@@ -79,7 +79,7 @@ namespace muse_dash_test
                                 string authorName = songInfo?.author ?? "(아티스트 없음)";
                                 MelonLogger.Msg($"  - [기본 곡] UID: {key} | 제목: {songName} | 아티스트: {authorName}");
 
-                                // 단 한 곡에 대해서만 데이터베이스상 제목 및 아티스트의 직접 수정(쓰기) 가능 여부를 검증
+                                // 단 한 곡에 대해서만 데이터베이스상 제목, 아티스트 및 난이도 속성의 직접 수정(쓰기) 가능 여부를 검증
                                 if (!checkedOne && songInfo != null)
                                 {
                                     checkedOne = true;
@@ -99,6 +99,29 @@ namespace muse_dash_test
                                     MelonLogger.Msg($"[글로벌 DB 속성 수정 가능 여부 검사 - 대상 곡 UID: {key}]");
                                     MelonLogger.Msg($"  - 제목(name) 속성 존재: Prop={nameProp != null}, Field={nameField != null} | 직접 수정(쓰기) 가능: {canWriteName}");
                                     MelonLogger.Msg($"  - 아티스트(author) 속성 존재: Prop={authorProp != null}, Field={authorField != null} | 직접 수정(쓰기) 가능: {canWriteAuthor}");
+
+                                    // 난이도(Difficulty / Level / Grade) 관련 필드 및 프로퍼티 동적 스캔
+                                    MelonLogger.Msg("  - [난이도 관련 속성 동적 검색 스캔 시작]");
+                                    var properties = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                                    foreach (var prop in properties)
+                                    {
+                                        string propNameLower = prop.Name.ToLowerInvariant();
+                                        if (propNameLower.Contains("diff") || propNameLower.Contains("level") || propNameLower.Contains("grade"))
+                                        {
+                                            MelonLogger.Msg($"    - [난이도 Property] 이름: {prop.Name} | 타입: {prop.PropertyType.Name} | 수정(쓰기) 가능: {prop.CanWrite}");
+                                        }
+                                    }
+
+                                    var fields = type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                                    foreach (var field in fields)
+                                    {
+                                        string fieldNameLower = field.Name.ToLowerInvariant();
+                                        if (fieldNameLower.Contains("diff") || fieldNameLower.Contains("level") || fieldNameLower.Contains("grade"))
+                                        {
+                                            MelonLogger.Msg($"    - [난이도 Field] 이름: {field.Name} | 타입: {field.FieldType.Name} | 수정(쓰기) 가능: {!field.IsInitOnly}");
+                                        }
+                                    }
+                                    MelonLogger.Msg("  - [난이도 관련 속성 동적 검색 스캔 완료]");
                                 }
                             }
                         }
