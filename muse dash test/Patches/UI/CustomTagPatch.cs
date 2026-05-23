@@ -69,6 +69,7 @@ namespace muse_dash_test
                     if (allMusicInfo != null)
                     {
                         MelonLogger.Msg($"[기본 탑재 곡 목록 조회 - 총 {allMusicInfo.Count}개]");
+                        bool checkedOne = false;
                         foreach (var key in allMusicInfo.Keys)
                         {
                             if (key != null && !key.StartsWith("999-"))
@@ -77,6 +78,28 @@ namespace muse_dash_test
                                 string songName = songInfo?.name ?? "(이름 없음)";
                                 string authorName = songInfo?.author ?? "(아티스트 없음)";
                                 MelonLogger.Msg($"  - [기본 곡] UID: {key} | 제목: {songName} | 아티스트: {authorName}");
+
+                                // 단 한 곡에 대해서만 데이터베이스상 제목 및 아티스트의 직접 수정(쓰기) 가능 여부를 검증
+                                if (!checkedOne && songInfo != null)
+                                {
+                                    checkedOne = true;
+                                    var type = songInfo.GetType();
+                                    
+                                    var nameProp = type.GetProperty("name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                                    var authorProp = type.GetProperty("author", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                                    
+                                    bool canWriteName = nameProp != null && nameProp.CanWrite;
+                                    bool canWriteAuthor = authorProp != null && authorProp.CanWrite;
+
+                                    var nameField = type.GetField("name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                                    var authorField = type.GetField("author", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                                    if (nameField != null) canWriteName = !nameField.IsInitOnly;
+                                    if (authorField != null) canWriteAuthor = !authorField.IsInitOnly;
+
+                                    MelonLogger.Msg($"[글로벌 DB 속성 수정 가능 여부 검사 - 대상 곡 UID: {key}]");
+                                    MelonLogger.Msg($"  - 제목(name) 속성 존재: Prop={nameProp != null}, Field={nameField != null} | 직접 수정(쓰기) 가능: {canWriteName}");
+                                    MelonLogger.Msg($"  - 아티스트(author) 속성 존재: Prop={authorProp != null}, Field={authorField != null} | 직접 수정(쓰기) 가능: {canWriteAuthor}");
+                                }
                             }
                         }
                         MelonLogger.Msg("[기본 탑재 곡 목록 조회 완료]");
