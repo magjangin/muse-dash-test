@@ -54,8 +54,25 @@ namespace muse_dash_test
                         iconName = "IconCustomAlbums" // CustomAlbums에서 자주 쓰이는 기본 아이콘 리소스 이름
                     };
 
-                    // 3. 이 태그 탭 하위에 노출할 곡 UIDs 정의 (예: 튜토리얼 "0-0"을 테스트용으로 추가)
-                    var musicList = new List<string> { "0-0" };
+                    // 3. 이 태그 탭 하위에 노출할 곡 UIDs 정의 (기본 탑재 곡들을 동적으로 전체 나열)
+                    var musicList = new List<string>();
+                    var allMusicInfo = GlobalDataBase.dbMusicTag?.m_AllMusicInfo;
+                    if (allMusicInfo != null)
+                    {
+                        foreach (var key in allMusicInfo.Keys)
+                        {
+                            if (key != null && !key.StartsWith("999-"))
+                            {
+                                musicList.Add(key);
+                            }
+                        }
+                    }
+
+                    // 만약 빈 목록일 경우를 대비해 튜토리얼 곡 기본값 예비 주입
+                    if (musicList.Count == 0)
+                    {
+                        musicList.Add("0-0");
+                    }
 
                     // IL2CPP List 구조로 변환
                     var il2CppMusicList = new Il2CppSystem.Collections.Generic.List<string>(musicList.Count);
