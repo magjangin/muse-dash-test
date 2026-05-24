@@ -135,6 +135,10 @@ public class PnlStage_ChangeFinalMusic_Patch
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.LongSongNameController), "Refresh", new Type[] { typeof(string), typeof(bool), typeof(float) })]
 public class LongSongNameController_Refresh_Patch
 {
+    private const int CustomTagUid = 998;
+    private const string CustomMusicUid = "0-0";
+    private const string CustomAlbumTitle = "실험 앨범";
+
     // 태그 뷰 아이템의 LongSongNameController 인스턴스 → 커스텀 텍스트 맵
     private static readonly Dictionary<IntPtr, string> _customTextMap = new Dictionary<IntPtr, string>();
 
@@ -176,7 +180,15 @@ public class LongSongNameController_Refresh_Patch
             string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
             if (!string.IsNullOrEmpty(selectedUid))
             {
-                if (__instance.gameObject.name == "ImgSongTitleMask")
+                if (__instance.gameObject.name == "ImgAlbumTittle")
+                {
+                    if (selectedUid == CustomMusicUid && PnlStagePatchHelper.IsCustomAlbumContext(CustomTagUid, CustomMusicUid))
+                    {
+                        text = CustomAlbumTitle;
+                        MelonLogger.Msg($"[LongSongNameController.Refresh] 앨범 제목 강제 변경 -> {CustomAlbumTitle} (UID: {selectedUid})");
+                    }
+                }
+                else if (__instance.gameObject.name == "ImgSongTitleMask")
                 {
                     if (CustomTitles.TryGetValue(selectedUid, out var customTitle))
                     {
@@ -223,6 +235,54 @@ public static class PnlStagePatchHelper
 {
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+    public static bool IsCustomAlbumContext(int tagUid, string musicUid)
+    {
+        try
+        {
+            var db = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag;
+            if (db == null || db.stageShowMusicList == null)
+            {
+                return false;
+            }
+
+            var tag = db.GetAlbumTagInfo(tagUid);
+            if (tag?.albumsInfos == null || tag.albumsInfos.Count == 0)
+            {
+                return false;
+            }
+
+            bool hasExpectedAlbum = false;
+            for (int i = 0; i < tag.albumsInfos.Count; i++)
+            {
+                var album = tag.albumsInfos[i];
+                if (album != null && album.uid == "998-0" && album.title == "실험 앨범")
+                {
+                    hasExpectedAlbum = true;
+                    break;
+                }
+            }
+
+            if (!hasExpectedAlbum)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < db.stageShowMusicList.Count; i++)
+            {
+                if (db.stageShowMusicList[i] == musicUid)
+                {
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"IsCustomAlbumContext 예외: {ex}");
+        }
+
+        return false;
+    }
 
     public static string GetCurrentSelectedMusicUid()
     {
