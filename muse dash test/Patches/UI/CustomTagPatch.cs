@@ -256,25 +256,57 @@ namespace muse_dash_test
             {
                 try
                 {
-                    var displayAlbums = new Il2CppSystem.Collections.Generic.List<AlbumDisplayMusic>();
-                    tag.GetDisplayAlbums(displayAlbums, true);
+                    var displayAlbumsWithMerge = new Il2CppSystem.Collections.Generic.List<AlbumDisplayMusic>();
+                    tag.GetDisplayAlbums(displayAlbumsWithMerge, true);
+
+                    var displayAlbumsWithoutMerge = new Il2CppSystem.Collections.Generic.List<AlbumDisplayMusic>();
+                    tag.GetDisplayAlbums(displayAlbumsWithoutMerge, false);
 
                     var musicUids = new Il2CppSystem.Collections.Generic.List<string>();
                     tag.GetMusicUids(musicUids, true);
 
-                    MelonLogger.Msg($"{label}: tagIndex={tag.tagIndex}, tagUid={tag.tagUid}, tagName={tag.tagName}, isCustomTag={tag.isCustomTag}, musicUids={musicUids.Count}, albumsInfos={tag.albumsInfos?.Count ?? -1}, displayAlbums={displayAlbums.Count}, m_DisplayMusicUids={tag.m_DisplayMusicUids?.Count ?? -1}, m_MusicUids={tag.m_MusicUids?.Count ?? -1}");
+                    MelonLogger.Msg($"{label}: tagIndex={tag.tagIndex}, tagUid={tag.tagUid}, tagName={tag.tagName}, isCustomTag={tag.isCustomTag}, musicUids={musicUids.Count}, albumsInfos={tag.albumsInfos?.Count ?? -1}, displayAlbumsMerge={displayAlbumsWithMerge.Count}, displayAlbumsRaw={displayAlbumsWithoutMerge.Count}, m_DisplayMusicUids={tag.m_DisplayMusicUids?.Count ?? -1}, m_MusicUids={tag.m_MusicUids?.Count ?? -1}");
                     LogStringList($"{label}.GetMusicUids", musicUids, 12);
-
-                    for (int i = 0; i < displayAlbums.Count; i++)
-                    {
-                        var album = displayAlbums[i];
-                        if (album == null) continue;
-                        MelonLogger.Msg($"{label}.DisplayAlbum[{i}]: title={album.displayTitle}, count={album.count}, albumInfo.title={album.albumInfo?.title}, albumInfo.uid={album.albumInfo?.uid}, albumInfo.tag={album.albumInfo?.tag}");
-                    }
+                    LogAlbumsInfoList($"{label}.albumsInfos", tag.albumsInfos);
+                    LogDisplayAlbumList($"{label}.m_DisplayMusicUids", tag.m_DisplayMusicUids);
+                    LogDisplayAlbumList($"{label}.GetDisplayAlbums(true)", displayAlbumsWithMerge);
+                    LogDisplayAlbumList($"{label}.GetDisplayAlbums(false)", displayAlbumsWithoutMerge);
                 }
                 catch (System.Exception ex)
                 {
                     MelonLogger.Error($"{label} 로그 예외: {ex}");
+                }
+            }
+
+            private static void LogAlbumsInfoList(string label, Il2CppSystem.Collections.Generic.List<DBConfigAlbums.AlbumsInfo> albums)
+            {
+                if (albums == null)
+                {
+                    MelonLogger.Msg($"{label}: null");
+                    return;
+                }
+
+                for (int i = 0; i < albums.Count; i++)
+                {
+                    var album = albums[i];
+                    if (album == null) continue;
+                    MelonLogger.Msg($"{label}[{i}]: title={album.title}, uid={album.uid}, tag={album.tag}, jsonName={album.jsonName}, prefabsName={album.prefabsName}, free={album.free}, needPurchase={album.needPurchase}");
+                }
+            }
+
+            private static void LogDisplayAlbumList(string label, Il2CppSystem.Collections.Generic.List<AlbumDisplayMusic> displayAlbums)
+            {
+                if (displayAlbums == null)
+                {
+                    MelonLogger.Msg($"{label}: null");
+                    return;
+                }
+
+                for (int i = 0; i < displayAlbums.Count; i++)
+                {
+                    var album = displayAlbums[i];
+                    if (album == null) continue;
+                    MelonLogger.Msg($"{label}[{i}]: title={album.displayTitle}, count={album.count}, albumInfo.title={album.albumInfo?.title}, albumInfo.uid={album.albumInfo?.uid}, albumInfo.tag={album.albumInfo?.tag}");
                 }
             }
 
