@@ -105,6 +105,7 @@ public class PnlStage_ChangeMusic_Patch
     {
         try
         {
+            PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.ChangeMusic", __instance);
             PnlMusicUtils.LogMusicInfo("PnlStage.ChangeMusic", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }
@@ -286,8 +287,58 @@ public class PnlMusicTagScrollView_InitListView_Patch
 // 로컬 PnlStage 정보 조회 헬퍼
 public static class PnlStagePatchHelper
 {
+    private const int CustomTagUid = 998;
+    private const string CustomMusicUid = "0-0";
+    private const string CustomTitle = "화영왕";
+    private const string CustomArtist = "화영왕";
+
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+    public static void ApplyCustomTagTitleAccessors(string source, PnlStage stage)
+    {
+        try
+        {
+            if (stage == null)
+            {
+                MelonLogger.Msg($"[{source}] 커스텀 태그 접근자 적용 건너뜀: stage=null");
+                return;
+            }
+
+            if (!IsCustomAlbumContext(CustomTagUid, CustomMusicUid))
+            {
+                MelonLogger.Msg($"[{source}] 커스텀 태그 접근자 적용 건너뜀: customContext=false");
+                return;
+            }
+
+            var musicText = stage.musicNameTitle;
+            var artistText = stage.artistNameTitle;
+
+            if (musicText != null)
+            {
+                MelonLogger.Msg($"[{source}] musicNameTitle 접근자로 제목 변경: {CleanLogText(musicText.text)} -> {CustomTitle}");
+                musicText.text = CustomTitle;
+            }
+            else
+            {
+                MelonLogger.Warning($"[{source}] musicNameTitle 접근자 결과가 null입니다.");
+            }
+
+            if (artistText != null)
+            {
+                MelonLogger.Msg($"[{source}] artistNameTitle 접근자로 아티스트 변경: {CleanLogText(artistText.text)} -> {CustomArtist}");
+                artistText.text = CustomArtist;
+            }
+            else
+            {
+                MelonLogger.Warning($"[{source}] artistNameTitle 접근자 결과가 null입니다.");
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} 커스텀 태그 접근자 적용 예외: {ex}");
+        }
+    }
 
     public static void LogPnlStageRefresh(string source, PnlStage stage)
     {

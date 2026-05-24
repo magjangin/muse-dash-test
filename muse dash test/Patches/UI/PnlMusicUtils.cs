@@ -11,7 +11,7 @@ public static class PnlMusicUtils
 {
     // 곡 제목 실험 모드: 여기만 수정하면 됩니다.
     // EnableSongTitleExperiment=false로 바꾸면 원본 UI를 건드리지 않고 로그만 출력합니다.
-    private const bool EnableSongTitleExperiment = true;
+    private const bool EnableSongTitleExperiment = false;
     private const string ExperimentTitle = "화영왕";
     private const string ExperimentArtist = "화영왕";
     private const string ExperimentLevelDesignerLabel = "레벨 디자이너";
