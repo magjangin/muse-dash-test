@@ -178,17 +178,23 @@ public class LongSongNameController_Refresh_Patch
             
             // 현재 선택된 곡 Uid 가져오기 (로컬 헬퍼 사용)
             string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            if (__instance.gameObject.name == "ImgAlbumTittle")
+            {
+                bool isCustomAlbumContext = PnlStagePatchHelper.IsCustomAlbumContext(CustomTagUid, CustomMusicUid);
+                MelonLogger.Msg($"[LongSongNameController.Refresh] 앨범 제목 검사: selectedUid='{selectedUid ?? "(null)"}', isCustomAlbumContext={isCustomAlbumContext}");
+
+                if (isCustomAlbumContext)
+                {
+                    text = CustomAlbumTitle;
+                    MelonLogger.Msg($"[LongSongNameController.Refresh] 앨범 제목 강제 변경 -> {CustomAlbumTitle} (UID: {selectedUid ?? "(unknown)"})");
+                }
+
+                return;
+            }
+
             if (!string.IsNullOrEmpty(selectedUid))
             {
-                if (__instance.gameObject.name == "ImgAlbumTittle")
-                {
-                    if (selectedUid == CustomMusicUid && PnlStagePatchHelper.IsCustomAlbumContext(CustomTagUid, CustomMusicUid))
-                    {
-                        text = CustomAlbumTitle;
-                        MelonLogger.Msg($"[LongSongNameController.Refresh] 앨범 제목 강제 변경 -> {CustomAlbumTitle} (UID: {selectedUid})");
-                    }
-                }
-                else if (__instance.gameObject.name == "ImgSongTitleMask")
+                if (__instance.gameObject.name == "ImgSongTitleMask")
                 {
                     if (CustomTitles.TryGetValue(selectedUid, out var customTitle))
                     {
