@@ -170,6 +170,8 @@ namespace muse_dash_test
                     info.m_DisplayMusicUids = displayAlbums;
                     info.m_MusicUids = tagMusicList;
 
+                    CustomTagLinkProbe.DumpAtLinkTime(__instance, musicList);
+
                     // 6. 글로벌 데이터베이스의 커스텀 태그 정렬 목록에 등록
                     if (!GlobalDataBase.dbMusicTag.AllAlbumTagsSortContains(TagUid))
                     {

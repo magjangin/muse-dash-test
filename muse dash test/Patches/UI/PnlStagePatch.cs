@@ -34,6 +34,8 @@ public class PnlStage_Start_Patch
         yield return new WaitForSeconds(delay);
         try
         {
+            MusicButtonCellInstanceTracker.LogSummary("PnlStage.Start.Delay");
+
             var scrollView = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlMusicTagScrollView>();
             if (scrollView == null)
             {

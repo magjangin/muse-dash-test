@@ -23,6 +23,7 @@ public class MusicButtonCell_InitMusicCell_Patch
                 string gameObjectName = __instance.gameObject != null ? __instance.gameObject.name : "(null)";
                 
                 MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Prefix: GameObject={gameObjectName} | Uid={musicUid} | Name={musicName} | Author={musicAuthor} | TabIndex={tabIndex}");
+                MusicButtonCellInstanceTracker.Register(__instance, initMusicInfo, tabIndex, "InitMusicCell.Prefix");
             }
         }
         catch (Exception ex)
@@ -53,7 +54,7 @@ public class MusicButtonCell_OnButtonClicked_Patch
                 string musicName = musicInfo != null ? musicInfo.name : "(unknown)";
                 string gameObjectName = __instance.gameObject != null ? __instance.gameObject.name : "(null)";
                 
-                MelonLogger.Msg($"[MusicButtonCell.OnButtonClicked] Prefix: 곡 셀 클릭됨! GameObject={gameObjectName} | Uid={musicUid} | Name={musicName}");
+                MelonLogger.Msg($"[MusicButtonCell.OnButtonClicked] Prefix: 곡 셀 클릭됨! GameObject={gameObjectName} | Uid={musicUid} | Name={musicName} | Instance={MusicButtonCellInstanceTracker.Describe(__instance)}");
             }
         }
         catch (Exception ex)
