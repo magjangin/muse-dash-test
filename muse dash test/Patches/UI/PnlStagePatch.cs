@@ -131,6 +131,81 @@ public class PnlStage_ChangeFinalMusic_Patch
     }
 }
 
+// PnlStage.RefreshStageUI 후킹
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshStageUI")]
+public class PnlStage_RefreshStageUI_Patch
+{
+    public static void Prefix(PnlStage __instance)
+    {
+        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshStageUI.Prefix", __instance);
+    }
+
+    public static void Postfix(PnlStage __instance)
+    {
+        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshStageUI.Postfix", __instance);
+    }
+}
+
+// PnlStage.RefreshTagTitle 후킹
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshTagTitle")]
+public class PnlStage_RefreshTagTitle_Patch
+{
+    public static void Prefix(PnlStage __instance)
+    {
+        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshTagTitle.Prefix", __instance);
+    }
+
+    public static void Postfix(PnlStage __instance)
+    {
+        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshTagTitle.Postfix", __instance);
+    }
+}
+
+// PnlStage.RefreshDisplayMusic 후킹
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshDisplayMusic")]
+public class PnlStage_RefreshDisplayMusic_Patch
+{
+    public static void Prefix(PnlStage __instance)
+    {
+        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshDisplayMusic.Prefix", __instance);
+    }
+
+    public static void Postfix(PnlStage __instance)
+    {
+        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshDisplayMusic.Postfix", __instance);
+    }
+}
+
+// SetSelectedMusicNameTxt.GetSelectedMusicName 후킹
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "GetSelectedMusicName")]
+public class SetSelectedMusicNameTxt_GetSelectedMusicName_Patch
+{
+    public static void Prefix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+    {
+        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicName.Prefix", __instance, null);
+    }
+
+    public static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance, ref string __result)
+    {
+        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicName.Postfix", __instance, __result);
+    }
+}
+
+// SetSelectedMusicNameTxt.GetSelectedMusicAuthor 후킹
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "GetSelectedMusicAuthor")]
+public class SetSelectedMusicNameTxt_GetSelectedMusicAuthor_Patch
+{
+    public static void Prefix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+    {
+        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicAuthor.Prefix", __instance, null);
+    }
+
+    public static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance, ref string __result)
+    {
+        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicAuthor.Postfix", __instance, __result);
+    }
+}
+
 // LongSongNameController.Refresh 후킹 패치 (진단 및 후킹용)
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.LongSongNameController), "Refresh", new Type[] { typeof(string), typeof(bool), typeof(float) })]
 public class LongSongNameController_Refresh_Patch
@@ -241,6 +316,79 @@ public static class PnlStagePatchHelper
 {
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+    public static void LogPnlStageRefresh(string source, PnlStage stage)
+    {
+        try
+        {
+            if (stage == null)
+            {
+                MelonLogger.Msg($"[{source}] stage=null");
+                return;
+            }
+
+            string selectedUid = GetCurrentSelectedMusicUid();
+            string albumTitle = GetLongNameControllerText(stage.m_AlbumTitleTxt);
+            string musicTitle = GetLongNameControllerText(stage.musicLongNameController);
+            string artistTitle = GetLongNameControllerText(stage.artistLongNameController);
+            string albumObjActive = stage.m_AlbumTitleObj != null ? stage.m_AlbumTitleObj.activeSelf.ToString() : "(null)";
+            MelonLogger.Msg($"[{source}] selectedUid={selectedUid ?? "(null)"}, albumTitle={CleanLogText(albumTitle)}, musicTitle={CleanLogText(musicTitle)}, artistTitle={CleanLogText(artistTitle)}, albumTitleObjActive={albumObjActive}");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} 예외: {ex}");
+        }
+    }
+
+    public static void LogSetSelectedMusicNameTxt(string source, Il2Cpp.SetSelectedMusicNameTxt component, string result)
+    {
+        try
+        {
+            if (component == null)
+            {
+                MelonLogger.Msg($"[{source}] component=null, result={CleanLogText(result)}");
+                return;
+            }
+
+            string gameObjectName = component.gameObject != null ? component.gameObject.name : "(null)";
+            MelonLogger.Msg($"[{source}] GameObject={gameObjectName}, isMusicName={component.isMusicName}, isMusicAuthor={component.isMusicAuthor}, result={CleanLogText(result)}");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} 예외: {ex}");
+        }
+    }
+
+    public static string GetLongNameControllerText(Il2Cpp.LongSongNameController controller)
+    {
+        if (controller == null)
+        {
+            return null;
+        }
+
+        return FirstNonEmpty(
+            controller.m_TxtSimpleName?.text,
+            controller.m_MidSimpleName?.text,
+            controller.m_TxtBackupName?.text);
+    }
+
+    private static string FirstNonEmpty(params string[] values)
+    {
+        if (values == null) return null;
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static string CleanLogText(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "(null)" : value.Trim();
+    }
 
     public static bool IsCustomAlbumContext(int tagUid, string musicUid)
     {
