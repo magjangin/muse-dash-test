@@ -131,21 +131,6 @@ public class PnlStage_ChangeFinalMusic_Patch
     }
 }
 
-// PnlStage.RefreshStageUI 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshStageUI")]
-public class PnlStage_RefreshStageUI_Patch
-{
-    public static void Prefix(PnlStage __instance)
-    {
-        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshStageUI.Prefix", __instance);
-    }
-
-    public static void Postfix(PnlStage __instance)
-    {
-        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshStageUI.Postfix", __instance);
-    }
-}
-
 // PnlStage.RefreshTagTitle 후킹
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshTagTitle")]
 public class PnlStage_RefreshTagTitle_Patch
@@ -161,48 +146,43 @@ public class PnlStage_RefreshTagTitle_Patch
     }
 }
 
-// PnlStage.RefreshDisplayMusic 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshDisplayMusic")]
-public class PnlStage_RefreshDisplayMusic_Patch
+// PnlStage.musicNameTitle getter 후킹
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), "get_musicNameTitle")]
+public class PnlStage_GetMusicNameTitle_Patch
 {
-    public static void Prefix(PnlStage __instance)
+    public static void Postfix(PnlStage __instance, ref Text __result)
     {
-        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshDisplayMusic.Prefix", __instance);
-    }
-
-    public static void Postfix(PnlStage __instance)
-    {
-        PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshDisplayMusic.Postfix", __instance);
+        PnlStagePatchHelper.LogTextAccessor("PnlStage.get_musicNameTitle", __instance, __result);
     }
 }
 
-// SetSelectedMusicNameTxt.GetSelectedMusicName 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "GetSelectedMusicName")]
-public class SetSelectedMusicNameTxt_GetSelectedMusicName_Patch
+// PnlStage.musicNameTitle setter 후킹
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), "set_musicNameTitle")]
+public class PnlStage_SetMusicNameTitle_Patch
 {
-    public static void Prefix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+    public static void Prefix(PnlStage __instance, Text value)
     {
-        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicName.Prefix", __instance, null);
-    }
-
-    public static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance, ref string __result)
-    {
-        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicName.Postfix", __instance, __result);
+        PnlStagePatchHelper.LogTextAccessor("PnlStage.set_musicNameTitle", __instance, value);
     }
 }
 
-// SetSelectedMusicNameTxt.GetSelectedMusicAuthor 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "GetSelectedMusicAuthor")]
-public class SetSelectedMusicNameTxt_GetSelectedMusicAuthor_Patch
+// PnlStage.artistNameTitle getter 후킹
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), "get_artistNameTitle")]
+public class PnlStage_GetArtistNameTitle_Patch
 {
-    public static void Prefix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+    public static void Postfix(PnlStage __instance, ref Text __result)
     {
-        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicAuthor.Prefix", __instance, null);
+        PnlStagePatchHelper.LogTextAccessor("PnlStage.get_artistNameTitle", __instance, __result);
     }
+}
 
-    public static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance, ref string __result)
+// PnlStage.artistNameTitle setter 후킹
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), "set_artistNameTitle")]
+public class PnlStage_SetArtistNameTitle_Patch
+{
+    public static void Prefix(PnlStage __instance, Text value)
     {
-        PnlStagePatchHelper.LogSetSelectedMusicNameTxt("SetSelectedMusicNameTxt.GetSelectedMusicAuthor.Postfix", __instance, __result);
+        PnlStagePatchHelper.LogTextAccessor("PnlStage.set_artistNameTitle", __instance, value);
     }
 }
 
@@ -340,18 +320,17 @@ public static class PnlStagePatchHelper
         }
     }
 
-    public static void LogSetSelectedMusicNameTxt(string source, Il2Cpp.SetSelectedMusicNameTxt component, string result)
+    public static void LogTextAccessor(string source, PnlStage stage, Text text)
     {
         try
         {
-            if (component == null)
-            {
-                MelonLogger.Msg($"[{source}] component=null, result={CleanLogText(result)}");
-                return;
-            }
-
-            string gameObjectName = component.gameObject != null ? component.gameObject.name : "(null)";
-            MelonLogger.Msg($"[{source}] GameObject={gameObjectName}, isMusicName={component.isMusicName}, isMusicAuthor={component.isMusicAuthor}, result={CleanLogText(result)}");
+            string selectedUid = GetCurrentSelectedMusicUid();
+            string textName = text != null ? text.name : "(null)";
+            string gameObjectName = text != null && text.gameObject != null ? text.gameObject.name : "(null)";
+            string value = text != null ? text.text : null;
+            string active = text != null && text.gameObject != null ? text.gameObject.activeSelf.ToString() : "(null)";
+            string stageName = stage != null ? stage.name : "(null)";
+            MelonLogger.Msg($"[{source}] stage={stageName}, selectedUid={selectedUid ?? "(null)"}, TextName={textName}, GameObject={gameObjectName}, Active={active}, Text={CleanLogText(value)}");
         }
         catch (Exception ex)
         {
