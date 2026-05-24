@@ -143,6 +143,8 @@ namespace muse_dash_test
                     // CustomTagInfo는 music_list만 갖고, 앨범 트리는 AlbumTagInfo 쪽 m_AlbumsInfos/m_DisplayMusicUids가 담당합니다.
                     var tagMusicList = ToIl2CppStringList(musicList);
                     var displayMusicList = ToIl2CppStringList(musicList);
+                    info.SetTagUids(ToIl2CppStringList(musicList));
+                    MelonLogger.Msg("[커스텀 태그 진단] SetTagUids 이후 커스텀 앨범 표시 데이터를 다시 덮어씁니다.");
 
                     var albumInfo = new DBConfigAlbums.AlbumsInfo
                     {
@@ -167,7 +169,6 @@ namespace muse_dash_test
                     displayAlbums.Add(displayAlbum);
                     info.m_DisplayMusicUids = displayAlbums;
                     info.m_MusicUids = tagMusicList;
-                    info.SetTagUids(ToIl2CppStringList(musicList));
 
                     // 6. 글로벌 데이터베이스의 커스텀 태그 정렬 목록에 등록
                     if (!GlobalDataBase.dbMusicTag.AllAlbumTagsSortContains(TagUid))
