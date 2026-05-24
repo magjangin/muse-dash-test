@@ -63,70 +63,6 @@ namespace muse_dash_test
                     // InitCustomTagInfo 쪽에서 전달된 리스트를 직접 정리할 수 있어, 용도별로 새 리스트를 계속 만들어 씁니다.
                     var customInfoMusicList = ToIl2CppStringList(musicList);
 
-                    // 3.5. 원래 있던 기본 탑재 곡들의 목록을 상세히 로그로 출력
-                    var allMusicInfo = GlobalDataBase.dbMusicTag?.m_AllMusicInfo;
-                    if (allMusicInfo != null)
-                    {
-                        MelonLogger.Msg($"[기본 탑재 곡 목록 조회 - 총 {allMusicInfo.Count}개]");
-                        bool checkedOne = false;
-                        foreach (var key in allMusicInfo.Keys)
-                        {
-                            if (key != null && !key.StartsWith("999-"))
-                            {
-                                var songInfo = GlobalDataBase.dbMusicTag.GetMusicInfoFromAll(key);
-                                string songName = songInfo?.name ?? "(이름 없음)";
-                                string authorName = songInfo?.author ?? "(아티스트 없음)";
-                                MelonLogger.Msg($"  - [기본 곡] UID: {key} | 제목: {songName} | 아티스트: {authorName}");
-
-                                // 단 한 곡에 대해서만 데이터베이스상 제목, 아티스트 및 난이도 속성의 직접 수정(쓰기) 가능 여부를 검증
-                                if (!checkedOne && songInfo != null)
-                                {
-                                    checkedOne = true;
-                                    var type = songInfo.GetType();
-                                    
-                                    var nameProp = type.GetProperty("name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                                    var authorProp = type.GetProperty("author", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                                    
-                                    bool canWriteName = nameProp != null && nameProp.CanWrite;
-                                    bool canWriteAuthor = authorProp != null && authorProp.CanWrite;
-
-                                    var nameField = type.GetField("name", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                                    var authorField = type.GetField("author", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                                    if (nameField != null) canWriteName = !nameField.IsInitOnly;
-                                    if (authorField != null) canWriteAuthor = !authorField.IsInitOnly;
-
-                                    MelonLogger.Msg($"[글로벌 DB 속성 수정 가능 여부 검사 - 대상 곡 UID: {key}]");
-                                    MelonLogger.Msg($"  - 제목(name) 속성 존재: Prop={nameProp != null}, Field={nameField != null} | 직접 수정(쓰기) 가능: {canWriteName}");
-                                    MelonLogger.Msg($"  - 아티스트(author) 속성 존재: Prop={authorProp != null}, Field={authorField != null} | 직접 수정(쓰기) 가능: {canWriteAuthor}");
-
-                                    // 난이도(Difficulty / Level / Grade) 관련 필드 및 프로퍼티 동적 스캔
-                                    MelonLogger.Msg("  - [난이도 관련 속성 동적 검색 스캔 시작]");
-                                    var properties = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                                    foreach (var prop in properties)
-                                    {
-                                        string propNameLower = prop.Name.ToLowerInvariant();
-                                        if (propNameLower.Contains("diff") || propNameLower.Contains("level") || propNameLower.Contains("grade"))
-                                        {
-                                            MelonLogger.Msg($"    - [난이도 Property] 이름: {prop.Name} | 타입: {prop.PropertyType.Name} | 수정(쓰기) 가능: {prop.CanWrite}");
-                                        }
-                                    }
-
-                                    var fields = type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                                    foreach (var field in fields)
-                                    {
-                                        string fieldNameLower = field.Name.ToLowerInvariant();
-                                        if (fieldNameLower.Contains("diff") || fieldNameLower.Contains("level") || fieldNameLower.Contains("grade"))
-                                        {
-                                            MelonLogger.Msg($"    - [난이도 Field] 이름: {field.Name} | 타입: {field.FieldType.Name} | 수정(쓰기) 가능: {!field.IsInitOnly}");
-                                        }
-                                    }
-                                    MelonLogger.Msg("  - [난이도 관련 속성 동적 검색 스캔 완료]");
-                                }
-                            }
-                        }
-                        MelonLogger.Msg("[기본 탑재 곡 목록 조회 완료]");
-                    }
-
                     // 4. CustomTagInfo 설정
                     var customInfo = new CustomTagInfo
                     {
@@ -137,14 +73,12 @@ namespace muse_dash_test
 
                     // 5. 커스텀 태그 초기화 및 바인딩
                     info.InitCustomTagInfo(customInfo);
-                    MelonLogger.Msg($"[커스텀 태그 진단] InitCustomTagInfo 이후 customInfo.music_list.Count={customInfo.music_list?.Count ?? -1}");
 
                     // InitCustomTagInfo가 내부 표시 목록을 다시 정리할 수 있으므로 앨범 트리는 초기화 후에 연결합니다.
                     // CustomTagInfo는 music_list만 갖고, 앨범 트리는 AlbumTagInfo 쪽 m_AlbumsInfos/m_DisplayMusicUids가 담당합니다.
                     var tagMusicList = ToIl2CppStringList(musicList);
                     var displayMusicList = ToIl2CppStringList(musicList);
                     info.SetTagUids(ToIl2CppStringList(musicList));
-                    MelonLogger.Msg("[커스텀 태그 진단] SetTagUids 이후 커스텀 앨범 표시 데이터를 다시 덮어씁니다.");
 
                     var albumInfo = new DBConfigAlbums.AlbumsInfo
                     {
@@ -170,8 +104,6 @@ namespace muse_dash_test
                     info.m_DisplayMusicUids = displayAlbums;
                     info.m_MusicUids = tagMusicList;
 
-                    CustomTagLinkProbe.DumpAtLinkTime(__instance, musicList);
-
                     // 6. 글로벌 데이터베이스의 커스텀 태그 정렬 목록에 등록
                     if (!GlobalDataBase.dbMusicTag.AllAlbumTagsSortContains(TagUid))
                     {
@@ -186,8 +118,6 @@ namespace muse_dash_test
                     // 7. 글로벌 데이터베이스에 태그 데이터 최종 등록
                     GlobalDataBase.dbMusicTag.AddAlbumTagData(TagUid, info);
                     MelonLogger.Msg($"글로벌 데이터베이스에 커스텀 태그/앨범 데이터 등록 완료! AlbumUid={AlbumUidString}, AlbumTitle={AlbumTitle}, MusicCount={musicList.Count}");
-
-                    LogCustomTagRegistrationState(__instance, info, ToIl2CppStringList(musicList));
                 }
                 catch (System.Exception ex)
                 {
@@ -203,155 +133,6 @@ namespace muse_dash_test
                     result.Add(value);
                 }
                 return result;
-            }
-
-            private static void LogCustomTagRegistrationState(MusicTagManager manager, AlbumTagInfo info, Il2CppSystem.Collections.Generic.List<string> musicUids)
-            {
-                try
-                {
-                    var db = GlobalDataBase.dbMusicTag;
-                    if (db == null)
-                    {
-                        MelonLogger.Warning("[커스텀 태그 진단] dbMusicTag가 null입니다.");
-                        return;
-                    }
-
-                    MelonLogger.Msg($"[커스텀 태그 진단] AllAlbumTagsSortContains({TagUid})={db.AllAlbumTagsSortContains(TagUid)}, customTagsCount={db.customTagsCount}");
-                    MelonLogger.Msg($"[커스텀 태그 진단] m_AlbumTagsSort.Count={db.m_AlbumTagsSort?.Count ?? -1}, m_CustomAlbumTagsSort.Count={db.m_CustomAlbumTagsSort?.Count ?? -1}, m_AllAlbumTagData.Count={db.m_AllAlbumTagData?.Count ?? -1}");
-                    LogIntList("[커스텀 태그 진단] m_AlbumTagsSort", db.m_AlbumTagsSort, TagUid);
-                    LogIntList("[커스텀 태그 진단] m_CustomAlbumTagsSort", db.m_CustomAlbumTagsSort, TagUid);
-
-                    var allSort = new Il2CppSystem.Collections.Generic.List<int>();
-                    db.GetAllTagsIndexSort(allSort);
-                    LogIntList("[커스텀 태그 진단] GetAllTagsIndexSort", allSort, TagUid);
-
-                    var registered = db.GetAlbumTagInfo(TagUid);
-                    if (registered == null)
-                    {
-                        MelonLogger.Warning($"[커스텀 태그 진단] GetAlbumTagInfo({TagUid}) 결과가 null입니다.");
-                    }
-                    else
-                    {
-                        LogAlbumTagInfo("[커스텀 태그 진단] registered", registered);
-                    }
-
-                    LogAlbumTagInfo("[커스텀 태그 진단] local", info);
-
-                    if (manager != null)
-                    {
-                        bool refreshByTag = manager.RefreshStageDisplayMusics(TagUid);
-                        bool refreshByList = manager.RefreshStageDisplayMusics(musicUids, TagUid, true);
-                        MelonLogger.Msg($"[커스텀 태그 진단] RefreshStageDisplayMusics(tag)={refreshByTag}, RefreshStageDisplayMusics(list,tag,true)={refreshByList}, stageShowMusicCount={db.stageShowMusicCount}");
-                        LogStringList("[커스텀 태그 진단] stageShowMusicList", db.stageShowMusicList, 12);
-                    }
-                    else
-                    {
-                        MelonLogger.Warning("[커스텀 태그 진단] MusicTagManager __instance가 null이라 RefreshStageDisplayMusics 검증을 건너뜁니다.");
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    MelonLogger.Error($"[커스텀 태그 진단] 예외: {ex}");
-                }
-            }
-
-            private static void LogAlbumTagInfo(string label, AlbumTagInfo tag)
-            {
-                try
-                {
-                    var displayAlbumsWithMerge = new Il2CppSystem.Collections.Generic.List<AlbumDisplayMusic>();
-                    tag.GetDisplayAlbums(displayAlbumsWithMerge, true);
-
-                    var displayAlbumsWithoutMerge = new Il2CppSystem.Collections.Generic.List<AlbumDisplayMusic>();
-                    tag.GetDisplayAlbums(displayAlbumsWithoutMerge, false);
-
-                    var musicUids = new Il2CppSystem.Collections.Generic.List<string>();
-                    tag.GetMusicUids(musicUids, true);
-
-                    MelonLogger.Msg($"{label}: tagIndex={tag.tagIndex}, tagUid={tag.tagUid}, tagName={tag.tagName}, isCustomTag={tag.isCustomTag}, musicUids={musicUids.Count}, albumsInfos={tag.albumsInfos?.Count ?? -1}, displayAlbumsMerge={displayAlbumsWithMerge.Count}, displayAlbumsRaw={displayAlbumsWithoutMerge.Count}, m_DisplayMusicUids={tag.m_DisplayMusicUids?.Count ?? -1}, m_MusicUids={tag.m_MusicUids?.Count ?? -1}");
-                    LogStringList($"{label}.GetMusicUids", musicUids, 12);
-                    LogAlbumsInfoList($"{label}.albumsInfos", tag.albumsInfos);
-                    LogDisplayAlbumList($"{label}.m_DisplayMusicUids", tag.m_DisplayMusicUids);
-                    LogDisplayAlbumList($"{label}.GetDisplayAlbums(true)", displayAlbumsWithMerge);
-                    LogDisplayAlbumList($"{label}.GetDisplayAlbums(false)", displayAlbumsWithoutMerge);
-                }
-                catch (System.Exception ex)
-                {
-                    MelonLogger.Error($"{label} 로그 예외: {ex}");
-                }
-            }
-
-            private static void LogAlbumsInfoList(string label, Il2CppSystem.Collections.Generic.List<DBConfigAlbums.AlbumsInfo> albums)
-            {
-                if (albums == null)
-                {
-                    MelonLogger.Msg($"{label}: null");
-                    return;
-                }
-
-                for (int i = 0; i < albums.Count; i++)
-                {
-                    var album = albums[i];
-                    if (album == null) continue;
-                    MelonLogger.Msg($"{label}[{i}]: title={album.title}, uid={album.uid}, tag={album.tag}, jsonName={album.jsonName}, prefabsName={album.prefabsName}, free={album.free}, needPurchase={album.needPurchase}");
-                }
-            }
-
-            private static void LogDisplayAlbumList(string label, Il2CppSystem.Collections.Generic.List<AlbumDisplayMusic> displayAlbums)
-            {
-                if (displayAlbums == null)
-                {
-                    MelonLogger.Msg($"{label}: null");
-                    return;
-                }
-
-                for (int i = 0; i < displayAlbums.Count; i++)
-                {
-                    var album = displayAlbums[i];
-                    if (album == null) continue;
-                    MelonLogger.Msg($"{label}[{i}]: title={album.displayTitle}, count={album.count}, albumInfo.title={album.albumInfo?.title}, albumInfo.uid={album.albumInfo?.uid}, albumInfo.tag={album.albumInfo?.tag}");
-                }
-            }
-
-            private static void LogIntList(string label, Il2CppSystem.Collections.Generic.List<int> list, int target)
-            {
-                if (list == null)
-                {
-                    MelonLogger.Msg($"{label}: null");
-                    return;
-                }
-
-                int found = -1;
-                var sb = new System.Text.StringBuilder();
-                int max = System.Math.Min(list.Count, 40);
-                for (int i = 0; i < max; i++)
-                {
-                    int value = list[i];
-                    if (value == target) found = i;
-                    if (i > 0) sb.Append(", ");
-                    sb.Append(value);
-                }
-                if (list.Count > max) sb.Append(", ...");
-                MelonLogger.Msg($"{label}: Count={list.Count}, targetIndex={found}, Values=[{sb}]");
-            }
-
-            private static void LogStringList(string label, Il2CppSystem.Collections.Generic.List<string> list, int max)
-            {
-                if (list == null)
-                {
-                    MelonLogger.Msg($"{label}: null");
-                    return;
-                }
-
-                var sb = new System.Text.StringBuilder();
-                int count = System.Math.Min(list.Count, max);
-                for (int i = 0; i < count; i++)
-                {
-                    if (i > 0) sb.Append(", ");
-                    sb.Append(list[i]);
-                }
-                if (list.Count > count) sb.Append(", ...");
-                MelonLogger.Msg($"{label}: Count={list.Count}, Values=[{sb}]");
             }
         }
 
