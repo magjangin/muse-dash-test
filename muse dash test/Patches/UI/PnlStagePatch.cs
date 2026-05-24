@@ -162,22 +162,6 @@ public class PnlStage_GetMusicNameTitle_Patch
     }
 }
 
-// PnlStage.musicNameTitle setter 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.musicNameTitle), HarmonyLib.MethodType.Setter)]
-public class PnlStage_SetMusicNameTitle_Patch
-{
-    public static bool Prepare()
-    {
-        MelonLogger.Msg("[PnlStage.set_musicNameTitle] 접근자 후킹 준비 완료");
-        return true;
-    }
-
-    public static void Prefix(PnlStage __instance, Text value)
-    {
-        PnlStagePatchHelper.LogTextAccessor("PnlStage.set_musicNameTitle", __instance, value);
-    }
-}
-
 // PnlStage.artistNameTitle getter 후킹
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.artistNameTitle), HarmonyLib.MethodType.Getter)]
 public class PnlStage_GetArtistNameTitle_Patch
@@ -191,22 +175,6 @@ public class PnlStage_GetArtistNameTitle_Patch
     public static void Postfix(PnlStage __instance, ref Text __result)
     {
         PnlStagePatchHelper.LogTextAccessor("PnlStage.get_artistNameTitle", __instance, __result);
-    }
-}
-
-// PnlStage.artistNameTitle setter 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.artistNameTitle), HarmonyLib.MethodType.Setter)]
-public class PnlStage_SetArtistNameTitle_Patch
-{
-    public static bool Prepare()
-    {
-        MelonLogger.Msg("[PnlStage.set_artistNameTitle] 접근자 후킹 준비 완료");
-        return true;
-    }
-
-    public static void Prefix(PnlStage __instance, Text value)
-    {
-        PnlStagePatchHelper.LogTextAccessor("PnlStage.set_artistNameTitle", __instance, value);
     }
 }
 
