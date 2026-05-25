@@ -22,6 +22,7 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomTitles = new Dictionary<string, string>
     {
+        { "0-0", "화영왕" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -29,6 +30,7 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomArtists = new Dictionary<string, string>
     {
+        { "0-0", "화영왕" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -82,6 +84,17 @@ public class LongSongNameController_Refresh_Patch
                         MelonLogger.Msg($"[LongSongNameController.Refresh] 아티스트 강제 변경 -> {customArtist} (UID: {selectedUid})");
                     }
                 }
+            }
+
+            if (__instance.gameObject.name == "ImgSongTitleMask" && text == "Iyaiya")
+            {
+                text = "화영왕";
+                MelonLogger.Msg("[LongSongNameController.Refresh] 원본 곡 제목 기반 강제 변경: Iyaiya -> 화영왕");
+            }
+            else if (__instance.gameObject.name == "ImgArtistMask" && text == "小野道ono")
+            {
+                text = "화영왕";
+                MelonLogger.Msg("[LongSongNameController.Refresh] 원본 아티스트 기반 강제 변경: 小野道ono -> 화영왕");
             }
         }
         catch (Exception ex)

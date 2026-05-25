@@ -19,6 +19,8 @@ public class PnlPreparation_Awake_Patch
         try
         {
             PnlMusicUtils.LogPreparationMusicInfo(__instance);
+            MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.Awake.Delay", 0.25f));
+            MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.Awake.DelayLong", 1.0f));
         }
         catch (Exception ex)
         {
