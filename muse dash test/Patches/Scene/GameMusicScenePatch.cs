@@ -22,8 +22,6 @@ public class GameMusicScene_LoadScene_Patch
     {
         try
         {
-            MelonLogger.Msg($"GameMusicScene.LoadScene 호출: sceneName={sceneName}, instance={__instance}");
-
             if (!EnableLoadSceneRewrite) return;
 
             foreach (var rule in LoadSceneRewriteRules)
@@ -31,7 +29,6 @@ public class GameMusicScene_LoadScene_Patch
                 bool sceneMatch = rule.OrigSceneName == "*" || sceneName == rule.OrigSceneName;
                 if (sceneMatch)
                 {
-                    MelonLogger.Msg($"GameMusicScene.LoadScene: sceneName 변경 적용 -> {rule.NewSceneName} (원본={sceneName})");
                     sceneName = rule.NewSceneName;
                     break;
                 }
@@ -45,13 +42,7 @@ public class GameMusicScene_LoadScene_Patch
 
     public static void Postfix(Il2CppGameLogic.GameMusicScene __instance, string sceneName)
     {
-        try
-        {
-            MelonLogger.Msg($"GameMusicScene.LoadScene 완료: sceneName={sceneName}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"GameMusicScene.LoadScene Postfix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"GameMusicScene.LoadScene Postfix 예외: {ex}"); }
     }
 }

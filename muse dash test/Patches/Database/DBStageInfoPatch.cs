@@ -77,8 +77,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void Postfix(DBStageInfo __instance)
     {
-        MelonLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: {__instance}");
-
         try
         {
             ApplyExperimentChart(__instance);

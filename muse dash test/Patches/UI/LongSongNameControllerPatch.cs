@@ -23,6 +23,7 @@ public class LongSongNameController_Refresh_Patch
     private static readonly Dictionary<string, string> CustomTitles = new Dictionary<string, string>
     {
         { "0-0", "화영왕" },
+        { "999-0", "화영왕" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -31,6 +32,7 @@ public class LongSongNameController_Refresh_Patch
     private static readonly Dictionary<string, string> CustomArtists = new Dictionary<string, string>
     {
         { "0-0", "화영왕" },
+        { "999-0", "화영왕" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -44,27 +46,27 @@ public class LongSongNameController_Refresh_Patch
         }
         try
         {
-            MelonLogger.Msg($"[LongSongNameController.Refresh] 호출됨: 원본 text='{text}' | GameObject={__instance.gameObject.name}");
-
             // 등록된 커스텀 텍스트 우선 적용 (Refresh 시에도 유지)
             if (_customTextMap.TryGetValue(__instance.Pointer, out var mapped))
             {
-                MelonLogger.Msg($"[LongSongNameController.Refresh] 커스텀 텍스트 유지: '{text}' → '{mapped}'");
                 text = mapped;
                 return;
             }
             
             // 현재 선택된 곡 Uid 가져오기 (로컬 헬퍼 사용)
             string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            if (string.IsNullOrEmpty(selectedUid) || selectedUid == "(null)")
+            {
+                selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+
             if (__instance.gameObject.name == "ImgAlbumTittle")
             {
                 bool isCustomAlbumContext = PnlStagePatchHelper.IsCustomAlbumContext(CustomTagUid, CustomMusicUid);
-                MelonLogger.Msg($"[LongSongNameController.Refresh] 앨범 제목 검사: selectedUid='{selectedUid ?? "(null)"}', isCustomAlbumContext={isCustomAlbumContext}");
 
                 if (isCustomAlbumContext)
                 {
                     text = CustomAlbumTitle;
-                    MelonLogger.Msg($"[LongSongNameController.Refresh] 앨범 제목 강제 변경 -> {CustomAlbumTitle} (UID: {selectedUid ?? "(unknown)"})");
                 }
 
                 return;
@@ -72,22 +74,20 @@ public class LongSongNameController_Refresh_Patch
 
             if (!string.IsNullOrEmpty(selectedUid))
             {
-                if (__instance.gameObject.name == "ImgSongTitleMask")
+                if (__instance.gameObject.name == "ImgSongTitleMask" || __instance.gameObject.name == "ImgSongNameMask")
                 {
                     if (PnlStagePatchHelper.ShouldApplyHwayoungwang() &&
                         CustomTitles.TryGetValue(selectedUid, out var customTitle))
                     {
                         text = customTitle;
-                        MelonLogger.Msg($"[LongSongNameController.Refresh] 곡 제목 강제 변경 -> {customTitle} (UID: {selectedUid})");
                     }
                 }
-                else if (__instance.gameObject.name == "ImgArtistMask")
+                else if (__instance.gameObject.name == "ImgArtistMask" || __instance.gameObject.name == "ImgSongAuthorMask")
                 {
                     if (PnlStagePatchHelper.ShouldApplyHwayoungwang() &&
                         CustomArtists.TryGetValue(selectedUid, out var customArtist))
                     {
                         text = customArtist;
-                        MelonLogger.Msg($"[LongSongNameController.Refresh] 아티스트 강제 변경 -> {customArtist} (UID: {selectedUid})");
                     }
                 }
             }
@@ -97,7 +97,6 @@ public class LongSongNameController_Refresh_Patch
                 if (PnlStagePatchHelper.ShouldApplyHwayoungwang())
                 {
                     text = "화영왕";
-                    MelonLogger.Msg("[LongSongNameController.Refresh] 원본 곡 제목 기반 강제 변경: Iyaiya -> 화영왕");
                 }
             }
             else if (__instance.gameObject.name == "ImgArtistMask" && text == "小野道ono")
@@ -105,7 +104,6 @@ public class LongSongNameController_Refresh_Patch
                 if (PnlStagePatchHelper.ShouldApplyHwayoungwang())
                 {
                     text = "화영왕";
-                    MelonLogger.Msg("[LongSongNameController.Refresh] 원본 아티스트 기반 강제 변경: 小野道ono -> 화영왕");
                 }
             }
         }

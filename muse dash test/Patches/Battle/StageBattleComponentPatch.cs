@@ -7,11 +7,7 @@ using System.Reflection;
 [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "LoadMusicData")]
 public class StageBattleComponent_LoadMusicData_Patch
 {
-    public static void Postfix(StageBattleComponent __instance)
-    {
-        MelonLogger.Msg($"StageBattleComponent.LoadMusicData 호출됨: {__instance}");
-        DumpStageBattleComponentProperties(__instance);
-    }
+    public static void Postfix(StageBattleComponent __instance) { }
 
     public static void DumpStageBattleComponentProperties(StageBattleComponent __instance)
     {

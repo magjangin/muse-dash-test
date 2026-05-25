@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using HarmonyLib;
 using Il2Cpp;
 using Il2CppAssets.Scripts.Database;
@@ -27,8 +27,6 @@ namespace muse_dash_test
         {
             private static void Postfix(MusicTagManager __instance)
             {
-                MelonLogger.Msg("MusicTagManager.InitAlbumTagInfo Postfix: 커스텀 태그 주입을 시작합니다.");
-
                 try
                 {
                     // 1. 태그 탭 다국어 명칭 정의
@@ -110,121 +108,10 @@ namespace muse_dash_test
                     if (!GlobalDataBase.dbMusicTag.AllAlbumTagsSortContains(TagUid))
                     {
                         GlobalDataBase.dbMusicTag.AddCustomAlbumTagsSort(TagUid);
-                        MelonLogger.Msg($"AddCustomAlbumTagsSort로 커스텀 태그 UID({TagUid}) 등록 완료");
-                    }
-                    else
-                    {
-                        MelonLogger.Msg($"커스텀 태그 UID({TagUid})는 이미 태그 정렬 목록에 있습니다.");
                     }
 
                     // 7. 글로벌 데이터베이스에 태그 데이터 최종 등록
                     GlobalDataBase.dbMusicTag.AddAlbumTagData(TagUid, info);
-                    MelonLogger.Msg($"글로벌 데이터베이스에 커스텀 태그/앨범 데이터 등록 완료! AlbumUid={AlbumUidString}, AlbumTitle={AlbumTitle}, CoverPrefab={AlbumCoverPrefabName}, MusicCount={musicList.Count}");
-                    LogCoverCandidates(info, albumInfo, customInfo);
-
-                    // 접근자 호출 테스트 추가!
-                    try
-                    {
-                        MelonLogger.Msg("[CustomTagPatch] 시작: Singleton<ConfigManager> 및 dbConfigAlbum 상태 검사...");
-                        var instance = Singleton<ConfigManager>.instance;
-                        MelonLogger.Msg($"[CustomTagPatch] Singleton<ConfigManager>.instance 존재 여부: {instance != null}");
-                        
-                        DBConfigALBUM dbConfigAlbum = null;
-                        if (instance != null)
-                        {
-                            dbConfigAlbum = instance.GetConfigObject<DBConfigALBUM>();
-                        }
-                        MelonLogger.Msg($"[CustomTagPatch] ConfigManager를 통한 dbConfigAlbum 획득 결과: {dbConfigAlbum != null}");
-
-                        // Fallback: GlobalDataBase를 통한 검색
-                        if (dbConfigAlbum == null)
-                        {
-                            MelonLogger.Msg("[CustomTagPatch] ConfigManager에서 DBConfigALBUM을 찾지 못했습니다. GlobalDataBase fallback 검사를 시작합니다...");
-                            MelonLogger.Msg($"[CustomTagPatch] GlobalDataBase.dbConfig 존재 여부: {GlobalDataBase.dbConfig != null}");
-                            if (GlobalDataBase.dbConfig != null)
-                            {
-                                MelonLogger.Msg($"[CustomTagPatch] dbConfig.m_ConfigDic 존재 여부: {GlobalDataBase.dbConfig.m_ConfigDic != null}");
-                                if (GlobalDataBase.dbConfig.m_ConfigDic != null)
-                                {
-                                    MelonLogger.Msg($"[CustomTagPatch] m_ConfigDic 엔트리 개수: {GlobalDataBase.dbConfig.m_ConfigDic.Count}");
-                                    foreach (var entry in GlobalDataBase.dbConfig.m_ConfigDic)
-                                    {
-                                        var casted = entry.Value?.TryCast<DBConfigALBUM>();
-                                        if (casted != null)
-                                        {
-                                            dbConfigAlbum = casted;
-                                            MelonLogger.Msg($"[CustomTagPatch] GlobalDataBase.dbConfig를 통해 DBConfigALBUM 획득 성공 (Key: '{entry.Key}')");
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if (dbConfigAlbum != null)
-                        {
-                            var testMusicInfo = dbConfigAlbum.GetMusicInfoByMusicUid("0-0");
-                            MelonLogger.Msg($"[CustomTagPatch] testMusicInfo('0-0') 획득 결과: {testMusicInfo != null}");
-                             if (testMusicInfo != null)
-                            {
-                                MelonLogger.Msg("[CustomTagPatch] '0-0' MusicInfo 획득 성공. 얇은 복사(Shallow Copy/MemberwiseClone)를 시도합니다...");
-                                
-                                // MemberwiseClone()을 호출하여 얇은 복사본을 생성하고 MusicInfo로 캐스팅합니다.
-                                var copiedMusicInfo = testMusicInfo.MemberwiseClone().Cast<MusicInfo>();
-                                MelonLogger.Msg($"[CustomTagPatch] 얇은 복사본 생성 완료: {copiedMusicInfo != null}");
-
-                                if (copiedMusicInfo != null)
-                                {
-                                    MelonLogger.Msg("[CustomTagPatch] 복사본의 uid 접근자(getter)를 호출합니다...");
-                                    string copiedOriginalUid = copiedMusicInfo.uid; // 복사본 getter 호출!
-                                    MelonLogger.Msg($"[CustomTagPatch] 복사본 uid 접근자(getter) 결과: {copiedOriginalUid}");
-
-                                    MelonLogger.Msg("[CustomTagPatch] 복사본의 uid 설정자(setter)를 호출하여 999-0로 변형합니다...");
-                                    copiedMusicInfo.uid = "999-0"; // 복사본 setter 호출!
-
-                                    MelonLogger.Msg($"[CustomTagPatch] 변형 후 복사본 uid 접근자(getter) 결과: {copiedMusicInfo.uid}");
-
-                                    // 생성된 커스텀 앨범(태그) 상세 정보를 출력합니다.
-                                    MelonLogger.Msg("[CustomTagPatch] === 생성된 커스텀 앨범(태그) 정보 출력 ===");
-                                    MelonLogger.Msg($"[CustomTagPatch] 앨범 태그 UID (tagUid): {info?.tagUid ?? "(null)"}");
-                                    MelonLogger.Msg($"[CustomTagPatch] 앨범 태그 이름 (name): {info?.name ?? "(null)"}");
-                                    MelonLogger.Msg($"[CustomTagPatch] 앨범 태그 아이콘 (iconName): {info?.iconName ?? "(null)"}");
-                                    
-                                    if (info != null && info.m_MusicUids != null)
-                                    {
-                                        var sb = new System.Text.StringBuilder();
-                                        for (int idx = 0; idx < info.m_MusicUids.Count; idx++)
-                                        {
-                                            if (sb.Length > 0) sb.Append(", ");
-                                            sb.Append(info.m_MusicUids[idx] ?? "(null)");
-                                        }
-                                        MelonLogger.Msg($"[CustomTagPatch] 등록된 곡 UIDs (m_MusicUids): [{sb}]");
-                                    }
-
-                                    if (info != null && info.m_AlbumsInfos != null)
-                                    {
-                                        for (int idx = 0; idx < info.m_AlbumsInfos.Count; idx++)
-                                        {
-                                            var alb = info.m_AlbumsInfos[idx];
-                                            MelonLogger.Msg($"[CustomTagPatch] 수록 앨범[{idx}]: Title='{alb?.title}', Uid='{alb?.uid}', tag='{alb?.tag}', jsonName='{alb?.jsonName}'");
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                MelonLogger.Warning("[CustomTagPatch] '0-0'에 해당하는 MusicInfo를 찾지 못했습니다.");
-                            }
-                        }
-                        else
-                        {
-                            MelonLogger.Warning("[CustomTagPatch] DBConfigALBUM 인스턴스를 최종적으로 획득하지 못해 테스트를 중단합니다.");
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        MelonLogger.Error($"[CustomTagPatch] 접근자 테스트 중 에러 발생: {ex}");
-                    }
                 }
                 catch (System.Exception ex)
                 {
@@ -330,7 +217,6 @@ namespace muse_dash_test
                     {
                         // 게임이 상정하는 앨범 개수 상한선을 실제 개수(count - 3)로 최적화 리사이징
                         configObject.m_MaxAlbumUid = configObject.count - 3;
-                        MelonLogger.Msg($"MusicTagManager.InitDatas Postfix: m_MaxAlbumUid 성능 최적화 패치 완료 (최대 Uid: {configObject.count - 3})");
                     }
                 }
                 catch (System.Exception ex)

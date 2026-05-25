@@ -591,4 +591,67 @@ public static class PnlStagePatchHelper
             return $"Dump error: {ex}";
         }
     }
+
+    private static readonly string[] ExperimentModeTitles = { "\uc2e4\ud5d8 \ubaa8\ub4dc", "Experiment Mod", "\u5b9e\u9a8c\u6a21\u5f0f", "\u5be6\u9a57\u6a21\u5f0f", "\u5b9f\u9a13\u30e2\u30fc\u30c9" };
+
+    public static void SyncExperimentModeFromStage(PnlStage stage)
+    {
+        try
+        {
+            if (stage == null) return;
+            var titleText = stage.titleOwn;
+            if (titleText == null) return;
+            string text = titleText.text ?? string.Empty;
+            bool isExp = false;
+            foreach (var t in ExperimentModeTitles)
+                if (text == t) { isExp = true; break; }
+            if (isExp != MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
+            {
+                MelonLogger.Msg($"[SyncExperimentMode] titleOwn.text='{text}' \u2192 IsExperimentModActive={isExp}");
+                MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive = isExp;
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"SyncExperimentModeFromStage \uc608\uc678: {ex}");
+        }
+    }
+
+    public static void LogButtons(string source, PnlStage stage)
+    {
+        try
+        {
+            if (stage == null)
+            {
+                MelonLogger.Msg($"[{source}] stage=null");
+                return;
+            }
+
+            int count = 0;
+            foreach (var prop in typeof(PnlStage).GetProperties(InstanceMembers))
+            {
+                if (prop.PropertyType != typeof(Button) || !prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
+                try
+                {
+                    var btn = prop.GetValue(stage) as Button;
+                    string goName = btn?.gameObject != null ? btn.gameObject.name : "(null)";
+                    string active = btn?.gameObject != null ? btn.gameObject.activeSelf.ToString() : "(null)";
+                    string interactable = btn != null ? btn.interactable.ToString() : "(null)";
+                    MelonLogger.Msg($"[{source}] Button prop={prop.Name}, gameObject={goName}, active={active}, interactable={interactable}");
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Msg($"[{source}] Button prop={prop.Name}: (예외: {ex.Message})");
+                }
+            }
+
+            if (count == 0)
+                MelonLogger.Msg($"[{source}] Button 프로퍼티 없음");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} LogButtons 예외: {ex}");
+        }
+    }
 }

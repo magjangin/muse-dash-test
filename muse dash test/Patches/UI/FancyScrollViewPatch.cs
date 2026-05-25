@@ -10,26 +10,14 @@ namespace muse_dash_test
     {
         private static void Prefix(FancyScrollView __instance)
         {
-            try
-            {
-                MelonLogger.Msg($"[FancyScrollView.InitData.Prefix] {Describe(__instance)}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"FancyScrollView.InitData Prefix 예외: {ex}");
-            }
+            try { }
+            catch (Exception ex) { MelonLogger.Error($"FancyScrollView.InitData Prefix 예외: {ex}"); }
         }
 
         private static void Postfix(FancyScrollView __instance)
         {
-            try
-            {
-                MelonLogger.Msg($"[FancyScrollView.InitData.Postfix] {Describe(__instance)}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"FancyScrollView.InitData Postfix 예외: {ex}");
-            }
+            try { }
+            catch (Exception ex) { MelonLogger.Error($"FancyScrollView.InitData Postfix 예외: {ex}"); }
         }
 
         private static string Describe(FancyScrollView instance)

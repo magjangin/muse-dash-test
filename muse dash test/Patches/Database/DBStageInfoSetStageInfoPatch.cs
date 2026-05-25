@@ -1,39 +1,8 @@
-﻿using MelonLoader;
+using MelonLoader;
 using System;
-using Il2CppAssets.Scripts.UI.Panels;
 using Il2CppAssets.Scripts.Database;
 using System.Reflection;
 using System.Collections;
-using System.Collections.Generic;
-
-// PnlBattle.GameStart 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlBattle), "GameStart")]
-public class PnlBattle_GameStart_Patch
-{
-    public static void Prefix(PnlBattle __instance)
-    {
-        try
-        {
-            MelonLogger.Msg($"PnlBattle.GameStart 호출: instance={__instance}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"PnlBattle.GameStart Prefix 예외: {ex}");
-        }
-    }
-
-    public static void Postfix(PnlBattle __instance)
-    {
-        try
-        {
-            MelonLogger.Msg("PnlBattle.GameStart 완료");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"PnlBattle.GameStart Postfix 예외: {ex}");
-        }
-    }
-}
 
 // DBStageInfo.SetStageInfo(StageInfo info) 후킹
 [HarmonyLib.HarmonyPatch(typeof(DBStageInfo), "SetStageInfo")]
@@ -41,27 +10,14 @@ public class DBStageInfo_SetStageInfo_Patch
 {
     public static void Prefix(DBStageInfo __instance, object info)
     {
-        try
-        {
-            MelonLogger.Msg($"DBStageInfo.SetStageInfo 호출: info={info}, instance={__instance}");
-            DumpStageInfo(info);
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"DBStageInfo.SetStageInfo Prefix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"DBStageInfo.SetStageInfo Prefix 예외: {ex}"); }
     }
 
     public static void Postfix(DBStageInfo __instance, object info)
     {
-        try
-        {
-            MelonLogger.Msg("DBStageInfo.SetStageInfo 완료");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"DBStageInfo.SetStageInfo Postfix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"DBStageInfo.SetStageInfo Postfix 예외: {ex}"); }
     }
 
     private static void DumpStageInfo(object info)
