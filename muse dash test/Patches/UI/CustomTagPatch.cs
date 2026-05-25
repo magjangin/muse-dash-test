@@ -121,15 +121,6 @@ namespace muse_dash_test
                     GlobalDataBase.dbMusicTag.AddAlbumTagData(TagUid, info);
                     MelonLogger.Msg($"글로벌 데이터베이스에 커스텀 태그/앨범 데이터 등록 완료! AlbumUid={AlbumUidString}, AlbumTitle={AlbumTitle}, CoverPrefab={AlbumCoverPrefabName}, MusicCount={musicList.Count}");
                     LogCoverCandidates(info, albumInfo, customInfo);
-
-                    try
-                    {
-                        CustomUidExperiment.RunExperiment();
-                    }
-                    catch (System.Exception ex)
-                    {
-                        MelonLogger.Error($"[UidExperiment] 에러 발생: {ex}");
-                    }
                 }
                 catch (System.Exception ex)
                 {
