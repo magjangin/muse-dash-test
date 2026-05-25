@@ -10,6 +10,8 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.OnButtonClicked))]
     public class MusicButtonCell_OnButtonClicked_Patch
     {
+        public static string LastClickedMusicUid = "";
+
         public static bool Prepare()
         {
             MelonLogger.Msg("[MusicButtonCell.OnButtonClicked] 후킹 준비 완료");
@@ -26,6 +28,8 @@ namespace muse_dash_test
                     string uid = musicInfo != null ? musicInfo.uid : "(null)";
                     string name = musicInfo != null ? musicInfo.name : "(null)";
                     MelonLogger.Msg($"[MusicButtonCell.OnButtonClicked] Prefix 호출됨! Clicked Cell - Uid: {uid}, Name: {name}");
+                    
+                    LastClickedMusicUid = uid;
                 }
             }
             catch (Exception ex)

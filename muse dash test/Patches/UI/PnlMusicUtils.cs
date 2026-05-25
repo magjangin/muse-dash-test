@@ -95,6 +95,12 @@ public static class PnlMusicUtils
     {
         if (!EnableSongTitleExperiment || pnlInstance == null) return;
 
+        // 통합 조건 검사 적용
+        if (!PnlStagePatchHelper.ShouldApplyHwayoungwang())
+        {
+            return;
+        }
+
         SetMemberText(pnlInstance, "musicNameTitle", ExperimentTitle);
         SetMemberText(pnlInstance, "songNameTitle", ExperimentTitle);
         SetMemberText(pnlInstance, "titleText", ExperimentTitle);

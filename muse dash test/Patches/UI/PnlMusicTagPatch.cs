@@ -45,9 +45,9 @@ namespace muse_dash_test
 
                     MelonLogger.Msg($"[PnlMusicTag] viewItem[{i}] 셀 검사: uid={musicInfo.uid ?? "(null)"}, name={musicInfo.name ?? "(null)"}, cellGo={cell.gameObject?.name ?? "(null)"}");
 
-                    if (musicInfo.uid != CustomMusicUid)
+                    if (musicInfo.uid != CustomMusicUid && musicInfo.uid != "999-0")
                     {
-                        MelonLogger.Msg($"[PnlMusicTag] viewItem[{i}] 스킵: uid mismatch expected={CustomMusicUid}");
+                        MelonLogger.Msg($"[PnlMusicTag] viewItem[{i}] 스킵: uid mismatch expected={CustomMusicUid} or 999-0");
                         continue;
                     }
 

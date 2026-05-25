@@ -16,6 +16,37 @@ public static class PnlStagePatchHelper
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
+    public static bool ShouldApplyHwayoungwang()
+    {
+        // 1. 실험 모드가 활성화되어 있지 않으면 절대 치환하지 않음
+        if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
+        {
+            return false;
+        }
+
+        // 2. 마지막으로 클릭된 Uid가 "999-0" 이거나 "0-0" 인 경우
+        string lastClicked = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+        if (lastClicked == "999-0" || lastClicked == "0-0")
+        {
+            return true;
+        }
+
+        // 3. 혹은, 현재 선택된 Uid가 "999-0" 이거나 "0-0" 인 경우
+        string selected = GetCurrentSelectedMusicUid();
+        if (selected == "999-0" || selected == "0-0")
+        {
+            return true;
+        }
+
+        // 4. 혹은, 아직 아무 곡도 클릭하지 않은 초기 상태라면 허용함
+        if (string.IsNullOrEmpty(lastClicked) || lastClicked == "(null)")
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public static void ApplyCustomTagTitleAccessors(string source, PnlStage stage)
     {
         try
@@ -23,6 +54,13 @@ public static class PnlStagePatchHelper
             if (stage == null)
             {
                 MelonLogger.Msg($"[{source}] 커스텀 태그 접근자 적용 건너뜀: stage=null");
+                return;
+            }
+
+            // 통합 조건 검사 적용
+            if (!ShouldApplyHwayoungwang())
+            {
+                MelonLogger.Msg($"[{source}] 커스텀 태그 접근자 적용 건너뜀: ShouldApplyHwayoungwang=false");
                 return;
             }
 
