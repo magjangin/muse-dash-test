@@ -165,15 +165,26 @@ namespace muse_dash_test
                         {
                             var testMusicInfo = dbConfigAlbum.GetMusicInfoByMusicUid("0-0");
                             MelonLogger.Msg($"[CustomTagPatch] testMusicInfo('0-0') 획득 결과: {testMusicInfo != null}");
-                            if (testMusicInfo != null)
+                             if (testMusicInfo != null)
                             {
-                                MelonLogger.Msg("[CustomTagPatch] '0-0' MusicInfo 획득 성공. 인위적으로 uid 접근자(getter)를 호출합니다...");
-                                string originalUid = testMusicInfo.uid; // getter 호출!
-                                MelonLogger.Msg($"[CustomTagPatch] uid 접근자(getter) 반환값 결과: {originalUid}");
+                                MelonLogger.Msg("[CustomTagPatch] '0-0' MusicInfo 획득 성공. 얇은 복사(Shallow Copy/MemberwiseClone)를 시도합니다...");
+                                
+                                // MemberwiseClone()을 호출하여 얇은 복사본을 생성하고 MusicInfo로 캐스팅합니다.
+                                var copiedMusicInfo = testMusicInfo.MemberwiseClone().Cast<MusicInfo>();
+                                MelonLogger.Msg($"[CustomTagPatch] 얇은 복사본 생성 완료: {copiedMusicInfo != null}");
 
-                                MelonLogger.Msg("[CustomTagPatch] 인위적으로 uid 설정자(setter)를 호출하여 테스트합니다...");
-                                testMusicInfo.uid = "999-0"; // setter 호출!
-                                MelonLogger.Msg("[CustomTagPatch] uid 값을 999-0 상태로 원상복구하지 않고 유지합니다.");
+                                if (copiedMusicInfo != null)
+                                {
+                                    MelonLogger.Msg("[CustomTagPatch] 복사본의 uid 접근자(getter)를 호출합니다...");
+                                    string copiedOriginalUid = copiedMusicInfo.uid; // 복사본 getter 호출!
+                                    MelonLogger.Msg($"[CustomTagPatch] 복사본 uid 접근자(getter) 결과: {copiedOriginalUid}");
+
+                                    MelonLogger.Msg("[CustomTagPatch] 복사본의 uid 설정자(setter)를 호출하여 999-0로 변형합니다...");
+                                    copiedMusicInfo.uid = "999-0"; // 복사본 setter 호출!
+
+                                    MelonLogger.Msg($"[CustomTagPatch] 변형 후 복사본 uid 접근자(getter) 결과: {copiedMusicInfo.uid}");
+                                    MelonLogger.Msg($"[CustomTagPatch] 변형 후 원본 객체('0-0')의 uid 접근자(getter) 결과: {testMusicInfo.uid}");
+                                }
                             }
                             else
                             {
