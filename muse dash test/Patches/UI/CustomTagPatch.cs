@@ -183,7 +183,6 @@ namespace muse_dash_test
                                     copiedMusicInfo.uid = "999-0"; // 복사본 setter 호출!
 
                                     MelonLogger.Msg($"[CustomTagPatch] 변형 후 복사본 uid 접근자(getter) 결과: {copiedMusicInfo.uid}");
-                                    MelonLogger.Msg($"[CustomTagPatch] 변형 후 원본 객체('0-0')의 uid 접근자(getter) 결과: {testMusicInfo.uid}");
                                 }
                             }
                             else
