@@ -183,6 +183,32 @@ namespace muse_dash_test
                                     copiedMusicInfo.uid = "999-0"; // 복사본 setter 호출!
 
                                     MelonLogger.Msg($"[CustomTagPatch] 변형 후 복사본 uid 접근자(getter) 결과: {copiedMusicInfo.uid}");
+
+                                    // 생성된 커스텀 앨범(태그) 상세 정보를 출력합니다.
+                                    MelonLogger.Msg("[CustomTagPatch] === 생성된 커스텀 앨범(태그) 정보 출력 ===");
+                                    MelonLogger.Msg($"[CustomTagPatch] 앨범 태그 UID (tagUid): {info?.tagUid ?? "(null)"}");
+                                    MelonLogger.Msg($"[CustomTagPatch] 앨범 태그 이름 (name): {info?.name ?? "(null)"}");
+                                    MelonLogger.Msg($"[CustomTagPatch] 앨범 태그 아이콘 (iconName): {info?.iconName ?? "(null)"}");
+                                    
+                                    if (info != null && info.m_MusicUids != null)
+                                    {
+                                        var sb = new System.Text.StringBuilder();
+                                        for (int idx = 0; idx < info.m_MusicUids.Count; idx++)
+                                        {
+                                            if (sb.Length > 0) sb.Append(", ");
+                                            sb.Append(info.m_MusicUids[idx] ?? "(null)");
+                                        }
+                                        MelonLogger.Msg($"[CustomTagPatch] 등록된 곡 UIDs (m_MusicUids): [{sb}]");
+                                    }
+
+                                    if (info != null && info.m_AlbumsInfos != null)
+                                    {
+                                        for (int idx = 0; idx < info.m_AlbumsInfos.Count; idx++)
+                                        {
+                                            var alb = info.m_AlbumsInfos[idx];
+                                            MelonLogger.Msg($"[CustomTagPatch] 수록 앨범[{idx}]: Title='{alb?.title}', Uid='{alb?.uid}', tag='{alb?.tag}', jsonName='{alb?.jsonName}'");
+                                        }
+                                    }
                                 }
                             }
                             else

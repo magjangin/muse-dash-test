@@ -150,22 +150,4 @@ namespace muse_dash_test
             MelonLogger.Msg($"[MusicInfo.uid Getter Hook] Instance: {__instance.name} ({__instance.musicName}), uid: {__result ?? "(null)"}");
         }
     }
-
-    [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.uid), MethodType.Setter)]
-    internal static class MusicInfo_UidSetter_Patch
-    {
-        public static bool Prepare()
-        {
-            MelonLogger.Msg("[MusicInfo.set_uid] 접근자 후킹 준비 완료");
-            return true;
-        }
-
-        [HarmonyPrefix]
-        private static bool Prefix(MusicInfo __instance, ref string __0)
-        {
-            if (__instance == null) return true;
-            MelonLogger.Msg($"[MusicInfo.uid Setter Hook] Instance: {__instance.name} ({__instance.musicName}), setting uid to: {__0 ?? "(null)"}");
-            return true;
-        }
-    }
 }
