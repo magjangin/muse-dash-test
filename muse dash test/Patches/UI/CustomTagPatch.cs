@@ -173,10 +173,7 @@ namespace muse_dash_test
 
                                 MelonLogger.Msg("[CustomTagPatch] 인위적으로 uid 설정자(setter)를 호출하여 테스트합니다...");
                                 testMusicInfo.uid = "999-0"; // setter 호출!
-
-                                // 타 데이터 오염 방지를 위해 원래 값으로 안전하게 원상복구
-                                testMusicInfo.uid = originalUid;
-                                MelonLogger.Msg("[CustomTagPatch] uid 값을 원래 상태로 안전하게 원상복구했습니다.");
+                                MelonLogger.Msg("[CustomTagPatch] uid 값을 999-0 상태로 원상복구하지 않고 유지합니다.");
                             }
                             else
                             {
