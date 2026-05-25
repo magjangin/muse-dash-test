@@ -132,8 +132,15 @@ namespace muse_dash_test
                             if (testMusicInfo != null)
                             {
                                 MelonLogger.Msg("[CustomTagPatch] '0-0' MusicInfo 획득 성공. 인위적으로 uid 접근자(getter)를 호출합니다...");
-                                string testUid = testMusicInfo.uid; // getter 호출!
-                                MelonLogger.Msg($"[CustomTagPatch] uid 접근자(getter) 반환값 결과: {testUid}");
+                                string originalUid = testMusicInfo.uid; // getter 호출!
+                                MelonLogger.Msg($"[CustomTagPatch] uid 접근자(getter) 반환값 결과: {originalUid}");
+
+                                MelonLogger.Msg("[CustomTagPatch] 인위적으로 uid 설정자(setter)를 호출하여 테스트합니다...");
+                                testMusicInfo.uid = "999-0"; // setter 호출!
+
+                                // 타 데이터 오염 방지를 위해 원래 값으로 안전하게 원상복구
+                                testMusicInfo.uid = originalUid;
+                                MelonLogger.Msg("[CustomTagPatch] uid 값을 원래 상태로 안전하게 원상복구했습니다.");
                             }
                             else
                             {
