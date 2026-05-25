@@ -163,10 +163,10 @@ public static class PnlStagePatchHelper
             }
 
             var root = stage.musicRoot;
-            MelonLogger.Msg($"[{source}] root={root.name}, active={root.activeSelf}, childCount={root.transform.childCount}");
+            MelonLogger.Msg($"[{source}] cover probe: root={root.name}, active={root.activeSelf}");
 
             var images = root.GetComponentsInChildren<UnityEngine.UI.Image>(true);
-            int imageCount = 0;
+            int coverCount = 0;
             foreach (var image in images)
             {
                 if (image == null)
@@ -175,18 +175,17 @@ public static class PnlStagePatchHelper
                 }
 
                 string spriteName = image.sprite != null ? image.sprite.name : "(null)";
-                string materialName = image.material != null ? image.material.name : "(null)";
-                MelonLogger.Msg($"[{source}] Image[{imageCount}] path={GetTransformPath(image.transform, root.transform)}, name={image.name}, active={image.gameObject.activeSelf}, sprite={spriteName}, material={materialName}, color={image.color}");
-                imageCount++;
-                if (imageCount >= 80)
+                if (!LooksLikeCoverImage(image.name, spriteName))
                 {
-                    MelonLogger.Msg($"[{source}] Image dump truncated at {imageCount}");
-                    break;
+                    continue;
                 }
+
+                MelonLogger.Msg($"[{source}] CoverImage[{coverCount}] path={GetTransformPath(image.transform, root.transform)}, active={image.gameObject.activeSelf}, sprite={spriteName}, color={image.color}");
+                coverCount++;
+                if (coverCount >= 8) break;
             }
 
             var rawImages = root.GetComponentsInChildren<UnityEngine.UI.RawImage>(true);
-            int rawImageCount = 0;
             foreach (var rawImage in rawImages)
             {
                 if (rawImage == null)
@@ -195,38 +194,37 @@ public static class PnlStagePatchHelper
                 }
 
                 string textureName = rawImage.texture != null ? rawImage.texture.name : "(null)";
-                string materialName = rawImage.material != null ? rawImage.material.name : "(null)";
-                MelonLogger.Msg($"[{source}] RawImage[{rawImageCount}] path={GetTransformPath(rawImage.transform, root.transform)}, name={rawImage.name}, active={rawImage.gameObject.activeSelf}, texture={textureName}, material={materialName}, color={rawImage.color}");
-                rawImageCount++;
-                if (rawImageCount >= 40)
-                {
-                    MelonLogger.Msg($"[{source}] RawImage dump truncated at {rawImageCount}");
-                    break;
-                }
-            }
-
-            var texts = root.GetComponentsInChildren<UnityEngine.UI.Text>(true);
-            int textCount = 0;
-            foreach (var text in texts)
-            {
-                if (text == null)
+                if (!LooksLikeCoverImage(rawImage.name, textureName))
                 {
                     continue;
                 }
 
-                MelonLogger.Msg($"[{source}] Text[{textCount}] path={GetTransformPath(text.transform, root.transform)}, name={text.name}, active={text.gameObject.activeSelf}, text={CleanLogText(text.text)}");
-                textCount++;
-                if (textCount >= 40)
-                {
-                    MelonLogger.Msg($"[{source}] Text dump truncated at {textCount}");
-                    break;
-                }
+                MelonLogger.Msg($"[{source}] CoverRawImage[{coverCount}] path={GetTransformPath(rawImage.transform, root.transform)}, active={rawImage.gameObject.activeSelf}, texture={textureName}, color={rawImage.color}");
+                coverCount++;
+                if (coverCount >= 8) break;
+            }
+
+            if (coverCount == 0)
+            {
+                MelonLogger.Msg($"[{source}] cover probe: no ImgCover/cover sprite found");
             }
         }
         catch (Exception ex)
         {
             MelonLogger.Error($"{source} MusicRoot 덤프 예외: {ex}");
         }
+    }
+
+    private static bool LooksLikeCoverImage(string objectName, string assetName)
+    {
+        return ContainsCoverToken(objectName) || ContainsCoverToken(assetName);
+    }
+
+    private static bool ContainsCoverToken(string value)
+    {
+        return !string.IsNullOrEmpty(value) &&
+            (value.IndexOf("ImgCover", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             value.IndexOf("cover", StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     private static string GetTransformPath(Transform transform, Transform stopAt)
