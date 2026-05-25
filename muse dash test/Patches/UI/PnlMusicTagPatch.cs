@@ -16,19 +16,45 @@ namespace muse_dash_test
             {
                 var viewItems = panel?.viewItems;
                 if (viewItems == null)
+                {
+                    MelonLogger.Msg("[PnlMusicTag] 커스텀 셀 제목 적용 스킵: viewItems=null");
                     return;
+                }
+
+                MelonLogger.Msg($"[PnlMusicTag] 커스텀 셀 제목 적용 검사 시작: viewItems.Count={viewItems.Count}");
 
                 for (int i = 0; i < viewItems.Count; i++)
                 {
                     var cell = viewItems[i]?.m_Cell;
                     var musicInfo = cell?.musicInfo;
-                    if (cell == null || musicInfo == null || musicInfo.uid != CustomMusicUid)
+                    if (cell == null)
+                    {
+                        MelonLogger.Msg($"[PnlMusicTag] viewItem[{i}] 스킵: cell=null");
                         continue;
+                    }
+
+                    if (musicInfo == null)
+                    {
+                        MelonLogger.Msg($"[PnlMusicTag] viewItem[{i}] 스킵: musicInfo=null, cellGo={cell.gameObject?.name ?? "(null)"}");
+                        continue;
+                    }
+
+                    MelonLogger.Msg($"[PnlMusicTag] viewItem[{i}] 셀 검사: uid={musicInfo.uid ?? "(null)"}, name={musicInfo.name ?? "(null)"}, cellGo={cell.gameObject?.name ?? "(null)"}");
+
+                    if (musicInfo.uid != CustomMusicUid)
+                    {
+                        MelonLogger.Msg($"[PnlMusicTag] viewItem[{i}] 스킵: uid mismatch expected={CustomMusicUid}");
+                        continue;
+                    }
 
                     int writes = SetCellTitleText(cell, CustomCellTitle, musicInfo.name);
                     if (writes > 0)
                     {
                         MelonLogger.Msg($"[PnlMusicTag] 커스텀 셀 제목 적용: uid={musicInfo.uid}, title={CustomCellTitle}, writes={writes}");
+                    }
+                    else
+                    {
+                        MelonLogger.Msg($"[PnlMusicTag] 커스텀 셀 제목 적용 결과: uid={musicInfo.uid}, writes=0");
                     }
                 }
             }
@@ -46,6 +72,7 @@ namespace muse_dash_test
 
             int writes = 0;
             var texts = go.GetComponentsInChildren<UnityEngine.UI.Text>(true);
+            MelonLogger.Msg($"[PnlMusicTag] SetCellTitleText: cellGo={go.name}, textCount={texts.Length}, originalTitle={originalTitle ?? "(null)"}, targetTitle={title}");
             for (int i = 0; i < texts.Length; i++)
             {
                 var text = texts[i];
@@ -57,6 +84,8 @@ namespace muse_dash_test
                     objectName.IndexOf("SongTitle", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     objectName.IndexOf("TxtTitle", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     objectName.IndexOf("Name", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                MelonLogger.Msg($"[PnlMusicTag] Text 후보[{i}]: objectName={objectName}, current='{text.text ?? "(null)"}', looksLikeTitle={looksLikeTitle}");
 
                 if (!looksLikeTitle && text.text != originalTitle)
                     continue;
@@ -77,6 +106,7 @@ namespace muse_dash_test
     {
         private static void Postfix(PnlMusicTag __instance)
         {
+            MelonLogger.Msg("[PnlMusicTag.RefreshScrollViewItem] Postfix 호출됨");
             PnlMusicTagPatchLogger.ApplyCustomCellTitle(__instance);
         }
     }

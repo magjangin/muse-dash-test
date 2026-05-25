@@ -133,4 +133,47 @@ namespace muse_dash_test
             }
         }
     }
+
+    [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.uid), MethodType.Getter)]
+    internal static class MusicInfo_Uid_Patch
+    {
+        public static bool Prepare()
+        {
+            MelonLogger.Msg("[MusicInfo.get_uid] 접근자 후킹 준비 완료");
+            return true;
+        }
+
+        [HarmonyPostfix]
+        private static void Postfix(MusicInfo __instance, ref string __result)
+        {
+            if (__instance == null) return;
+            if (__result == "0-0")
+            {
+                __result = "999-0";
+                MelonLogger.Msg($"[MusicInfo.uid Getter Hook] Rewrote: 0-0 -> 999-0 for Instance: {__instance.name} ({__instance.musicName})");
+            }
+            else
+            {
+                MelonLogger.Msg($"[MusicInfo.uid Getter Hook] Instance: {__instance.name} ({__instance.musicName}), uid: {__result ?? "(null)"}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.uid), MethodType.Setter)]
+    internal static class MusicInfo_UidSetter_Patch
+    {
+        public static bool Prepare()
+        {
+            MelonLogger.Msg("[MusicInfo.set_uid] 접근자 후킹 준비 완료");
+            return true;
+        }
+
+        [HarmonyPrefix]
+        private static bool Prefix(MusicInfo __instance, ref string __0)
+        {
+            if (__instance == null) return true;
+            MelonLogger.Msg($"[MusicInfo.uid Setter Hook] Instance: {__instance.name} ({__instance.musicName}), setting uid to: {__0 ?? "(null)"}");
+            return true;
+        }
+    }
 }
