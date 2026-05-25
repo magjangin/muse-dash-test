@@ -121,6 +121,30 @@ namespace muse_dash_test
                     GlobalDataBase.dbMusicTag.AddAlbumTagData(TagUid, info);
                     MelonLogger.Msg($"글로벌 데이터베이스에 커스텀 태그/앨범 데이터 등록 완료! AlbumUid={AlbumUidString}, AlbumTitle={AlbumTitle}, CoverPrefab={AlbumCoverPrefabName}, MusicCount={musicList.Count}");
                     LogCoverCandidates(info, albumInfo, customInfo);
+
+                    // 접근자 호출 테스트 추가!
+                    try
+                    {
+                        var dbConfigAlbum = Singleton<ConfigManager>.instance.GetConfigObject<DBConfigALBUM>();
+                        if (dbConfigAlbum != null)
+                        {
+                            var testMusicInfo = dbConfigAlbum.GetMusicInfoByMusicUid("0-0");
+                            if (testMusicInfo != null)
+                            {
+                                MelonLogger.Msg("[CustomTagPatch] '0-0' MusicInfo 획득 성공. 인위적으로 uid 접근자(getter)를 호출합니다...");
+                                string testUid = testMusicInfo.uid; // getter 호출!
+                                MelonLogger.Msg($"[CustomTagPatch] uid 접근자(getter) 반환값 결과: {testUid}");
+                            }
+                            else
+                            {
+                                MelonLogger.Warning("[CustomTagPatch] '0-0'에 해당하는 MusicInfo를 찾지 못했습니다.");
+                            }
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        MelonLogger.Error($"[CustomTagPatch] 접근자 테스트 중 에러 발생: {ex}");
+                    }
                 }
                 catch (System.Exception ex)
                 {
