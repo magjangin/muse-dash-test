@@ -17,6 +17,7 @@ public class PnlStage_Start_Patch
     {
         try
         {
+            PnlStagePatchHelper.LogPnlStageProperties("PnlStage.Start.Properties", __instance);
             PnlMusicUtils.LogMusicInfo("PnlStage.Start", __instance);
             MelonCoroutines.Start(PnlMusicUtils.LogMusicInfoAfterDelay("PnlStage.Start.Delay", __instance, 0.5f));
         }
@@ -39,6 +40,8 @@ public class PnlStage_ChangeMusic_Patch
         try
         {
             PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.ChangeMusic", __instance);
+            PnlStagePatchHelper.LogPnlStageProperties("PnlStage.ChangeMusic.Properties", __instance);
+            PnlStagePatchHelper.LogMusicRootComponents("PnlStage.ChangeMusic.MusicRoot", __instance);
             PnlMusicUtils.LogMusicInfo("PnlStage.ChangeMusic", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }

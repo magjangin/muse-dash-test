@@ -1,6 +1,7 @@
 using MelonLoader;
 using System;
 using System.Reflection;
+using System.Text;
 using Il2CppAssets.Scripts.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
@@ -98,6 +99,207 @@ public static class PnlStagePatchHelper
         catch (Exception ex)
         {
             MelonLogger.Error($"{source} 예외: {ex}");
+        }
+    }
+
+    public static void LogPnlStageProperties(string source, PnlStage stage)
+    {
+        try
+        {
+            if (stage == null)
+            {
+                MelonLogger.Msg($"[{source}] stage=null");
+                return;
+            }
+
+            var sb = new StringBuilder();
+            int count = 0;
+            foreach (var prop in typeof(PnlStage).GetProperties(InstanceMembers))
+            {
+                if (!prop.CanRead || prop.GetIndexParameters().Length != 0)
+                {
+                    continue;
+                }
+
+                string value = SafePropertyValue(stage, prop);
+                if (string.IsNullOrEmpty(value))
+                {
+                    continue;
+                }
+
+                if (sb.Length > 0)
+                {
+                    sb.Append(" | ");
+                }
+
+                sb.Append(prop.Name);
+                sb.Append('=');
+                sb.Append(value);
+                count++;
+
+                if (count >= 80)
+                {
+                    sb.Append(" | ...");
+                    break;
+                }
+            }
+
+            MelonLogger.Msg($"[{source}] {sb}");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} 프로퍼티 덤프 예외: {ex}");
+        }
+    }
+
+    public static void LogMusicRootComponents(string source, PnlStage stage)
+    {
+        try
+        {
+            if (stage == null || stage.musicRoot == null)
+            {
+                MelonLogger.Msg($"[{source}] musicRoot=null");
+                return;
+            }
+
+            var root = stage.musicRoot;
+            MelonLogger.Msg($"[{source}] root={root.name}, active={root.activeSelf}, childCount={root.transform.childCount}");
+
+            var images = root.GetComponentsInChildren<UnityEngine.UI.Image>(true);
+            int imageCount = 0;
+            foreach (var image in images)
+            {
+                if (image == null)
+                {
+                    continue;
+                }
+
+                string spriteName = image.sprite != null ? image.sprite.name : "(null)";
+                string materialName = image.material != null ? image.material.name : "(null)";
+                MelonLogger.Msg($"[{source}] Image[{imageCount}] path={GetTransformPath(image.transform, root.transform)}, name={image.name}, active={image.gameObject.activeSelf}, sprite={spriteName}, material={materialName}, color={image.color}");
+                imageCount++;
+                if (imageCount >= 80)
+                {
+                    MelonLogger.Msg($"[{source}] Image dump truncated at {imageCount}");
+                    break;
+                }
+            }
+
+            var rawImages = root.GetComponentsInChildren<UnityEngine.UI.RawImage>(true);
+            int rawImageCount = 0;
+            foreach (var rawImage in rawImages)
+            {
+                if (rawImage == null)
+                {
+                    continue;
+                }
+
+                string textureName = rawImage.texture != null ? rawImage.texture.name : "(null)";
+                string materialName = rawImage.material != null ? rawImage.material.name : "(null)";
+                MelonLogger.Msg($"[{source}] RawImage[{rawImageCount}] path={GetTransformPath(rawImage.transform, root.transform)}, name={rawImage.name}, active={rawImage.gameObject.activeSelf}, texture={textureName}, material={materialName}, color={rawImage.color}");
+                rawImageCount++;
+                if (rawImageCount >= 40)
+                {
+                    MelonLogger.Msg($"[{source}] RawImage dump truncated at {rawImageCount}");
+                    break;
+                }
+            }
+
+            var texts = root.GetComponentsInChildren<UnityEngine.UI.Text>(true);
+            int textCount = 0;
+            foreach (var text in texts)
+            {
+                if (text == null)
+                {
+                    continue;
+                }
+
+                MelonLogger.Msg($"[{source}] Text[{textCount}] path={GetTransformPath(text.transform, root.transform)}, name={text.name}, active={text.gameObject.activeSelf}, text={CleanLogText(text.text)}");
+                textCount++;
+                if (textCount >= 40)
+                {
+                    MelonLogger.Msg($"[{source}] Text dump truncated at {textCount}");
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} MusicRoot 덤프 예외: {ex}");
+        }
+    }
+
+    private static string GetTransformPath(Transform transform, Transform stopAt)
+    {
+        try
+        {
+            if (transform == null)
+            {
+                return "(null)";
+            }
+
+            var sb = new StringBuilder(transform.name);
+            var current = transform.parent;
+            while (current != null && current != stopAt)
+            {
+                sb.Insert(0, current.name + "/");
+                current = current.parent;
+            }
+
+            if (stopAt != null)
+            {
+                sb.Insert(0, stopAt.name + "/");
+            }
+
+            return sb.ToString();
+        }
+        catch
+        {
+            return transform != null ? transform.name : "(null)";
+        }
+    }
+
+    private static string SafePropertyValue(object target, PropertyInfo prop)
+    {
+        try
+        {
+            object value = prop.GetValue(target);
+            if (value == null)
+            {
+                return "(null)";
+            }
+
+            if (value is string s)
+            {
+                return CleanLogText(s);
+            }
+
+            Type type = value.GetType();
+            if (type.IsPrimitive || value is decimal)
+            {
+                return value.ToString();
+            }
+
+            if (value is Text text)
+            {
+                return $"Text(name={text.name ?? "(null)"}, text={CleanLogText(text.text)})";
+            }
+
+            if (value is Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
+            {
+                return $"MusicInfo(uid={musicInfo.uid ?? "(null)"}, name={musicInfo.name ?? "(null)"}, cover={musicInfo.cover ?? "(null)"})";
+            }
+
+            if (value is UnityEngine.Object unityObject)
+            {
+                return $"{type.Name}(name={unityObject.name ?? "(null)"})";
+            }
+
+            return type.FullName;
+        }
+        catch (Exception ex)
+        {
+            return "(error: " + ex.Message + ")";
         }
     }
 

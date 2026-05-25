@@ -5,6 +5,7 @@ using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.Database.DataClass;
 using Il2CppAssets.Scripts.PeroTools.Commons;
 using Il2CppAssets.Scripts.PeroTools.Managers;
+using System;
 using System.Collections.Generic;
 using static Il2CppAssets.Scripts.Database.DBConfigCustomTags;
 
@@ -16,6 +17,7 @@ namespace muse_dash_test
         private const string TagUidString = "tag-muse-dash-test";
         private const string AlbumUidString = "998-0";
         private const string AlbumTitle = "실험 앨범";
+        private const string AlbumCoverPrefabName = "album_0";
 
         /// <summary>
         /// 런타임에 게임 데이터베이스에 우리의 "실험 모드" 커스텀 태그 카테고리를 동적으로 주입합니다.
@@ -86,7 +88,7 @@ namespace muse_dash_test
                         title = AlbumTitle,
                         tag = TagUidString,
                         jsonName = "custom_album_998_0",
-                        prefabsName = "",
+                        prefabsName = AlbumCoverPrefabName,
                         free = true,
                         needPurchase = false,
                         price = ""
@@ -117,7 +119,8 @@ namespace muse_dash_test
 
                     // 7. 글로벌 데이터베이스에 태그 데이터 최종 등록
                     GlobalDataBase.dbMusicTag.AddAlbumTagData(TagUid, info);
-                    MelonLogger.Msg($"글로벌 데이터베이스에 커스텀 태그/앨범 데이터 등록 완료! AlbumUid={AlbumUidString}, AlbumTitle={AlbumTitle}, MusicCount={musicList.Count}");
+                    MelonLogger.Msg($"글로벌 데이터베이스에 커스텀 태그/앨범 데이터 등록 완료! AlbumUid={AlbumUidString}, AlbumTitle={AlbumTitle}, CoverPrefab={AlbumCoverPrefabName}, MusicCount={musicList.Count}");
+                    LogCoverCandidates(info, albumInfo, customInfo);
                 }
                 catch (System.Exception ex)
                 {
@@ -134,6 +137,78 @@ namespace muse_dash_test
                 }
                 return result;
             }
+
+            private static void LogCoverCandidates(AlbumTagInfo tagInfo, DBConfigAlbums.AlbumsInfo albumInfo, CustomTagInfo customInfo)
+            {
+                try
+                {
+                    MelonLogger.Msg($"[CoverProbe] AlbumTagInfo: tagUid={tagInfo?.tagUid ?? "(null)"}, name={tagInfo?.name ?? "(null)"}, iconName={tagInfo?.iconName ?? "(null)"}");
+                    MelonLogger.Msg($"[CoverProbe] CustomTagInfo: tag_picture={customInfo?.tag_picture ?? "(null)"}");
+
+                    if (albumInfo == null)
+                    {
+                        MelonLogger.Msg("[CoverProbe] AlbumsInfo: (null)");
+                        return;
+                    }
+
+                    MelonLogger.Msg($"[CoverProbe] AlbumsInfo direct: uid={albumInfo.uid ?? "(null)"}, title={albumInfo.title ?? "(null)"}, tag={albumInfo.tag ?? "(null)"}, jsonName={albumInfo.jsonName ?? "(null)"}, prefabsName={albumInfo.prefabsName ?? "(null)"}");
+
+                    var type = albumInfo.GetType();
+                    foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
+                    {
+                        if (!prop.CanRead || prop.GetIndexParameters().Length != 0)
+                            continue;
+
+                        string name = prop.Name ?? string.Empty;
+                        if (!LooksCoverRelated(name))
+                            continue;
+
+                        object value = SafeRead(() => prop.GetValue(albumInfo));
+                        MelonLogger.Msg($"[CoverProbe] AlbumsInfo prop {name}={FormatValue(value)}");
+                    }
+
+                    foreach (var field in type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
+                    {
+                        string name = field.Name ?? string.Empty;
+                        if (!LooksCoverRelated(name))
+                            continue;
+
+                        object value = SafeRead(() => field.GetValue(albumInfo));
+                        MelonLogger.Msg($"[CoverProbe] AlbumsInfo field {name}={FormatValue(value)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Warning($"[CoverProbe] 커버 후보 로그 예외: {ex.Message}");
+                }
+            }
+
+            private static bool LooksCoverRelated(string name)
+            {
+                return name.IndexOf("cover", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("prefab", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("pic", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("json", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            private static object SafeRead(Func<object> read)
+            {
+                try
+                {
+                    return read();
+                }
+                catch (Exception ex)
+                {
+                    return "(error: " + ex.Message + ")";
+                }
+            }
+
+            private static string FormatValue(object value)
+            {
+                return value == null ? "(null)" : value.ToString();
+            }
+
         }
 
         /// <summary>
