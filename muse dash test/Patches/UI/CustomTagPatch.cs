@@ -125,10 +125,46 @@ namespace muse_dash_test
                     // 접근자 호출 테스트 추가!
                     try
                     {
-                        var dbConfigAlbum = Singleton<ConfigManager>.instance.GetConfigObject<DBConfigALBUM>();
+                        MelonLogger.Msg("[CustomTagPatch] 시작: Singleton<ConfigManager> 및 dbConfigAlbum 상태 검사...");
+                        var instance = Singleton<ConfigManager>.instance;
+                        MelonLogger.Msg($"[CustomTagPatch] Singleton<ConfigManager>.instance 존재 여부: {instance != null}");
+                        
+                        DBConfigALBUM dbConfigAlbum = null;
+                        if (instance != null)
+                        {
+                            dbConfigAlbum = instance.GetConfigObject<DBConfigALBUM>();
+                        }
+                        MelonLogger.Msg($"[CustomTagPatch] ConfigManager를 통한 dbConfigAlbum 획득 결과: {dbConfigAlbum != null}");
+
+                        // Fallback: GlobalDataBase를 통한 검색
+                        if (dbConfigAlbum == null)
+                        {
+                            MelonLogger.Msg("[CustomTagPatch] ConfigManager에서 DBConfigALBUM을 찾지 못했습니다. GlobalDataBase fallback 검사를 시작합니다...");
+                            MelonLogger.Msg($"[CustomTagPatch] GlobalDataBase.dbConfig 존재 여부: {GlobalDataBase.dbConfig != null}");
+                            if (GlobalDataBase.dbConfig != null)
+                            {
+                                MelonLogger.Msg($"[CustomTagPatch] dbConfig.m_ConfigDic 존재 여부: {GlobalDataBase.dbConfig.m_ConfigDic != null}");
+                                if (GlobalDataBase.dbConfig.m_ConfigDic != null)
+                                {
+                                    MelonLogger.Msg($"[CustomTagPatch] m_ConfigDic 엔트리 개수: {GlobalDataBase.dbConfig.m_ConfigDic.Count}");
+                                    foreach (var entry in GlobalDataBase.dbConfig.m_ConfigDic)
+                                    {
+                                        var casted = entry.Value?.TryCast<DBConfigALBUM>();
+                                        if (casted != null)
+                                        {
+                                            dbConfigAlbum = casted;
+                                            MelonLogger.Msg($"[CustomTagPatch] GlobalDataBase.dbConfig를 통해 DBConfigALBUM 획득 성공 (Key: '{entry.Key}')");
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         if (dbConfigAlbum != null)
                         {
                             var testMusicInfo = dbConfigAlbum.GetMusicInfoByMusicUid("0-0");
+                            MelonLogger.Msg($"[CustomTagPatch] testMusicInfo('0-0') 획득 결과: {testMusicInfo != null}");
                             if (testMusicInfo != null)
                             {
                                 MelonLogger.Msg("[CustomTagPatch] '0-0' MusicInfo 획득 성공. 인위적으로 uid 접근자(getter)를 호출합니다...");
@@ -146,6 +182,10 @@ namespace muse_dash_test
                             {
                                 MelonLogger.Warning("[CustomTagPatch] '0-0'에 해당하는 MusicInfo를 찾지 못했습니다.");
                             }
+                        }
+                        else
+                        {
+                            MelonLogger.Warning("[CustomTagPatch] DBConfigALBUM 인스턴스를 최종적으로 획득하지 못해 테스트를 중단합니다.");
                         }
                     }
                     catch (System.Exception ex)
