@@ -38,6 +38,10 @@ public class LongSongNameController_Refresh_Patch
 
     public static void Prefix(Il2Cpp.LongSongNameController __instance, ref string text, bool isSpecialFont, float delay)
     {
+        if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
+        {
+            return;
+        }
         try
         {
             MelonLogger.Msg($"[LongSongNameController.Refresh] 호출됨: 원본 text='{text}' | GameObject={__instance.gameObject.name}");
