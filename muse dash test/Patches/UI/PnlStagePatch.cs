@@ -17,6 +17,15 @@ public class PnlStage_Start_Patch
     {
         try
         {
+            try
+            {
+                muse_dash_test.CustomUidExperiment.RunExperiment();
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[UidExperiment] PnlStage.Start에서 에러 발생: {ex}");
+            }
+
             PnlStagePatchHelper.LogPnlStageProperties("PnlStage.Start.Properties", __instance);
             PnlMusicUtils.LogMusicInfo("PnlStage.Start", __instance);
             MelonCoroutines.Start(PnlMusicUtils.LogMusicInfoAfterDelay("PnlStage.Start.Delay", __instance, 0.5f));
