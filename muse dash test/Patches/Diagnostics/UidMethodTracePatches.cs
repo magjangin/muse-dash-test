@@ -147,15 +147,7 @@ namespace muse_dash_test
         private static void Postfix(MusicInfo __instance, ref string __result)
         {
             if (__instance == null) return;
-            if (__result == "0-0")
-            {
-                __result = "999-0";
-                MelonLogger.Msg($"[MusicInfo.uid Getter Hook] Rewrote: 0-0 -> 999-0 for Instance: {__instance.name} ({__instance.musicName})");
-            }
-            else
-            {
-                MelonLogger.Msg($"[MusicInfo.uid Getter Hook] Instance: {__instance.name} ({__instance.musicName}), uid: {__result ?? "(null)"}");
-            }
+            MelonLogger.Msg($"[MusicInfo.uid Getter Hook] Instance: {__instance.name} ({__instance.musicName}), uid: {__result ?? "(null)"}");
         }
     }
 
