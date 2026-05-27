@@ -82,20 +82,6 @@ namespace muse_dash_test
                                 }
                             }
 
-                            // 필드 출력
-                            foreach (var field in musicInfo.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
-                            {
-                                try
-                                {
-                                    var val = field.GetValue(musicInfo);
-                                    MelonLogger.Msg($"[CustomTagPatch] [Field] {field.Name} (Type={field.FieldType.Name}): {val ?? "(null)"}");
-                                }
-                                catch (Exception ex)
-                                {
-                                    MelonLogger.Msg($"[CustomTagPatch] [Field] {field.Name} (Type={field.FieldType.Name}): [Read Error: {ex.Message}]");
-                                }
-                            }
-
                             MelonLogger.Msg("[CustomTagPatch] ===============================================");
                         }
                         else
