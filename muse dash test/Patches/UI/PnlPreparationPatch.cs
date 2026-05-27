@@ -1,23 +1,95 @@
-﻿using MelonLoader;
+using MelonLoader;
 using System;
 
-// Il2Cpp.PnlPreparation Awake 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "Awake")]
-public class PnlPreparation_Awake_Patch
+// Il2Cpp.PnlPreparation OnEnable 후킹
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "OnEnable")]
+public class PnlPreparation_OnEnable_Patch
 {
     public static void Prefix(Il2Cpp.PnlPreparation __instance)
     {
-        try { }
+        try
+        {
+            if (__instance != null)
+            {
+                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
+                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
+                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
+                
+                MelonLogger.Msg($"[PnlPreparation.OnEnable.Prefix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+            }
+        }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.Awake Prefix 예외: {ex}");
+            MelonLogger.Error($"PnlPreparation.OnEnable Prefix 로그 예외: {ex}");
         }
     }
 
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"PnlPreparation.Awake Postfix 예외: {ex}"); }
+        try
+        {
+            if (__instance != null)
+            {
+                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
+                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
+                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
+                
+                MelonLogger.Msg($"[PnlPreparation.OnEnable.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+            }
+            
+            PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.OnEnable");
+            MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.Delay", 0.25f));
+            MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.DelayLong", 1.0f));
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"PnlPreparation.OnEnable Postfix 예외: {ex}");
+        }
+    }
+}
+
+// Il2Cpp.PnlPreparation RefreshUi 후킹
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "RefreshUi")]
+public class PnlPreparation_RefreshUi_Patch
+{
+    public static void Prefix(Il2Cpp.PnlPreparation __instance)
+    {
+        try
+        {
+            if (__instance != null)
+            {
+                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
+                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
+                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
+                
+                MelonLogger.Msg($"[PnlPreparation.RefreshUi.Prefix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"PnlPreparation.RefreshUi Prefix 로그 예외: {ex}");
+        }
+    }
+
+    public static void Postfix(Il2Cpp.PnlPreparation __instance)
+    {
+        try
+        {
+            if (__instance != null)
+            {
+                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
+                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
+                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
+                
+                MelonLogger.Msg($"[PnlPreparation.RefreshUi.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+            }
+            
+            PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.RefreshUi");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"PnlPreparation.RefreshUi Postfix 예외: {ex}");
+        }
     }
 }
 
@@ -27,8 +99,23 @@ public class PnlPreparation_GameStart_Patch
 {
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"PnlPreparation.GameStart Postfix 예외: {ex}"); }
+        try
+        {
+            if (__instance != null)
+            {
+                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
+                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
+                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
+                
+                MelonLogger.Msg($"[PnlPreparation.GameStart.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+            }
+            
+            PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.GameStart");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"PnlPreparation.GameStart Postfix 예외: {ex}");
+        }
     }
 }
 
@@ -38,7 +125,22 @@ public class PnlPreparation_OnBattleStart_Patch
 {
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"PnlPreparation.OnBattleStart Postfix 예외: {ex}"); }
+        try
+        {
+            if (__instance != null)
+            {
+                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
+                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
+                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
+                
+                MelonLogger.Msg($"[PnlPreparation.OnBattleStart.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+            }
+            
+            PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.OnBattleStart");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"PnlPreparation.OnBattleStart Postfix 예외: {ex}");
+        }
     }
 }
