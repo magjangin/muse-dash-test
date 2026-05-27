@@ -59,35 +59,44 @@ namespace muse_dash_test
                     // 3. 이 태그 탭 하위에 노출할 곡 UIDs 정의 (튜토리얼 곡 딱 하나만 기본 노출로 원복)
                     var musicList = new List<string> { "0-0" };
 
-                    // 0-0의 메타데이터 출력 추가
+                    // 0-0의 모든 필드와 프로퍼티를 리플렉션으로 남김없이 출력
                     try
                     {
                         var musicInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll("0-0");
                         if (musicInfo != null)
                         {
-                            MelonLogger.Msg("[CustomTagPatch] === Metadata of '0-0' ===");
-                            MelonLogger.Msg($"[CustomTagPatch] uid: {musicInfo.uid}");
-                            MelonLogger.Msg($"[CustomTagPatch] name: {musicInfo.name}");
-                            MelonLogger.Msg($"[CustomTagPatch] author: {musicInfo.author}");
-                            MelonLogger.Msg($"[CustomTagPatch] bpm: {musicInfo.bpm}");
-                            MelonLogger.Msg($"[CustomTagPatch] music: {musicInfo.music}");
-                            MelonLogger.Msg($"[CustomTagPatch] demo: {musicInfo.demo}");
-                            MelonLogger.Msg($"[CustomTagPatch] cover: {musicInfo.cover}");
-                            MelonLogger.Msg($"[CustomTagPatch] hexieCover: {musicInfo.hexieCover}");
-                            MelonLogger.Msg($"[CustomTagPatch] noteJson: {musicInfo.noteJson}");
-                            MelonLogger.Msg($"[CustomTagPatch] scene: {musicInfo.scene}");
-                            MelonLogger.Msg($"[CustomTagPatch] levelDesigner: {musicInfo.levelDesigner}");
-                            MelonLogger.Msg($"[CustomTagPatch] levelDesigner1: {musicInfo.levelDesigner1}");
-                            MelonLogger.Msg($"[CustomTagPatch] levelDesigner2: {musicInfo.levelDesigner2}");
-                            MelonLogger.Msg($"[CustomTagPatch] levelDesigner3: {musicInfo.levelDesigner3}");
-                            MelonLogger.Msg($"[CustomTagPatch] levelDesigner4: {musicInfo.levelDesigner4}");
-                            MelonLogger.Msg($"[CustomTagPatch] levelDesigner5: {musicInfo.levelDesigner5}");
-                            MelonLogger.Msg($"[CustomTagPatch] difficulty1: {musicInfo.difficulty1}");
-                            MelonLogger.Msg($"[CustomTagPatch] difficulty2: {musicInfo.difficulty2}");
-                            MelonLogger.Msg($"[CustomTagPatch] difficulty3: {musicInfo.difficulty3}");
-                            MelonLogger.Msg($"[CustomTagPatch] difficulty4: {musicInfo.difficulty4}");
-                            MelonLogger.Msg($"[CustomTagPatch] difficulty5: {musicInfo.difficulty5}");
-                            MelonLogger.Msg("[CustomTagPatch] ==============================");
+                            MelonLogger.Msg("[CustomTagPatch] === Exhaustive Metadata of '0-0' (Reflection) ===");
+                            
+                            // 프로퍼티 출력
+                            foreach (var prop in musicInfo.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
+                            {
+                                if (!prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
+                                try
+                                {
+                                    var val = prop.GetValue(musicInfo);
+                                    MelonLogger.Msg($"[CustomTagPatch] [Property] {prop.Name} (Type={prop.PropertyType.Name}): {val ?? "(null)"}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    MelonLogger.Msg($"[CustomTagPatch] [Property] {prop.Name} (Type={prop.PropertyType.Name}): [Read Error: {ex.Message}]");
+                                }
+                            }
+
+                            // 필드 출력
+                            foreach (var field in musicInfo.GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
+                            {
+                                try
+                                {
+                                    var val = field.GetValue(musicInfo);
+                                    MelonLogger.Msg($"[CustomTagPatch] [Field] {field.Name} (Type={field.FieldType.Name}): {val ?? "(null)"}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    MelonLogger.Msg($"[CustomTagPatch] [Field] {field.Name} (Type={field.FieldType.Name}): [Read Error: {ex.Message}]");
+                                }
+                            }
+
+                            MelonLogger.Msg("[CustomTagPatch] ===============================================");
                         }
                         else
                         {
@@ -96,7 +105,7 @@ namespace muse_dash_test
                     }
                     catch (Exception ex)
                     {
-                        MelonLogger.Error($"[CustomTagPatch] '0-0' 메타데이터 출력 예외: {ex}");
+                        MelonLogger.Error($"[CustomTagPatch] '0-0' 리플렉션 메타데이터 출력 예외: {ex}");
                     }
 
                     // IL2CPP List 구조로 변환합니다.
