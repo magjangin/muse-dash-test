@@ -80,9 +80,9 @@ namespace muse_dash_test
                                     
                                     // 2. 복사본 프로퍼티 수정 수행
                                     clonedInfo.uid = "999-0";
-                                    clonedInfo.name = "화영왕";
-                                    clonedInfo.author = "화영왕";
-                                    clonedInfo.levelDesigner = "화영왕";
+                                    clonedInfo.name = "화영왕 0";
+                                    clonedInfo.author = "화영왕 0";
+                                    clonedInfo.levelDesigner = "화영왕 0";
                                     clonedInfo.cover = "iyaiya_cover"; // 기존 커버 재사용
                                     clonedInfo.noteJson = "iyaiya_map"; // 기존 맵 재사용
                                     clonedInfo.music = "iyaiya_music"; // 기존 음원 재사용

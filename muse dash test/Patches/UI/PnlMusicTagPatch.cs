@@ -8,7 +8,7 @@ namespace muse_dash_test
     internal static class PnlMusicTagPatchLogger
     {
         private const string CustomMusicUid = "0-0";
-        private const string CustomCellTitle = "화영왕";
+        private const string CustomCellTitle = "화영왕 0";
 
         public static void ApplyCustomCellTitle(PnlMusicTag panel)
         {

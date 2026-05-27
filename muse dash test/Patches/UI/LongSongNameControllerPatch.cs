@@ -22,8 +22,8 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomTitles = new Dictionary<string, string>
     {
-        { "0-0", "화영왕" },
-        { "999-0", "화영왕" },
+        { "0-0", "화영왕 0" },
+        { "999-0", "화영왕 0" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -31,8 +31,8 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomArtists = new Dictionary<string, string>
     {
-        { "0-0", "화영왕" },
-        { "999-0", "화영왕" },
+        { "0-0", "화영왕 0" },
+        { "999-0", "화영왕 0" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -96,14 +96,14 @@ public class LongSongNameController_Refresh_Patch
             {
                 if (PnlStagePatchHelper.ShouldApplyHwayoungwang())
                 {
-                    text = "화영왕";
+                    text = "화영왕 0";
                 }
             }
             else if (__instance.gameObject.name == "ImgArtistMask" && text == "小野道ono")
             {
                 if (PnlStagePatchHelper.ShouldApplyHwayoungwang())
                 {
-                    text = "화영왕";
+                    text = "화영왕 0";
                 }
             }
         }

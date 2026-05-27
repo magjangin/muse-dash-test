@@ -10,8 +10,8 @@ public static class PnlStagePatchHelper
 {
     private const int CustomTagUid = 998;
     private const string CustomMusicUid = "0-0";
-    private const string CustomTitle = "화영왕";
-    private const string CustomArtist = "화영왕";
+    private const string CustomTitle = "화영왕 0";
+    private const string CustomArtist = "화영왕 0";
 
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
