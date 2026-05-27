@@ -51,6 +51,11 @@ public class Boss_Play_Patch
     {
         try
         {
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            {
+                return true;
+            }
+
             if (key != null && key.StartsWith("swap:"))
             {
                 var parts = key.Split(':');
@@ -166,6 +171,12 @@ public class Boss_InitBossObject_Patch
         try
         {
             MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
+
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            {
+                MelonLogger.Msg("Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (실험 차트 아님)");
+                return;
+            }
 
             if (Boss_Play_Patch.isDynamicSwapping)
             {

@@ -79,6 +79,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         try
         {
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            {
+                MelonLogger.Msg("[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님");
+                return;
+            }
+
             ApplyExperimentChart(__instance);
         }
         catch (System.Exception ex)
@@ -89,5 +95,20 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 삽입 후 덤프 헬퍼 메서드 호출
         //MelonLogger.Msg("노트 삽입 후 덤프:");
         //DumpMusicList(__instance);
+    }
+}
+
+public static class ExperimentPlayContext
+{
+    public static bool ShouldApplyExperimentChart { get; private set; }
+
+    public static void RememberMusicSelection(string uid)
+    {
+        bool isExperimentTag = MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive;
+        bool isCustomUid = uid == "0-0" || uid == "999-0";
+        bool isCustomAlbum = PnlStagePatchHelper.IsCustomAlbumContext(998, "0-0");
+        ShouldApplyExperimentChart = isExperimentTag && isCustomUid && isCustomAlbum;
+
+        MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, isExperimentTag={isExperimentTag}, isCustomAlbum={isCustomAlbum}, apply={ShouldApplyExperimentChart}");
     }
 }

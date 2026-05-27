@@ -23,6 +23,7 @@ namespace muse_dash_test
                     var musicInfo = __instance.musicInfo;
                     string uid = musicInfo != null ? musicInfo.uid : "(null)";
                     LastClickedMusicUid = uid;
+                    ExperimentPlayContext.RememberMusicSelection(uid);
                 }
             }
             catch (Exception ex)

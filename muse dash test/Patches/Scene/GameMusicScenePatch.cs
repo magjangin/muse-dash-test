@@ -23,6 +23,7 @@ public class GameMusicScene_LoadScene_Patch
         try
         {
             if (!EnableLoadSceneRewrite) return;
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart) return;
 
             foreach (var rule in LoadSceneRewriteRules)
             {
