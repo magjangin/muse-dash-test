@@ -79,9 +79,21 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         try
         {
+            // 진입 시점에 안전하게 현재 선택된 곡 UID를 확인하여 플래그 재업데이트
+            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            if (string.IsNullOrEmpty(uid))
+            {
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+
+            if (!string.IsNullOrEmpty(uid))
+            {
+                ExperimentPlayContext.RememberMusicSelection(uid);
+            }
+
             if (!ExperimentPlayContext.ShouldApplyExperimentChart)
             {
-                MelonLogger.Msg("[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님");
+                MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"})");
                 return;
             }
 
@@ -104,11 +116,9 @@ public static class ExperimentPlayContext
 
     public static void RememberMusicSelection(string uid)
     {
-        bool isExperimentTag = MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive;
-        bool isCustomUid = uid == "999-0";
-        bool isCustomAlbum = PnlStagePatchHelper.IsCustomAlbumContext(998, uid);
-        ShouldApplyExperimentChart = isExperimentTag && isCustomUid && isCustomAlbum;
+        // 999-0 곡은 우리 실험 모드 전용 가상 곡이므로, 이 UID면 무조건 실험 차트와 보스 변경을 적용합니다.
+        ShouldApplyExperimentChart = (uid == "999-0");
 
-        MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, isExperimentTag={isExperimentTag}, isCustomAlbum={isCustomAlbum}, apply={ShouldApplyExperimentChart}");
+        MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, apply={ShouldApplyExperimentChart}");
     }
 }
