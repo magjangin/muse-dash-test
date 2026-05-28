@@ -14,6 +14,8 @@ public static class PnlStagePatchHelper
     private const string CustomTitle = "화영왕 0";
     private const string CustomArtist = "화영왕 0";
 
+    public static string LastSelectedMusicUid = "";
+
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
@@ -582,6 +584,10 @@ public static class PnlStagePatchHelper
 
     public static string GetCurrentSelectedMusicUid()
     {
+        if (!string.IsNullOrEmpty(LastSelectedMusicUid))
+        {
+            return LastSelectedMusicUid;
+        }
         try
         {
             var pnlStage = UnityEngine.Object.FindObjectOfType<PnlStage>();

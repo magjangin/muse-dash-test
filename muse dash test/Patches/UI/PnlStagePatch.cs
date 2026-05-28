@@ -262,6 +262,10 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
+            if (musicInfo != null && !string.IsNullOrEmpty(musicInfo.uid))
+            {
+                PnlStagePatchHelper.LastSelectedMusicUid = musicInfo.uid;
+            }
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
             MelonLogger.Msg($"PnlStage.RefreshDiffUI Prefix: musicNameTitle={musicText}, artistNameTitle={artistText}");
