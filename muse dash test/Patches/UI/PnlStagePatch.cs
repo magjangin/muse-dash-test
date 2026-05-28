@@ -262,7 +262,9 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.RefreshDiffUI Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
+            string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
+            MelonLogger.Msg($"PnlStage.RefreshDiffUI Prefix: musicNameTitle={musicText}, artistNameTitle={artistText}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshDiffUI Prefix 예외: {ex}"); }
     }
@@ -271,10 +273,13 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
             PnlStagePatchHelper.ApplyCustomTagTitleAccessorsForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo);
             PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.RefreshDiffUI", __instance);
             PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.RefreshDiffUI.Force", __instance);
+
+            string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
+            string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
+            MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle={musicText}, artistNameTitle={artistText}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshDiffUI Postfix 예외: {ex}"); }
     }
