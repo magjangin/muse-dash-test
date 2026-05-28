@@ -6,26 +6,14 @@ public class SceneChangeController_ChangeScene_Patch
 {
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
-        try
-        {
-            MelonLogger.Msg($"SceneChangeController.ChangeScene 호출: sceneInfo={sceneInfo}, instance={__instance}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"SceneChangeController.ChangeScene Prefix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"SceneChangeController.ChangeScene Prefix 예외: {ex}"); }
     }
 
     public static void Postfix(Il2Cpp.SceneChangeController __instance, int sceneInfo)
     {
-        try
-        {
-            MelonLogger.Msg($"SceneChangeController.ChangeScene 완료: sceneInfo={sceneInfo}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"SceneChangeController.ChangeScene Postfix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"SceneChangeController.ChangeScene Postfix 예외: {ex}"); }
     }
 }
 
@@ -34,25 +22,13 @@ public class SceneChangeController_ChangeNote_Patch
 {
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
-        try
-        {
-            MelonLogger.Msg($"SceneChangeController.ChangeNote 호출: sceneInfo={sceneInfo}, instance={__instance}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"SceneChangeController.ChangeNote Prefix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"SceneChangeController.ChangeNote Prefix 예외: {ex}"); }
     }
 
     public static void Postfix(Il2Cpp.SceneChangeController __instance, int sceneInfo)
     {
-        try
-        {
-            MelonLogger.Msg($"SceneChangeController.ChangeNote 완료: sceneInfo={sceneInfo}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"SceneChangeController.ChangeNote Postfix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"SceneChangeController.ChangeNote Postfix 예외: {ex}"); }
     }
 }

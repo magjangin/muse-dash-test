@@ -34,7 +34,9 @@
 | `m_MaxAlbumUid` 성능 최적화 패치 | ✅ 완료 |
 | 곡 제목 실시간 변조 (`PnlStage`) | ✅ 완료 |
 | 아티스트명 실시간 변조 (`PnlStage`) | ✅ 완료 |
+| 준비 화면 텍스트 보강 변조 (`PnlPreparation`) | ✅ 완료 |
 | `MusicInfo` 속성 쓰기 가능 여부 리플렉션 스캔 | ✅ 완료 |
+| UID 단독 변조 한계 확인 및 정식 등록 방향 정리 | ✅ 완료 |
 | 네이티브 훅 없는 인메모리 차트 재구성 | ✅ 완료 |
 
 ---
@@ -43,6 +45,9 @@
 
 * **완료**: 커스텀 태그 카테고리 동적 주입 및 곡 바인딩
 * **완료**: 곡 제목·아티스트·레벨 디자이너 UI 실시간 변조
+* **완료**: UID 단독 변조가 UI/`MusicInfo` 불일치를 만든다는 점 확인 및 정식 등록 방향 문서화
+* **진행 중 (핵심 과제)**: `999-0` 같은 커스텀 UID가 `GetMusicInfoByMusicUid` 계열 조회에서 실제 `MusicInfo`로 돌아오도록 게임 DB 저장소에 정식 등록하는 루트 확인
+* **진행 중**: `MusicButtonCell` 곡 셀 데이터 가로채기 성공 ➡️ 곡 셀 커버 주입 및 커스텀 앨범 정렬/순서 변경 구현 ⏳
 * **진행 예정**: 커스텀 곡 선택 시 외부 JSON/채보 파일로부터 노트를 실시간으로 읽어와 실제 플레이 가능한 커스텀 차트 로더 구현
 * **진행 예정**: 로컬 이미지를 커스텀 곡 커버 썸네일로 주입하는 실험
 * **진행 예정**: 채보 특정 구간에서 보스 연출 트리거(`swap:[보스명]:[씬번호]`) 실시간 연동 기믹 심화
@@ -63,7 +68,12 @@
 │   │   ├── UI/               # 곡 정보 실시간 텍스트 변조 및 커스텀 태그
 │   │   │   ├── CustomTagPatch.cs            # 커스텀 태그 동적 주입 및 성능 최적화
 │   │   │   ├── PnlMusicUtils.cs             # 곡 메타데이터 UI 탐색 유틸리티
-│   │   │   ├── PnlStagePatch.cs             # PnlStage 곡 정보 변조 패치
+│   │   │   ├── PnlStagePatch.cs             # PnlStage 직접 후킹 패치 (다이어트 완료)
+│   │   │   ├── PnlStagePatchHelper.cs       # [NEW] PnlStage 및 UI 조회용 헬퍼 유틸
+│   │   │   ├── LongSongNameControllerPatch.cs # [NEW] 곡 이름 스크롤 컨트롤러 패치
+│   │   │   ├── PnlMusicTagScrollViewPatch.cs # [NEW] 태그 스크롤 뷰 및 캐시타이틀 패치
+│   │   │   ├── MusicButtonAreaTitlePatch.cs # [NEW] 타이틀 버튼 영역 텍스트 갱신 패치
+│   │   │   ├── MusicButtonCellPatch.cs      # [NEW] 곡 셀 데이터 초기화 가로채기 패치
 │   │   │   └── PnlPreparationPatch.cs       # 곡 준비 화면 정보 변조 패치
 │   │   └── Scene/            # 로딩 씬 강제 제어 및 흐름 제어
 │   │       ├── GameMusicScenePatch.cs       # 게임 뮤직 씬 패치
@@ -75,6 +85,7 @@
 │   ├── MODDING.md                      # 전체 모딩 빌드 및 연동 기초
 │   ├── NOTE_EXPERIMENTS.md             # 커스텀 노트 스펙 설계 가이드
 │   ├── BOSS_EXPERIMENTS.md             # 실시간 보스 교환 기믹 가이드
+│   ├── UID_INJECTION.md                # 커스텀 UID 정식 등록 및 UI 선택 흐름 정리
 │   ├── CODE_REFERENCE.md               # C# 패치 코드 상세 분석 참고서
 │   └── LOGGING_AND_TROUBLESHOOTING.md  # 로그 분석 및 트러블슈팅 가이드
 │

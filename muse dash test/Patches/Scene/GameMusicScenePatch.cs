@@ -5,37 +5,21 @@ using System;
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "LoadScene")]
 public class GameMusicScene_LoadScene_Patch
 {
-    private static readonly bool EnableLoadSceneRewrite = true;
-
-    public class LoadSceneRule
-    {
-        public string OrigSceneName;
-        public string NewSceneName;
-    }
-
-    private static readonly LoadSceneRule[] LoadSceneRewriteRules = new[]
-    {
-        new LoadSceneRule { OrigSceneName = "*", NewSceneName = "scene_10" },
-    };
-
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance, ref string sceneName)
     {
         try
         {
-            MelonLogger.Msg($"GameMusicScene.LoadScene 호출: sceneName={sceneName}, instance={__instance}");
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart) return;
 
-            if (!EnableLoadSceneRewrite) return;
-
-            foreach (var rule in LoadSceneRewriteRules)
+            if (!muse_dash_test.MainMod.TryGetCachedHwaScene(out int scene))
             {
-                bool sceneMatch = rule.OrigSceneName == "*" || sceneName == rule.OrigSceneName;
-                if (sceneMatch)
-                {
-                    MelonLogger.Msg($"GameMusicScene.LoadScene: sceneName 변경 적용 -> {rule.NewSceneName} (원본={sceneName})");
-                    sceneName = rule.NewSceneName;
-                    break;
-                }
+                MelonLogger.Msg($"[GameMusicScene.LoadScene] manifest scene이 없어 리다이렉션을 건너뜁니다: current={sceneName}");
+                return;
             }
+
+            string redirectedSceneName = $"scene_{scene:00}";
+            MelonLogger.Msg($"[GameMusicScene.LoadScene] scene 리다이렉션: {sceneName} -> {redirectedSceneName}");
+            sceneName = redirectedSceneName;
         }
         catch (Exception ex)
         {
@@ -45,13 +29,7 @@ public class GameMusicScene_LoadScene_Patch
 
     public static void Postfix(Il2CppGameLogic.GameMusicScene __instance, string sceneName)
     {
-        try
-        {
-            MelonLogger.Msg($"GameMusicScene.LoadScene 완료: sceneName={sceneName}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"GameMusicScene.LoadScene Postfix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"GameMusicScene.LoadScene Postfix 예외: {ex}"); }
     }
 }

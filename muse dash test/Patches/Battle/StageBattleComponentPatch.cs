@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using Il2CppFormulaBase;
 using Il2CppGameLogic;
 using System.Reflection;
@@ -7,11 +7,7 @@ using System.Reflection;
 [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "LoadMusicData")]
 public class StageBattleComponent_LoadMusicData_Patch
 {
-    public static void Postfix(StageBattleComponent __instance)
-    {
-        MelonLogger.Msg($"StageBattleComponent.LoadMusicData 호출됨: {__instance}");
-        DumpStageBattleComponentProperties(__instance);
-    }
+    public static void Postfix(StageBattleComponent __instance) { }
 
     public static void DumpStageBattleComponentProperties(StageBattleComponent __instance)
     {
@@ -123,6 +119,11 @@ public class StageBattleComponent_InitData_Patch
 {
     public static void Postfix(StageBattleComponent __instance)
     {
-        MelonLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}");
+        string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+        if (string.IsNullOrEmpty(uid))
+        {
+            uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid ?? "(unknown)";
+        }
+        MelonLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
     }
 }

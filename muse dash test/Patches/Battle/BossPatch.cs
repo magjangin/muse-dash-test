@@ -51,7 +51,10 @@ public class Boss_Play_Patch
     {
         try
         {
-            MelonLogger.Msg($"Il2Cpp.Boss.Play 호출: key={key}, playAnimator={playAnimator}, instance={__instance}");
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            {
+                return true;
+            }
 
             if (key != null && key.StartsWith("swap:"))
             {
@@ -61,8 +64,6 @@ public class Boss_Play_Patch
                     string newName = parts[1];
                     if (int.TryParse(parts[2], out int newScene))
                     {
-                        MelonLogger.Msg($"[DynamicSwap] 실시간 보스 교체 시작 -> name={newName}, scene={newScene}");
-                        
                         // 보스 오브젝트와 그 부모를 강제로 활성화 (out 등으로 비활성화되었을 가능성 방지)
                         try
                         {
@@ -70,12 +71,10 @@ public class Boss_Play_Patch
                             if (component != null && component.gameObject != null)
                             {
                                 component.gameObject.SetActive(true);
-                                MelonLogger.Msg("[DynamicSwap] Boss gameObject 강제 활성화 완료");
-                                
+
                                 if (component.transform != null && component.transform.parent != null)
                                 {
                                     component.transform.parent.gameObject.SetActive(true);
-                                    MelonLogger.Msg("[DynamicSwap] Boss parent gameObject 강제 활성화 완료");
                                 }
                             }
                         }
@@ -83,9 +82,6 @@ public class Boss_Play_Patch
                         {
                             MelonLogger.Warning($"[DynamicSwap] gameObject 활성화 시도 중 경고: {ex.Message}");
                         }
-
-                        // 보스 내부 필드 상태 덤프 (디버그 용도)
-                        DumpBossFields(__instance);
 
                         isDynamicSwapping = true;
                         try
@@ -108,7 +104,6 @@ public class Boss_Play_Patch
                         }
                         catch {}
                         
-                        MelonLogger.Msg($"[DynamicSwap] 실시간 보스 교체 완료. 등장 애니메이션(in) 실행");
                         __instance.Play("in", playAnimator);
                     }
                 }
@@ -124,14 +119,8 @@ public class Boss_Play_Patch
 
     public static void Postfix(Il2Cpp.Boss __instance, string key, bool playAnimator)
     {
-        try
-        {
-            MelonLogger.Msg($"Il2Cpp.Boss.Play 완료: key={key}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"Boss.Play Postfix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"Boss.Play Postfix 예외: {ex}"); }
     }
 }
 
@@ -140,26 +129,14 @@ public class Boss_SetBoss_Patch
 {
     public static void Prefix(Il2Cpp.Boss __instance)
     {
-        try
-        {
-            MelonLogger.Msg($"Il2Cpp.Boss.SetBoss 호출: instance={__instance}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"Boss.SetBoss Prefix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"Boss.SetBoss Prefix 예외: {ex}"); }
     }
 
     public static void Postfix(Il2Cpp.Boss __instance)
     {
-        try
-        {
-            MelonLogger.Msg("Il2Cpp.Boss.SetBoss 완료");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"Boss.SetBoss Postfix 예외: {ex}");
-        }
+        try { }
+        catch (Exception ex) { MelonLogger.Error($"Boss.SetBoss Postfix 예외: {ex}"); }
     }
 }
 
@@ -172,7 +149,7 @@ public class Boss_InitBossObject_Patch
 
      확인한 정답:
      - name: 0401_boss
-     - scene: 4
+    - scene: txt의 씬 번호를 그대로 사용
 
      다른 보스를 실험하려면 BossRewriteRules의 NewName/NewScene만 바꾸면 됩니다.
     */
@@ -194,6 +171,12 @@ public class Boss_InitBossObject_Patch
         try
         {
             MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
+
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            {
+                MelonLogger.Msg("Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (실험 차트 아님)");
+                return;
+            }
 
             if (Boss_Play_Patch.isDynamicSwapping)
             {

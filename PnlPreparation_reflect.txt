@@ -1,0 +1,199 @@
+=== Type: Il2Cpp.PnlPreparation ===
+
+=== Fields ===
+System.IntPtr NativeMethodInfoPtr_Awake_Private_Void_0
+System.IntPtr NativeFieldInfoPtr_stageAchievementValue
+System.IntPtr NativeFieldInfoPtr_startButton
+System.IntPtr NativeFieldInfoPtr_btnDownloadReport
+System.IntPtr NativeFieldInfoPtr_pnlRanks
+System.IntPtr NativeFieldInfoPtr_buttonToggle
+System.IntPtr NativeFieldInfoPtr_pnlRecord
+System.IntPtr NativeFieldInfoPtr_pnlPreparationLayAchv
+System.IntPtr NativeFieldInfoPtr_m_ConfigSelect
+System.IntPtr NativeFieldInfoPtr_m_TanocHideBmsDetector
+System.IntPtr NativeFieldInfoPtr_designerLongNameController
+System.IntPtr NativeFieldInfoPtr_songAuthorLongNameController
+System.IntPtr NativeFieldInfoPtr_m_Sb
+System.IntPtr NativeMethodInfoPtr_OnPnlLevelConfigSelectShowOpen_Private_Void_0
+System.IntPtr NativeMethodInfoPtr_OnAwake_Protected_Virtual_New_Void_0
+System.IntPtr NativeMethodInfoPtr_OnBattleStart_Protected_Virtual_New_Void_0
+System.IntPtr NativeMethodInfoPtr_VipTimeoutCheck_Private_Boolean_0
+System.IntPtr NativeMethodInfoPtr_OnDownloadBestReport_Protected_Void_0
+System.IntPtr NativeMethodInfoPtr_BeforeGameStart_Private_Void_Int64_0
+System.IntPtr NativeMethodInfoPtr_GameStart_Private_Void_0
+System.IntPtr NativeMethodInfoPtr_CheckIsUnlockMasterLevel_Private_Boolean_0
+System.IntPtr NativeMethodInfoPtr_OnDiffTglChanged_Private_Void_0
+System.IntPtr NativeMethodInfoPtr_OnEnable_Protected_Virtual_New_Void_0
+System.IntPtr NativeMethodInfoPtr_RefreshUi_Public_Void_0
+System.IntPtr NativeMethodInfoPtr_PreWarm_Public_Virtual_New_Void_Int32_0
+System.IntPtr NativeMethodInfoPtr_OnDestroy_Private_Void_0
+System.IntPtr NativeMethodInfoPtr__ctor_Public_Void_0
+System.IntPtr NativeMethodInfoPtr__OnEnable_b__22_0_Private_Void_0
+System.Boolean isWrapped
+System.IntPtr pooledPtr
+
+=== Properties ===
+UnityEngine.UI.Text stageAchievementValue
+UnityEngine.UI.Button startButton
+UnityEngine.UI.Button btnDownloadReport
+Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray`1[[Il2CppAssets.Scripts.UI.Panels.PnlRank, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] pnlRanks
+Il2CppAssets.Scripts.PeroTools.Nice.Components.ButtonToggle buttonToggle
+Il2Cpp.PnlRecord pnlRecord
+Il2Cpp.PnlPreparationLayAchv pnlPreparationLayAchv
+Il2CppAssets.Scripts.UI.Panels.PopupPresetConfigSelect m_ConfigSelect
+Il2Cpp.ScreenCDrawingDetector m_TanocHideBmsDetector
+Il2Cpp.LongSongNameController designerLongNameController
+Il2Cpp.LongSongNameController songAuthorLongNameController
+Il2CppSystem.Text.StringBuilder m_Sb
+System.Boolean useGUILayout
+System.Boolean enabled
+System.Boolean isActiveAndEnabled
+UnityEngine.Transform transform
+UnityEngine.GameObject gameObject
+System.String tag
+System.IntPtr m_CachedPtr
+System.String name
+UnityEngine.HideFlags hideFlags
+System.IntPtr ObjectClass
+System.IntPtr Pointer
+System.Boolean WasCollected
+
+=== Methods ===
+System.Void Awake()
+System.Void GameStart()
+System.Void OnBattleStart()
+UnityEngine.UI.Text get_stageAchievementValue()
+System.Void set_stageAchievementValue(Text )
+UnityEngine.UI.Button get_startButton()
+System.Void set_startButton(Button )
+UnityEngine.UI.Button get_btnDownloadReport()
+System.Void set_btnDownloadReport(Button )
+Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray`1[[Il2CppAssets.Scripts.UI.Panels.PnlRank, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] get_pnlRanks()
+System.Void set_pnlRanks(Il2CppReferenceArray`1 )
+Il2CppAssets.Scripts.PeroTools.Nice.Components.ButtonToggle get_buttonToggle()
+System.Void set_buttonToggle(ButtonToggle )
+Il2Cpp.PnlRecord get_pnlRecord()
+System.Void set_pnlRecord(PnlRecord )
+Il2Cpp.PnlPreparationLayAchv get_pnlPreparationLayAchv()
+System.Void set_pnlPreparationLayAchv(PnlPreparationLayAchv )
+Il2CppAssets.Scripts.UI.Panels.PopupPresetConfigSelect get_m_ConfigSelect()
+System.Void set_m_ConfigSelect(PopupPresetConfigSelect )
+Il2Cpp.ScreenCDrawingDetector get_m_TanocHideBmsDetector()
+System.Void set_m_TanocHideBmsDetector(ScreenCDrawingDetector )
+Il2Cpp.LongSongNameController get_designerLongNameController()
+System.Void set_designerLongNameController(LongSongNameController )
+Il2Cpp.LongSongNameController get_songAuthorLongNameController()
+System.Void set_songAuthorLongNameController(LongSongNameController )
+Il2CppSystem.Text.StringBuilder get_m_Sb()
+System.Void set_m_Sb(StringBuilder )
+System.Boolean get_useGUILayout()
+System.Void set_useGUILayout(Boolean value)
+System.Boolean get_enabled()
+System.Void set_enabled(Boolean value)
+System.Boolean get_isActiveAndEnabled()
+UnityEngine.Transform get_transform()
+UnityEngine.GameObject get_gameObject()
+System.String get_tag()
+System.Void set_tag(String value)
+System.IntPtr get_m_CachedPtr()
+System.Void set_m_CachedPtr(IntPtr )
+System.String get_name()
+System.Void set_name(String value)
+UnityEngine.HideFlags get_hideFlags()
+System.Void set_hideFlags(HideFlags value)
+System.IntPtr get_ObjectClass()
+System.IntPtr get_Pointer()
+System.Boolean get_WasCollected()
+System.Void OnPnlLevelConfigSelectShowOpen()
+System.Void OnAwake()
+System.Boolean VipTimeoutCheck()
+System.Void OnDownloadBestReport()
+System.Void BeforeGameStart(Int64 sizeNeedDonwload)
+System.Boolean CheckIsUnlockMasterLevel()
+System.Void OnDiffTglChanged()
+System.Void OnEnable()
+System.Void RefreshUi()
+System.Void PreWarm(Int32 slice)
+System.Void OnDestroy()
+System.Void _OnEnable_b__22_0()
+System.Boolean IsInvoking()
+System.Void CancelInvoke()
+System.Void Invoke(String methodName, Single time)
+System.Void InvokeRepeating(String methodName, Single time, Single repeatRate)
+System.Void CancelInvoke(String methodName)
+System.Boolean IsInvoking(String methodName)
+UnityEngine.Coroutine StartCoroutine(String methodName)
+UnityEngine.Coroutine StartCoroutine(String methodName, Object value)
+UnityEngine.Coroutine StartCoroutine(IEnumerator routine)
+UnityEngine.Coroutine StartCoroutine_Auto(IEnumerator routine)
+System.Void StopCoroutine(IEnumerator routine)
+System.Void StopCoroutine(Coroutine routine)
+System.Void StopCoroutine(String methodName)
+System.Void StopAllCoroutines()
+UnityEngine.Coroutine StartCoroutineManaged(String methodName, Object value)
+UnityEngine.Coroutine StartCoroutineManaged2(IEnumerator enumerator)
+System.Void StopCoroutineManaged(Coroutine routine)
+System.Void StopCoroutineFromEnumeratorManaged(IEnumerator routine)
+System.String GetScriptClassName()
+UnityEngine.Component GetComponent(Type type)
+System.Void GetComponentFastPath(Type type, IntPtr oneFurtherThanResultValue)
+ GetComponent()
+System.Boolean TryGetComponent(Type type, Component& component)
+System.Boolean TryGetComponent(T& component)
+UnityEngine.Component GetComponentInChildren(Type t, Boolean includeInactive)
+ GetComponentInChildren(Boolean includeInactive)
+ GetComponentInChildren()
+Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray`1[[UnityEngine.Component, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] GetComponentsInChildren(Type t, Boolean includeInactive)
+ GetComponentsInChildren(Boolean includeInactive)
+System.Void GetComponentsInChildren(Boolean includeInactive, List`1 result)
+ GetComponentsInChildren()
+System.Void GetComponentsInChildren(List`1 results)
+UnityEngine.Component GetComponentInParent(Type t)
+ GetComponentInParent()
+ GetComponentsInParent(Boolean includeInactive)
+System.Void GetComponentsInParent(Boolean includeInactive, List`1 results)
+ GetComponentsInParent()
+System.Void GetComponentsForListInternal(Type searchType, Object resultList)
+System.Void GetComponents(Type type, List`1 results)
+System.Void GetComponents(List`1 results)
+ GetComponents()
+System.Void SendMessage(String methodName, Object value, SendMessageOptions options)
+System.Void BroadcastMessage(String methodName, Object parameter, SendMessageOptions options)
+UnityEngine.Component GetComponent(String type)
+UnityEngine.Component GetComponentInChildren(Type t)
+Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray`1[[UnityEngine.Component, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] GetComponentsInChildren(Type t)
+Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray`1[[UnityEngine.Component, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] GetComponentsInParent(Type t, Boolean includeInactive)
+Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray`1[[UnityEngine.Component, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] GetComponentsInParent(Type t)
+Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray`1[[UnityEngine.Component, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]] GetComponents(Type type)
+System.Boolean CompareTag(String tag)
+System.Void SendMessageUpwards(String methodName, Object value, SendMessageOptions options)
+System.Void SendMessageUpwards(String methodName, Object value)
+System.Void SendMessageUpwards(String methodName)
+System.Void SendMessageUpwards(String methodName, SendMessageOptions options)
+System.Void SendMessage(String methodName, Object value)
+System.Void SendMessage(String methodName)
+System.Void SendMessage(String methodName, SendMessageOptions options)
+System.Void BroadcastMessage(String methodName, Object parameter)
+System.Void BroadcastMessage(String methodName)
+System.Void BroadcastMessage(String methodName, SendMessageOptions options)
+System.Int32 GetInstanceID()
+System.Int32 GetHashCode()
+System.Boolean Equals(Object other)
+System.Void EnsureRunningOnMainThread()
+System.IntPtr GetCachedPtr()
+System.String ToString()
+System.Void Finalize()
+Il2CppSystem.Type GetIl2CppType()
+Il2CppSystem.Object MemberwiseClone()
+System.Void FieldGetter(String typeName, String fieldName, Object& val)
+System.Void FieldSetter(String typeName, String fieldName, Object val)
+System.Void CreateGCHandle(IntPtr objHdl)
+ Cast()
+ Unbox()
+ TryCast()
+System.Void Finalize()
+System.Type GetType()
+System.Object MemberwiseClone()
+System.String ToString()
+System.Boolean Equals(Object obj)
+System.Int32 GetHashCode()

@@ -1,296 +1,14 @@
 using MelonLoader;
 using System;
-using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Il2CppAssets.Scripts.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
 
-public static class PnlMusicUtils
+public static partial class PnlMusicUtils
 {
-    // 곡 제목 실험 모드: 여기만 수정하면 됩니다.
-    // EnableSongTitleExperiment=false로 바꾸면 원본 UI를 건드리지 않고 로그만 출력합니다.
-    private const bool EnableSongTitleExperiment = true;
-    private const string ExperimentTitle = "화영왕";
-    private const string ExperimentArtist = "화영왕";
-    private const string ExperimentLevelDesignerLabel = "레벨 디자이너";
-    private const string ExperimentLevelDesignerName = "화영왕";
-    private static readonly bool ApplySongTitleExperimentGlobally = false;
-
-    // 화면마다 텍스트 오브젝트 이름이 다를 수 있어서 후보를 여러 개 둡니다.
-    private static readonly string[] TitleTextObjectNames = { "TxtSongTitle", "TxtSongName", "TxtSongName_Simple", "TxtSongName_Backup", "TxtMusicTitle", "TxtMusicName", "TxtTitle" };
-    private static readonly string[] ArtistTextObjectNames = { "TxtArtist", "TxtArtistName", "TxtSongAuthor", "TxtSongAuthor_Simple", "TxtSongAuthor_Backup" };
-    private static readonly string[] LevelDesignerLabelTextObjectNames = { "TxtStageDesigner", "TxtLevelDesigner", "TxtDesigner", "TxtLevelDesign", "TxtChartDesigner" };
-    private static readonly string[] LevelDesignerNameTextObjectNames = { "ImgStageDesignerMask", "TxtStageDesignerName", "TxtDesignerName", "TxtLevelDesignName", "TxtChartDesignerName" };
-
-    public static IEnumerator LogMusicInfoAfterDelay(string source, object pnlInstance, float delaySeconds)
-    {
-        yield return new WaitForSeconds(delaySeconds);
-        LogMusicInfo(source, pnlInstance);
-    }
-
-    public static void LogMusicInfo(string source, object pnlInstance)
-    {
-        try
-        {
-            ApplySongTitleExperiment(source, pnlInstance);
-            var info = ExtractMusicInfo(pnlInstance);
-            LogCompact(source, info);
-        }
-        catch (Exception ex) { MelonLogger.Error($"LogMusicInfo 예외: {ex}"); }
-    }
-
-    public static void LogPreparationMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
-    {
-        try
-        {
-            ApplySongTitleExperiment(source, pnlInstance);
-            var info = ExtractMusicInfo(pnlInstance);
-            if (!IsUsefulTitle(info.Title))
-            {
-                var stage = FindLivePnlStage();
-                if (stage != null)
-                {
-                    ApplySongTitleExperiment(source + "->PnlStage", stage);
-                    var stageInfo = ExtractMusicInfo(stage);
-                    if (IsUsefulTitle(stageInfo.Title)) info.Title = stageInfo.Title;
-                    if (!string.IsNullOrWhiteSpace(stageInfo.Clip)) info.Clip = stageInfo.Clip;
-                    if (!string.IsNullOrWhiteSpace(stageInfo.Artist)) info.Artist = stageInfo.Artist;
-                    if (!string.IsNullOrWhiteSpace(stageInfo.LevelDesigner)) info.LevelDesigner = stageInfo.LevelDesigner;
-                    if (string.IsNullOrWhiteSpace(info.ClipReason) || info.ClipReason == "AudioClip 후보 없음")
-                        info.ClipReason = stageInfo.ClipReason;
-                }
-            }
-            LogCompact(source, info);
-        }
-        catch (Exception ex) { MelonLogger.Error($"LogPreparationMusicInfo 예외: {ex}"); }
-    }
-
-    public static void DumpMusicInfo(object pnlInstance)
-    {
-        try
-        {
-            LogMusicInfo("MusicInfo", pnlInstance);
-        }
-        catch (Exception ex) { MelonLogger.Error($"DumpMusicInfo 예외: {ex}"); }
-    }
-
-    private class MusicInfo
-    {
-        public string Title;
-        public string Clip;
-        public string Artist;
-        public string LevelDesigner;
-        public string ClipReason;
-    }
-
-    private static void ApplySongTitleExperiment(string source, object pnlInstance)
-    {
-        if (!EnableSongTitleExperiment || pnlInstance == null) return;
-
-        SetMemberText(pnlInstance, "musicNameTitle", ExperimentTitle);
-        SetMemberText(pnlInstance, "songNameTitle", ExperimentTitle);
-        SetMemberText(pnlInstance, "titleText", ExperimentTitle);
-        SetMemberText(pnlInstance, "musicTitle", ExperimentTitle);
-
-        SetMemberText(pnlInstance, "artistNameTitle", ExperimentArtist);
-        SetMemberText(pnlInstance, "artistText", ExperimentArtist);
-        SetMemberText(pnlInstance, "artistName", ExperimentArtist);
-
-        SetMemberText(pnlInstance, "levelDesignerName", ExperimentLevelDesignerName);
-        SetMemberText(pnlInstance, "levelDesignerText", ExperimentLevelDesignerLabel);
-        SetMemberText(pnlInstance, "designerName", ExperimentLevelDesignerName);
-        SetMemberText(pnlInstance, "designerText", ExperimentLevelDesignerLabel);
-        SetMemberText(pnlInstance, "chartDesignerName", ExperimentLevelDesignerName);
-        SetMemberText(pnlInstance, "stageDesignerName", ExperimentLevelDesignerName);
-
-        var root = GetRootGameObject(pnlInstance);
-        if (root != null)
-        {
-            SetChildTextByNames(root, TitleTextObjectNames, ExperimentTitle);
-            SetChildTextByNames(root, ArtistTextObjectNames, ExperimentArtist);
-            SetChildTextByNames(root, LevelDesignerLabelTextObjectNames, ExperimentLevelDesignerLabel);
-            SetChildTextByNames(root, LevelDesignerNameTextObjectNames, ExperimentLevelDesignerName);
-        }
-
-        if (ApplySongTitleExperimentGlobally)
-        {
-            SetSceneTextByNameOrCurrentValue(TitleTextObjectNames, ExperimentTitle, true);
-            SetSceneTextByNameOrCurrentValue(ArtistTextObjectNames, ExperimentArtist, false);
-            SetSceneTextByNameOrCurrentValue(LevelDesignerLabelTextObjectNames, ExperimentLevelDesignerLabel, false);
-            SetSceneTextByNameOrCurrentValue(LevelDesignerNameTextObjectNames, ExperimentLevelDesignerName, false);
-        }
-    }
-
-    private static int SetMemberText(object obj, string memberName, string value)
-    {
-        try
-        {
-            if (obj == null || string.IsNullOrEmpty(memberName)) return 0;
-            var ty = obj.GetType();
-
-            var p = ty.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (p != null && p.GetIndexParameters().Length == 0)
-                return SetTextValue(p.GetValue(obj), value);
-
-            var f = ty.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f != null)
-                return SetTextValue(f.GetValue(obj), value);
-        }
-        catch { }
-        return 0;
-    }
-
-    private static int SetTextValue(object target, string value)
-    {
-        try
-        {
-            if (target == null) return 0;
-
-            if (target is Text unityText)
-            {
-                unityText.text = value;
-                return 1;
-            }
-
-            var ty = target.GetType();
-            var textProp = ty.GetProperty("text", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (textProp != null && textProp.CanWrite)
-            {
-                textProp.SetValue(target, value);
-                return 1;
-            }
-
-            var mTextProp = ty.GetProperty("m_Text", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (mTextProp != null && mTextProp.CanWrite)
-            {
-                mTextProp.SetValue(target, value);
-                return 1;
-            }
-
-            var mTextField = ty.GetField("m_Text", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (mTextField != null)
-            {
-                mTextField.SetValue(target, value);
-                return 1;
-            }
-        }
-        catch { }
-        return 0;
-    }
-
-    private static GameObject GetRootGameObject(object obj)
-    {
-        try
-        {
-            if (obj is GameObject go) return go;
-            if (obj is Component component) return component.gameObject;
-
-            var memberGameObject = GetMemberObject(obj, "gameObject") as GameObject;
-            if (memberGameObject != null) return memberGameObject;
-        }
-        catch { }
-        return null;
-    }
-
-    private static object GetMemberObject(object obj, string memberName)
-    {
-        try
-        {
-            if (obj == null) return null;
-            var ty = obj.GetType();
-            var p = ty.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (p != null && p.GetIndexParameters().Length == 0) return p.GetValue(obj);
-            var f = ty.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f != null) return f.GetValue(obj);
-        }
-        catch { }
-        return null;
-    }
-
-    private static int SetChildTextByNames(GameObject root, string[] objectNames, string value)
-    {
-        int writes = 0;
-        if (root == null || objectNames == null) return writes;
-
-        try
-        {
-            var texts = root.GetComponentsInChildren<Text>(true);
-            foreach (var text in texts)
-            {
-                try
-                {
-                    if (text == null || text.gameObject == null) continue;
-                    if (!NameMatches(text.name, objectNames) && !NameMatches(text.gameObject.name, objectNames)) continue;
-                    text.text = value;
-                    writes++;
-                    writes += SetAllTextUnder(text.gameObject, value);
-                }
-                catch { }
-            }
-        }
-        catch { }
-
-        try
-        {
-            var components = root.GetComponentsInChildren<Component>(true);
-            foreach (var component in components)
-            {
-                try
-                {
-                    if (component == null || component.gameObject == null) continue;
-                    if (!NameMatches(component.name, objectNames) && !NameMatches(component.gameObject.name, objectNames)) continue;
-                    writes += SetTextValue(component, value);
-                    writes += SetAllTextUnder(component.gameObject, value);
-                }
-                catch { }
-            }
-        }
-        catch { }
-
-        return writes;
-    }
-
-    private static int SetAllTextUnder(GameObject root, string value)
-    {
-        int writes = 0;
-        if (root == null) return writes;
-
-        try
-        {
-            var texts = root.GetComponentsInChildren<Text>(true);
-            foreach (var text in texts)
-            {
-                try
-                {
-                    if (text == null) continue;
-                    text.text = value;
-                    writes++;
-                }
-                catch { }
-            }
-        }
-        catch { }
-
-        try
-        {
-            var components = root.GetComponentsInChildren<Component>(true);
-            foreach (var component in components)
-            {
-                try
-                {
-                    if (component == null) continue;
-                    writes += SetTextValue(component, value);
-                }
-                catch { }
-            }
-        }
-        catch { }
-
-        return writes;
-    }
-
     private static int SetSceneTextByNameOrCurrentValue(string[] objectNames, string value, bool titleMode)
     {
         int writes = 0;
@@ -398,16 +116,32 @@ public static class PnlMusicUtils
             FillByNamedMembers(pnlInstance, info);
 
         if (EnableSongTitleExperiment && (string.IsNullOrWhiteSpace(info.LevelDesigner) || info.LevelDesigner == ExperimentLevelDesignerLabel || IsUiObjectName(info.LevelDesigner)))
-            info.LevelDesigner = ExperimentLevelDesignerName;
+        {
+            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            if (string.IsNullOrEmpty(selectedUid) || selectedUid == "(null)")
+            {
+                selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+            var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
+            if (musicInfo != null)
+            {
+                info.LevelDesigner = musicInfo.levelDesigner;
+            }
+            else
+            {
+                info.LevelDesigner = ExperimentLevelDesignerName;
+            }
+        }
 
         return info;
     }
 
     private static void LogCompact(string source, MusicInfo info)
     {
+        string uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid ?? "(unknown)";
         string clip = Clean(info.Clip);
         string reason = string.IsNullOrWhiteSpace(info.Clip) ? $", 클립 사유={Clean(info.ClipReason)}" : "";
-        MelonLogger.Msg($"{source}: 곡 이름={Clean(info.Title)}, 음악 클립={clip}, 아티스트 이름={Clean(info.Artist)}, 레벨 디자이너={ExperimentLevelDesignerLabel}, 실제 이름={Clean(info.LevelDesigner)}{reason}");
+        MelonLogger.Msg($"{source}: 곡 이름={Clean(info.Title)}, UID={uid}, 음악 클립={clip}, 아티스트 이름={Clean(info.Artist)}, 레벨 디자이너={ExperimentLevelDesignerLabel}, 실제 이름={Clean(info.LevelDesigner)}{reason}");
     }
 
     private static string Clean(string value)
@@ -672,16 +406,13 @@ public static class PnlMusicUtils
         try
         {
             var ty = o.GetType();
-            // 1) If the object is a Unity UI text/TMP component, prefer its text property
             try { var tprop = ty.GetProperty("text", BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic); if (tprop != null) { var txt = tprop.GetValue(o) as string; if (!string.IsNullOrEmpty(txt)) return $"{ty.Name}: title={txt}"; } } catch { }
 
-            // 2) Try common direct props/fields
             string title = SafeGetProp(o, "title") ?? SafeGetProp(o, "name") ?? SafeGetProp(o, "musicName") ?? SafeGetProp(o, "songName");
             string album = SafeGetProp(o, "album") ?? SafeGetProp(o, "albumName");
             string bms = SafeGetProp(o, "m_BmsUid") ?? SafeGetProp(o, "bmsUid") ?? SafeGetProp(o, "ibms_id");
             if (!string.IsNullOrEmpty(title) || !string.IsNullOrEmpty(album) || !string.IsNullOrEmpty(bms)) return $"{ty.Name}: title={title ?? "(null)"}, album={album ?? "(null)"}, bms={bms ?? "(null)"}";
 
-            // 3) Deep scan
             var candidates = new List<string>(); CollectStringValues(o, candidates, 0, 2);
             string best = null;
             foreach (var s in candidates)
@@ -791,39 +522,4 @@ public static class PnlMusicUtils
         catch (Exception ex) { MelonLogger.Msg($"LogStringProps exception: {ex.Message}"); }
     }
 
-    private static bool TryLogCompact(object pnlInstance)
-    {
-        try
-        {
-            if (pnlInstance == null) return false;
-            var t = pnlInstance.GetType();
-            string title = null, artist = null, album = null;
-            foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
-            {
-                try
-                {
-                    var v = f.GetValue(pnlInstance); if (v == null) continue; var lname = f.Name.ToLowerInvariant();
-                    if (title == null && (lname.Contains("song") || lname.Contains("title") || lname.Contains("music") || lname.Contains("name"))) title = SafeGetProp(v, "text") ?? SafeGetProp(v, "m_Text") ?? SafeGetProp(v, "name") ?? (v as string);
-                    if (artist == null && lname.Contains("artist")) artist = SafeGetProp(v, "text") ?? SafeGetProp(v, "m_Text") ?? SafeGetProp(v, "name") ?? (v as string);
-                    if (album == null && lname.Contains("album")) album = SafeGetProp(v, "text") ?? SafeGetProp(v, "m_Text") ?? SafeGetProp(v, "name") ?? (v as string);
-                }
-                catch { }
-            }
-            foreach (var p in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
-            {
-                try
-                {
-                    if (p.GetIndexParameters().Length > 0) continue; var v = p.GetValue(pnlInstance); if (v == null) continue; var lname = p.Name.ToLowerInvariant();
-                    if (title == null && (lname.Contains("song") || lname.Contains("title") || lname.Contains("music") || lname.Contains("name"))) title = SafeGetProp(v, "text") ?? SafeGetProp(v, "m_Text") ?? SafeGetProp(v, "name") ?? (v as string);
-                    if (artist == null && lname.Contains("artist")) artist = SafeGetProp(v, "text") ?? SafeGetProp(v, "m_Text") ?? SafeGetProp(v, "name") ?? (v as string);
-                    if (album == null && lname.Contains("album")) album = SafeGetProp(v, "text") ?? SafeGetProp(v, "m_Text") ?? SafeGetProp(v, "name") ?? (v as string);
-                }
-                catch { }
-            }
-            if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(artist) && string.IsNullOrEmpty(album)) return false;
-            MelonLogger.Msg($"NowPlaying: {(string.IsNullOrEmpty(title) ? "(unknown)" : title)} - {(string.IsNullOrEmpty(artist) ? "(unknown)" : artist)} - {(string.IsNullOrEmpty(album) ? "(unknown)" : album)}");
-            return true;
-        }
-        catch { return false; }
-    }
 }
