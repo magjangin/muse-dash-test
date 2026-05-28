@@ -71,93 +71,12 @@ namespace muse_dash_test
                             MelonLogger.Msg("[CustomTagPatch] === 얇은 복사 및 주입 실험 시작 ===");
                             LogMusicInfoDump("[CustomTagPatch] [원본 곡 상세 덤프] originalInfo", originalInfo);
                             
-                            // 1. MemberwiseClone 복사 수행
-                            var clonedObj = originalInfo.MemberwiseClone();
-                            if (clonedObj != null)
-                            {
-                                var clonedInfo = clonedObj.TryCast<MusicInfo>();
-                                if (clonedInfo != null)
-                                {
-                                    MelonLogger.Msg("[CustomTagPatch] [성공] originalInfo.MemberwiseClone() 및 MusicInfo 캐스팅 성공!");
-                                    
-                                    // 2. 복사본 프로퍼티 수정 수행
-                                    clonedInfo.uid = "999-0";
-                                    clonedInfo.name = "화영왕 0";
-                                    clonedInfo.author = "화영왕 0";
-                                    clonedInfo.levelDesigner = "화영왕 0";
-                                    clonedInfo.cover = "iyaiya_cover"; // 기존 커버 재사용
-                                    clonedInfo.noteJson = "iyaiya_map"; // 기존 맵 재사용
-                                    clonedInfo.music = "iyaiya_music"; // 기존 음원 재사용
-                                    SetMemberValue(clonedInfo, "difficulty1", 2);
-                                    SetMemberValue(clonedInfo, "difficulty2", 5);
-                                    SetMemberValue(clonedInfo, "difficulty3", 0);
-                                    SetMemberValue(clonedInfo, "callBackDifficulty1", 2);
-                                    SetMemberValue(clonedInfo, "callBackDifficulty2", 5);
-                                    SetMemberValue(clonedInfo, "callBackDifficulty3", 0);
-                                    SetMemberValue(clonedInfo, "callBackDifficulty4", 0);
-                                    SetMemberValue(clonedInfo, "callBackDifficulty5", 0);
-                                    
-                                    // 2.5 Mask Value 오버라이드로 앨범 소속 변경 (앨범 2개 생성 문제 및 롤백 방지)
-                                    try
-                                    {
-                                        clonedInfo.AddMaskValue("albumUidName", (Il2CppSystem.String)AlbumUidString);
-                                        clonedInfo.AddMaskValue("albumIndex", new Il2CppSystem.Int32 { m_value = TagUid }.BoxIl2CppObject());
-                                        clonedInfo.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_998_0");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        MelonLogger.Error($"[CustomTagPatch] [실패] AddMaskValue 앨범 마스크 적용 예외: {ex}");
-                                    }
-
-                                    MelonLogger.Msg($"[CustomTagPatch] [성공] 복사본 속성 수정 완료: uid='{clonedInfo.uid}', name='{clonedInfo.name}', author='{clonedInfo.author}'");
-                                    LogMusicInfoDump("[CustomTagPatch] [복사본 곡 상세 덤프] clonedInfo", clonedInfo);
-                                    
-                                    // 3. 글로벌 DBMusicTag의 m_AllMusicInfo 맵에 등록 시도
-                                    var allMusicDict = GlobalDataBase.dbMusicTag?.m_AllMusicInfo;
-                                    if (allMusicDict != null)
-                                    {
-                                        if (!allMusicDict.ContainsKey("999-0"))
-                                        {
-                                            allMusicDict.Add("999-0", clonedInfo);
-                                            MelonLogger.Msg("[CustomTagPatch] [성공] m_AllMusicInfo 맵에 '999-0' 신규 주입 완료!");
-                                        }
-                                        else
-                                        {
-                                            allMusicDict["999-0"] = clonedInfo;
-                                            MelonLogger.Msg("[CustomTagPatch] [알림] m_AllMusicInfo에 '999-0'이 이미 존재하여 덮어썼습니다.");
-                                        }
-                                        
-                                        // 4. 주입 검증: GetMusicInfoFromAll("999-0") 성공 여부 확인
-                                        var checkInfo = GlobalDataBase.dbMusicTag.GetMusicInfoFromAll("999-0");
-                                        if (checkInfo != null && checkInfo.uid == "999-0")
-                                        {
-                                            MelonLogger.Msg($"[CustomTagPatch] [대성공] GetMusicInfoFromAll('999-0') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
-                                            LogMusicInfoDump("[CustomTagPatch] [검증 곡 상세 덤프] checkInfo", checkInfo);
-                                            
-                                            // 5. 커스텀 태그 노출 목록에 "999-0"만 단독으로 포함시킵니다!
-                                            musicList.Add("999-0");
-                                            MelonLogger.Msg("[CustomTagPatch] [성공] 커스텀 태그 노출 목록에 '999-0' 추가 완료!");
-                                        }
-                                        else
-                                        {
-                                            MelonLogger.Error("[CustomTagPatch] [실패] '999-0' 주입 후 조회 검증에 실패했습니다.");
-                                        }
-                                    }
-                                    else
-                                    {
-                                        MelonLogger.Error("[CustomTagPatch] [실패] GlobalDataBase.dbMusicTag.m_AllMusicInfo가 null입니다.");
-                                    }
-                                }
-                                else
-                                {
-                                    MelonLogger.Error("[CustomTagPatch] [실패] clonedObj를 MusicInfo로 캐스팅하지 못했습니다.");
-                                }
-                            }
-                            else
-                            {
-                                MelonLogger.Error("[CustomTagPatch] [실패] originalInfo.MemberwiseClone() 결과가 null입니다.");
-                            }
+                            // "999-0" 화영왕 0 주입
+                            InjectVirtualSong(originalInfo, "999-0", "화영왕 0", "화영왕 0", "화영왕 0", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 2, 5, musicList);
                             
+                            // "999-1" 화영왕 1 주입
+                            InjectVirtualSong(originalInfo, "999-1", "화영왕 1", "화영왕 1", "화영왕 1", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 3, 6, musicList);
+
                             MelonLogger.Msg("[CustomTagPatch] =======================================");
                         }
                         else
@@ -300,6 +219,91 @@ namespace muse_dash_test
                     result.Add(value);
                 }
                 return result;
+            }
+
+            private static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, string cover, string noteJson, string music, int diff1, int diff2, List<string> musicList)
+            {
+                try
+                {
+                    // 1. MemberwiseClone 복사 수행
+                    var clonedObj = originalInfo.MemberwiseClone();
+                    if (clonedObj == null)
+                    {
+                        MelonLogger.Error($"[CustomTagPatch] [실패] {uid} originalInfo.MemberwiseClone() 결과가 null입니다.");
+                        return;
+                    }
+
+                    var clonedInfo = clonedObj.TryCast<MusicInfo>();
+                    if (clonedInfo == null)
+                    {
+                        MelonLogger.Error($"[CustomTagPatch] [실패] {uid} clonedObj를 MusicInfo로 캐스팅하지 못했습니다.");
+                        return;
+                    }
+
+                    // 2. 복사본 프로퍼티 수정 수행
+                    clonedInfo.uid = uid;
+                    clonedInfo.name = name;
+                    clonedInfo.author = author;
+                    clonedInfo.levelDesigner = levelDesigner;
+                    clonedInfo.cover = cover;
+                    clonedInfo.noteJson = noteJson;
+                    clonedInfo.music = music;
+                    SetMemberValue(clonedInfo, "difficulty1", diff1);
+                    SetMemberValue(clonedInfo, "difficulty2", diff2);
+                    SetMemberValue(clonedInfo, "difficulty3", 0);
+                    SetMemberValue(clonedInfo, "callBackDifficulty1", diff1);
+                    SetMemberValue(clonedInfo, "callBackDifficulty2", diff2);
+                    SetMemberValue(clonedInfo, "callBackDifficulty3", 0);
+                    SetMemberValue(clonedInfo, "callBackDifficulty4", 0);
+                    SetMemberValue(clonedInfo, "callBackDifficulty5", 0);
+
+                    // 2.5 Mask Value 오버라이드로 앨범 소속 변경 (앨범 2개 생성 문제 및 롤백 방지)
+                    try
+                    {
+                        clonedInfo.AddMaskValue("albumUidName", (Il2CppSystem.String)AlbumUidString);
+                        clonedInfo.AddMaskValue("albumIndex", new Il2CppSystem.Int32 { m_value = TagUid }.BoxIl2CppObject());
+                        clonedInfo.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_998_0");
+                    }
+                    catch (Exception ex)
+                    {
+                        MelonLogger.Error($"[CustomTagPatch] [실패] {uid} AddMaskValue 앨범 마스크 적용 예외: {ex}");
+                    }
+
+                    // 3. 글로벌 DBMusicTag의 m_AllMusicInfo 맵에 등록 시도
+                    var allMusicDict = GlobalDataBase.dbMusicTag?.m_AllMusicInfo;
+                    if (allMusicDict != null)
+                    {
+                        if (!allMusicDict.ContainsKey(uid))
+                        {
+                            allMusicDict.Add(uid, clonedInfo);
+                            MelonLogger.Msg($"[CustomTagPatch] [성공] m_AllMusicInfo 맵에 '{uid}' 신규 주입 완료!");
+                        }
+                        else
+                        {
+                            allMusicDict[uid] = clonedInfo;
+                            MelonLogger.Msg($"[CustomTagPatch] [알림] m_AllMusicInfo에 '{uid}'이 이미 존재하여 덮어썼습니다.");
+                        }
+
+                        // 4. 주입 검증: GetMusicInfoFromAll(uid) 성공 여부 확인
+                        var checkInfo = GlobalDataBase.dbMusicTag.GetMusicInfoFromAll(uid);
+                        if (checkInfo != null && checkInfo.uid == uid)
+                        {
+                            MelonLogger.Msg($"[CustomTagPatch] [대성공] GetMusicInfoFromAll('{uid}') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
+                            
+                            // 5. 커스텀 태그 노출 목록에 추가
+                            musicList.Add(uid);
+                            MelonLogger.Msg($"[CustomTagPatch] [성공] 커스텀 태그 노출 목록에 '{uid}' 추가 완료!");
+                        }
+                        else
+                        {
+                            MelonLogger.Error($"[CustomTagPatch] [실패] '{uid}' 주입 후 조회 검증에 실패했습니다.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error($"[CustomTagPatch] {uid} 주입 중 예외 발생: {ex}");
+                }
             }
 
             private static void LogCoverCandidates(AlbumTagInfo tagInfo, DBConfigAlbums.AlbumsInfo albumInfo, CustomTagInfo customInfo)

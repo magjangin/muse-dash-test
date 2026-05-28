@@ -43,7 +43,7 @@ public static class PnlStagePatchHelper
         {
             uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
         }
-        return uid == "999-0";
+        return uid == "999-0" || uid == "999-1";
     }
 
     public static void ApplyCustomTagTitleAccessors(string source, PnlStage stage)
@@ -148,7 +148,7 @@ public static class PnlStagePatchHelper
                 return false;
             }
 
-            if (musicInfo.uid != "999-0")
+            if (musicInfo.uid != "999-0" && musicInfo.uid != "999-1")
             {
                 return false;
             }
@@ -158,15 +158,15 @@ public static class PnlStagePatchHelper
 
             if (musicText != null)
             {
-                musicText.text = CustomTitle;
+                musicText.text = musicInfo.name;
             }
 
             if (artistText != null)
             {
-                artistText.text = CustomArtist;
+                artistText.text = musicInfo.author;
             }
 
-            MelonLogger.Msg($"{source}: musicInfo.uid=999-0 direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
+            MelonLogger.Msg($"{source}: musicInfo.uid={musicInfo.uid} direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
             return true;
         }
         catch (Exception ex)

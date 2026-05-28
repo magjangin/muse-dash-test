@@ -116,8 +116,8 @@ public static class ExperimentPlayContext
 
     public static void RememberMusicSelection(string uid)
     {
-        // 999-0 곡은 우리 실험 모드 전용 가상 곡이므로, 이 UID면 무조건 실험 차트와 보스 변경을 적용합니다.
-        ShouldApplyExperimentChart = (uid == "999-0");
+        // 999-0 및 999-1 곡은 우리 실험 모드 전용 가상 곡이므로, 이 UID면 무조건 실험 차트와 보스 변경을 적용합니다.
+        ShouldApplyExperimentChart = (uid == "999-0" || uid == "999-1");
 
         MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, apply={ShouldApplyExperimentChart}");
     }
