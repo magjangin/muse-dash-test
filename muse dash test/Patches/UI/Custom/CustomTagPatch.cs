@@ -5,9 +5,12 @@ using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.Database.DataClass;
 using Il2CppAssets.Scripts.PeroTools.Commons;
 using Il2CppAssets.Scripts.PeroTools.Managers;
+using System.Collections;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Reflection;
+using System.Runtime.Serialization;
 using static Il2CppAssets.Scripts.Database.DBConfigCustomTags;
 
 namespace muse_dash_test
@@ -56,21 +59,36 @@ namespace muse_dash_test
                     {
                         name = defaultName,
                         tagUid = TagUidString,
-                        iconName = "IconCustomAlbums" // CustomAlbums에서 자주 쓰이는 기본 아이콘 리소스 이름
+                        iconName = "IconCustomAlbums" // CustomAlbums에서 자주  쓰이는 기본 아이콘 리소스 이름
                     };
 
                     // 3. 이 태그 탭 하위에 노출할 곡 UIDs 정의 (가상 복제 곡만 주입하기 위해 빈 리스트로 시작)
                     var musicList = new List<string>();
 
-                    // 0-0 얇은 객체 복사 및 커스텀 태그 주입 실험
+                    // manifest에서 지정한 원본 곡을 찾고 커스텀 태그 주입 실험
                     try
                     {
-                        var originalInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll("0-0");
+                        muse_dash_test.MainMod.TryGetCachedHwaSearchTerms(out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceDescription);
+                        string lookupQuery = string.IsNullOrWhiteSpace(sourceUid) ? null : sourceUid;
+                        if (string.IsNullOrWhiteSpace(lookupQuery))
+                        {
+                            lookupQuery = sourceTitle;
+                        }
+                        if (string.IsNullOrWhiteSpace(lookupQuery))
+                        {
+                            lookupQuery = sourceArtist;
+                        }
+
+                        var originalInfo = string.IsNullOrWhiteSpace(lookupQuery) ? null : GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(lookupQuery);
+                        if (originalInfo == null && !string.IsNullOrWhiteSpace(lookupQuery))
+                        {
+                            PnlStagePatchHelper.TryFindMusicInfoByQuery(lookupQuery, out originalInfo, out _);
+                        }
 
                         if (originalInfo != null)
                         {
-                            MelonLogger.Msg("[CustomTagPatch] === 얇은 복사 및 주입 실험 시작 === sourceUid=0-0");
-                            LogMusicInfoDump("[CustomTagPatch] [원본 곡 상세 덤프] originalInfo", originalInfo);
+                            MelonLogger.Msg($"[CustomTagPatch] === 얇은 복사 및  주입 실험 시작 === lookup={lookupQuery ?? "(null)"}, sourceUid={originalInfo.uid}");
+                            LogMusicInfoDump("[CustomTagPatch] [원본 곡 상세 덤 프] originalInfo", originalInfo);
                             
                             // "999-0" 화영왕 0 주입
                             InjectVirtualSong(originalInfo, "999-0", "화영왕 0", "화영왕 0", "화영왕 0", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 2, 5, musicList);
@@ -90,11 +108,11 @@ namespace muse_dash_test
                     }
                     catch (Exception ex)
                     {
-                        MelonLogger.Error($"[CustomTagPatch] 얇은 복사 및 주입 실험 중 예외 발생: {ex}");
+                        MelonLogger.Error($"[CustomTagPatch] 얇은 복사 및 주입  실험 중 예외 발생: {ex}");
                     }
 
                     // IL2CPP List 구조로 변환합니다.
-                    // InitCustomTagInfo 쪽에서 전달된 리스트를 직접 정리할 수 있어, 용도별로 새 리스트를 계속 만들어 씁니다.
+                    // InitCustomTagInfo 쪽에서 전달된 리스트를 직접 정리할 수  있어, 용도별로 새 리스트를 계속 만들어 씁니다.
                     var customInfoMusicList = ToIl2CppStringList(musicList);
 
                     // 4. CustomTagInfo 설정
@@ -108,7 +126,7 @@ namespace muse_dash_test
                     // 5. 커스텀 태그 초기화 및 바인딩
                     info.InitCustomTagInfo(customInfo);
 
-                    // InitCustomTagInfo가 내부 표시 목록을 다시 정리할 수 있으므로 앨범 트리는 초기화 후에 연결합니다.
+                    // InitCustomTagInfo가 내부 표시 목록을 다시 정리할 수 있으 므로 앨범 트리는 초기화 후에 연결합니다.
                     // CustomTagInfo는 music_list만 갖고, 앨범 트리는 AlbumTagInfo 쪽 m_AlbumsInfos/m_DisplayMusicUids가 담당합니다.
                     var tagMusicList = ToIl2CppStringList(musicList);
                     var displayMusicList = ToIl2CppStringList(musicList);
@@ -158,7 +176,7 @@ namespace muse_dash_test
                                         if (!exists)
                                         {
                                             items.Add(clonedAlbum);
-                                            MelonLogger.Msg("[CustomTagPatch] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(998-0) 주입 완료!");
+                                            MelonLogger.Msg("[CustomTagPatch] [ 성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(998-0) 주입 완료!");
                                         }
                                     }
                                 }
@@ -167,7 +185,7 @@ namespace muse_dash_test
                     }
                     catch (Exception ex)
                     {
-                        MelonLogger.Error($"[CustomTagPatch] 앨범 복제 주입 중 예외 발생: {ex}");
+                        MelonLogger.Error($"[CustomTagPatch] 앨범 복제 주입 중  예외 발생: {ex}");
                     }
 
                     // 1.2 복제 실패에 대비한 안전 폴백
@@ -229,7 +247,7 @@ namespace muse_dash_test
             {
                 try
                 {
-                    // 1. MemberwiseClone 복사 수행
+                    // 1. 원본 객체를 얇은 복사로 복제
                     var clonedObj = originalInfo.MemberwiseClone();
                     if (clonedObj == null)
                     {
@@ -249,9 +267,6 @@ namespace muse_dash_test
                     clonedInfo.name = name;
                     clonedInfo.author = author;
                     clonedInfo.levelDesigner = levelDesigner;
-                    clonedInfo.cover = cover;
-                    clonedInfo.noteJson = noteJson;
-                    clonedInfo.music = music;
                     SetMemberValue(clonedInfo, "difficulty1", diff1);
                     SetMemberValue(clonedInfo, "difficulty2", diff2);
                     SetMemberValue(clonedInfo, "difficulty3", 0);
@@ -267,11 +282,14 @@ namespace muse_dash_test
                         clonedInfo.AddMaskValue("albumUidName", (Il2CppSystem.String)AlbumUidString);
                         clonedInfo.AddMaskValue("albumIndex", new Il2CppSystem.Int32 { m_value = TagUid }.BoxIl2CppObject());
                         clonedInfo.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_998_0");
+                        SetAlbumMetadata(clonedInfo, AlbumUidString, TagUid, TagUid + 1, "custom_album_998_0");
                     }
                     catch (Exception ex)
                     {
                         MelonLogger.Error($"[CustomTagPatch] [실패] {uid} AddMaskValue 앨범 마스크 적용 예외: {ex}");
                     }
+
+                    LogNestedMusicExInfo("[CustomTagPatch] [복제 후 MusicExInfo 덤프]", clonedInfo);
 
                     // 3. 글로벌 DBMusicTag의 m_AllMusicInfo 맵에 등록 시도
                     var allMusicDict = GlobalDataBase.dbMusicTag?.m_AllMusicInfo;
@@ -466,6 +484,283 @@ namespace muse_dash_test
                 }
 
                 return Convert.ChangeType(value, underlyingType);
+            }
+
+            private static object DeepCloneObject(object source)
+            {
+                return DeepCloneObject(source, new Dictionary<object, object>(new ReferenceEqualityComparer()));
+            }
+
+            private static void SetAlbumMetadata(MusicInfo info, string albumUidString, int albumIndex, int albumJsonIndex, string albumJsonName)
+            {
+                if (info == null)
+                {
+                    return;
+                }
+
+                SetMemberValue(info, "albumUidName", albumUidString);
+                SetMemberValue(info, "albumIndex", albumIndex);
+                SetMemberValue(info, "albumJsonIndex", albumJsonIndex);
+                SetMemberValue(info, "albumJsonName", albumJsonName);
+                SetMemberValue(info, "_albumUidName_k__BackingField", albumUidString);
+                SetMemberValue(info, "_albumIndex_k__BackingField", albumIndex);
+                SetMemberValue(info, "_albumJsonIndex_k__BackingField", albumJsonIndex);
+                SetMemberValue(info, "_albumJsonName_k__BackingField", albumJsonName);
+                SetMemberValue(info, "m_AlbumUidName", albumUidString);
+                SetMemberValue(info, "m_AlbumIndex", albumIndex);
+                SetMemberValue(info, "m_AlbumJsonIndex", albumJsonIndex);
+                SetMemberValue(info, "m_AlbumJsonName", albumJsonName);
+
+                var musicExInfo = GetMemberValue(info, "m_MusicExInfo") ?? GetMemberValue(info, "MusicExInfo");
+                if (musicExInfo != null)
+                {
+                    SetMemberValue(musicExInfo, "albumUidName", albumUidString);
+                    SetMemberValue(musicExInfo, "albumIndex", albumIndex);
+                    SetMemberValue(musicExInfo, "albumJsonIndex", albumJsonIndex);
+                    SetMemberValue(musicExInfo, "albumJsonName", albumJsonName);
+                    SetMemberValue(musicExInfo, "_albumUidName_k__BackingField", albumUidString);
+                    SetMemberValue(musicExInfo, "_albumIndex_k__BackingField", albumIndex);
+                    SetMemberValue(musicExInfo, "_albumJsonIndex_k__BackingField", albumJsonIndex);
+                    SetMemberValue(musicExInfo, "_albumJsonName_k__BackingField", albumJsonName);
+                    SetMemberValue(musicExInfo, "m_AlbumUidName", albumUidString);
+                    SetMemberValue(musicExInfo, "m_AlbumIndex", albumIndex);
+                    SetMemberValue(musicExInfo, "m_AlbumJsonIndex", albumJsonIndex);
+                    SetMemberValue(musicExInfo, "m_AlbumJsonName", albumJsonName);
+                }
+            }
+
+            private static object GetMemberValue(object target, string memberName)
+            {
+                if (target == null)
+                {
+                    return null;
+                }
+
+                var type = target.GetType();
+                var property = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (property != null && property.CanRead && property.GetIndexParameters().Length == 0)
+                {
+                    return SafeRead(() => property.GetValue(target));
+                }
+
+                var field = type.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (field != null)
+                {
+                    return SafeRead(() => field.GetValue(target));
+                }
+
+                return null;
+            }
+
+            private static void LogNestedMusicExInfo(string label, MusicInfo info)
+            {
+                try
+                {
+                    var musicExInfo = GetMemberValue(info, "m_MusicExInfo") ?? GetMemberValue(info, "MusicExInfo");
+                    if (musicExInfo == null)
+                    {
+                        MelonLogger.Msg($"{label}: (null)");
+                        return;
+                    }
+
+                    var type = musicExInfo.GetType();
+                    MelonLogger.Msg($"{label}: type={type.FullName}");
+
+                    foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                    {
+                        if (!prop.CanRead || prop.GetIndexParameters().Length != 0)
+                            continue;
+
+                        string name = prop.Name ?? string.Empty;
+                        if (name.IndexOf("album", StringComparison.OrdinalIgnoreCase) < 0 && name.IndexOf("cover", StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        object value = SafeRead(() => prop.GetValue(musicExInfo));
+                        MelonLogger.Msg($"{label}: prop {name}={FormatValue(value)}");
+                    }
+
+                    foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                    {
+                        string name = field.Name ?? string.Empty;
+                        if (name.IndexOf("album", StringComparison.OrdinalIgnoreCase) < 0 && name.IndexOf("cover", StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        object value = SafeRead(() => field.GetValue(musicExInfo));
+                        MelonLogger.Msg($"{label}: field {name}={FormatValue(value)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Warning($"{label} 덤프 예외: {ex.Message}");
+                }
+            }
+
+            private static object DeepCloneObject(object source, Dictionary<object, object> visited)
+            {
+                if (source == null)
+                {
+                    return null;
+                }
+
+                Type sourceType = source.GetType();
+                if (IsAtomicType(sourceType) || source is UnityEngine.Object)
+                {
+                    return source;
+                }
+
+                if (visited.TryGetValue(source, out object cachedClone))
+                {
+                    return cachedClone;
+                }
+
+                if (sourceType.IsArray)
+                {
+                    Array sourceArray = (Array)source;
+                    Array clonedArray = Array.CreateInstance(sourceType.GetElementType(), sourceArray.Length);
+                    visited[source] = clonedArray;
+                    for (int i = 0; i < sourceArray.Length; i++)
+                    {
+                        clonedArray.SetValue(DeepCloneObject(sourceArray.GetValue(i), visited), i);
+                    }
+                    return clonedArray;
+                }
+
+                if (source is IDictionary sourceDictionary)
+                {
+                    IDictionary clonedDictionary = CreateDictionaryInstance(sourceType);
+                    if (clonedDictionary != null)
+                    {
+                        visited[source] = clonedDictionary;
+                        foreach (DictionaryEntry entry in sourceDictionary)
+                        {
+                            clonedDictionary.Add(DeepCloneObject(entry.Key, visited), DeepCloneObject(entry.Value, visited));
+                        }
+                        return clonedDictionary;
+                    }
+                }
+
+                if (source is IList sourceList)
+                {
+                    IList clonedList = CreateListInstance(sourceType);
+                    if (clonedList != null)
+                    {
+                        visited[source] = clonedList;
+                        foreach (object item in sourceList)
+                        {
+                            clonedList.Add(DeepCloneObject(item, visited));
+                        }
+                        return clonedList;
+                    }
+                }
+
+                object target = CreateObjectInstance(sourceType);
+                if (target == null)
+                {
+                    return source;
+                }
+
+                visited[source] = target;
+
+                foreach (var property in sourceType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    try
+                    {
+                        if (!property.CanRead || !property.CanWrite || property.GetIndexParameters().Length != 0)
+                        {
+                            continue;
+                        }
+
+                        object value = property.GetValue(source);
+                        property.SetValue(target, DeepCloneObject(value, visited));
+                    }
+                    catch (Exception ex)
+                    {
+                        MelonLogger.Warning($"[CustomTagPatch] 깊은 복사 실패: type={sourceType.Name}, member={property.Name}, kind=property, error={ex.Message}");
+                    }
+                }
+
+                foreach (var field in sourceType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    try
+                    {
+                        object value = field.GetValue(source);
+                        field.SetValue(target, DeepCloneObject(value, visited));
+                    }
+                    catch (Exception ex)
+                    {
+                        MelonLogger.Warning($"[CustomTagPatch] 깊은 복사 실패: type={sourceType.Name}, member={field.Name}, kind=field, error={ex.Message}");
+                    }
+                }
+
+                return target;
+            }
+
+            private static bool IsAtomicType(Type type)
+            {
+                return type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(TimeSpan) || type == typeof(Guid);
+            }
+
+            private static object CreateObjectInstance(Type type)
+            {
+                try
+                {
+                    var constructor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                    if (constructor != null)
+                    {
+                        return constructor.Invoke(null);
+                    }
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    return FormatterServices.GetUninitializedObject(type);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            private static IList CreateListInstance(Type type)
+            {
+                try
+                {
+                    object instance = CreateObjectInstance(type);
+                    return instance as IList;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            private static IDictionary CreateDictionaryInstance(Type type)
+            {
+                try
+                {
+                    object instance = CreateObjectInstance(type);
+                    return instance as IDictionary;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            private sealed class ReferenceEqualityComparer : IEqualityComparer<object>
+            {
+                public new bool Equals(object x, object y)
+                {
+                    return ReferenceEquals(x, y);
+                }
+
+                public int GetHashCode(object obj)
+                {
+                    return obj == null ? 0 : RuntimeHelpers.GetHashCode(obj);
+                }
             }
 
         }
