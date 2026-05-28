@@ -105,8 +105,8 @@ public static class ExperimentPlayContext
     public static void RememberMusicSelection(string uid)
     {
         bool isExperimentTag = MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive;
-        bool isCustomUid = uid == "0-0" || uid == "999-0";
-        bool isCustomAlbum = PnlStagePatchHelper.IsCustomAlbumContext(998, "0-0");
+        bool isCustomUid = uid == "999-0";
+        bool isCustomAlbum = PnlStagePatchHelper.IsCustomAlbumContext(998, uid);
         ShouldApplyExperimentChart = isExperimentTag && isCustomUid && isCustomAlbum;
 
         MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, isExperimentTag={isExperimentTag}, isCustomAlbum={isCustomAlbum}, apply={ShouldApplyExperimentChart}");
