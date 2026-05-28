@@ -101,37 +101,58 @@ public static class PnlMusicUtils
             return;
         }
 
-        SetMemberText(pnlInstance, "musicNameTitle", ExperimentTitle);
-        SetMemberText(pnlInstance, "songNameTitle", ExperimentTitle);
-        SetMemberText(pnlInstance, "titleText", ExperimentTitle);
-        SetMemberText(pnlInstance, "musicTitle", ExperimentTitle);
+        string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+        if (string.IsNullOrEmpty(selectedUid) || selectedUid == "(null)")
+        {
+            selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+        }
 
-        SetMemberText(pnlInstance, "artistNameTitle", ExperimentArtist);
-        SetMemberText(pnlInstance, "artistText", ExperimentArtist);
-        SetMemberText(pnlInstance, "artistName", ExperimentArtist);
+        string title = ExperimentTitle;
+        string artist = ExperimentArtist;
+        string designer = ExperimentLevelDesignerName;
 
-        SetMemberText(pnlInstance, "levelDesignerName", ExperimentLevelDesignerName);
+        if (!string.IsNullOrEmpty(selectedUid))
+        {
+            var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
+            if (musicInfo != null)
+            {
+                title = musicInfo.name;
+                artist = musicInfo.author;
+                designer = musicInfo.levelDesigner;
+            }
+        }
+
+        SetMemberText(pnlInstance, "musicNameTitle", title);
+        SetMemberText(pnlInstance, "songNameTitle", title);
+        SetMemberText(pnlInstance, "titleText", title);
+        SetMemberText(pnlInstance, "musicTitle", title);
+
+        SetMemberText(pnlInstance, "artistNameTitle", artist);
+        SetMemberText(pnlInstance, "artistText", artist);
+        SetMemberText(pnlInstance, "artistName", artist);
+
+        SetMemberText(pnlInstance, "levelDesignerName", designer);
         SetMemberText(pnlInstance, "levelDesignerText", ExperimentLevelDesignerLabel);
-        SetMemberText(pnlInstance, "designerName", ExperimentLevelDesignerName);
+        SetMemberText(pnlInstance, "designerName", designer);
         SetMemberText(pnlInstance, "designerText", ExperimentLevelDesignerLabel);
-        SetMemberText(pnlInstance, "chartDesignerName", ExperimentLevelDesignerName);
-        SetMemberText(pnlInstance, "stageDesignerName", ExperimentLevelDesignerName);
+        SetMemberText(pnlInstance, "chartDesignerName", designer);
+        SetMemberText(pnlInstance, "stageDesignerName", designer);
 
         var root = GetRootGameObject(pnlInstance);
         if (root != null)
         {
-            SetChildTextByNames(root, TitleTextObjectNames, ExperimentTitle);
-            SetChildTextByNames(root, ArtistTextObjectNames, ExperimentArtist);
+            SetChildTextByNames(root, TitleTextObjectNames, title);
+            SetChildTextByNames(root, ArtistTextObjectNames, artist);
             SetChildTextByNames(root, LevelDesignerLabelTextObjectNames, ExperimentLevelDesignerLabel);
-            SetChildTextByNames(root, LevelDesignerNameTextObjectNames, ExperimentLevelDesignerName);
+            SetChildTextByNames(root, LevelDesignerNameTextObjectNames, designer);
         }
 
         if (ApplySongTitleExperimentGlobally)
         {
-            SetSceneTextByNameOrCurrentValue(TitleTextObjectNames, ExperimentTitle, true);
-            SetSceneTextByNameOrCurrentValue(ArtistTextObjectNames, ExperimentArtist, false);
+            SetSceneTextByNameOrCurrentValue(TitleTextObjectNames, title, true);
+            SetSceneTextByNameOrCurrentValue(ArtistTextObjectNames, artist, false);
             SetSceneTextByNameOrCurrentValue(LevelDesignerLabelTextObjectNames, ExperimentLevelDesignerLabel, false);
-            SetSceneTextByNameOrCurrentValue(LevelDesignerNameTextObjectNames, ExperimentLevelDesignerName, false);
+            SetSceneTextByNameOrCurrentValue(LevelDesignerNameTextObjectNames, designer, false);
         }
     }
 
@@ -410,7 +431,22 @@ public static class PnlMusicUtils
             FillByNamedMembers(pnlInstance, info);
 
         if (EnableSongTitleExperiment && (string.IsNullOrWhiteSpace(info.LevelDesigner) || info.LevelDesigner == ExperimentLevelDesignerLabel || IsUiObjectName(info.LevelDesigner)))
-            info.LevelDesigner = ExperimentLevelDesignerName;
+        {
+            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            if (string.IsNullOrEmpty(selectedUid) || selectedUid == "(null)")
+            {
+                selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+            var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
+            if (musicInfo != null)
+            {
+                info.LevelDesigner = musicInfo.levelDesigner;
+            }
+            else
+            {
+                info.LevelDesigner = ExperimentLevelDesignerName;
+            }
+        }
 
         return info;
     }
