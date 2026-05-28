@@ -178,6 +178,7 @@ public static class PnlStagePatchHelper
 
     public static void LogStageTitleSnapshot(string source, PnlStage stage)
     {
+        if (!ShouldApplyHwayoungwang()) return;
         try
         {
             if (stage == null)
@@ -200,6 +201,7 @@ public static class PnlStagePatchHelper
 
     public static void LogPnlStageRefresh(string source, PnlStage stage)
     {
+        if (!ShouldApplyHwayoungwang()) return;
         try
         {
             if (stage == null)
@@ -222,6 +224,7 @@ public static class PnlStagePatchHelper
 
     public static void LogTextAccessor(string source, PnlStage stage, Text text)
     {
+        if (!ShouldApplyHwayoungwang()) return;
         try
         {
             string selectedUid = GetCurrentSelectedMusicUid();
@@ -316,6 +319,7 @@ public static class PnlStagePatchHelper
 
     public static void LogPnlStageProperties(string source, PnlStage stage)
     {
+        if (!ShouldApplyHwayoungwang()) return;
         try
         {
             if (stage == null)
@@ -342,6 +346,7 @@ public static class PnlStagePatchHelper
 
     public static void LogMusicRootComponents(string source, PnlStage stage)
     {
+        if (!ShouldApplyHwayoungwang()) return;
         try
         {
             if (stage == null || stage.musicRoot == null)
@@ -804,6 +809,7 @@ public static class PnlStagePatchHelper
 
     public static void LogButtons(string source, PnlStage stage)
     {
+        if (!ShouldApplyHwayoungwang()) return;
         try
         {
             if (stage == null)
