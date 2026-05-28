@@ -22,8 +22,8 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomTitles = new Dictionary<string, string>
     {
-        { "0-0", "화영왕 0" },
         { "999-0", "화영왕 0" },
+        { "999-1", "화영왕 1" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -31,8 +31,8 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomArtists = new Dictionary<string, string>
     {
-        { "0-0", "화영왕 0" },
         { "999-0", "화영왕 0" },
+        { "999-1", "화영왕 1" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -58,57 +58,69 @@ public class LongSongNameController_Refresh_Patch
                 return;
             }
             
-            // 현재 선택된 곡 Uid 가져오기 (로컬 헬퍼 사용)
-            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-            if (string.IsNullOrEmpty(selectedUid) || selectedUid == "(null)")
+            // 현재 이 Controller가 속한 곡의 UID를 구한다.
+            // 우선 parent MusicButtonCell을 찾아보고, 있으면 그 셀의 곡 UID를 사용한다.
+            string targetUid = null;
+            var cell = __instance.GetComponentInParent<Il2CppAssets.Scripts.UI.Panels.PnlMusicTag.MusicButtonCell>();
+            if (cell != null && cell.musicInfo != null)
             {
-                selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                targetUid = cell.musicInfo.uid;
+            }
+            else
+            {
+                // 없으면 현재 선택된 곡 UID를 사용한다.
+                targetUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                if (string.IsNullOrEmpty(targetUid) || targetUid == "(null)")
+                {
+                    targetUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                }
             }
 
+            if (string.IsNullOrEmpty(targetUid) || targetUid == "(null)")
+            {
+                return;
+            }
+
+            // 앨범 제목 처리 (ImgAlbumTittle)
             if (__instance.gameObject.name == "ImgAlbumTittle")
             {
                 bool isCustomAlbumContext = PnlStagePatchHelper.IsCustomAlbumContext(CustomTagUid, CustomMusicUid);
-
                 if (isCustomAlbumContext)
                 {
                     text = CustomAlbumTitle;
                 }
-
                 return;
             }
 
-            if (!string.IsNullOrEmpty(selectedUid))
+            // 커스텀 제목/아티스트 매핑 처리
+            if (__instance.gameObject.name == "ImgSongTitleMask" || __instance.gameObject.name == "ImgSongNameMask")
             {
-                if (__instance.gameObject.name == "ImgSongTitleMask" || __instance.gameObject.name == "ImgSongNameMask")
+                if (CustomTitles.TryGetValue(targetUid, out var customTitle))
                 {
-                    if (PnlStagePatchHelper.ShouldApplyHwayoungwang() &&
-                        CustomTitles.TryGetValue(selectedUid, out var customTitle))
-                    {
-                        text = customTitle;
-                    }
+                    text = customTitle;
                 }
-                else if (__instance.gameObject.name == "ImgArtistMask" || __instance.gameObject.name == "ImgSongAuthorMask")
+                else if (targetUid == "999-0" || targetUid == "999-1")
                 {
-                    if (PnlStagePatchHelper.ShouldApplyHwayoungwang() &&
-                        CustomArtists.TryGetValue(selectedUid, out var customArtist))
+                    var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
+                    if (musicInfo != null)
                     {
-                        text = customArtist;
+                        text = musicInfo.name;
                     }
                 }
             }
-
-            if (__instance.gameObject.name == "ImgSongTitleMask" && text == "Iyaiya")
+            else if (__instance.gameObject.name == "ImgArtistMask" || __instance.gameObject.name == "ImgSongAuthorMask")
             {
-                if (PnlStagePatchHelper.ShouldApplyHwayoungwang())
+                if (CustomArtists.TryGetValue(targetUid, out var customArtist))
                 {
-                    text = "화영왕 0";
+                    text = customArtist;
                 }
-            }
-            else if (__instance.gameObject.name == "ImgArtistMask" && text == "小野道ono")
-            {
-                if (PnlStagePatchHelper.ShouldApplyHwayoungwang())
+                else if (targetUid == "999-0" || targetUid == "999-1")
                 {
-                    text = "화영왕 0";
+                    var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
+                    if (musicInfo != null)
+                    {
+                        text = musicInfo.author;
+                    }
                 }
             }
         }

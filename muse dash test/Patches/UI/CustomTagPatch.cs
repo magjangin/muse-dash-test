@@ -499,7 +499,7 @@ namespace muse_dash_test
         {
             private static bool Prefix(DBConfigAlbums __instance, MusicInfo musicInfo, ref DBConfigAlbums.AlbumsInfo __result)
             {
-                if (musicInfo != null && musicInfo.uid == "999-0" && CustomAlbumInfo != null)
+                if (musicInfo != null && (musicInfo.uid == "999-0" || musicInfo.uid == "999-1") && CustomAlbumInfo != null)
                 {
                     __result = CustomAlbumInfo;
                     return false;

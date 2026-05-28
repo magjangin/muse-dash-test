@@ -46,12 +46,12 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    if (musicInfo.uid != CustomMusicUid && musicInfo.uid != "999-0")
+                    if (musicInfo.uid != "999-0" && musicInfo.uid != "999-1")
                     {
                         continue;
                     }
 
-                    appliedCount += SetCellTitleText(cell, CustomCellTitle, musicInfo.name);
+                    appliedCount += SetCellTitleText(cell, musicInfo.name, musicInfo.name);
                 }
             }
             catch (Exception ex)
