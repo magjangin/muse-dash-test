@@ -486,49 +486,7 @@ namespace muse_dash_test
             }
         }
 
-        // 가상 복제 곡 "999-0"에 대해 앨범 UID, 인덱스, JSON명을 오버라이드하여
-        // 게임 내에서 완벽하게 "실험 앨범(998-0)"에 종속되도록 보장하는 게터 우회 패치들입니다.
-        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.albumUidName), MethodType.Getter)]
-        internal class MusicInfo_albumUidName_Patch
-        {
-            private static bool Prefix(MusicInfo __instance, ref string __result)
-            {
-                if (__instance != null && __instance.uid == "999-0")
-                {
-                    __result = "998-0";
-                    return false;
-                }
-                return true;
-            }
-        }
 
-        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.albumIndex), MethodType.Getter)]
-        internal class MusicInfo_albumIndex_Patch
-        {
-            private static bool Prefix(MusicInfo __instance, ref int __result)
-            {
-                if (__instance != null && __instance.uid == "999-0")
-                {
-                    __result = 998;
-                    return false;
-                }
-                return true;
-            }
-        }
-
-        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.albumJsonName), MethodType.Getter)]
-        internal class MusicInfo_albumJsonName_Patch
-        {
-            private static bool Prefix(MusicInfo __instance, ref string __result)
-            {
-                if (__instance != null && __instance.uid == "999-0")
-                {
-                    __result = "custom_album_998_0";
-                    return false;
-                }
-                return true;
-            }
-        }
 
         // 가상 앨범 "998-0"의 구매/소유/무료 상태를 게임의 앨범 데이터베이스에 우회 주입하여
         // 가상 곡 "999-0"이 항상 해금된(무료) 상태로 노출되도록 보장하는 패치입니다.
