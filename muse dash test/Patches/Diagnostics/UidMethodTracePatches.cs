@@ -1,8 +1,10 @@
 using HarmonyLib;
+using Il2Cpp;
 using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.Database.DataClass;
 using MelonLoader;
 using System;
+using System.Reflection;
 using System.Text;
 using Il2CppStringList = Il2CppSystem.Collections.Generic.List<string>;
 
@@ -12,6 +14,7 @@ namespace muse_dash_test
     {
         public const string SourceUid = "0-0";
         public const string TargetUid = "999-0";
+        public const string TargetDisplayName = "화영왕 0";
 
         public static string MusicInfo(MusicInfo info)
         {
@@ -105,6 +108,223 @@ namespace muse_dash_test
                 return "(property dump error: " + ex.Message + ")";
             }
         }
+
+        public static string PropertyDump(object instance)
+        {
+            if (instance == null)
+            {
+                return "(null)";
+            }
+
+            try
+            {
+                var sb = new StringBuilder();
+                var props = instance.GetType().GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach (var prop in props)
+                {
+                    if (!prop.CanRead || prop.GetIndexParameters().Length != 0)
+                    {
+                        continue;
+                    }
+
+                    object value;
+                    try
+                    {
+                        value = prop.GetValue(instance);
+                    }
+                    catch (Exception ex)
+                    {
+                        value = "(error: " + ex.Message + ")";
+                    }
+
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(", ");
+                    }
+
+                    sb.Append(prop.Name);
+                    sb.Append('=');
+                    sb.Append(value ?? "(null)");
+                }
+
+                return sb.Length == 0 ? "(no properties)" : sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "(property dump error: " + ex.Message + ")";
+            }
+        }
+
+        public static string TextPropertyDump(object instance)
+        {
+            if (instance == null)
+            {
+                return "(null)";
+            }
+
+            try
+            {
+                var sb = new StringBuilder();
+                var type = instance.GetType();
+
+                foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (!prop.CanRead || prop.GetIndexParameters().Length != 0)
+                    {
+                        continue;
+                    }
+
+                    if (prop.PropertyType != typeof(string) && !prop.Name.Equals("text", StringComparison.OrdinalIgnoreCase) && !prop.Name.Equals("m_Text", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        var value = prop.GetValue(instance) as string;
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            if (sb.Length > 0)
+                            {
+                                sb.Append(", ");
+                            }
+
+                            sb.Append(prop.Name);
+                            sb.Append('=');
+                            sb.Append(value);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(", ");
+                        }
+
+                        sb.Append(prop.Name);
+                        sb.Append("=(error: ");
+                        sb.Append(ex.Message);
+                        sb.Append(")");
+                    }
+                }
+
+                foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (field.FieldType != typeof(string) && !field.Name.Equals("text", StringComparison.OrdinalIgnoreCase) && !field.Name.Equals("m_Text", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        var value = field.GetValue(instance) as string;
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            if (sb.Length > 0)
+                            {
+                                sb.Append(", ");
+                            }
+
+                            sb.Append(field.Name);
+                            sb.Append('=');
+                            sb.Append(value);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(", ");
+                        }
+
+                        sb.Append(field.Name);
+                        sb.Append("=(error: ");
+                        sb.Append(ex.Message);
+                        sb.Append(")");
+                    }
+                }
+
+                return sb.Length == 0 ? "(no text properties)" : sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "(text property dump error: " + ex.Message + ")";
+            }
+        }
+
+        public static string DescribeSetSelectedMusicNameTxt(Il2Cpp.SetSelectedMusicNameTxt instance)
+        {
+            if (instance == null)
+            {
+                return "(null)";
+            }
+
+            try
+            {
+                object txtValue = null;
+                object longCtrlValue = null;
+                object isMusicNameValue = null;
+                object isMusicAuthorValue = null;
+
+                try { txtValue = instance.GetType().GetProperty("txt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
+                try { longCtrlValue = instance.GetType().GetProperty("m_LongCtrl", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
+                try { isMusicNameValue = instance.GetType().GetProperty("isMusicName", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
+                try { isMusicAuthorValue = instance.GetType().GetProperty("isMusicAuthor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
+
+                string txtText = "(null)";
+                if (txtValue != null)
+                {
+                    var txtType = txtValue.GetType();
+                    var textProp = txtType.GetProperty("text", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (textProp != null)
+                    {
+                        txtText = textProp.GetValue(txtValue) as string ?? "(null)";
+                    }
+                }
+
+                string longCtrlName = "(null)";
+                if (longCtrlValue is UnityEngine.Object unityObject)
+                {
+                    longCtrlName = unityObject.name ?? "(null)";
+                }
+                else if (longCtrlValue != null)
+                {
+                    longCtrlName = longCtrlValue.ToString();
+                }
+
+                return $"txt={txtText}, isMusicName={isMusicNameValue ?? "(null)"}, isMusicAuthor={isMusicAuthorValue ?? "(null)"}, m_LongCtrl={longCtrlName}";
+            }
+            catch (Exception ex)
+            {
+                return "(describe error: " + ex.Message + ")";
+            }
+        }
+
+        public static string GetTargetDisplayName(string uid)
+        {
+            if (string.IsNullOrEmpty(uid))
+            {
+                return null;
+            }
+
+            if (uid == TargetUid)
+            {
+                return TargetDisplayName;
+            }
+
+            if (uid == "999-1")
+            {
+                return "화영왕 1";
+            }
+
+            if (uid == "999-2")
+            {
+                return "화영왕 2";
+            }
+
+            return null;
+        }
+
     }
 
     [HarmonyPatch(typeof(DBMusicTag), nameof(DBMusicTag.GetMusicInfoFromShowMusicUids))]
@@ -119,6 +339,150 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 MelonLogger.Error($"DBMusicTag.GetMusicInfoFromShowMusicUids Postfix 예외: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Il2Cpp.PnlVictory), "SetScore")]
+    internal static class PnlVictory_SetScore_TracePatch
+    {
+        private static void Prefix(Il2Cpp.PnlVictory __instance)
+        {
+        }
+
+        private static void Postfix(Il2Cpp.PnlVictory __instance)
+        {
+        }
+    }
+
+    [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "OnEnable")]
+    internal static class SetSelectedMusicNameTxt_OnEnable_TracePatch
+    {
+        private static void ForceCustomDisplay(Il2Cpp.SetSelectedMusicNameTxt __instance)
+        {
+            try
+            {
+                if (__instance == null)
+                {
+                    return;
+                }
+
+                string uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                if (string.IsNullOrEmpty(uid))
+                {
+                    uid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                }
+
+                string displayName = UidRewriteExperiment.GetTargetDisplayName(uid);
+                if (string.IsNullOrEmpty(displayName))
+                {
+                    return;
+                }
+
+                var type = __instance.GetType();
+                var textProp = type.GetProperty("txt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                var txt = textProp?.GetValue(__instance) as UnityEngine.UI.Text;
+                if (txt != null)
+                {
+                    txt.text = displayName;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"SetSelectedMusicNameTxt 강제 표시 예외: {ex}");
+            }
+        }
+
+        private static void Prefix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+        {
+            try
+            {
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.OnEnable.Prefix] type={__instance.GetType().FullName}");
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.OnEnable.Prefix.Text] {UidRewriteExperiment.DescribeSetSelectedMusicNameTxt(__instance)}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"SetSelectedMusicNameTxt.OnEnable Prefix 예외: {ex}");
+            }
+        }
+
+        private static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+        {
+            try
+            {
+                ForceCustomDisplay(__instance);
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.OnEnable.Postfix] type={__instance.GetType().FullName}");
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.OnEnable.Postfix.Text] {UidRewriteExperiment.DescribeSetSelectedMusicNameTxt(__instance)}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"SetSelectedMusicNameTxt.OnEnable Postfix 예외: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "Awake")]
+    internal static class SetSelectedMusicNameTxt_Awake_TracePatch
+    {
+        private static void ForceCustomDisplay(Il2Cpp.SetSelectedMusicNameTxt __instance)
+        {
+            try
+            {
+                if (__instance == null)
+                {
+                    return;
+                }
+
+                string uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                if (string.IsNullOrEmpty(uid))
+                {
+                    uid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                }
+
+                string displayName = UidRewriteExperiment.GetTargetDisplayName(uid);
+                if (string.IsNullOrEmpty(displayName))
+                {
+                    return;
+                }
+
+                var type = __instance.GetType();
+                var textProp = type.GetProperty("txt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                var txt = textProp?.GetValue(__instance) as UnityEngine.UI.Text;
+                if (txt != null)
+                {
+                    txt.text = displayName;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"SetSelectedMusicNameTxt Awake 강제 표시 예외: {ex}");
+            }
+        }
+
+        private static void Prefix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+        {
+            try
+            {
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.Awake.Prefix] type={__instance.GetType().FullName}");
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.Awake.Prefix.Text] {UidRewriteExperiment.DescribeSetSelectedMusicNameTxt(__instance)}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"SetSelectedMusicNameTxt.Awake Prefix 예외: {ex}");
+            }
+        }
+
+        private static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance)
+        {
+            try
+            {
+                ForceCustomDisplay(__instance);
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.Awake.Postfix] type={__instance.GetType().FullName}");
+                MelonLogger.Msg($"[SetSelectedMusicNameTxt.Awake.Postfix.Text] {UidRewriteExperiment.DescribeSetSelectedMusicNameTxt(__instance)}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"SetSelectedMusicNameTxt.Awake Postfix 예외: {ex}");
             }
         }
     }

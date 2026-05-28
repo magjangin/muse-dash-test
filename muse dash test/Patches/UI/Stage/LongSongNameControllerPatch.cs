@@ -24,6 +24,7 @@ public class LongSongNameController_Refresh_Patch
     {
         { "999-0", "화영왕 0" },
         { "999-1", "화영왕 1" },
+        { "999-2", "화영왕 2" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -33,6 +34,7 @@ public class LongSongNameController_Refresh_Patch
     {
         { "999-0", "화영왕 0" },
         { "999-1", "화영왕 1" },
+        { "999-2", "화영왕 2" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -40,11 +42,6 @@ public class LongSongNameController_Refresh_Patch
 
     public static void Prefix(Il2Cpp.LongSongNameController __instance, ref string text, bool isSpecialFont, float delay)
     {
-        if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
-        {
-            return;
-        }
-
         if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
         {
             return;
@@ -99,7 +96,7 @@ public class LongSongNameController_Refresh_Patch
                 {
                     text = customTitle;
                 }
-                else if (targetUid == "999-0" || targetUid == "999-1")
+                else if (targetUid == "999-0" || targetUid == "999-1" || targetUid == "999-2")
                 {
                     var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
                     if (musicInfo != null)
@@ -114,7 +111,7 @@ public class LongSongNameController_Refresh_Patch
                 {
                     text = customArtist;
                 }
-                else if (targetUid == "999-0" || targetUid == "999-1")
+                else if (targetUid == "999-0" || targetUid == "999-1" || targetUid == "999-2")
                 {
                     var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
                     if (musicInfo != null)

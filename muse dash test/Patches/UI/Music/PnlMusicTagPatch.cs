@@ -12,11 +12,6 @@ namespace muse_dash_test
 
         public static void ApplyCustomCellTitle(PnlMusicTag panel)
         {
-            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
-            {
-                return;
-            }
-
             if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
             {
                 return;
@@ -46,7 +41,7 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    if (musicInfo.uid != "999-0" && musicInfo.uid != "999-1")
+                    if (musicInfo.uid != "999-0" && musicInfo.uid != "999-1" && musicInfo.uid != "999-2")
                     {
                         continue;
                     }

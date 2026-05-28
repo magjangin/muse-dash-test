@@ -27,11 +27,6 @@ public class PnlPreparation_OnEnable_Patch
     {
         try
         {
-            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
-            {
-                return;
-            }
-
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
@@ -77,11 +72,6 @@ public class PnlPreparation_RefreshUi_Patch
     {
         try
         {
-            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
-            {
-                return;
-            }
-
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
@@ -107,11 +97,6 @@ public class PnlPreparation_GameStart_Patch
     {
         try
         {
-            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
-            {
-                return;
-            }
-
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
@@ -137,11 +122,6 @@ public class PnlPreparation_OnBattleStart_Patch
     {
         try
         {
-            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
-            {
-                return;
-            }
-
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);

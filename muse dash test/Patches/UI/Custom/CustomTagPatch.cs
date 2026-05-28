@@ -66,22 +66,26 @@ namespace muse_dash_test
                     try
                     {
                         var originalInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll("0-0");
+
                         if (originalInfo != null)
                         {
-                            MelonLogger.Msg("[CustomTagPatch] === 얇은 복사 및 주입 실험 시작 ===");
+                            MelonLogger.Msg("[CustomTagPatch] === 얇은 복사 및 주입 실험 시작 === sourceUid=0-0");
                             LogMusicInfoDump("[CustomTagPatch] [원본 곡 상세 덤프] originalInfo", originalInfo);
                             
                             // "999-0" 화영왕 0 주입
                             InjectVirtualSong(originalInfo, "999-0", "화영왕 0", "화영왕 0", "화영왕 0", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 2, 5, musicList);
-                            
+
                             // "999-1" 화영왕 1 주입
                             InjectVirtualSong(originalInfo, "999-1", "화영왕 1", "화영왕 1", "화영왕 1", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 3, 6, musicList);
+
+                            // "999-2" 화영왕 2 주입
+                            InjectVirtualSong(originalInfo, "999-2", "화영왕 2", "화영왕 2", "화영왕 2", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 4, 7, musicList);
 
                             MelonLogger.Msg("[CustomTagPatch] =======================================");
                         }
                         else
                         {
-                            MelonLogger.Warning("[CustomTagPatch] '0-0'의 MusicInfo를 GlobalDataBase에서 찾지 못했습니다.");
+                            MelonLogger.Warning("[CustomTagPatch] 검색된 원본 MusicInfo를 찾지 못했습니다.");
                         }
                     }
                     catch (Exception ex)
@@ -499,7 +503,7 @@ namespace muse_dash_test
         {
             private static bool Prefix(DBConfigAlbums __instance, MusicInfo musicInfo, ref DBConfigAlbums.AlbumsInfo __result)
             {
-                if (musicInfo != null && (musicInfo.uid == "999-0" || musicInfo.uid == "999-1") && CustomAlbumInfo != null)
+                if (musicInfo != null && (musicInfo.uid == "999-0" || musicInfo.uid == "999-1" || musicInfo.uid == "999-2") && CustomAlbumInfo != null)
                 {
                     __result = CustomAlbumInfo;
                     return false;
