@@ -107,37 +107,20 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(AlbumTagInfo), nameof(AlbumTagInfo.GetMusicUids))]
-    internal static class AlbumTagInfo_GetMusicUids_ObservePatch
-    {
-        private static void Postfix(AlbumTagInfo __instance, Il2CppStringList __0, bool __1) { }
-    }
-
     [HarmonyPatch(typeof(DBMusicTag), nameof(DBMusicTag.GetMusicInfoFromShowMusicUids))]
     internal static class DBMusicTag_GetMusicInfoFromShowMusicUids_ObservePatch
     {
-        private static void Postfix(int index, MusicInfo __result) { }
-    }
-
-    [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.uid), MethodType.Getter)]
-    internal static class MusicInfo_Uid_Patch
-    {
-        [HarmonyPostfix]
-        private static void Postfix(MusicInfo __instance, ref string __result)
+        private static void Postfix(int index, MusicInfo __result)
         {
-            if (__instance == null) return;
-            if (MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive && __result == "0-0")
-                __result = "999-0";
+            try
+            {
+                MelonLogger.Msg($"[DBMusicTag.GetMusicInfoFromShowMusicUids.Postfix] index={index}, result={UidRewriteExperiment.MusicInfo(__result)}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"DBMusicTag.GetMusicInfoFromShowMusicUids Postfix 예외: {ex}");
+            }
         }
     }
 
-    [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.uid), MethodType.Setter)]
-    internal static class MusicInfo_UidSetter_Patch
-    {
-        [HarmonyPrefix]
-        private static bool Prefix(MusicInfo __instance, ref string __0)
-        {
-            return true;
-        }
-    }
 }

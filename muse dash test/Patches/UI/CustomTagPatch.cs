@@ -7,6 +7,7 @@ using Il2CppAssets.Scripts.PeroTools.Commons;
 using Il2CppAssets.Scripts.PeroTools.Managers;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using static Il2CppAssets.Scripts.Database.DBConfigCustomTags;
 
 namespace muse_dash_test
@@ -68,6 +69,7 @@ namespace muse_dash_test
                         if (originalInfo != null)
                         {
                             MelonLogger.Msg("[CustomTagPatch] === 얇은 복사 및 주입 실험 시작 ===");
+                            LogMusicInfoDump("[CustomTagPatch] [원본 곡 상세 덤프] originalInfo", originalInfo);
                             
                             // 1. MemberwiseClone 복사 수행
                             var clonedObj = originalInfo.MemberwiseClone();
@@ -86,6 +88,14 @@ namespace muse_dash_test
                                     clonedInfo.cover = "iyaiya_cover"; // 기존 커버 재사용
                                     clonedInfo.noteJson = "iyaiya_map"; // 기존 맵 재사용
                                     clonedInfo.music = "iyaiya_music"; // 기존 음원 재사용
+                                    SetMemberValue(clonedInfo, "difficulty1", 2);
+                                    SetMemberValue(clonedInfo, "difficulty2", 5);
+                                    SetMemberValue(clonedInfo, "difficulty3", 0);
+                                    SetMemberValue(clonedInfo, "callBackDifficulty1", 2);
+                                    SetMemberValue(clonedInfo, "callBackDifficulty2", 5);
+                                    SetMemberValue(clonedInfo, "callBackDifficulty3", 0);
+                                    SetMemberValue(clonedInfo, "callBackDifficulty4", 0);
+                                    SetMemberValue(clonedInfo, "callBackDifficulty5", 0);
                                     
                                     // 2.5 Mask Value 오버라이드로 앨범 소속 변경 (앨범 2개 생성 문제 및 롤백 방지)
                                     try
@@ -100,6 +110,7 @@ namespace muse_dash_test
                                     }
 
                                     MelonLogger.Msg($"[CustomTagPatch] [성공] 복사본 속성 수정 완료: uid='{clonedInfo.uid}', name='{clonedInfo.name}', author='{clonedInfo.author}'");
+                                    LogMusicInfoDump("[CustomTagPatch] [복사본 곡 상세 덤프] clonedInfo", clonedInfo);
                                     
                                     // 3. 글로벌 DBMusicTag의 m_AllMusicInfo 맵에 등록 시도
                                     var allMusicDict = GlobalDataBase.dbMusicTag?.m_AllMusicInfo;
@@ -121,6 +132,7 @@ namespace muse_dash_test
                                         if (checkInfo != null && checkInfo.uid == "999-0")
                                         {
                                             MelonLogger.Msg($"[CustomTagPatch] [대성공] GetMusicInfoFromAll('999-0') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
+                                            LogMusicInfoDump("[CustomTagPatch] [검증 곡 상세 덤프] checkInfo", checkInfo);
                                             
                                             // 5. 커스텀 태그 노출 목록에 "999-0"만 단독으로 포함시킵니다!
                                             musicList.Add("999-0");
@@ -359,6 +371,93 @@ namespace muse_dash_test
             private static string FormatValue(object value)
             {
                 return value == null ? "(null)" : value.ToString();
+            }
+
+            private static void LogMusicInfoDump(string label, MusicInfo info)
+            {
+                try
+                {
+                    if (info == null)
+                    {
+                        MelonLogger.Msg($"{label}: (null)");
+                        return;
+                    }
+
+                    MelonLogger.Msg($"{label}: uid={info.uid ?? "(null)"}, name={info.name ?? "(null)"}, author={info.author ?? "(null)"}, levelDesigner={info.levelDesigner ?? "(null)"}, cover={info.cover ?? "(null)"}, noteJson={info.noteJson ?? "(null)"}, music={info.music ?? "(null)"}, albumUidName={info.albumUidName ?? "(null)"}, albumJsonName={info.albumJsonName ?? "(null)"}, albumIndex={info.albumIndex}");
+
+                    var type = info.GetType();
+                    foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
+                    {
+                        if (!prop.CanRead || prop.GetIndexParameters().Length != 0)
+                            continue;
+
+                        object value;
+                        try
+                        {
+                            value = prop.GetValue(info);
+                        }
+                        catch (Exception ex)
+                        {
+                            value = "(error: " + ex.Message + ")";
+                        }
+
+                        MelonLogger.Msg($"{label}: prop {prop.Name}={FormatValue(value)}");
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error($"{label} 덤프 예외: {ex}");
+                }
+            }
+
+            private static void SetMemberValue(object target, string memberName, object value)
+            {
+                if (target == null)
+                {
+                    return;
+                }
+
+                var type = target.GetType();
+
+                var property = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (property != null && property.CanWrite)
+                {
+                    property.SetValue(target, ConvertMemberValue(value, property.PropertyType));
+                    return;
+                }
+
+                var field = type.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (field != null)
+                {
+                    field.SetValue(target, ConvertMemberValue(value, field.FieldType));
+                }
+            }
+
+            private static object ConvertMemberValue(object value, Type targetType)
+            {
+                if (value == null)
+                {
+                    return null;
+                }
+
+                var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+                if (underlyingType.IsInstanceOfType(value))
+                {
+                    return value;
+                }
+
+                if (underlyingType == typeof(string))
+                {
+                    return value.ToString();
+                }
+
+                if (underlyingType.IsEnum)
+                {
+                    return Enum.ToObject(underlyingType, value);
+                }
+
+                return Convert.ChangeType(value, underlyingType);
             }
 
         }

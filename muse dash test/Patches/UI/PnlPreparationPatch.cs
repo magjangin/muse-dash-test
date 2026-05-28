@@ -14,8 +14,7 @@ public class PnlPreparation_OnEnable_Patch
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
                 string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
                 string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-                
-                MelonLogger.Msg($"[PnlPreparation.OnEnable.Prefix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+
             }
         }
         catch (Exception ex)
@@ -28,15 +27,19 @@ public class PnlPreparation_OnEnable_Patch
     {
         try
         {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return;
+            }
+
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
                 string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
                 string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-                
-                MelonLogger.Msg($"[PnlPreparation.OnEnable.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+
             }
-            
+
             PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.OnEnable");
             MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.Delay", 0.25f));
             MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.DelayLong", 1.0f));
@@ -61,8 +64,7 @@ public class PnlPreparation_RefreshUi_Patch
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
                 string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
                 string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-                
-                MelonLogger.Msg($"[PnlPreparation.RefreshUi.Prefix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+
             }
         }
         catch (Exception ex)
@@ -75,15 +77,19 @@ public class PnlPreparation_RefreshUi_Patch
     {
         try
         {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return;
+            }
+
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
                 string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
                 string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-                
-                MelonLogger.Msg($"[PnlPreparation.RefreshUi.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+
             }
-            
+
             PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.RefreshUi");
         }
         catch (Exception ex)
@@ -101,15 +107,19 @@ public class PnlPreparation_GameStart_Patch
     {
         try
         {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return;
+            }
+
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
                 string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
                 string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-                
-                MelonLogger.Msg($"[PnlPreparation.GameStart.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+
             }
-            
+
             PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.GameStart");
         }
         catch (Exception ex)
@@ -127,15 +137,19 @@ public class PnlPreparation_OnBattleStart_Patch
     {
         try
         {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return;
+            }
+
             if (__instance != null)
             {
                 string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
                 string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
                 string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-                
-                MelonLogger.Msg($"[PnlPreparation.OnBattleStart.Postfix] designer='{designerText}', artist='{artistText}', achievement='{achvText}'");
+
             }
-            
+
             PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.OnBattleStart");
         }
         catch (Exception ex)

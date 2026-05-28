@@ -40,6 +40,11 @@ public class LongSongNameController_Refresh_Patch
 
     public static void Prefix(Il2Cpp.LongSongNameController __instance, ref string text, bool isSpecialFont, float delay)
     {
+        if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+        {
+            return;
+        }
+
         if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
         {
             return;

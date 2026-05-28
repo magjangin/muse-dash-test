@@ -12,10 +12,16 @@ namespace muse_dash_test
 
         public static void ApplyCustomCellTitle(PnlMusicTag panel)
         {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return;
+            }
+
             if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
             {
                 return;
             }
+
             try
             {
                 var viewItems = panel?.viewItems;
@@ -23,6 +29,8 @@ namespace muse_dash_test
                 {
                     return;
                 }
+
+                int appliedCount = 0;
 
                 for (int i = 0; i < viewItems.Count; i++)
                 {
@@ -35,7 +43,6 @@ namespace muse_dash_test
 
                     if (musicInfo == null)
                     {
-
                         continue;
                     }
 
@@ -44,7 +51,7 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    SetCellTitleText(cell, CustomCellTitle, musicInfo.name);
+                    appliedCount += SetCellTitleText(cell, CustomCellTitle, musicInfo.name);
                 }
             }
             catch (Exception ex)
@@ -93,7 +100,14 @@ namespace muse_dash_test
     {
         private static void Postfix(PnlMusicTag __instance)
         {
-            PnlMusicTagPatchLogger.ApplyCustomCellTitle(__instance);
+            try
+            {
+                PnlMusicTagPatchLogger.ApplyCustomCellTitle(__instance);
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"PnlMusicTag.RefreshScrollViewItem Postfix 예외: {ex}");
+            }
         }
     }
 }

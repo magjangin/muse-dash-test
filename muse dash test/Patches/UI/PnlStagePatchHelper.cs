@@ -2,6 +2,7 @@ using MelonLoader;
 using System;
 using System.Reflection;
 using System.Text;
+using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +16,23 @@ public static class PnlStagePatchHelper
 
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+    public static string DescribeMusicInfo(MusicInfo musicInfo)
+    {
+        if (musicInfo == null)
+        {
+            return "MusicInfo(null)";
+        }
+
+        try
+        {
+            return $"MusicInfo(uid={musicInfo.uid ?? "(null)"}, name={musicInfo.name ?? "(null)"}, author={musicInfo.author ?? "(null)"}, cover={musicInfo.cover ?? "(null)"})";
+        }
+        catch (Exception ex)
+        {
+            return $"MusicInfo({musicInfo.GetType().Name}, describe failed: {ex.Message})";
+        }
+    }
 
     public static bool ShouldApplyHwayoungwang()
     {
@@ -51,22 +69,24 @@ public static class PnlStagePatchHelper
     {
         try
         {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return;
+            }
+
             if (stage == null)
             {
-                MelonLogger.Msg($"[{source}] 커스텀 태그 접근자 적용 건너뜀: stage=null");
                 return;
             }
 
             // 통합 조건 검사 적용
             if (!ShouldApplyHwayoungwang())
             {
-                MelonLogger.Msg($"[{source}] 커스텀 태그 접근자 적용 건너뜀: ShouldApplyHwayoungwang=false");
                 return;
             }
 
             if (!IsCustomAlbumContext(CustomTagUid, CustomMusicUid))
             {
-                MelonLogger.Msg($"[{source}] 커스텀 태그 접근자 적용 건너뜀: customContext=false");
                 return;
             }
 
@@ -75,27 +95,125 @@ public static class PnlStagePatchHelper
 
             if (musicText != null)
             {
-                MelonLogger.Msg($"[{source}] musicNameTitle 접근자로 제목 변경: {CleanLogText(musicText.text)} -> {CustomTitle}");
                 musicText.text = CustomTitle;
             }
             else
             {
-                MelonLogger.Warning($"[{source}] musicNameTitle 접근자 결과가 null입니다.");
             }
 
             if (artistText != null)
             {
-                MelonLogger.Msg($"[{source}] artistNameTitle 접근자로 아티스트 변경: {CleanLogText(artistText.text)} -> {CustomArtist}");
                 artistText.text = CustomArtist;
             }
             else
             {
-                MelonLogger.Warning($"[{source}] artistNameTitle 접근자 결과가 null입니다.");
             }
         }
         catch (Exception ex)
         {
             MelonLogger.Error($"{source} 커스텀 태그 접근자 적용 예외: {ex}");
+        }
+    }
+
+    public static void ForceApplyCustomTagTitleAccessors(string source, PnlStage stage)
+    {
+        try
+        {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return;
+            }
+
+            if (stage == null)
+            {
+                return;
+            }
+
+            if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
+            {
+                return;
+            }
+
+            var musicText = stage.musicNameTitle;
+            var artistText = stage.artistNameTitle;
+
+            if (musicText != null)
+            {
+                musicText.text = CustomTitle;
+            }
+
+            if (artistText != null)
+            {
+                artistText.text = CustomArtist;
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} 강제 커스텀 태그 접근자 적용 예외: {ex}");
+        }
+    }
+
+    public static bool ApplyCustomTagTitleAccessorsForMusicInfo(string source, PnlStage stage, MusicInfo musicInfo)
+    {
+        try
+        {
+            if (!global::muse_dash_test.UiFeatureFlags.IsUiOverridesEnabled())
+            {
+                return false;
+            }
+
+            if (stage == null || musicInfo == null)
+            {
+                return false;
+            }
+
+            if (musicInfo.uid != "999-0")
+            {
+                return false;
+            }
+
+            var musicText = stage.musicNameTitle;
+            var artistText = stage.artistNameTitle;
+
+            if (musicText != null)
+            {
+                musicText.text = CustomTitle;
+            }
+
+            if (artistText != null)
+            {
+                artistText.text = CustomArtist;
+            }
+
+            MelonLogger.Msg($"{source}: musicInfo.uid=999-0 direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} musicInfo 직접 커스텀 태그 적용 예외: {ex}");
+            return false;
+        }
+    }
+
+    public static void LogStageTitleSnapshot(string source, PnlStage stage)
+    {
+        try
+        {
+            if (stage == null)
+            {
+                MelonLogger.Msg($"{source}: stage=null");
+                return;
+            }
+
+            string musicText = stage.musicNameTitle != null ? CleanLogText(stage.musicNameTitle.text) : "(null)";
+            string artistText = stage.artistNameTitle != null ? CleanLogText(stage.artistNameTitle.text) : "(null)";
+            string musicLong = GetLongNameControllerText(stage.musicLongNameController);
+            string artistLong = GetLongNameControllerText(stage.artistLongNameController);
+            MelonLogger.Msg($"{source}: musicText={musicText}, artistText={artistText}, musicLong={musicLong}, artistLong={artistLong}");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"{source} stage title snapshot 예외: {ex}");
         }
     }
 
@@ -105,7 +223,6 @@ public static class PnlStagePatchHelper
         {
             if (stage == null)
             {
-                MelonLogger.Msg($"[{source}] stage=null");
                 return;
             }
 
@@ -114,7 +231,7 @@ public static class PnlStagePatchHelper
             string musicTitle = GetLongNameControllerText(stage.musicLongNameController);
             string artistTitle = GetLongNameControllerText(stage.artistLongNameController);
             string albumObjActive = stage.m_AlbumTitleObj != null ? stage.m_AlbumTitleObj.activeSelf.ToString() : "(null)";
-            MelonLogger.Msg($"[{source}] selectedUid={selectedUid ?? "(null)"}, albumTitle={CleanLogText(albumTitle)}, musicTitle={CleanLogText(musicTitle)}, artistTitle={CleanLogText(artistTitle)}, albumTitleObjActive={albumObjActive}");
+            MelonLogger.Msg($"{source}: selectedUid={selectedUid}, albumTitle={albumTitle}, musicTitle={musicTitle}, artistTitle={artistTitle}, albumObjActive={albumObjActive}");
         }
         catch (Exception ex)
         {
@@ -127,16 +244,92 @@ public static class PnlStagePatchHelper
         try
         {
             string selectedUid = GetCurrentSelectedMusicUid();
+            string resolvedSource = DescribeTextAccessorSource(stage, text);
             string textName = text != null ? text.name : "(null)";
             string gameObjectName = text != null && text.gameObject != null ? text.gameObject.name : "(null)";
             string value = text != null ? text.text : null;
             string active = text != null && text.gameObject != null ? text.gameObject.activeSelf.ToString() : "(null)";
             string stageName = stage != null ? stage.name : "(null)";
-            MelonLogger.Msg($"[{source}] stage={stageName}, selectedUid={selectedUid ?? "(null)"}, TextName={textName}, GameObject={gameObjectName}, Active={active}, Text={CleanLogText(value)}");
+            MelonLogger.Msg($"{source}: source={resolvedSource}, stage={stageName}, selectedUid={selectedUid}, textName={textName}, gameObjectName={gameObjectName}, active={active}, value={value ?? "(null)"}");
         }
         catch (Exception ex)
         {
             MelonLogger.Error($"{source} 예외: {ex}");
+        }
+    }
+
+    public static string DescribeTextAccessorSource(PnlStage stage, Text text)
+    {
+        try
+        {
+            if (stage == null || text == null)
+            {
+                return "(unresolved)";
+            }
+
+            string direct = FindTextReferenceSource(stage, text, "stage", 0, 4);
+            if (!string.IsNullOrEmpty(direct))
+            {
+                return direct;
+            }
+
+            return "(unresolved)";
+        }
+        catch (Exception ex)
+        {
+            return $"(source error: {ex.Message})";
+        }
+    }
+
+    private static string FindTextReferenceSource(object target, Text text, string path, int depth, int maxDepth)
+    {
+        try
+        {
+            if (target == null || text == null)
+            {
+                return null;
+            }
+
+            if (ReferenceEquals(target, text))
+            {
+                return path;
+            }
+
+            if (depth >= maxDepth)
+            {
+                return null;
+            }
+
+            foreach (var field in target.GetType().GetFields(InstanceMembers))
+            {
+                object value = field.GetValue(target);
+                if (value == null)
+                {
+                    continue;
+                }
+
+                if (ReferenceEquals(value, text))
+                {
+                    return $"{path}.{field.Name}";
+                }
+
+                if (value is string || value is Text || value is UnityEngine.Object)
+                {
+                    continue;
+                }
+
+                string nestedPath = FindTextReferenceSource(value, text, $"{path}.{field.Name}", depth + 1, maxDepth);
+                if (!string.IsNullOrEmpty(nestedPath))
+                {
+                    return nestedPath;
+                }
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -146,47 +339,23 @@ public static class PnlStagePatchHelper
         {
             if (stage == null)
             {
-                MelonLogger.Msg($"[{source}] stage=null");
                 return;
             }
 
-            var sb = new StringBuilder();
-            int count = 0;
-            foreach (var prop in typeof(PnlStage).GetProperties(InstanceMembers))
-            {
-                if (!prop.CanRead || prop.GetIndexParameters().Length != 0)
-                {
-                    continue;
-                }
+            string selectedUid = GetCurrentSelectedMusicUid();
+            string stageName = stage.name ?? "(null)";
+            string stageActive = stage.gameObject != null ? stage.gameObject.activeSelf.ToString() : "(null)";
+            string musicTitle = GetLongNameControllerText(stage.musicLongNameController);
+            string artistTitle = GetLongNameControllerText(stage.artistLongNameController);
+            string albumTitle = GetLongNameControllerText(stage.m_AlbumTitleTxt);
+            string titleText = stage.musicNameTitle != null ? CleanLogText(stage.musicNameTitle.text) : "(null)";
+            string artistText = stage.artistNameTitle != null ? CleanLogText(stage.artistNameTitle.text) : "(null)";
 
-                string value = SafePropertyValue(stage, prop);
-                if (string.IsNullOrEmpty(value))
-                {
-                    continue;
-                }
-
-                if (sb.Length > 0)
-                {
-                    sb.Append(" | ");
-                }
-
-                sb.Append(prop.Name);
-                sb.Append('=');
-                sb.Append(value);
-                count++;
-
-                if (count >= 80)
-                {
-                    sb.Append(" | ...");
-                    break;
-                }
-            }
-
-            MelonLogger.Msg($"[{source}] {sb}");
+            MelonLogger.Msg($"{source}: stage={stageName}, active={stageActive}, selectedUid={selectedUid}, titleText={titleText}, artistText={artistText}, albumTitle={albumTitle}, musicLong={musicTitle}, artistLong={artistTitle}");
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"{source} 프로퍼티 덤프 예외: {ex}");
+            MelonLogger.Error($"{source} stage summary 예외: {ex}");
         }
     }
 
@@ -196,12 +365,10 @@ public static class PnlStagePatchHelper
         {
             if (stage == null || stage.musicRoot == null)
             {
-                MelonLogger.Msg($"[{source}] musicRoot=null");
                 return;
             }
 
             var root = stage.musicRoot;
-            MelonLogger.Msg($"[{source}] cover probe: root={root.name}, active={root.activeSelf}");
 
             var images = root.GetComponentsInChildren<UnityEngine.UI.Image>(true);
             int coverCount = 0;
@@ -218,7 +385,6 @@ public static class PnlStagePatchHelper
                     continue;
                 }
 
-                MelonLogger.Msg($"[{source}] CoverImage[{coverCount}] path={GetTransformPath(image.transform, root.transform)}, active={image.gameObject.activeSelf}, sprite={spriteName}, color={image.color}");
                 coverCount++;
                 if (coverCount >= 8) break;
             }
@@ -237,15 +403,11 @@ public static class PnlStagePatchHelper
                     continue;
                 }
 
-                MelonLogger.Msg($"[{source}] CoverRawImage[{coverCount}] path={GetTransformPath(rawImage.transform, root.transform)}, active={rawImage.gameObject.activeSelf}, texture={textureName}, color={rawImage.color}");
                 coverCount++;
                 if (coverCount >= 8) break;
             }
 
-            if (coverCount == 0)
-            {
-                MelonLogger.Msg($"[{source}] cover probe: no ImgCover/cover sprite found");
-            }
+            MelonLogger.Msg($"{source}: musicRoot coverCount={coverCount}, rawImageCount={rawImages.Length}");
         }
         catch (Exception ex)
         {
@@ -545,6 +707,12 @@ public static class PnlStagePatchHelper
                         sb.AppendLine($"Prop {prop.Name} = '{v}'");
                         found++;
                     }
+                    else if (prop.PropertyType == typeof(Text) && prop.CanRead)
+                    {
+                        var v = prop.GetValue(area) as Text;
+                        sb.AppendLine($"Prop {prop.Name} = {FormatDebugValue(v)}");
+                        found++;
+                    }
                 }
                 foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
                 {
@@ -553,6 +721,12 @@ public static class PnlStagePatchHelper
                     {
                         var v = field.GetValue(area) as string;
                         sb.AppendLine($"Field {field.Name} = '{v}'");
+                        found++;
+                    }
+                    else if (field.FieldType == typeof(Text))
+                    {
+                        var v = field.GetValue(area) as Text;
+                        sb.AppendLine($"Field {field.Name} = {FormatDebugValue(v)}");
                         found++;
                     }
                 }
@@ -573,14 +747,14 @@ public static class PnlStagePatchHelper
                     if (memberCount++ >= maxMembersPerComp) break;
                     if (!prop.CanRead) continue;
                     string val = null;
-                    try { var obj = prop.GetValue(c); if (obj != null) val = obj.ToString(); } catch { val = "(err)"; }
+                    try { val = FormatDebugValue(prop.GetValue(c)); } catch { val = "(err)"; }
                     if (!string.IsNullOrEmpty(val)) sb.AppendLine($"  Prop {prop.Name} = '{val}'");
                 }
                 foreach (var field in ct.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
                 {
                     if (memberCount++ >= maxMembersPerComp) break;
                     string val = null;
-                    try { var obj = field.GetValue(c); if (obj != null) val = obj.ToString(); } catch { val = "(err)"; }
+                    try { val = FormatDebugValue(field.GetValue(c)); } catch { val = "(err)"; }
                     if (!string.IsNullOrEmpty(val)) sb.AppendLine($"  Field {field.Name} = '{val}'");
                 }
             }
@@ -589,6 +763,33 @@ public static class PnlStagePatchHelper
         catch (Exception ex)
         {
             return $"Dump error: {ex}";
+        }
+    }
+
+    private static string FormatDebugValue(object value)
+    {
+        try
+        {
+            if (value == null)
+            {
+                return "(null)";
+            }
+
+            if (value is Text text)
+            {
+                return $"Text(name={text.name ?? "(null)"}, text={CleanLogText(text.text)})";
+            }
+
+            if (value is UnityEngine.Object unityObject)
+            {
+                return $"{value.GetType().Name}(name={unityObject.name ?? "(null)"})";
+            }
+
+            return value.ToString();
+        }
+        catch (Exception ex)
+        {
+            return $"(format err: {ex.Message})";
         }
     }
 
@@ -607,7 +808,6 @@ public static class PnlStagePatchHelper
                 if (text == t) { isExp = true; break; }
             if (isExp != MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
             {
-                MelonLogger.Msg($"[SyncExperimentMode] titleOwn.text='{text}' \u2192 IsExperimentModActive={isExp}");
                 MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive = isExp;
             }
         }
@@ -623,7 +823,6 @@ public static class PnlStagePatchHelper
         {
             if (stage == null)
             {
-                MelonLogger.Msg($"[{source}] stage=null");
                 return;
             }
 
@@ -637,17 +836,18 @@ public static class PnlStagePatchHelper
                     string goName = btn?.gameObject != null ? btn.gameObject.name : "(null)";
                     string active = btn?.gameObject != null ? btn.gameObject.activeSelf.ToString() : "(null)";
                     string interactable = btn != null ? btn.interactable.ToString() : "(null)";
-                    MelonLogger.Msg($"[{source}] Button prop={prop.Name}, gameObject={goName}, active={active}, interactable={interactable}");
                     count++;
+                    MelonLogger.Msg($"{source}: button {prop.Name} => go={goName}, active={active}, interactable={interactable}");
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Msg($"[{source}] Button prop={prop.Name}: (예외: {ex.Message})");
                 }
             }
 
             if (count == 0)
-                MelonLogger.Msg($"[{source}] Button 프로퍼티 없음");
+            {
+                MelonLogger.Msg($"{source}: button properties => (none)");
+            }
         }
         catch (Exception ex)
         {
