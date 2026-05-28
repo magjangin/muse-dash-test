@@ -417,9 +417,10 @@ public static class PnlMusicUtils
 
     private static void LogCompact(string source, MusicInfo info)
     {
+        string uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid ?? "(unknown)";
         string clip = Clean(info.Clip);
         string reason = string.IsNullOrWhiteSpace(info.Clip) ? $", 클립 사유={Clean(info.ClipReason)}" : "";
-        MelonLogger.Msg($"{source}: 곡 이름={Clean(info.Title)}, 음악 클립={clip}, 아티스트 이름={Clean(info.Artist)}, 레벨 디자이너={ExperimentLevelDesignerLabel}, 실제 이름={Clean(info.LevelDesigner)}{reason}");
+        MelonLogger.Msg($"{source}: 곡 이름={Clean(info.Title)}, UID={uid}, 음악 클립={clip}, 아티스트 이름={Clean(info.Artist)}, 레벨 디자이너={ExperimentLevelDesignerLabel}, 실제 이름={Clean(info.LevelDesigner)}{reason}");
     }
 
     private static string Clean(string value)
