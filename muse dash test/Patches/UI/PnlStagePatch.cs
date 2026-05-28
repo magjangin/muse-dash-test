@@ -278,7 +278,14 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
-            PnlStagePatchHelper.ApplyCustomTagTitleAccessorsForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo);
+            if (PnlStagePatchHelper.ApplyCustomTagTitleAccessorsForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
+            {
+                // 다이내믹 주입에 성공했으면 다른 정적 주입은 실행하지 않고 리턴합니다.
+                string mText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
+                string aText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
+                MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle={mText}, artistNameTitle={aText}");
+                return;
+            }
             PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.RefreshDiffUI", __instance);
             PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.RefreshDiffUI.Force", __instance);
 

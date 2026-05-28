@@ -71,23 +71,29 @@ public static class PnlStagePatchHelper
                 return;
             }
 
+            string uid = LastSelectedMusicUid;
+            if (string.IsNullOrEmpty(uid))
+            {
+                uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+
+            var musicInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
+            if (musicInfo == null)
+            {
+                return;
+            }
+
             var musicText = stage.musicNameTitle;
             var artistText = stage.artistNameTitle;
 
             if (musicText != null)
             {
-                musicText.text = CustomTitle;
-            }
-            else
-            {
+                musicText.text = musicInfo.name;
             }
 
             if (artistText != null)
             {
-                artistText.text = CustomArtist;
-            }
-            else
-            {
+                artistText.text = musicInfo.author;
             }
         }
         catch (Exception ex)
@@ -115,17 +121,29 @@ public static class PnlStagePatchHelper
                 return;
             }
 
+            string uid = LastSelectedMusicUid;
+            if (string.IsNullOrEmpty(uid))
+            {
+                uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+
+            var musicInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
+            if (musicInfo == null)
+            {
+                return;
+            }
+
             var musicText = stage.musicNameTitle;
             var artistText = stage.artistNameTitle;
 
             if (musicText != null)
             {
-                musicText.text = CustomTitle;
+                musicText.text = musicInfo.name;
             }
 
             if (artistText != null)
             {
-                artistText.text = CustomArtist;
+                artistText.text = musicInfo.author;
             }
         }
         catch (Exception ex)
