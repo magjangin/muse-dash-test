@@ -178,68 +178,14 @@ public static class PnlStagePatchHelper
 
     public static void LogStageTitleSnapshot(string source, PnlStage stage)
     {
-        if (!ShouldApplyHwayoungwang()) return;
-        try
-        {
-            if (stage == null)
-            {
-                MelonLogger.Msg($"{source}: stage=null");
-                return;
-            }
-
-            string musicText = stage.musicNameTitle != null ? CleanLogText(stage.musicNameTitle.text) : "(null)";
-            string artistText = stage.artistNameTitle != null ? CleanLogText(stage.artistNameTitle.text) : "(null)";
-            string musicLong = GetLongNameControllerText(stage.musicLongNameController);
-            string artistLong = GetLongNameControllerText(stage.artistLongNameController);
-            MelonLogger.Msg($"{source}: musicText={musicText}, artistText={artistText}, musicLong={musicLong}, artistLong={artistLong}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"{source} stage title snapshot 예외: {ex}");
-        }
     }
 
     public static void LogPnlStageRefresh(string source, PnlStage stage)
     {
-        if (!ShouldApplyHwayoungwang()) return;
-        try
-        {
-            if (stage == null)
-            {
-                return;
-            }
-
-            string selectedUid = GetCurrentSelectedMusicUid();
-            string albumTitle = GetLongNameControllerText(stage.m_AlbumTitleTxt);
-            string musicTitle = GetLongNameControllerText(stage.musicLongNameController);
-            string artistTitle = GetLongNameControllerText(stage.artistLongNameController);
-            string albumObjActive = stage.m_AlbumTitleObj != null ? stage.m_AlbumTitleObj.activeSelf.ToString() : "(null)";
-            MelonLogger.Msg($"{source}: selectedUid={selectedUid}, albumTitle={albumTitle}, musicTitle={musicTitle}, artistTitle={artistTitle}, albumObjActive={albumObjActive}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"{source} 예외: {ex}");
-        }
     }
 
     public static void LogTextAccessor(string source, PnlStage stage, Text text)
     {
-        if (!ShouldApplyHwayoungwang()) return;
-        try
-        {
-            string selectedUid = GetCurrentSelectedMusicUid();
-            string resolvedSource = DescribeTextAccessorSource(stage, text);
-            string textName = text != null ? text.name : "(null)";
-            string gameObjectName = text != null && text.gameObject != null ? text.gameObject.name : "(null)";
-            string value = text != null ? text.text : null;
-            string active = text != null && text.gameObject != null ? text.gameObject.activeSelf.ToString() : "(null)";
-            string stageName = stage != null ? stage.name : "(null)";
-            MelonLogger.Msg($"{source}: source={resolvedSource}, stage={stageName}, selectedUid={selectedUid}, textName={textName}, gameObjectName={gameObjectName}, active={active}, value={value ?? "(null)"}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"{source} 예외: {ex}");
-        }
     }
 
     public static string DescribeTextAccessorSource(PnlStage stage, Text text)
@@ -319,86 +265,10 @@ public static class PnlStagePatchHelper
 
     public static void LogPnlStageProperties(string source, PnlStage stage)
     {
-        if (!ShouldApplyHwayoungwang()) return;
-        try
-        {
-            if (stage == null)
-            {
-                return;
-            }
-
-            string selectedUid = GetCurrentSelectedMusicUid();
-            string stageName = stage.name ?? "(null)";
-            string stageActive = stage.gameObject != null ? stage.gameObject.activeSelf.ToString() : "(null)";
-            string musicTitle = GetLongNameControllerText(stage.musicLongNameController);
-            string artistTitle = GetLongNameControllerText(stage.artistLongNameController);
-            string albumTitle = GetLongNameControllerText(stage.m_AlbumTitleTxt);
-            string titleText = stage.musicNameTitle != null ? CleanLogText(stage.musicNameTitle.text) : "(null)";
-            string artistText = stage.artistNameTitle != null ? CleanLogText(stage.artistNameTitle.text) : "(null)";
-
-            MelonLogger.Msg($"{source}: stage={stageName}, active={stageActive}, selectedUid={selectedUid}, titleText={titleText}, artistText={artistText}, albumTitle={albumTitle}, musicLong={musicTitle}, artistLong={artistTitle}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"{source} stage summary 예외: {ex}");
-        }
     }
 
     public static void LogMusicRootComponents(string source, PnlStage stage)
     {
-        if (!ShouldApplyHwayoungwang()) return;
-        try
-        {
-            if (stage == null || stage.musicRoot == null)
-            {
-                return;
-            }
-
-            var root = stage.musicRoot;
-
-            var images = root.GetComponentsInChildren<UnityEngine.UI.Image>(true);
-            int coverCount = 0;
-            foreach (var image in images)
-            {
-                if (image == null)
-                {
-                    continue;
-                }
-
-                string spriteName = image.sprite != null ? image.sprite.name : "(null)";
-                if (!LooksLikeCoverImage(image.name, spriteName))
-                {
-                    continue;
-                }
-
-                coverCount++;
-                if (coverCount >= 8) break;
-            }
-
-            var rawImages = root.GetComponentsInChildren<UnityEngine.UI.RawImage>(true);
-            foreach (var rawImage in rawImages)
-            {
-                if (rawImage == null)
-                {
-                    continue;
-                }
-
-                string textureName = rawImage.texture != null ? rawImage.texture.name : "(null)";
-                if (!LooksLikeCoverImage(rawImage.name, textureName))
-                {
-                    continue;
-                }
-
-                coverCount++;
-                if (coverCount >= 8) break;
-            }
-
-            MelonLogger.Msg($"{source}: musicRoot coverCount={coverCount}, rawImageCount={rawImages.Length}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"{source} MusicRoot 덤프 예외: {ex}");
-        }
     }
 
     private static bool LooksLikeCoverImage(string objectName, string assetName)
@@ -809,40 +679,5 @@ public static class PnlStagePatchHelper
 
     public static void LogButtons(string source, PnlStage stage)
     {
-        if (!ShouldApplyHwayoungwang()) return;
-        try
-        {
-            if (stage == null)
-            {
-                return;
-            }
-
-            int count = 0;
-            foreach (var prop in typeof(PnlStage).GetProperties(InstanceMembers))
-            {
-                if (prop.PropertyType != typeof(Button) || !prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
-                try
-                {
-                    var btn = prop.GetValue(stage) as Button;
-                    string goName = btn?.gameObject != null ? btn.gameObject.name : "(null)";
-                    string active = btn?.gameObject != null ? btn.gameObject.activeSelf.ToString() : "(null)";
-                    string interactable = btn != null ? btn.interactable.ToString() : "(null)";
-                    count++;
-                    MelonLogger.Msg($"{source}: button {prop.Name} => go={goName}, active={active}, interactable={interactable}");
-                }
-                catch (Exception ex)
-                {
-                }
-            }
-
-            if (count == 0)
-            {
-                MelonLogger.Msg($"{source}: button properties => (none)");
-            }
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"{source} LogButtons 예외: {ex}");
-        }
     }
 }
