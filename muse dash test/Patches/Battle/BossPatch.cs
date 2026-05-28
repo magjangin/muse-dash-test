@@ -149,7 +149,7 @@ public class Boss_InitBossObject_Patch
 
      확인한 정답:
      - name: 0401_boss
-     - scene: 4
+    - scene: txt의 씬 번호를 그대로 사용
 
      다른 보스를 실험하려면 BossRewriteRules의 NewName/NewScene만 바꾸면 됩니다.
     */

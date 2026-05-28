@@ -28,9 +28,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         new ExperimentNoteSpec { Label = "보스1 등장", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 15.0, BossAction = "in" },
         new ExperimentNoteSpec { Label = "보스1 공격", Uid = "050107", NoteType = 0, Pathway = 0, StartTick = 17.5, BossAction = "boss_far_atk_1_start" },
         new ExperimentNoteSpec { Label = "보스1 퇴장", Uid = "050102", NoteType = 0, Pathway = 0, StartTick = 22.0, BossAction = "out" },
-        new ExperimentNoteSpec { Label = "보스2 교체", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 24.0, BossAction = "swap:0401_boss:4" },
-        new ExperimentNoteSpec { Label = "보스2 공격", Uid = "050107", NoteType = 0, Pathway = 0, StartTick = 26.5, BossAction = "boss_far_atk_1_start" },
-        new ExperimentNoteSpec { Label = "보스2 퇴장", Uid = "050108", NoteType = 0, Pathway = 0, StartTick = 31.0, BossAction = "boss_far_atk_1_end" },
+        new ExperimentNoteSpec { Label = "보스2 교체", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 26.0, BossAction = "swap:0401_boss:4" },
+        new ExperimentNoteSpec { Label = "보스2 공격", Uid = "050107", NoteType = 0, Pathway = 0, StartTick = 28.5, BossAction = "boss_far_atk_1_start" },
+        new ExperimentNoteSpec { Label = "보스2 퇴장", Uid = "050108", NoteType = 0, Pathway = 0, StartTick = 33.0, BossAction = "boss_far_atk_1_end" },
 
 
         // 원하는 실험은 아래 예시를 복사해서 주석을 해제하세요.

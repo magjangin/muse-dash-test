@@ -110,6 +110,19 @@ namespace muse_dash_test
             return true;
         }
 
+        public static bool TryGetCachedHwaScene(out int scene)
+        {
+            scene = default;
+
+            if (cachedManifest == null || !cachedManifest.Scene.HasValue)
+            {
+                return false;
+            }
+
+            scene = cachedManifest.Scene.Value;
+            return true;
+        }
+
         private static HwaManifest LoadHwaManifest(string folderPath)
         {
             try
