@@ -1,4 +1,5 @@
 using MelonLoader;
+using muse_dash_test;
 using System;
 using System.Reflection;
 using System.Collections;
@@ -161,15 +162,11 @@ public static partial class PnlMusicUtils
         try
         {
             if (obj == null || string.IsNullOrEmpty(memberName)) return 0;
-            var ty = obj.GetType();
-
-            var p = ty.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (p != null && p.GetIndexParameters().Length == 0)
-                return SetTextValue(p.GetValue(obj), value);
-
-            var f = ty.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f != null)
-                return SetTextValue(f.GetValue(obj), value);
+            object target = ModReflection.GetValue(obj, memberName);
+            if (target != null)
+            {
+                return SetTextValue(target, value);
+            }
         }
         catch { }
         return 0;
@@ -187,25 +184,8 @@ public static partial class PnlMusicUtils
                 return 1;
             }
 
-            var ty = target.GetType();
-            var textProp = ty.GetProperty("text", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (textProp != null && textProp.CanWrite)
+            if (ModReflection.SetValue(target, "text", value))
             {
-                textProp.SetValue(target, value);
-                return 1;
-            }
-
-            var mTextProp = ty.GetProperty("m_Text", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (mTextProp != null && mTextProp.CanWrite)
-            {
-                mTextProp.SetValue(target, value);
-                return 1;
-            }
-
-            var mTextField = ty.GetField("m_Text", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (mTextField != null)
-            {
-                mTextField.SetValue(target, value);
                 return 1;
             }
         }
@@ -229,17 +209,7 @@ public static partial class PnlMusicUtils
 
     private static object GetMemberObject(object obj, string memberName)
     {
-        try
-        {
-            if (obj == null) return null;
-            var ty = obj.GetType();
-            var p = ty.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (p != null && p.GetIndexParameters().Length == 0) return p.GetValue(obj);
-            var f = ty.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f != null) return f.GetValue(obj);
-        }
-        catch { }
-        return null;
+        return ModReflection.GetValue(obj, memberName);
     }
 
     private static int SetChildTextByNames(GameObject root, string[] objectNames, string value)

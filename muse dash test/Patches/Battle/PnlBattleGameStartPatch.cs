@@ -12,7 +12,7 @@ using UnityEngine.Networking;
 [HarmonyLib.HarmonyPatch]
 public class PnlBattle_GameStart_Patch
 {
-    private static readonly string HwaFolderPath = Path.Combine("H:\\steam\\steamapps\\common\\Muse Dash", "hwa");
+    private static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
 
     private static MethodBase TargetMethod()
     {

@@ -1,4 +1,5 @@
 using MelonLoader;
+using muse_dash_test;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -175,11 +176,8 @@ public static partial class PnlMusicUtils
         try
         {
             if (obj == null) return null;
-            var ty = obj.GetType();
-            var p = ty.GetProperty(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (p != null && p.GetIndexParameters().Length == 0) return ValueToUsefulText(p.GetValue(obj));
-            var f = ty.GetField(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f != null) return ValueToUsefulText(f.GetValue(obj));
+            object val = ModReflection.GetValue(obj, memberName);
+            return ValueToUsefulText(val);
         }
         catch { }
         return null;
@@ -455,11 +453,14 @@ public static partial class PnlMusicUtils
     {
         try
         {
-            if (o == null) return null; var ty = o.GetType();
-            var p = ty.GetProperty(propName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (p != null) { var v = p.GetValue(o); if (v is string) return v as string; var tv = v?.GetType().GetProperty("text", BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(v) as string; if (!string.IsNullOrEmpty(tv)) return tv; if (v != null) return v.ToString(); }
-            var f = ty.GetField(propName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (f != null) { var v = f.GetValue(o); if (v is string) return v as string; var tv = v?.GetType().GetProperty("text", BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(v) as string; if (!string.IsNullOrEmpty(tv)) return tv; if (v != null) return v.ToString(); }
+            if (o == null) return null;
+            object v = ModReflection.GetValue(o, propName);
+            if (v == null) return null;
+            if (v is string s) return s;
+
+            string tv = ModReflection.GetValue(v, "text") as string;
+            if (!string.IsNullOrEmpty(tv)) return tv;
+            return v.ToString();
         }
         catch { }
         return null;

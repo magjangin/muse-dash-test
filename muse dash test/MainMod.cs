@@ -9,7 +9,7 @@ namespace muse_dash_test
 {
     public class MainMod : MelonMod
     {
-        private static readonly string HwaFolderPath = Path.Combine("H:\\steam\\steamapps\\common\\Muse Dash", "hwa");
+        private static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
         private static HwaManifest cachedManifest;
 
         private sealed class HwaManifest

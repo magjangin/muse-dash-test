@@ -243,80 +243,19 @@ namespace muse_dash_test
             {
                 try
                 {
-                    // 1. 원본 객체를 얇은 복사로 복제
-                    var clonedObj = originalInfo.MemberwiseClone();
-                    if (clonedObj == null)
+                    if (!TryCloneMusicInfo(originalInfo, uid, out MusicInfo clonedInfo))
                     {
-                        MelonLogger.Error($"[CustomTagPatch] [실패] {uid} originalInfo.MemberwiseClone() 결과가 null입니다.");
                         return;
                     }
 
-                    var clonedInfo = clonedObj.TryCast<MusicInfo>();
-                    if (clonedInfo == null)
+                    ApplyVirtualSongMetadata(clonedInfo, uid, name, author, levelDesigner, diff1, diff2);
+                    if (!ApplyVirtualSongAlbumMetadata(clonedInfo, uid))
                     {
-                        MelonLogger.Error($"[CustomTagPatch] [실패] {uid} clonedObj를 MusicInfo로 캐스팅하지 못했습니다.");
                         return;
-                    }
-
-                    // 2. 복사본 프로퍼티 수정 수행
-                    clonedInfo.uid = uid;
-                    clonedInfo.name = name;
-                    clonedInfo.author = author;
-                    clonedInfo.levelDesigner = levelDesigner;
-                    SetMemberValue(clonedInfo, "difficulty1", diff1);
-                    SetMemberValue(clonedInfo, "difficulty2", diff2);
-                    SetMemberValue(clonedInfo, "difficulty3", 0);
-                    SetMemberValue(clonedInfo, "callBackDifficulty1", diff1);
-                    SetMemberValue(clonedInfo, "callBackDifficulty2", diff2);
-                    SetMemberValue(clonedInfo, "callBackDifficulty3", 0);
-                    SetMemberValue(clonedInfo, "callBackDifficulty4", 0);
-                    SetMemberValue(clonedInfo, "callBackDifficulty5", 0);
-
-                    // 2.5 Mask Value 오버라이드로 앨범 소속 변경 (앨범 2개 생성 문제 및 롤백 방지)
-                    try
-                    {
-                        clonedInfo.AddMaskValue("albumUidName", (Il2CppSystem.String)AlbumUidString);
-                        clonedInfo.AddMaskValue("albumIndex", new Il2CppSystem.Int32 { m_value = TagUid }.BoxIl2CppObject());
-                        clonedInfo.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_998_0");
-                        SetAlbumMetadata(clonedInfo, AlbumUidString, TagUid, TagUid + 1, "custom_album_998_0");
-                    }
-                    catch (Exception ex)
-                    {
-                        MelonLogger.Error($"[CustomTagPatch] [실패] {uid} AddMaskValue 앨범 마스크 적용 예외: {ex}");
                     }
 
                     LogNestedMusicExInfo("[CustomTagPatch] [복제 후 MusicExInfo 덤프]", clonedInfo);
-
-                    // 3. 글로벌 DBMusicTag의 m_AllMusicInfo 맵에 등록 시도
-                    var allMusicDict = GlobalDataBase.dbMusicTag?.m_AllMusicInfo;
-                    if (allMusicDict != null)
-                    {
-                        if (!allMusicDict.ContainsKey(uid))
-                        {
-                            allMusicDict.Add(uid, clonedInfo);
-                            MelonLogger.Msg($"[CustomTagPatch] [성공] m_AllMusicInfo 맵에 '{uid}' 신규 주입 완료!");
-                        }
-                        else
-                        {
-                            allMusicDict[uid] = clonedInfo;
-                            MelonLogger.Msg($"[CustomTagPatch] [알림] m_AllMusicInfo에 '{uid}'이 이미 존재하여 덮어썼습니다.");
-                        }
-
-                        // 4. 주입 검증: GetMusicInfoFromAll(uid) 성공 여부 확인
-                        var checkInfo = GlobalDataBase.dbMusicTag.GetMusicInfoFromAll(uid);
-                        if (checkInfo != null && checkInfo.uid == uid)
-                        {
-                            MelonLogger.Msg($"[CustomTagPatch] [대성공] GetMusicInfoFromAll('{uid}') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
-                            
-                            // 5. 커스텀 태그 노출 목록에 추가
-                            musicList.Add(uid);
-                            MelonLogger.Msg($"[CustomTagPatch] [성공] 커스텀 태그 노출 목록에 '{uid}' 추가 완료!");
-                        }
-                        else
-                        {
-                            MelonLogger.Error($"[CustomTagPatch] [실패] '{uid}' 주입 후 조회 검증에 실패했습니다.");
-                        }
-                    }
+                    RegisterVirtualSong(clonedInfo, uid, musicList);
                 }
                 catch (Exception ex)
                 {
