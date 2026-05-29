@@ -5,89 +5,70 @@ namespace muse_dash_test
     /// <summary>
     /// 게임 내부의 원본 MusicInfo 객체와의 강결합을 방지하고 필드 업데이트 취약성을 격리하는 추상화 어댑터 래퍼입니다.
     /// </summary>
-    public class MusicInfoWrapper
+    public class MusicInfoWrapper : Il2CppWrapperBase
     {
-        public object RawObject { get; }
-
-        public MusicInfoWrapper(object rawMusicInfo)
+        public MusicInfoWrapper(object rawMusicInfo) : base(rawMusicInfo)
         {
-            RawObject = rawMusicInfo;
         }
 
         public string uid
         {
-            get => ModReflection.GetValue(RawObject, "uid") as string;
-            set => ModReflection.SetValue(RawObject, "uid", value);
+            get => Get<string>("uid");
+            set => Set("uid", value);
         }
 
         public string name
         {
-            get => ModReflection.GetValue(RawObject, "name") as string;
-            set => ModReflection.SetValue(RawObject, "name", value);
+            get => Get<string>("name");
+            set => Set("name", value);
         }
 
         public string author
         {
-            get => ModReflection.GetValue(RawObject, "author") as string;
-            set => ModReflection.SetValue(RawObject, "author", value);
+            get => Get<string>("author");
+            set => Set("author", value);
         }
 
         public string levelDesigner
         {
-            get => ModReflection.GetValue(RawObject, "levelDesigner") as string;
-            set => ModReflection.SetValue(RawObject, "levelDesigner", value);
+            get => Get<string>("levelDesigner");
+            set => Set("levelDesigner", value);
         }
 
         public string cover
         {
-            get => ModReflection.GetValue(RawObject, "cover") as string;
-            set => ModReflection.SetValue(RawObject, "cover", value);
+            get => Get<string>("cover");
+            set => Set("cover", value);
         }
 
         public int difficulty1
         {
-            get => Convert.ToInt32(ModReflection.GetValue(RawObject, "difficulty1") ?? 0);
-            set => ModReflection.SetValue(RawObject, "difficulty1", value);
+            get => Get<int>("difficulty1");
+            set => Set("difficulty1", value);
         }
 
         public int difficulty2
         {
-            get => Convert.ToInt32(ModReflection.GetValue(RawObject, "difficulty2") ?? 0);
-            set => ModReflection.SetValue(RawObject, "difficulty2", value);
+            get => Get<int>("difficulty2");
+            set => Set("difficulty2", value);
         }
 
         public int difficulty3
         {
-            get => Convert.ToInt32(ModReflection.GetValue(RawObject, "difficulty3") ?? 0);
-            set => ModReflection.SetValue(RawObject, "difficulty3", value);
+            get => Get<int>("difficulty3");
+            set => Set("difficulty3", value);
         }
 
         public int difficulty4
         {
-            get => Convert.ToInt32(ModReflection.GetValue(RawObject, "difficulty4") ?? 0);
-            set => ModReflection.SetValue(RawObject, "difficulty4", value);
+            get => Get<int>("difficulty4");
+            set => Set("difficulty4", value);
         }
 
         public int difficulty5
         {
-            get => Convert.ToInt32(ModReflection.GetValue(RawObject, "difficulty5") ?? 0);
-            set => ModReflection.SetValue(RawObject, "difficulty5", value);
-        }
-
-        public void AddMaskValue(string key, object value)
-        {
-            try
-            {
-                var method = RawObject.GetType().GetMethod("AddMaskValue", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (method != null)
-                {
-                    method.Invoke(RawObject, new object[] { key, value });
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLoader.MelonLogger.Error($"[MusicInfoWrapper] AddMaskValue 호출 실패: {ex.Message}");
-            }
+            get => Get<int>("difficulty5");
+            set => Set("difficulty5", value);
         }
     }
 }

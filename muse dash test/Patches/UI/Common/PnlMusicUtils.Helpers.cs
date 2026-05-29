@@ -176,7 +176,7 @@ public static partial class PnlMusicUtils
         try
         {
             if (obj == null) return null;
-            object val = ModReflection.GetValue(obj, memberName);
+            object val = ModReflection.GetValue(obj, memberName, silent: true);
             return ValueToUsefulText(val);
         }
         catch { }
@@ -454,11 +454,11 @@ public static partial class PnlMusicUtils
         try
         {
             if (o == null) return null;
-            object v = ModReflection.GetValue(o, propName);
+            object v = ModReflection.GetValue(o, propName, silent: true);
             if (v == null) return null;
             if (v is string s) return s;
 
-            string tv = ModReflection.GetValue(v, "text") as string;
+            string tv = ModReflection.GetValue(v, "text", silent: true) as string;
             if (!string.IsNullOrEmpty(tv)) return tv;
             return v.ToString();
         }

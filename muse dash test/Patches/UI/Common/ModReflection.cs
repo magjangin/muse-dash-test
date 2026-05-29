@@ -131,6 +131,34 @@ namespace muse_dash_test
         {
             const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
+            // 텍스트 속성을 가질 리 없는 대표적인 Unity 핵심 타입들에 대한 'text' 조회 초고속 바이패스 필터
+            if (memberName == "text")
+            {
+                string typeName = type.FullName;
+                if (typeName != null &&
+                    (typeName.StartsWith("UnityEngine.Transform") ||
+                     typeName.StartsWith("UnityEngine.RectTransform") ||
+                     typeName.StartsWith("UnityEngine.CanvasRenderer") ||
+                     typeName.StartsWith("UnityEngine.MeshFilter") ||
+                     typeName.StartsWith("UnityEngine.MeshRenderer") ||
+                     typeName.StartsWith("UnityEngine.BoxCollider") ||
+                     typeName.StartsWith("UnityEngine.CircleCollider") ||
+                     typeName.StartsWith("UnityEngine.Rigidbody") ||
+                     typeName.StartsWith("UnityEngine.Canvas") ||
+                     typeName.StartsWith("UnityEngine.AudioSource") ||
+                     typeName.StartsWith("UnityEngine.ParticleSystem") ||
+                     typeName.StartsWith("UnityEngine.Animator") ||
+                     typeName.StartsWith("UnityEngine.Image") ||
+                     typeName.StartsWith("UnityEngine.Mask") ||
+                     typeName.StartsWith("UnityEngine.Sprite") ||
+                     typeName.StartsWith("UnityEngine.Camera") ||
+                     typeName.StartsWith("UnityEngine.Shader") ||
+                     typeName.StartsWith("UnityEngine.Material")))
+                {
+                    return null;
+                }
+            }
+
             // 패턴 1: 정확한 프로퍼티명
             var prop = type.GetProperty(memberName, flags);
             if (prop != null && prop.GetIndexParameters().Length == 0) return prop;

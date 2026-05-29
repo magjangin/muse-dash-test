@@ -39,9 +39,9 @@ namespace muse_dash_test
         {
             private static bool Prefix(DBConfigAlbums __instance, MusicInfo musicInfo, ref DBConfigAlbums.AlbumsInfo __result)
             {
-                if (musicInfo != null && (musicInfo.uid == "999-0" || musicInfo.uid == "999-1" || musicInfo.uid == "999-2") && CustomAlbumInfo != null)
+                if (musicInfo != null && (musicInfo.uid == "999-0" || musicInfo.uid == "999-1" || musicInfo.uid == "999-2") && CustomTagRegistry.CustomAlbumInfo != null)
                 {
-                    __result = CustomAlbumInfo;
+                    __result = CustomTagRegistry.CustomAlbumInfo;
                     return false;
                 }
 
@@ -54,9 +54,9 @@ namespace muse_dash_test
         {
             private static bool Prefix(DBConfigAlbums __instance, string uid, ref DBConfigAlbums.AlbumsInfo __result)
             {
-                if (uid == AlbumUidString && CustomAlbumInfo != null)
+                if (uid == CustomTagRegistry.AlbumUidString && CustomTagRegistry.CustomAlbumInfo != null)
                 {
-                    __result = CustomAlbumInfo;
+                    __result = CustomTagRegistry.CustomAlbumInfo;
                     return false;
                 }
 
@@ -69,9 +69,9 @@ namespace muse_dash_test
         {
             private static bool Prefix(DBConfigAlbums __instance, string uid, ref int __result)
             {
-                if (uid == AlbumUidString)
+                if (uid == CustomTagRegistry.AlbumUidString)
                 {
-                    __result = TagUid;
+                    __result = CustomTagRegistry.TagUid;
                     return false;
                 }
 

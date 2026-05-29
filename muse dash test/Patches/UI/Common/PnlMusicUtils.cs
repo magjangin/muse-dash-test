@@ -162,7 +162,7 @@ public static partial class PnlMusicUtils
         try
         {
             if (obj == null || string.IsNullOrEmpty(memberName)) return 0;
-            object target = ModReflection.GetValue(obj, memberName);
+            object target = ModReflection.GetValue(obj, memberName, silent: true);
             if (target != null)
             {
                 return SetTextValue(target, value);
@@ -184,7 +184,7 @@ public static partial class PnlMusicUtils
                 return 1;
             }
 
-            if (ModReflection.SetValue(target, "text", value))
+            if (ModReflection.SetValue(target, "text", value, silent: true))
             {
                 return 1;
             }
@@ -209,7 +209,7 @@ public static partial class PnlMusicUtils
 
     private static object GetMemberObject(object obj, string memberName)
     {
-        return ModReflection.GetValue(obj, memberName);
+        return ModReflection.GetValue(obj, memberName, silent: true);
     }
 
     private static int SetChildTextByNames(GameObject root, string[] objectNames, string value)
@@ -219,38 +219,44 @@ public static partial class PnlMusicUtils
 
         try
         {
-            var texts = root.GetComponentsInChildren<Text>(true);
-            foreach (var text in texts)
+            // 1. 하위의 모든 Transform(오브젝트 노드)을 수집하여 이름이 일치하는 타겟 오브젝트만 1차 초고속 선별
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            if (transforms != null)
             {
-                try
+                foreach (var trans in transforms)
                 {
-                    if (text == null || text.gameObject == null) continue;
-                    if (!NameMatches(text.name, objectNames) && !NameMatches(text.gameObject.name, objectNames)) continue;
-                    text.text = value;
-                    writes++;
-                    writes += SetAllTextUnder(text.gameObject, value);
-                }
-                catch { }
-            }
-        }
-        catch { }
+                    try
+                    {
+                        if (trans == null || trans.gameObject == null) continue;
 
-        try
-        {
-            var components = root.GetComponentsInChildren<Component>(true);
-            foreach (var component in components)
-            {
-                try
-                {
-                    if (component == null || component.gameObject == null) continue;
-                    if (!NameMatches(component.name, objectNames) && !NameMatches(component.gameObject.name, objectNames)) continue;
-                    writes += SetTextValue(component, value);
-                    writes += SetAllTextUnder(component.gameObject, value);
+                        // GameObject 이름이 찾고자 하는 텍스트 오브젝트 후보와 일치하는 경우에만 핀포인트 진입
+                        if (NameMatches(trans.gameObject.name, objectNames))
+                        {
+                            var go = trans.gameObject;
+
+                            // 해당 오브젝트에 존재하는 컴포넌트들만 조회 (전체 트리 스캔 배제)
+                            var components = go.GetComponents<Component>();
+                            if (components != null)
+                            {
+                                foreach (var comp in components)
+                                {
+                                    if (comp == null || comp is Transform || comp.GetType().Name == "CanvasRenderer") continue;
+                                    writes += SetTextValue(comp, value);
+                                }
+                            }
+
+                            // 하위 모든 텍스트 강제 동기화
+                            writes += SetAllTextUnder(go, value);
+                        }
+                    }
+                    catch { }
                 }
-                catch { }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"[PnlMusicUtils] SetChildTextByNames 최적화 스캔 중 예외: {ex.Message}");
+        }
 
         return writes;
     }
@@ -260,33 +266,44 @@ public static partial class PnlMusicUtils
         int writes = 0;
         if (root == null) return writes;
 
+        // 1. 표준 Text 컴포넌트는 즉시 처리
         try
         {
             var texts = root.GetComponentsInChildren<Text>(true);
-            foreach (var text in texts)
+            if (texts != null)
             {
-                try
+                foreach (var text in texts)
                 {
                     if (text == null) continue;
                     text.text = value;
                     writes++;
                 }
-                catch { }
             }
         }
         catch { }
 
+        // 2. 기타 텍스트 오브젝트 후보군에 대해 핀포인트 처리
         try
         {
-            var components = root.GetComponentsInChildren<Component>(true);
-            foreach (var component in components)
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            if (transforms != null)
             {
-                try
+                foreach (var trans in transforms)
                 {
-                    if (component == null) continue;
-                    writes += SetTextValue(component, value);
+                    if (trans == null || trans.gameObject == null) continue;
+                    var go = trans.gameObject;
+
+                    // 표준 Text 컴포넌트는 이미 처리했으므로 제외하고 나머지 컴포넌트만 탐색
+                    var components = go.GetComponents<Component>();
+                    if (components != null)
+                    {
+                        foreach (var comp in components)
+                        {
+                            if (comp == null || comp is Text || comp is Transform || comp.GetType().Name == "CanvasRenderer") continue;
+                            writes += SetTextValue(comp, value);
+                        }
+                    }
                 }
-                catch { }
             }
         }
         catch { }

@@ -26,7 +26,7 @@ namespace muse_dash_test
             public int? Difficulty5;
         }
 
-        public override void OnApplicationStart()
+        public override void OnInitializeMelon()
         {
             MelonLogger.Msg("모드가 로드되었습니다.");
 
