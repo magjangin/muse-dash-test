@@ -1,6 +1,6 @@
 # 노트 실험 가이드
 
-노트 실험은 `muse dash test/Patches/DBStageInfoPatch.cs`의 `ExperimentNotes` 배열만 수정하면 됩니다. 현재 방식은 원본 차트에서 첫 플레이 노트를 복사한 뒤, 원하는 값으로 바꿔서 새 차트처럼 주입하는 방식입니다.
+노트 실험은 `muse dash test/Patches/Database/Stage/DBStageInfoPatch.cs`의 `ExperimentNotes` 배열만 수정하면 됩니다. 현재 방식은 원본 차트에서 첫 플레이 노트를 복사한 뒤, 원하는 값으로 바꿔서 새 차트처럼 주입하는 방식입니다.
 
 이 문서는 “어떤 값을 넣어야 어떤 노트가 되는가”를 빠르게 보기 위한 타입 사전 역할도 합니다. 실제 게임 안에서는 일반 노트, 공중 노트, 롱노트, 샌드백, 보스 트리거가 모두 같은 `MusicData` 리스트 안에 들어갑니다.
 

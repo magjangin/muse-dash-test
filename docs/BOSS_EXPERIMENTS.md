@@ -4,8 +4,8 @@
 
 | 구분 | 수정 위치 | 의미 |
 | --- | --- | --- |
-| 보스 액션 트리거 | `DBStageInfoPatch.cs`의 `ExperimentNotes` | `in`, `boss_far_atk_1_start`, `boss_far_atk_2_start`, `out` 같은 보스 동작 실행 |
-| 실제 보스 프리팹 | `BossPatch.cs`의 `BossRewriteRules` | 화면에 보이는 보스 오브젝트 변경 |
+| 보스 액션 트리거 | `DBStageInfoPatch.cs` (`Patches/Database/Stage/`)의 `ExperimentNotes` | `in`, `boss_far_atk_1_start`, `boss_far_atk_2_start`, `out` 같은 보스 동작 실행 |
+| 실제 보스 프리팹 | `BossPatch.cs` (`Patches/Battle/Mechanics/`)의 `BossRewriteRules` | 화면에 보이는 보스 오브젝트 변경 |
 
 ## 핵심 개념
 
@@ -18,7 +18,7 @@
 수정 위치:
 
 ```text
-muse dash test/Patches/DBStageInfoPatch.cs
+muse dash test/Patches/Database/Stage/DBStageInfoPatch.cs
 ```
 
 예시:
@@ -147,8 +147,8 @@ UID의 앞 두 자리 `zz`는 씬 계열입니다. 보스 토큰은 뒤 4자리(
 
 그래서 “보스가 안 나온다”는 문제는 보통 두 종류로 나뉩니다.
 
-- 보스 액션 트리거가 안 들어간 경우: `DBStageInfoPatch.cs`의 `ExperimentNotes`와 `empty_000` 로그를 봅니다.
-- 실제 보스 모델이 원하는 것으로 안 바뀐 경우: `BossPatch.cs`의 `BossRewriteRules`와 `Boss.InitBossObject` 로그를 봅니다.
+- 보스 액션 트리거가 안 들어간 경우: `DBStageInfoPatch.cs` (`Patches/Database/Stage/`)의 `ExperimentNotes`와 `empty_000` 로그를 봅니다.
+- 실제 보스 모델이 원하는 것으로 안 바뀐 경우: `BossPatch.cs` (`Patches/Battle/Mechanics/`)의 `BossRewriteRules`와 `Boss.InitBossObject` 로그를 봅니다.
 - 보스 씬 전환이 의심되는 경우: `Boss.SceneBossChange` 로그와 `SceneBossChangeRules`의 `OrigIdx/NewIdx`를 봅니다.
 - 음악 씬 자체가 다르게 로드되는지 확인하려면 `GameMusicScene.LoadScene` 로그와 `LoadSceneRewriteRules`의 `OrigSceneName/NewSceneName`을 봅니다.
 
@@ -157,7 +157,7 @@ UID의 앞 두 자리 `zz`는 씬 계열입니다. 보스 토큰은 뒤 4자리(
 수정 위치:
 
 ```text
-muse dash test/Patches/BossPatch.cs
+muse dash test/Patches/Battle/Mechanics/BossPatch.cs
 ```
 
 현재 확인한 정답 프리팹은 아래입니다.

@@ -43,7 +43,7 @@ Il2Cpp.Boss.InitBossObject: 변경 적용 -> name=..., scene=...
 봐야 할 위치:
 
 ```text
-muse dash test/Patches/DBStageInfoPatch.cs
+muse dash test/Patches/Database/Stage/DBStageInfoPatch.cs
 ```
 
 확인할 값:
@@ -134,7 +134,7 @@ new ExperimentNoteSpec
 
 ### 1. 보스 액션 트리거가 들어갔는지
 
-`DBStageInfoPatch.cs`의 `ExperimentNotes`에 `BossAction="in"`이 필요합니다.
+`DBStageInfoPatch.cs` (`Patches/Database/Stage/`)의 `ExperimentNotes`에 `BossAction="in"`이 필요합니다.
 
 예:
 
@@ -163,7 +163,7 @@ showTick=15
 
 ### 2. 실제 보스 프리팹이 바뀌었는지
 
-`BossPatch.cs`에서 `BossRewriteRules`가 매칭되어야 합니다.
+`BossPatch.cs` (`Patches/Battle/Mechanics/`)에서 `BossRewriteRules`가 매칭되어야 합니다.
 
 로그:
 
@@ -196,7 +196,7 @@ new BossRule
 
 ## 곡 제목/아티스트가 안 바뀔 때
 
-곡 정보 실험은 `PnlStagePatch.cs`의 상수에서 켭니다.
+곡 정보 실험은 `PnlMusicUtils.cs` 및 `PnlStagePatchHelper.cs` 등의 유틸리티를 기반으로 동작하며, `PnlStagePatch.cs` (`Patches/UI/Stage/Selection/`) 등의 상수에서 켭니다.
 
 ```csharp
 private const bool EnableSongTitleExperiment = true;
