@@ -2,6 +2,8 @@ using MelonLoader;
 using Il2CppFormulaBase;
 using Il2CppGameLogic;
 using System.Reflection;
+using UnityEngine;
+using UnityEngine.Video;
 
 // Il2CppFormulaBase.StageBattleComponent.LoadMusicData 하모니 패치
 [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "LoadMusicData")]
@@ -127,3 +129,131 @@ public class StageBattleComponent_InitData_Patch
         MelonLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
     }
 }
+
+[HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Pause")]
+public class StageBattleComponent_Pause_Patch
+{
+    public static void Postfix(StageBattleComponent __instance, bool pauseCorountine)
+    {
+        try
+        {
+            MelonLogger.Msg($"[StageBattleComponent.Pause] 게임 일시정지 호출됨: pauseCorountine={pauseCorountine}");
+
+            // 1. 커스텀 BGA 비디오 일시정지
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                VideoPlayer vp = mainCam.GetComponentInChildren<VideoPlayer>();
+                if (vp != null && vp.isPlaying)
+                {
+                    vp.Pause();
+                    MelonLogger.Msg("[StageBattleComponent.Pause] 배경 비디오 재생을 일시정지했습니다.");
+                }
+            }
+
+            // 2. 커스텀 BGM 오디오 일시정지
+            GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
+            if (bgmGo != null)
+            {
+                AudioSource bgm = bgmGo.GetComponent<AudioSource>();
+                if (bgm != null && bgm.isPlaying)
+                {
+                    bgm.Pause();
+                    MelonLogger.Msg("[StageBattleComponent.Pause] 커스텀 BGM 오디오 재생을 일시정지했습니다.");
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            MelonLogger.Error($"[StageBattleComponent.Pause] 예외 발생: {ex}");
+        }
+    }
+}
+
+[HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Resume")]
+public class StageBattleComponent_Resume_Patch
+{
+    public static void Postfix(StageBattleComponent __instance, bool isExit)
+    {
+        try
+        {
+            MelonLogger.Msg($"[StageBattleComponent.Resume] 게임 재개 호출됨: isExit={isExit}");
+
+            if (isExit)
+            {
+                return;
+            }
+
+            // 1. 커스텀 BGA 비디오 재개
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                VideoPlayer vp = mainCam.GetComponentInChildren<VideoPlayer>();
+                if (vp != null)
+                {
+                    bool wasPlaying = vp.isPlaying;
+                    bool wasPrepared = vp.isPrepared;
+                    vp.Play();
+                    MelonLogger.Msg($"[StageBattleComponent.Resume] 배경 비디오 재생을 재개했습니다. (이전 상태: isPlaying={wasPlaying}, isPrepared={wasPrepared})");
+                }
+            }
+
+            // 2. 커스텀 BGM 오디오 재개
+            GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
+            if (bgmGo != null)
+            {
+                AudioSource bgm = bgmGo.GetComponent<AudioSource>();
+                if (bgm != null && !bgm.isPlaying)
+                {
+                    bgm.UnPause();
+                    MelonLogger.Msg("[StageBattleComponent.Resume] 커스텀 BGM 오디오 재생을 재개했습니다.");
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            MelonLogger.Error($"[StageBattleComponent.Resume] 예외 발생: {ex}");
+        }
+    }
+}
+
+[HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "End")]
+public class StageBattleComponent_End_Patch
+{
+    public static void Postfix(StageBattleComponent __instance)
+    {
+        try
+        {
+            MelonLogger.Msg("[StageBattleComponent.End] 스테이지 종료 호출됨 - 비디오 및 BGM을 정지합니다.");
+
+            // 1. 커스텀 BGA 비디오 완전히 정지
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                VideoPlayer vp = mainCam.GetComponentInChildren<VideoPlayer>();
+                if (vp != null)
+                {
+                    vp.Stop();
+                    MelonLogger.Msg("[StageBattleComponent.End] 배경 비디오 재생을 완전히 멈췄습니다.");
+                }
+            }
+
+            // 2. 커스텀 BGM 오디오 완전히 정지
+            GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
+            if (bgmGo != null)
+            {
+                AudioSource bgm = bgmGo.GetComponent<AudioSource>();
+                if (bgm != null)
+                {
+                    bgm.Stop();
+                    MelonLogger.Msg("[StageBattleComponent.End] 커스텀 BGM 오디오 재생을 완전히 멈췄습니다.");
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            MelonLogger.Error($"[StageBattleComponent.End] 예외 발생: {ex}");
+        }
+    }
+}
+

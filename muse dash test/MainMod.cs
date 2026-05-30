@@ -1,6 +1,8 @@
 using MelonLoader;
 using System;
 using System.IO;
+using UnityEngine;
+using UnityEngine.Video;
 
 [assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-test", "0.1.0", "화영왕")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
@@ -11,6 +13,11 @@ namespace muse_dash_test
     {
         private static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
         private static HwaManifest cachedManifest;
+
+        private static readonly HywStageManager hywStageManager = new HywStageManager();
+        private static float hywCheckTimer = 0f;
+        private const float HywCheckInterval = 0.1f;
+        private static float syncCooldownTimer = 0f;
 
         private sealed class HwaManifest
         {
@@ -29,6 +36,7 @@ namespace muse_dash_test
         public override void OnInitializeMelon()
         {
             MelonLogger.Msg("모드가 로드되었습니다.");
+            MelonLogger.Msg("HywHpTextMod - 체력바 텍스트 모드가 성공적으로 연동 활성화되었습니다!");
 
             try
             {
@@ -49,6 +57,108 @@ namespace muse_dash_test
 
         public override void OnUpdate()
         {
+            try
+            {
+                var pnl = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
+                if (pnl != null && pnl.CurrentBattleUIComp != null)
+                {
+                    var sld = pnl.CurrentBattleUIComp.sldProgress;
+                    if (sld != null && sld.gameObject.activeInHierarchy)
+                    {
+
+                        if (ExperimentPlayContext.ShouldApplyExperimentChart)
+                        {
+                            if (syncCooldownTimer > 0f)
+                            {
+                                syncCooldownTimer -= Time.deltaTime;
+                            }
+
+                            AudioSource bgmSource = null;
+                            GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
+                            if (bgmGo != null)
+                            {
+                                bgmSource = bgmGo.GetComponent<AudioSource>();
+                            }
+
+                            VideoPlayer bgaPlayer = null;
+                            Camera mainCam = Camera.main;
+                            if (mainCam != null)
+                            {
+                                Transform quad = mainCam.transform.Find("VideoBackgroundQuad");
+                                if (quad != null)
+                                {
+                                    bgaPlayer = quad.GetComponent<VideoPlayer>();
+                                }
+                            }
+
+                            if (syncCooldownTimer <= 0f && Time.timeScale > 0f)
+                            {
+                                float progressRatio = sld.value;
+
+                                if (bgmSource != null && bgmSource.clip != null && bgmSource.isPlaying)
+                                {
+                                    float totalDuration = bgmSource.clip.length;
+                                    float expectedTime = progressRatio * totalDuration;
+                                    float currentAudioTime = bgmSource.time;
+
+                                    if (Mathf.Abs(currentAudioTime - expectedTime) > 0.2f)
+                                    {
+                                        MelonLogger.Msg($"[Sync.BGM] 싱크 보정 적용! 오차: {currentAudioTime - expectedTime:F3}초 | 기존: {currentAudioTime:F2}초 -> 목표: {expectedTime:F2}초");
+                                        bgmSource.time = expectedTime;
+                                        syncCooldownTimer = 0.5f; // 0.5초 쿨다운을 두어 동기화 루프 충돌 방지
+                                    }
+                                }
+
+                                if (bgaPlayer != null && bgaPlayer.isPrepared && bgaPlayer.isPlaying)
+                                {
+                                    float totalDuration = (float)bgaPlayer.length;
+                                    float expectedTime = progressRatio * totalDuration;
+                                    float currentVideoTime = (float)bgaPlayer.time;
+
+                                    if (Mathf.Abs(currentVideoTime - expectedTime) > 0.2f)
+                                    {
+                                        MelonLogger.Msg($"[Sync.BGA] 싱크 보정 적용! 오차: {currentVideoTime - expectedTime:F3}초 | 기존: {currentVideoTime:F2}초 -> 목표: {expectedTime:F2}초");
+                                        bgaPlayer.time = expectedTime;
+                                        syncCooldownTimer = 0.5f; // 0.5초 쿨다운을 두어 비디오 버퍼 정비 보장
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    syncCooldownTimer = 0f; // 배틀 중이 아닐 때는 타이머 초기화
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            {
+                return;
+            }
+
+            try
+            {
+                hywCheckTimer += Time.deltaTime;
+                if (hywCheckTimer >= HywCheckInterval)
+                {
+                    hywCheckTimer = 0f;
+                    hywStageManager.CheckForStageAndModify();
+                }
+
+                if (hywStageManager.IsInStage)
+                {
+                    hywStageManager.CheckForNoteEvents();
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[HywHpTextMod] Update 오류: {ex}");
+            }
         }
 
         public override void OnApplicationQuit()
@@ -348,5 +458,6 @@ namespace muse_dash_test
                 + ", diff4=" + (manifest.Difficulty4.HasValue ? manifest.Difficulty4.Value.ToString() : "(null)")
                 + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString() : "(null)");
         }
+
     }
 }

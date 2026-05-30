@@ -7,6 +7,7 @@ using System.Reflection;
 using Il2CppAssets.Scripts.UI.Panels;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Video;
 
 // PnlBattle.GameStart 후킹: hwa 폴더의 ogg를 찾아 배틀 BGM으로 주입
 [HarmonyLib.HarmonyPatch]
@@ -30,6 +31,11 @@ public class PnlBattle_GameStart_Patch
     {
         try
         {
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            {
+                return;
+            }
+
             MelonCoroutines.Start(InjectBattleBgmAfterDelay(__instance));
         }
         catch (Exception ex)
@@ -41,6 +47,17 @@ public class PnlBattle_GameStart_Patch
     private static IEnumerator InjectBattleBgmAfterDelay(object __instance)
     {
         yield return null;
+
+        Camera mainCam = Camera.main;
+        if (mainCam != null)
+        {
+            MelonLogger.Msg($"[PnlBattle.GameStart.Bgm] 메인 카메라 감지 완료: name={mainCam.name}, position={mainCam.transform.position}");
+            TryPlayVideo(mainCam);
+        }
+        else
+        {
+            MelonLogger.Warning("[PnlBattle.GameStart.Bgm] 메인 카메라를 찾지 못했습니다.");
+        }
 
         string oggPath = ResolveHwaOggPath();
         if (string.IsNullOrWhiteSpace(oggPath))
@@ -291,6 +308,110 @@ public class PnlBattle_GameStart_Patch
             MelonLogger.Error($"[PnlBattle.GameStart.Bgm] AudioSource 생성 실패: {ex}");
             return null;
         }
+    }
+
+    private static void TryPlayVideo(Camera mainCam)
+    {
+        try
+        {
+            if (!Directory.Exists(HwaFolderPath))
+            {
+                return;
+            }
+
+            string[] mp4Files = Directory.GetFiles(HwaFolderPath, "*.mp4", SearchOption.TopDirectoryOnly);
+            if (mp4Files == null || mp4Files.Length == 0)
+            {
+                MelonLogger.Msg("[PnlBattle.GameStart.Video] hwa 폴더에 mp4 파일이 없습니다.");
+                return;
+            }
+
+            string mp4Path = mp4Files[0];
+            FileInfo mp4Info = new FileInfo(mp4Path);
+            MelonLogger.Msg($"[PnlBattle.GameStart.Video] mp4 비디오 주입 대상 발견: path={mp4Path}, fileName={mp4Info.Name}, size={mp4Info.Length}");
+
+            // 기존에 혹시 생성되었던 비디오 쿼드가 있다면 깔끔히 정리
+            Transform existingQuad = mainCam.transform.Find("VideoBackgroundQuad");
+            if (existingQuad != null && existingQuad.gameObject != null)
+            {
+                UnityEngine.Object.Destroy(existingQuad.gameObject);
+                MelonLogger.Msg("[PnlBattle.GameStart.Video] 기존 잔존 VideoBackgroundQuad 오브젝트를 삭제했습니다.");
+            }
+
+            // 1. 유니티 3D 쿼드(Quad) 오브젝트 동적 생성
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = "VideoBackgroundQuad";
+
+            // 2. 불필요한 콜라이더 컴포넌트 제거 (물리 버그 및 오버헤드 방지)
+            var col = quad.GetComponent("MeshCollider");
+            if (col != null) UnityEngine.Object.Destroy(col);
+
+            // 3. 카메라 아래로 귀속(Parent)시키고 Z 축 방향 뒤쪽으로 충분히 밀기
+            // Camera_2D 위치가 Z = -10 이고 노트/플레이어 평면이 Z = 0 부근이므로,
+            // localPosition.z = 25f로 두면 월드 Z = 15에 위치하여 노트 및 보스(Z = 0)보다 완벽히 뒤에 자리잡습니다.
+            quad.transform.parent = mainCam.transform;
+            quad.transform.localPosition = new Vector3(0f, 0f, 25f);
+
+            // 4. 메인 오르토그래픽 카메라 화면 크기에 맞추어 쿼드 스케일링
+            float height = mainCam.orthographicSize * 2f;
+            float width = height * mainCam.aspect;
+            quad.transform.localScale = new Vector3(width, height, 1f);
+
+            // 5. Unlit/Texture 최경량 쉐이더 머티리얼 적용 (IL2CPP 환경 대응용 다중 폴백 적용)
+            MeshRenderer renderer = quad.GetComponent<MeshRenderer>();
+            Shader shader = Shader.Find("Unlit/Texture") 
+                         ?? Shader.Find("Sprites/Default") 
+                         ?? Shader.Find("UI/Default");
+
+            if (shader != null)
+            {
+                renderer.material = new Material(shader);
+                MelonLogger.Msg($"[PnlBattle.GameStart.Video] '{shader.name}' 쉐이더를 비디오 판넬에 주입했습니다.");
+            }
+            else
+            {
+                MelonLogger.Warning("[PnlBattle.GameStart.Video] 폴백 쉐이더를 찾지 못하여 기본 생성된 머티리얼을 재사용합니다.");
+            }
+
+            // 2D 오르토그래픽 스프라이트 정렬 버그 방지: 소팅 레이어를 Background로, 순서를 피드백에 따라 -17로 미세 조정합니다.
+            renderer.sortingLayerName = "Background";
+            renderer.sortingOrder = -17;
+
+            // 6. 비디오 플레이어 부착 및 머티리얼 오버라이드 렌더링 설정
+            VideoPlayer videoPlayer = quad.AddComponent<VideoPlayer>();
+            videoPlayer.renderMode = VideoRenderMode.MaterialOverride;
+            videoPlayer.targetMaterialRenderer = renderer;
+            videoPlayer.targetMaterialProperty = "_MainTex";
+            videoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
+            videoPlayer.url = mp4Path;
+            videoPlayer.isLooping = true;
+            videoPlayer.Play();
+            MelonLogger.Msg("[PnlBattle.GameStart.Video] 쿼드 머티리얼 기반 비디오 재생을 성공적으로 시작했습니다.");
+
+            MelonCoroutines.Start(MonitorVideoPlayback(videoPlayer));
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"[PnlBattle.GameStart.Video] 비디오 재생 중 오류 발생: {ex}");
+        }
+    }
+
+    private static IEnumerator MonitorVideoPlayback(VideoPlayer vp)
+    {
+        if (vp == null) yield break;
+
+        yield return new WaitForSeconds(1.0f);
+
+        if (vp == null) yield break;
+
+        MelonLogger.Msg($"[PnlBattle.GameStart.Video.Debug] 1초 후 비디오 재생 상태 상세 점검:");
+        MelonLogger.Msg($"  - isPlaying: {vp.isPlaying}");
+        MelonLogger.Msg($"  - isPrepared: {vp.isPrepared}");
+        MelonLogger.Msg($"  - url: {vp.url}");
+        MelonLogger.Msg($"  - resolution: {vp.width}x{vp.height}");
+        MelonLogger.Msg($"  - frameCount: {vp.frameCount}");
+        MelonLogger.Msg($"  - frameRate: {vp.frameRate:0.00}");
+        MelonLogger.Msg($"  - playbackTime: {vp.time:0.00}s / duration: {vp.length:0.00}s");
     }
 
     private static bool LooksLikeBattleAudio(string text)

@@ -2,6 +2,9 @@ using MelonLoader;
 using System;
 using Il2CppAssets.Scripts.UI.Panels;
 using UnityEngine.UI;
+using Il2CppAssets.Scripts.PeroTools.Nice.Interface;
+using Il2CppAssets.Scripts.PeroTools.Nice.Datas;
+using Il2CppAssets.Scripts.PeroTools.Commons;
 
 // PnlStage.OnEnable 후킹
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), "OnEnable")]
@@ -11,6 +14,20 @@ public class PnlStage_OnEnable_Patch
     {
         try
         {
+            var dataManager = Singleton<DataManager>.instance;
+            if (dataManager != null)
+            {
+                var account = (DataObject)dataManager["Account"];
+                if (account != null)
+                {
+                    IVariable val = account["IsUnlockAllMaster"];
+                    if (val != null)
+                    {
+                        VariableUtils.SetResult(val, (Il2CppSystem.Object)true);
+                        MelonLogger.Msg("[🔓 FixLocksPatch] PnlStage.OnEnable - IsUnlockAllMaster를 true로 설정 완료!");
+                    }
+                }
+            }
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnEnable Prefix 예외: {ex}"); }
     }
@@ -262,6 +279,37 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
+            var dataManager = Singleton<DataManager>.instance;
+            DataObject account = null;
+            IVariable val = null;
+            bool success = false;
+
+            if (dataManager != null)
+            {
+                account = (DataObject)dataManager["Account"];
+                if (account != null)
+                {
+                    val = account["IsUnlockAllMaster"];
+                    if (val != null)
+                    {
+                        VariableUtils.SetResult(val, (Il2CppSystem.Object)true);
+                        success = true;
+                    }
+                }
+            }
+
+            string musicUid = musicInfo != null ? musicInfo.uid : "(null)";
+            string dmPtr = dataManager != null ? "Active" : "Null";
+            string accPtr = account != null ? "Found" : "Null";
+            string varState = val != null ? "Found" : "Null";
+            string execState = success ? "SUCCESS" : "FAILED";
+
+            MelonLogger.Msg($"[🔓 Unlock Process] PnlStage.RefreshDiffUI -> Target: [{musicUid}]");
+            MelonLogger.Msg($"  ├─ Step 1: Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager dm = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager>.instance; -> {dmPtr}");
+            MelonLogger.Msg($"  ├─ Step 2: Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataObject account = (Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataObject)dm[\"Account\"]; -> {accPtr}");
+            MelonLogger.Msg($"  ├─ Step 3: Il2CppAssets.Scripts.PeroTools.Nice.Interface.IVariable variable = account[\"IsUnlockAllMaster\"]; -> {varState}");
+            MelonLogger.Msg($"  └─ Step 4: Il2CppAssets.Scripts.PeroTools.Commons.VariableUtils.SetResult(variable, true); -> {execState}");
+
             if (musicInfo != null && !string.IsNullOrEmpty(musicInfo.uid))
             {
                 PnlStagePatchHelper.LastSelectedMusicUid = musicInfo.uid;
