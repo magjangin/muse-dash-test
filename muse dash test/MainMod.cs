@@ -12,6 +12,7 @@ namespace muse_dash_test
 {
     public class MainMod : MelonMod
     {
+
         private static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
         private static HwaManifest cachedManifest;
 
@@ -50,6 +51,8 @@ namespace muse_dash_test
                 MelonLogger.Error($"hwa 폴더 생성 중 예외: {ex}");
             }
         }
+
+
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {

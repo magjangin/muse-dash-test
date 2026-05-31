@@ -21,6 +21,10 @@
   * 커스텀 태그 하위에 원하는 곡 목록(`music_list`)을 바인딩하고, `m_AlbumTagsSort` 정렬 목록에 안전하게 삽입하는 전 과정이 검증 완료되었습니다.
   * `MusicTagManager.InitDatas` Postfix 패치로 1000개 앨범 순회 병목(`m_MaxAlbumUid` 초과)으로 인한 메뉴 렉을 방지하는 성능 최적화가 적용되어 있습니다.
 
+* **ALL PERFECT! Banner Customization (올 퍼펙트 전용 배너 커스텀) [NEW]** ✅
+  * 곡 완료 시 플레이어의 판정(Great 0, Miss 0, Full Combo)을 실시간으로 감지하여, 기존 FULL COMBO 배너 대신 찬란한 골드빛의 **"ALL PERFECT !"** 커스텀 텍스트 배너를 동적으로 교환 적용합니다.
+  * 인게임 HUD 스코어 컴포넌트(`ChangeScoreValue`)로부터 뮤즈 대시 메인 서체인 `LuckiestGuy-Regular` 등의 **프리미엄 시그니처 폰트를 실시간 추출/캐싱**하여 결과창에 완벽히 연동시켰으며, 입체적인 3D 섀도우 및 검은색 아웃라인(`Outline`) 효과까지 그대로 재현해 인게임 정체성을 지켰습니다.
+
 ---
 
 ## ✅ Verified Results (검증된 실험 결과)
@@ -38,6 +42,7 @@
 | `MusicInfo` 속성 쓰기 가능 여부 리플렉션 스캔 | ✅ 완료 |
 | UID 단독 변조 한계 확인 및 정식 등록 방향 정리 | ✅ 완료 |
 | 네이티브 훅 없는 인메모리 차트 재구성 | ✅ 완료 |
+| **ALL PERFECT! 배너 동적 교체 및 폰트/외곽선 적용** | ✅ 완료 |
 
 ---
 
@@ -59,6 +64,7 @@
 ```text
 ├── muse dash test/           # C# 모드 프로젝트 폴더
 │   ├── Patches/              # Harmony 런타임 패치 클래스들
+│   │   ├── APModPatch.cs     # 올 퍼펙트 배너 제어 및 인게임 폰트 캐싱 [NEW]
 │   │   ├── Database/         # 런타임 차트 및 세이브 데이터 관련 패치
 │   │   │   ├── Stage/        # 인메모리 차트 수명 주기 제어 및 로더
 │   │   │   │   ├── DBStageInfoPatch.cs

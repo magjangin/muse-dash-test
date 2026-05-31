@@ -56,6 +56,8 @@ public class Boss_Play_Patch
                 return true;
             }
 
+            MelonLogger.Msg($"Il2Cpp.Boss.Play 호출: key={key}, playAnimator={playAnimator}, instance={__instance}");
+
             if (key != null && key.StartsWith("swap:"))
             {
                 var parts = key.Split(':');

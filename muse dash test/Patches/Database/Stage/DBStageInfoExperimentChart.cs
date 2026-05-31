@@ -77,8 +77,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             sourceNotes[i] = CloneMusicData(musicList[i]);
         }
 
-
-
         var anchor = CloneMusicData(sourceNotes[0]);
         var sourceNote = CloneMusicData(sourceNotes[SourceNoteIndex]);
 

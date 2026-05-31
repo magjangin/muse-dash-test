@@ -16,12 +16,10 @@ namespace muse_dash_test
 
         private static readonly Dictionary<int, int> ChannelToLaneMap = new Dictionary<int, int>
         {
-            { 0x11, 0 },
-            { 0x12, 1 },
-            { 0x14, 2 },
-            { 0x15, 3 },
-            { 0x16, 4 },
-            { 0x18, 5 },
+            { 0x13, 0 },
+            { 0x14, 1 },
+            { 0x15, 2 },
+            { 0x18, 3 },
         };
 
         public static BmsChart ParseFile(string filePath)
@@ -472,5 +470,124 @@ namespace muse_dash_test
         public float Tick { get; internal set; }
         public float Bpm { get; internal set; }
         public string Source { get; internal set; }
+    }
+
+    public sealed class BmsWavInfo
+    {
+        public string RawWavName { get; set; }
+        public string Uid { get; set; }
+        public string PrefabName { get; set; }
+        public float Dt { get; set; } = -1f;
+        public int NoteType { get; set; } = 1; // Default to normal note
+        public string KeyAudio { get; set; }
+        public string BossAction { get; set; }
+    }
+
+    public static class BmsWavParser
+    {
+        private static readonly Regex DtRegex = new Regex(@"_dt([0-9]+(?:\.[0-9]+)?)(?:\.wav)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex UidRegex = new Regex(@"^([0-9]{6})", RegexOptions.Compiled);
+
+        public static BmsWavInfo ParseWavName(string wavName)
+        {
+            if (string.IsNullOrWhiteSpace(wavName))
+            {
+                return null;
+            }
+
+            var info = new BmsWavInfo { RawWavName = wavName };
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(wavName);
+
+            // 1. Parse UID (6 digits at the start of filename, e.g., 051001)
+            var uidMatch = UidRegex.Match(nameWithoutExt);
+            if (uidMatch.Success)
+            {
+                info.Uid = uidMatch.Groups[1].Value;
+                info.PrefabName = nameWithoutExt; // Prefab name defaults to filename
+            }
+
+            // 2. Parse dt (e.g. _dt0.7 or _dt1.2)
+            var dtMatch = DtRegex.Match(nameWithoutExt);
+            if (dtMatch.Success)
+            {
+                if (float.TryParse(dtMatch.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsedDt))
+                {
+                    info.Dt = parsedDt;
+                }
+
+                // Clean the prefab name to exclude the '_dtXX' suffix so the prefab follows the raw UID style
+                if (info.PrefabName != null && info.PrefabName.Contains("_dt"))
+                {
+                    int dtIdx = info.PrefabName.IndexOf("_dt", StringComparison.OrdinalIgnoreCase);
+                    if (dtIdx > 0)
+                    {
+                        info.PrefabName = info.PrefabName.Substring(0, dtIdx);
+                    }
+                }
+            }
+
+            // 3. Skeleton mapping for special gameplay notes & audios
+            string lowerName = nameWithoutExt.ToLowerInvariant();
+
+            // Check UID xx structure (zzxxyy)
+            if (info.Uid != null && info.Uid.Length == 6)
+            {
+                string xx = info.Uid.Substring(2, 2);
+                if (xx == "02")
+                {
+                    info.NoteType = 3; // Hold / Long note
+                }
+                else if (xx == "04")
+                {
+                    info.NoteType = 8; // Sandbag / Multi-hit
+                }
+                else if (xx == "03" || xx == "09")
+                {
+                    info.NoteType = 2; // Obstacle / Gear / Boss Gear
+                }
+                else if (xx == "17")
+                {
+                    info.NoteType = 4; // Ghost
+                }
+                else if (info.Uid.StartsWith("0002"))
+                {
+                    info.NoteType = 6; // HP / Heart
+                    info.KeyAudio = "sfx_hp";
+                }
+                else if (info.Uid.StartsWith("0003"))
+                {
+                    info.NoteType = 7; // Score Note
+                    info.KeyAudio = "sfx_score";
+                }
+            }
+
+            // String-based pattern matching and overrides for fallbacks
+            if (lowerName.Contains("heart") || lowerName.Contains("hp") || lowerName.Contains("000201"))
+            {
+                info.NoteType = 6;
+                info.KeyAudio = "sfx_hp";
+            }
+            else if (lowerName.Contains("score") || lowerName.Contains("note") || lowerName.Contains("000301"))
+            {
+                info.NoteType = 7;
+                info.KeyAudio = "sfx_score";
+            }
+            else if (lowerName.Contains("boss_swap"))
+            {
+                info.NoteType = 0;
+                info.PrefabName = "empty_000";
+                info.BossAction = "swap:0401_boss:4"; // Skeleton default swap redirection
+            }
+            else if (lowerName.Contains("sandbag") || lowerName.Contains("020401"))
+            {
+                info.NoteType = 8;
+            }
+            else if (lowerName.Contains("hold") || lowerName.Contains("long"))
+            {
+                info.NoteType = 3;
+            }
+
+            return info;
+        }
     }
 }

@@ -109,6 +109,9 @@
     <Reference Include="UnityEngine.UIModule">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.UIModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
     <Reference Include="Il2CppDOTween">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppDOTween.dll</HintPath>
     </Reference>
@@ -118,5 +121,8 @@
     <Reference Include="UnityEngine.ParticleSystemModule">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.ParticleSystemModule.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\tag_icon.png" />
   </ItemGroup>
 </Project>
