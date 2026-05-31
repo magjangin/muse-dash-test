@@ -5,6 +5,16 @@ using System.Reflection;
 
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
+    public static bool IsUidMiddlePair(string uid, string middlePair)
+    {
+        if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(middlePair) || uid.Length < 4 || middlePair.Length != 2)
+        {
+            return false;
+        }
+
+        return string.Equals(uid.Substring(2, 2), middlePair, System.StringComparison.OrdinalIgnoreCase);
+    }
+
     public static string BuildPrefabName(string uid, int noteType, int pathway)
     {
         if (string.IsNullOrEmpty(uid) || uid.Length < 6)
@@ -192,6 +202,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static void LogInsertedNote(string label, MusicData note)
     {
         string uid = note.noteData?.uid ?? "(null)";
+        if (!IsUidMiddlePair(uid, "09")) return;
         string prefab = note.noteData?.prefab_name ?? "(null)";
         string type = note.noteData != null ? note.noteData.type.ToString() : "(null)";
         string pathway = note.noteData != null ? note.noteData.pathway.ToString() : "(null)";
@@ -209,6 +220,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static void LogNoteState(string label, MusicData note)
     {
         string noteUid = SafeLogValue(() => note.noteData?.uid);
+        if (!IsUidMiddlePair(noteUid, "09")) return;
         string noteType = SafeLogValue(() => note.noteData?.type);
         string notePathway = SafeLogValue(() => note.noteData?.pathway);
         string noteScene = SafeLogValue(() => note.noteData?.scene);
@@ -239,5 +251,46 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             return $"(예외: {ex.GetType().Name})";
         }
+    }
+
+    public static string GetBossActionGroup(string bossAction)
+    {
+        if (string.IsNullOrWhiteSpace(bossAction))
+        {
+            return "none";
+        }
+
+        if (bossAction == "boss_far_atk_2")
+        {
+            return "boss_far_atk_2";
+        }
+
+        if (bossAction == "boss_far_atk_1_R")
+        {
+            return "boss_far_atk_1_R";
+        }
+
+        return "other";
+    }
+
+    public static bool IsTargetDebugUid(string uid)
+    {
+        return uid == "090908" || uid == "090902" || uid == "090911";
+    }
+
+    public static bool IsTargetDebugXxyy(string uid)
+    {
+        string xxyy = GetUidXxyy(uid);
+        return xxyy == "0908" || xxyy == "0902" || xxyy == "0911";
+    }
+
+    public static string GetUidXxyy(string uid)
+    {
+        if (string.IsNullOrEmpty(uid) || uid.Length < 6)
+        {
+            return string.Empty;
+        }
+
+        return uid.Substring(2, 4);
     }
 }

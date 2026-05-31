@@ -23,10 +23,13 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     // Speed, Dt는 -1이면 자동/원본 로직을 사용합니다.
     private static readonly ExperimentNoteSpec[] ExperimentNotes =
     {
+        new ExperimentNoteSpec { Label = "보스1 등장", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 15.0, BossAction = "in" },
+        new ExperimentNoteSpec { Label = "보스 원거리1 시작", Uid = "050107", NoteType = 0, Pathway = 0, StartTick = 16.0, BossAction = "boss_far_atk_1_start" },
+        new ExperimentNoteSpec { Label = "보스 기어 노트 070902", Uid = "070902", NoteType = 2, Pathway = 0, PrefabName = "070902_road_1_nor_2", KeyAudio = "sfx_jump", BossAction = "boss_far_atk_1_R", StartTick = 20.0, Dt = 0.7 },
+        
+
         // 이 배열만 수정하면 됩니다.
         // 줄을 복사/삭제하면서 원하는 노트만 남기세요.
-        new ExperimentNoteSpec { Label = "보스1 등장", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 15.0, BossAction = "in" },
-
 
         // 원하는 실험은 아래 예시를 복사해서 주석을 해제하세요.
         // new ExperimentNoteSpec { Label = "지상 일반 8개", Uid = "051001", NoteType = 1, Pathway = 0, StartTick = 15.0, Count = 8, Interval = 0.25 },
@@ -88,7 +91,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             if (!ExperimentPlayContext.ShouldApplyExperimentChart)
             {
-                MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"})");
+                MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"}, apply={ExperimentPlayContext.ShouldApplyExperimentChart})");
+                DumpMusicList(__instance);
                 return;
             }
 
@@ -112,7 +116,15 @@ public static class ExperimentPlayContext
     public static void RememberMusicSelection(string uid)
     {
         // 999-0, 999-1 및 999-2 곡은 우리 실험 모드 전용 가상 곡이므로, 이 UID면 무조건 실험 차트와 보스 변경을 적용합니다.
-        ShouldApplyExperimentChart = (uid == "999-0" || uid == "999-1" || uid == "999-2");
+        // UID를 못 찾았으면 이전 상태를 끌고 가지 않도록 false로 리셋합니다.
+        if (string.IsNullOrEmpty(uid))
+        {
+            ShouldApplyExperimentChart = false;
+        }
+        else
+        {
+            ShouldApplyExperimentChart = (uid == "999-0" || uid == "999-1" || uid == "999-2");
+        }
 
         MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, apply={ShouldApplyExperimentChart}");
     }

@@ -152,6 +152,34 @@ UID의 앞 두 자리 `zz`는 씬 계열입니다. 보스 토큰은 뒤 4자리(
 - 보스 씬 전환이 의심되는 경우: `Boss.SceneBossChange` 로그와 `SceneBossChangeRules`의 `OrigIdx/NewIdx`를 봅니다.
 - 음악 씬 자체가 다르게 로드되는지 확인하려면 `GameMusicScene.LoadScene` 로그와 `LoadSceneRewriteRules`의 `OrigSceneName/NewSceneName`을 봅니다.
 
+## 보스 노트 기어 후보 UID
+
+xxyy 기준으로 보스 노트 기어 후보로 본 UID는 아래입니다.
+
+| xxyy | 비고 |
+| --- | --- |
+| `0902` | 보스 노트 기어 후보 UID |
+| `0903` | 보스 노트 기어 후보 UID, `boss_far_atk_1_R`일 가능성이 높음 |
+| `0906` | 보스 노트 기어 후보 UID, `boss_far_atk_1_L`일 가능성이 높음 |
+| `0908` | 보스 노트 기어 후보 UID |
+| `0909` | 보스 노트 기어 후보 UID, `boss_far_atk_2`일 가능성이 높음 |
+| `0911` | 보스 노트 기어 후보 UID |
+| `0912` | 보스 노트 기어 후보 UID, `boss_far_atk_2`일 가능성이 높음 |
+
+`0902 = boss_far_atk_1_R`, `0908 = boss_far_atk_2`, `0911 = boss_far_atk_2`일 가능성이 높습니다.
+
+`boss_far_atk_1_R`은 지상일 가능성이 높고, `boss_far_atk_1_L`은 공중일 가능성이 높습니다. `boss_far_atk_2`는 아직 완전히 풀지 못했습니다.
+
+`boss_far_atk_2`은 `_road_2_nor_2`나 `_air_2_nor_2` 계열 프리팹일 가능성이 높습니다.
+
+보스 없이 생성하고 싶으면 `BossAction`을 비우거나 생략하면 됩니다.
+
+예시:
+
+```csharp
+new ExperimentNoteSpec { Label = "보스 기어 노트 070902", Uid = "070902", NoteType = 2, Pathway = 0, PrefabName = "070902_road_1_nor_2", KeyAudio = "sfx_jump", BossAction = "boss_far_atk_1_R", StartTick = 20.0, Dt = 0.7 },
+```
+
 ## 실제 보스 프리팹 바꾸기
 
 수정 위치:

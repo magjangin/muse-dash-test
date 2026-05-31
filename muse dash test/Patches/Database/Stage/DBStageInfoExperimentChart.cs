@@ -9,56 +9,43 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         if (__instance._musicList_k__BackingField != null)
         {
-            int count = System.Math.Min(__instance._musicList_k__BackingField.Count, 5);
-            for (int i = 0; i < count; i++)
+            int totalCount = __instance._musicList_k__BackingField.Count;
+            int count0908 = 0;
+            int count0902 = 0;
+            int count0911 = 0;
+            int other09yyCount = 0;
+            var seenOther09yy = new System.Collections.Generic.HashSet<string>();
+            var seenXxyy = new System.Collections.Generic.HashSet<string>();
+            MelonLogger.Msg($"[ExperimentChart.Debug] DumpMusicList 시작: total={totalCount}, filter=xxyy in [0908, 0902, 0911], unique only");
+
+            for (int i = 0; i < totalCount; i++)
             {
                 var musicData = __instance._musicList_k__BackingField[i];
-                MelonLogger.Msg($"MusicData {i}: {musicData}");
-                foreach (var prop in musicData.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                string uid = musicData.noteData?.uid;
+                string xxyy = GetUidXxyy(uid);
+                if (!IsTargetDebugXxyy(uid) || !seenXxyy.Add(xxyy))
                 {
-                    try
+                    if (!string.IsNullOrEmpty(xxyy) && xxyy.StartsWith("09"))
                     {
-                        var value = prop.GetValue(musicData);
-                        MelonLogger.Msg($"  {prop.Name}: {value}");
-                        if (prop.Name == "noteData" && value != null)
+                        other09yyCount++;
+                        if (seenOther09yy.Add(xxyy))
                         {
-                            MelonLogger.Msg($"    noteData:");
-                            foreach (var noteProp in value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                            {
-                                try
-                                {
-                                    var noteValue = noteProp.GetValue(value);
-                                    MelonLogger.Msg($"      {noteProp.Name}: {noteValue}");
-                                }
-                                catch (System.Exception ex)
-                                {
-                                    MelonLogger.Msg($"      {noteProp.Name}: (예외 발생: {ex.Message})");
-                                }
-                            }
-                        }
-                        else if (prop.Name == "configData" && value != null)
-                        {
-                            MelonLogger.Msg($"    configData:");
-                            foreach (var configProp in value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                            {
-                                try
-                                {
-                                    var configValue = configProp.GetValue(value);
-                                    MelonLogger.Msg($"      {configProp.Name}: {configValue}");
-                                }
-                                catch (System.Exception ex)
-                                {
-                                    MelonLogger.Msg($"      {configProp.Name}: (예외 발생: {ex.Message})");
-                                }
-                            }
+                            MelonLogger.Msg($"[ExperimentChart.Debug] 발견된 추가 09yy: xxyy={xxyy}, idx={i}, uid={uid}, boss_action={musicData.noteData?.boss_action ?? "(null)"}");
                         }
                     }
-                    catch (System.Exception ex)
-                    {
-                        MelonLogger.Msg($"  {prop.Name}: (예외 발생: {ex.Message})");
-                    }
+
+                    continue;
                 }
+
+                if (xxyy == "0908") count0908++;
+                else if (xxyy == "0902") count0902++;
+                else if (xxyy == "0911") count0911++;
+
+                MelonLogger.Msg($"[ExperimentChart.Debug] xxyy={xxyy}: idx={i}, uid={uid}, tick={musicData.tick}, dt={musicData.dt}, showTick={musicData.showTick}");
+                LogNoteState($"[ExperimentChart.Debug] note[{i}]", musicData);
             }
+
+            MelonLogger.Msg($"[ExperimentChart.Debug] xxyy summary: 0908={count0908}, 0902={count0902}, 0911={count0911}");
         }
     }
 
