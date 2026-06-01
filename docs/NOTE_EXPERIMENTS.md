@@ -330,6 +330,7 @@ new ExperimentNoteSpec { Label = "보스 퇴장", Uid = "050102", NoteType = 0, 
 ```csharp
 new ExperimentNoteSpec { Label = "보스 발사체만 1개", Uid = "070601", NoteType = 1, Pathway = 0, StartTick = 20.0, BossAction = "" },
 new ExperimentNoteSpec { Label = "보스 단타 노트 1개", Uid = "070601", NoteType = 1, Pathway = 0, StartTick = 20.0, PrefabName = "070601_road_nor_1", BossAction = "boss_far_atk_1_R", Dt = 0.7 },
+new ExperimentNoteSpec { Label = "보스 단타 노트 1개", Uid = "070604", NoteType = 1, Pathway = 1, StartTick = 20.0, PrefabName = "070604_air_nor_1", BossAction = "boss_far_atk_1_L", Dt = 0.7 },
 new ExperimentNoteSpec { Label = "보스 단타 노트 1개", Uid = "070701", NoteType = 1, Pathway = 0, StartTick = 20.0, BossAction = "boss_far_atk_2", Dt = 0.7 },
 ```
 

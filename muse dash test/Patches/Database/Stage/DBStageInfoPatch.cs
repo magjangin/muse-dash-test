@@ -23,9 +23,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     // Speed, Dt는 -1이면 자동/원본 로직을 사용합니다.
     private static readonly ExperimentNoteSpec[] ExperimentNotes =
     {
-        new ExperimentNoteSpec { Label = "보스1 등장", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 15.0, BossAction = "in" },
-        new ExperimentNoteSpec { Label = "보스 원거리1 시작", Uid = "050107", NoteType = 0, Pathway = 0, StartTick = 16.0, BossAction = "boss_far_atk_1_start" },
-        new ExperimentNoteSpec { Label = "보스 기어 노트 070902", Uid = "070902", NoteType = 2, Pathway = 0, PrefabName = "070902_road_1_nor_2", KeyAudio = "sfx_jump", BossAction = "boss_far_atk_1_R", StartTick = 20.0, Dt = 0.7 },
+        
+        // out 뒤에 다른 in을 두면 자동으로 swap:<BossName>:<BossScene>으로 변환됩니다.
+        // new ExperimentNoteSpec { Label = "보스1 퇴장", Uid = "050102", NoteType = 0, Pathway = 0, BossAction = "out", StartTick = 22.0 },
+        // new ExperimentNoteSpec { Label = "보스2 등장", Uid = "020101", NoteType = 0, Pathway = 0, BossAction = "in", BossName = "0201_boss", BossScene = 2, StartTick = 24.0 },
         
 
         // 이 배열만 수정하면 됩니다.
@@ -37,8 +38,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // new ExperimentNoteSpec { Label = "속도/dt 직접 지정", Uid = "051001", NoteType = 1, Pathway = 0, StartTick = 15.0, Speed = 12.0, Dt = 0.75 },
         // new ExperimentNoteSpec { Label = "롱노트 1개", Uid = "050201", NoteType = 3, Pathway = 0, IsLong = true, StartTick = 20.0, Length = 1.6 },
         // new ExperimentNoteSpec { Label = "샌드백 1개", Uid = "020401", NoteType = 8, Pathway = 0, IsMul = true, StartTick = 24.0, Length = 1.2 },
-        // new ExperimentNoteSpec { Label = "하트 1개", Uid = "000201", NoteType = 6, Pathway = 0, KeyAudio = "sfx_hp", StartTick = 28.0 },
-        // new ExperimentNoteSpec { Label = "음표 1개", Uid = "000301", NoteType = 7, Pathway = 0, KeyAudio = "sfx_score", StartTick = 30.0 },
+        new ExperimentNoteSpec { Label = "하트 1개", Uid = "000201", NoteType = 6, Pathway = 0, KeyAudio = "sfx_hp", StartTick = 28.0 },
+        new ExperimentNoteSpec { Label = "음표 1개", Uid = "000301", PrefabName = "000301_road_nor_1", NoteType = 7, Pathway = 0, KeyAudio = "sfx_score", StartTick = 30.0 },
 
         // 보스 액션 트리거(type 0)는 empty_000, 보스 발사체(type 1)는 일반 노트 프리팹을 씁니다.
         // 보스 발사체만 만들 때는 BossAction을 비우면 됩니다.
@@ -59,6 +60,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         public string PrefabName = "";
         public string KeyAudio = "";
         public string BossAction = "";
+        public string BossName = "";
+        public int BossScene = -1;
         public string Scene = "";
         public string IbmsId = "";
         public int NoteType = -1;

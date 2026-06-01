@@ -91,8 +91,38 @@ namespace muse_dash_test
                         MelonLogger.Msg($"[CustomTagRegistry] === 얇은 복사 및 주입 실험 시작 === lookup={lookupQuery ?? "(null)"}, sourceUid={originalInfo.uid}");
                         LogMusicInfoDump("[CustomTagRegistry] [원본 곡 상세 덤프] originalInfo", originalInfo);
 
+                        string primaryName = "화영왕 0";
+                        string primaryAuthor = "화영왕 0";
+                        string primaryLevelDesigner = "화영왕 0";
+                        int primaryDiff1 = 2;
+                        int primaryDiff2 = 5;
+                        int primaryDiff3 = 0;
+                        int primaryDiff4 = 0;
+                        int primaryDiff5 = 0;
+                        if (MainMod.TryGetCachedHwaPrimaryVirtualSong(out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out string manifestDescription))
+                        {
+                            if (!string.IsNullOrWhiteSpace(manifestTitle))
+                            {
+                                primaryName = manifestTitle;
+                            }
+                            if (!string.IsNullOrWhiteSpace(manifestArtist))
+                            {
+                                primaryAuthor = manifestArtist;
+                            }
+                            if (!string.IsNullOrWhiteSpace(manifestLevelDesigner))
+                            {
+                                primaryLevelDesigner = manifestLevelDesigner;
+                            }
+                            primaryDiff1 = manifestDiff1;
+                            primaryDiff2 = manifestDiff2;
+                            primaryDiff3 = manifestDiff3;
+                            primaryDiff4 = manifestDiff4;
+                            primaryDiff5 = manifestDiff5;
+                            MelonLogger.Msg($"[CustomTagRegistry] 999-0 manifest 반영: {manifestDescription}");
+                        }
+
                         // "999-0", "999-1", "999-2" 가상 곡 주입
-                        InjectVirtualSong(originalInfo, "999-0", "화영왕 0", "화영왕 0", "화영왕 0", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 2, 5, musicList);
+                        InjectVirtualSong(originalInfo, "999-0", primaryName, primaryAuthor, primaryLevelDesigner, "iyaiya_cover", "iyaiya_map", "iyaiya_music", primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
                         InjectVirtualSong(originalInfo, "999-1", "화영왕 1", "화영왕 1", "화영왕 1", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 3, 6, musicList);
                         InjectVirtualSong(originalInfo, "999-2", "화영왕 2", "화영왕 2", "화영왕 2", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 4, 7, musicList);
 
@@ -237,6 +267,11 @@ namespace muse_dash_test
 
         private static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, string cover, string noteJson, string music, int diff1, int diff2, List<string> musicList)
         {
+            InjectVirtualSong(originalInfo, uid, name, author, levelDesigner, cover, noteJson, music, diff1, diff2, 0, 0, 0, musicList);
+        }
+
+        private static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, string cover, string noteJson, string music, int diff1, int diff2, int diff3, int diff4, int diff5, List<string> musicList)
+        {
             try
             {
                 if (!TryCloneMusicInfo(originalInfo, uid, out MusicInfo clonedInfo))
@@ -244,7 +279,7 @@ namespace muse_dash_test
                     return;
                 }
 
-                ApplyVirtualSongMetadata(clonedInfo, uid, name, author, levelDesigner, diff1, diff2);
+                ApplyVirtualSongMetadata(clonedInfo, uid, name, author, levelDesigner, diff1, diff2, diff3, diff4, diff5);
                 if (!ApplyVirtualSongAlbumMetadata(clonedInfo, uid))
                 {
                     return;
@@ -280,7 +315,7 @@ namespace muse_dash_test
             return true;
         }
 
-        private static void ApplyVirtualSongMetadata(MusicInfo clonedInfo, string uid, string name, string author, string levelDesigner, int diff1, int diff2)
+        private static void ApplyVirtualSongMetadata(MusicInfo clonedInfo, string uid, string name, string author, string levelDesigner, int diff1, int diff2, int diff3, int diff4, int diff5)
         {
             if (clonedInfo == null) return;
 
@@ -291,13 +326,15 @@ namespace muse_dash_test
             wrapper.levelDesigner = levelDesigner;
             wrapper.difficulty1 = diff1;
             wrapper.difficulty2 = diff2;
-            wrapper.difficulty3 = 0;
+            wrapper.difficulty3 = diff3;
+            wrapper.difficulty4 = diff4;
+            wrapper.difficulty5 = diff5;
 
             ModReflection.SetValue(clonedInfo, "callBackDifficulty1", diff1, silent: true);
             ModReflection.SetValue(clonedInfo, "callBackDifficulty2", diff2, silent: true);
-            ModReflection.SetValue(clonedInfo, "callBackDifficulty3", 0, silent: true);
-            ModReflection.SetValue(clonedInfo, "callBackDifficulty4", 0, silent: true);
-            ModReflection.SetValue(clonedInfo, "callBackDifficulty5", 0, silent: true);
+            ModReflection.SetValue(clonedInfo, "callBackDifficulty3", diff3, silent: true);
+            ModReflection.SetValue(clonedInfo, "callBackDifficulty4", diff4, silent: true);
+            ModReflection.SetValue(clonedInfo, "callBackDifficulty5", diff5, silent: true);
         }
 
         private static bool ApplyVirtualSongAlbumMetadata(MusicInfo clonedInfo, string uid)

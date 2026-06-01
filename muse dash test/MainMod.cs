@@ -15,6 +15,7 @@ namespace muse_dash_test
 
         private static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
         private static HwaManifest cachedManifest;
+        private static BmsChart cachedBmsChart;
 
         private static readonly HywStageManager hywStageManager = new HywStageManager();
         private static float hywCheckTimer = 0f;
@@ -26,7 +27,10 @@ namespace muse_dash_test
             public string SourcePath;
             public string Uid;
             public string Title;
+            public string CustomTitle;
             public string Artist;
+            public string CustomArtist;
+            public string LevelDesigner;
             public int? Scene;
             public int? Difficulty1;
             public int? Difficulty2;
@@ -185,10 +189,21 @@ namespace muse_dash_test
                 {
                     MelonLogger.Msg("[MainMod.Hwa] 모드 로드 시 manifest 캐시 실패 또는 비어 있음");
                 }
+
+                cachedBmsChart = LoadHwaBmsChart(HwaFolderPath, cachedManifest);
+                if (cachedBmsChart != null)
+                {
+                    MelonLogger.Msg($"[MainMod.Hwa.Bms] 모드 로드 시 BMS 캐시 완료: {DescribeBmsChart(cachedBmsChart)}");
+                }
+                else
+                {
+                    MelonLogger.Msg("[MainMod.Hwa.Bms] 모드 로드 시 BMS 캐시 실패 또는 비어 있음");
+                }
             }
             catch (Exception ex)
             {
                 cachedManifest = null;
+                cachedBmsChart = null;
                 MelonLogger.Error($"[MainMod.Hwa] 모드 로드 시 manifest 선읽기 실패: {ex}");
             }
         }
@@ -224,6 +239,35 @@ namespace muse_dash_test
             return true;
         }
 
+        public static bool TryGetCachedHwaPrimaryVirtualSong(out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
+        {
+            title = null;
+            artist = null;
+            levelDesigner = null;
+            diff1 = 2;
+            diff2 = 5;
+            diff3 = 0;
+            diff4 = 0;
+            diff5 = 0;
+
+            if (cachedManifest == null)
+            {
+                description = string.Empty;
+                return false;
+            }
+
+            title = !string.IsNullOrWhiteSpace(cachedManifest.CustomTitle) ? cachedManifest.CustomTitle : cachedManifest.Title;
+            artist = !string.IsNullOrWhiteSpace(cachedManifest.CustomArtist) ? cachedManifest.CustomArtist : cachedManifest.Artist;
+            levelDesigner = cachedManifest.LevelDesigner;
+            diff1 = cachedManifest.Difficulty1 ?? diff1;
+            diff2 = cachedManifest.Difficulty2 ?? diff2;
+            diff3 = cachedManifest.Difficulty3 ?? diff3;
+            diff4 = cachedManifest.Difficulty4 ?? diff4;
+            diff5 = cachedManifest.Difficulty5 ?? diff5;
+            description = DescribeManifest(cachedManifest);
+            return true;
+        }
+
         public static bool TryGetCachedHwaScene(out int scene)
         {
             scene = default;
@@ -237,20 +281,33 @@ namespace muse_dash_test
             return true;
         }
 
+        public static bool TryGetCachedHwaBmsChart(out BmsChart chart, out string description)
+        {
+            chart = cachedBmsChart;
+            if (chart == null)
+            {
+                description = string.Empty;
+                return false;
+            }
+
+            description = DescribeBmsChart(chart);
+            return true;
+        }
+
         private static HwaManifest LoadHwaManifest(string folderPath)
         {
             try
             {
                 MelonLogger.Msg($"[MainMod.Hwa] manifest 탐색 시작: folder={folderPath}");
 
-                string[] txtFiles = Directory.GetFiles(folderPath, "*.txt", SearchOption.TopDirectoryOnly);
+                string[] txtFiles = Directory.GetFiles(folderPath, "*.txt", SearchOption.AllDirectories);
                 if (txtFiles == null || txtFiles.Length == 0)
                 {
-                    MelonLogger.Msg($"[MainMod.Hwa] txt 파일이 없습니다: folder={folderPath}");
+                    MelonLogger.Msg($"[MainMod.Hwa] 하위 폴더까지 스캔했지만 txt 파일이 없습니다: folder={folderPath}");
                     return null;
                 }
 
-                MelonLogger.Msg($"[MainMod.Hwa] txt 파일 {txtFiles.Length}개 발견: {string.Join(", ", Array.ConvertAll(txtFiles, Path.GetFileName))}");
+                MelonLogger.Msg($"[MainMod.Hwa] txt 파일 {txtFiles.Length}개 발견(하위 폴더 포함): {string.Join(", ", Array.ConvertAll(txtFiles, file => GetRelativeHwaPath(folderPath, file)))}");
 
                 Array.Sort(txtFiles, StringComparer.OrdinalIgnoreCase);
                 string preferred = null;
@@ -304,6 +361,82 @@ namespace muse_dash_test
             }
         }
 
+        private static BmsChart LoadHwaBmsChart(string folderPath, HwaManifest manifest)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+                {
+                    return null;
+                }
+
+                MelonLogger.Msg($"[MainMod.Hwa.Bms] BMS 탐색 시작: folder={folderPath}");
+
+                string preferred = null;
+                if (manifest != null && !string.IsNullOrWhiteSpace(manifest.SourcePath))
+                {
+                    string manifestDir = Path.GetDirectoryName(manifest.SourcePath);
+                    if (!string.IsNullOrWhiteSpace(manifestDir) && Directory.Exists(manifestDir))
+                    {
+                        preferred = FindPreferredBmsFile(manifestDir, SearchOption.TopDirectoryOnly);
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(preferred))
+                {
+                    preferred = FindPreferredBmsFile(folderPath, SearchOption.AllDirectories);
+                }
+
+                if (string.IsNullOrWhiteSpace(preferred) || !File.Exists(preferred))
+                {
+                    MelonLogger.Msg($"[MainMod.Hwa.Bms] BMS 파일이 없습니다: folder={folderPath}");
+                    return null;
+                }
+
+                MelonLogger.Msg($"[MainMod.Hwa.Bms] BMS 읽기 대상: {preferred}");
+                var chart = BmsParser.ParseFile(preferred);
+                MelonLogger.Msg($"[MainMod.Hwa.Bms] BMS 파싱 완료: {DescribeBmsChart(chart)}");
+                LogBmsWavMappingSummary(chart);
+                return chart;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[MainMod.Hwa.Bms] BMS 읽기 실패: {ex}");
+                return null;
+            }
+        }
+
+        private static string FindPreferredBmsFile(string folderPath, SearchOption searchOption)
+        {
+            try
+            {
+                string[] bmsFiles = Directory.GetFiles(folderPath, "*.bms", searchOption);
+                if (bmsFiles == null || bmsFiles.Length == 0)
+                {
+                    return null;
+                }
+
+                Array.Sort(bmsFiles, StringComparer.OrdinalIgnoreCase);
+                foreach (string file in bmsFiles)
+                {
+                    string fileName = Path.GetFileName(file);
+                    if (string.Equals(fileName, "chart.bms", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(fileName, "main.bms", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(fileName, "test.bms", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return file;
+                    }
+                }
+
+                return bmsFiles[0];
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[MainMod.Hwa.Bms] BMS 탐색 실패: {ex}");
+                return null;
+            }
+        }
+
         private static bool TryParseManifestLine(string rawLine, out string key, out string value)
         {
             key = null;
@@ -345,6 +478,122 @@ namespace muse_dash_test
             return !string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(value);
         }
 
+        private static string GetRelativeHwaPath(string rootPath, string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(rootPath) || string.IsNullOrWhiteSpace(filePath))
+                {
+                    return Path.GetFileName(filePath);
+                }
+
+                string root = Path.GetFullPath(rootPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                string full = Path.GetFullPath(filePath);
+                if (full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                {
+                    return full.Substring(root.Length);
+                }
+            }
+            catch
+            {
+            }
+
+            return Path.GetFileName(filePath);
+        }
+
+        private static string DescribeBmsChart(BmsChart chart)
+        {
+            if (chart == null)
+            {
+                return "(null)";
+            }
+
+            int metadataCount = chart.Metadata != null ? chart.Metadata.Count : 0;
+            int wavCount = CountBmsWavMetadata(chart);
+            int noteCount = chart.Notes != null ? chart.Notes.Count : 0;
+            int bpmCount = chart.BpmChanges != null ? chart.BpmChanges.Count : 0;
+            int swapCount = 0;
+            try
+            {
+                swapCount = BmsBossSwapPlanner.BuildSwapEvents(chart).Count;
+            }
+            catch
+            {
+                swapCount = -1;
+            }
+
+            return "path=" + (chart.SourcePath ?? "(null)")
+                + ", title=" + (chart.Title ?? "(null)")
+                + ", artist=" + (chart.Artist ?? "(null)")
+                + ", defaultBpm=" + chart.DefaultBpm.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)
+                + ", notes=" + noteCount
+                + ", bpmChanges=" + bpmCount
+                + ", metadata=" + metadataCount
+                + ", wav=" + wavCount
+                + ", bossSwapCandidates=" + swapCount;
+        }
+
+        private static int CountBmsWavMetadata(BmsChart chart)
+        {
+            if (chart?.Metadata == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            foreach (var key in chart.Metadata.Keys)
+            {
+                if (!string.IsNullOrWhiteSpace(key) && key.StartsWith("WAV", StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static void LogBmsWavMappingSummary(BmsChart chart)
+        {
+            if (chart?.Notes == null || chart.Notes.Count == 0)
+            {
+                MelonLogger.Msg("[MainMod.Hwa.Bms] 노트가 없어 WAV 매핑 샘플을 건너뜁니다.");
+                return;
+            }
+
+            int logged = 0;
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var note in chart.Notes)
+            {
+                if (note == null || string.IsNullOrWhiteSpace(note.RawValue) || !seen.Add(note.RawValue))
+                {
+                    continue;
+                }
+
+                var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, note);
+                if (wavInfo == null)
+                {
+                    MelonLogger.Msg($"[MainMod.Hwa.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav=(null)");
+                }
+                else
+                {
+                    MelonLogger.Msg($"[MainMod.Hwa.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav={wavInfo.RawWavName}, uid={wavInfo.Uid ?? "(null)"}, type={wavInfo.NoteType}, prefab={wavInfo.PrefabName ?? "(null)"}, dt={wavInfo.Dt}, keyAudio={wavInfo.KeyAudio ?? "(null)"}, bossAction={wavInfo.BossAction ?? "(null)"}");
+                }
+
+                logged++;
+                if (logged >= 12)
+                {
+                    break;
+                }
+            }
+
+            var swapEvents = BmsBossSwapPlanner.BuildSwapEvents(chart);
+            for (int i = 0; i < swapEvents.Count && i < 5; i++)
+            {
+                var evt = swapEvents[i];
+                MelonLogger.Msg($"[MainMod.Hwa.Bms] 보스 스왑 후보 #{i + 1}: outTick={evt.OutNote?.Tick}, inTick={evt.InNote?.Tick}, delay={evt.DelaySeconds:0.###}s, action={evt.BossAction}");
+            }
+        }
+
         private static void ApplyManifestValue(HwaManifest manifest, string key, string value)
         {
             if (manifest == null || string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
@@ -359,13 +608,31 @@ namespace muse_dash_test
                 return;
             }
 
+            if (normalizedKey.Contains("커스텀아티스트") || normalizedKey.Contains("customartist") || normalizedKey.Contains("customauthor"))
+            {
+                manifest.CustomArtist = value;
+                return;
+            }
+
+            if (normalizedKey.Contains("레벨디자이너") || normalizedKey.Contains("leveldesigner"))
+            {
+                manifest.LevelDesigner = value;
+                return;
+            }
+
             if (normalizedKey.Contains("artist") || normalizedKey.Contains("아티스트") || normalizedKey.Contains("author"))
             {
                 manifest.Artist = value;
                 return;
             }
 
-            if (normalizedKey.Contains("곡이름") || normalizedKey.Contains("곡명") || normalizedKey.Contains("가져올곡") || normalizedKey.Contains("song") || normalizedKey.Contains("title") || normalizedKey.Contains("music"))
+            if (normalizedKey.Contains("커스텀곡제목") || normalizedKey.Contains("customsongtitle") || normalizedKey.Contains("customtitle"))
+            {
+                manifest.CustomTitle = value;
+                return;
+            }
+
+            if (normalizedKey.Contains("곡이름") || normalizedKey.Contains("곡명") || normalizedKey.Contains("곡제목") || normalizedKey.Contains("가져올곡") || normalizedKey.Contains("song") || normalizedKey.Contains("title") || normalizedKey.Contains("music"))
             {
                 manifest.Title = value;
                 return;
@@ -454,7 +721,10 @@ namespace muse_dash_test
             return "path=" + (manifest.SourcePath ?? "(null)")
                 + ", uid=" + (manifest.Uid ?? "(null)")
                 + ", title=" + (manifest.Title ?? "(null)")
+                + ", customTitle=" + (manifest.CustomTitle ?? "(null)")
                 + ", artist=" + (manifest.Artist ?? "(null)")
+                + ", customArtist=" + (manifest.CustomArtist ?? "(null)")
+                + ", levelDesigner=" + (manifest.LevelDesigner ?? "(null)")
                 + ", scene=" + (manifest.Scene.HasValue ? manifest.Scene.Value.ToString() : "(null)")
                 + ", diff1=" + (manifest.Difficulty1.HasValue ? manifest.Difficulty1.Value.ToString() : "(null)")
                 + ", diff2=" + (manifest.Difficulty2.HasValue ? manifest.Difficulty2.Value.ToString() : "(null)")

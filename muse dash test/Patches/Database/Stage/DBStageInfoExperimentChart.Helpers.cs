@@ -24,13 +24,35 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string yy = uid.Substring(4, 2);
         string lane = pathway == 1 ? "air" : "road";
         string motion = "nor";
+        string variant = GetPrefabVariant(uid, noteType);
 
         if (xx == "15") motion = "down";
         else if (xx == "16") motion = "up";
         else if (yy == "07" || yy == "10") motion = "up";
         else if (yy == "13" || yy == "16") motion = "down";
 
-        return $"{uid}_{lane}_{motion}_1";
+        return $"{uid}_{lane}_{motion}_{variant}";
+    }
+
+    public static string GetPrefabVariant(string uid, int noteType)
+    {
+        if (string.Equals(uid, "000301", System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(uid, "000304", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return "1";
+        }
+
+        if (noteType == 7)
+        {
+            return "2";
+        }
+
+        return "1";
+    }
+
+    public static string GetPathwayLabel(int pathway)
+    {
+        return pathway == 1 ? "공중" : "지상";
     }
 
     public static bool ShouldUseEmptyBossActionPrefab(int noteType, string uid, string bossAction)
@@ -154,21 +176,320 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return note.noteData.type == 9 || uid.StartsWith("0004");
     }
 
+    public static System.Collections.Generic.List<ExperimentNoteSpec> BuildBmsExperimentNotes(muse_dash_test.BmsChart chart)
+    {
+        var specs = new System.Collections.Generic.List<ExperimentNoteSpec>();
+        if (chart?.Notes == null || chart.Notes.Count == 0)
+        {
+            return specs;
+        }
+
+        var pairedNotes = new System.Collections.Generic.HashSet<muse_dash_test.BmsNote>();
+        var matchedPairs = muse_dash_test.BmsNoteMatcher.MatchSpecialNotes(chart.Notes, chart);
+        foreach (var pair in matchedPairs)
+        {
+            if (pair?.StartNote == null || pair.EndNote == null)
+            {
+                continue;
+            }
+
+            var wavInfo = muse_dash_test.BmsBossSwapPlanner.ResolveWavInfo(chart, pair.StartNote);
+            if (wavInfo == null)
+            {
+                continue;
+            }
+
+            pairedNotes.Add(pair.StartNote);
+            pairedNotes.Add(pair.EndNote);
+
+            var spec = CreateExperimentNoteSpecFromBms(pair.StartNote, wavInfo);
+            spec.Label = $"BMS {pair.Type} {pair.StartNote.RawValue}";
+            spec.StartTick = pair.StartNote.Time;
+            spec.Length = System.Math.Max(0.0, pair.Duration);
+            spec.IsLong = pair.Type == muse_dash_test.BmsSpecialNoteType.Hold;
+            spec.IsMul = pair.Type == muse_dash_test.BmsSpecialNoteType.Sandbag;
+            specs.Add(spec);
+        }
+
+        foreach (var note in chart.Notes)
+        {
+            if (note == null || pairedNotes.Contains(note))
+            {
+                continue;
+            }
+
+            var wavInfo = muse_dash_test.BmsBossSwapPlanner.ResolveWavInfo(chart, note);
+            if (wavInfo == null)
+            {
+                continue;
+            }
+
+            if (wavInfo.NoteType == 3 || wavInfo.NoteType == 8)
+            {
+                MelonLogger.Warning($"[ExperimentChart.Bms] 특수 노트가 짝 없이 남아 단일 주입을 건너뜁니다: raw={note.RawValue}, tick={note.Tick}, time={note.Time:0.###}, wav={wavInfo.RawWavName}");
+                continue;
+            }
+
+            specs.Add(CreateExperimentNoteSpecFromBms(note, wavInfo));
+        }
+
+        specs.Sort((left, right) =>
+        {
+            int tickCompare = left.StartTick.CompareTo(right.StartTick);
+            if (tickCompare != 0) return tickCompare;
+            return string.Compare(left.Label, right.Label, System.StringComparison.OrdinalIgnoreCase);
+        });
+
+        MelonLogger.Msg($"[ExperimentChart.Bms] BMS 변환 완료: notes={chart.Notes.Count}, specs={specs.Count}, matchedPairs={matchedPairs.Count}");
+        return specs;
+    }
+
+    public static ExperimentNoteSpec CreateExperimentNoteSpecFromBms(muse_dash_test.BmsNote note, muse_dash_test.BmsWavInfo wavInfo)
+    {
+        var spec = new ExperimentNoteSpec
+        {
+            Label = $"BMS {note.RawValue}",
+            Uid = wavInfo.Uid ?? "",
+            PrefabName = ShouldKeepBmsPrefabName(wavInfo) ? wavInfo.PrefabName : "",
+            KeyAudio = wavInfo.KeyAudio ?? "",
+            BossAction = wavInfo.BossAction ?? "",
+            BossName = wavInfo.BossName ?? "",
+            BossScene = wavInfo.BossScene,
+            NoteType = wavInfo.NoteType,
+            Pathway = ResolveBmsPathway(note, wavInfo),
+            StartTick = NormalizeTimingValue(note.Time),
+            Dt = wavInfo.Dt >= 0.0 ? NormalizeTimingValue(wavInfo.Dt) : wavInfo.Dt
+        };
+
+        if (!string.IsNullOrEmpty(spec.BossAction) && !string.IsNullOrEmpty(spec.Uid) && spec.Uid.Length >= 2)
+        {
+            spec.Scene = "scene_" + spec.Uid.Substring(0, 2);
+        }
+
+        if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.MainMod.TryGetCachedHwaScene(out int manifestScene))
+        {
+            spec.Scene = $"scene_{manifestScene:00}";
+        }
+
+        return spec;
+    }
+
+    public static bool ShouldKeepBmsPrefabName(muse_dash_test.BmsWavInfo wavInfo)
+    {
+        if (wavInfo == null)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(wavInfo.BossAction) && wavInfo.NoteType == 0)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(wavInfo.PrefabName) || string.IsNullOrWhiteSpace(wavInfo.Uid))
+        {
+            return false;
+        }
+
+        return !string.Equals(wavInfo.PrefabName, wavInfo.Uid, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static int ResolveBmsPathway(muse_dash_test.BmsNote note, muse_dash_test.BmsWavInfo wavInfo)
+    {
+        if (note == null)
+        {
+            return 0;
+        }
+
+        if (note.Lane == 1 || note.Lane == 3)
+        {
+            return 1;
+        }
+
+        if (!string.IsNullOrWhiteSpace(wavInfo?.Uid) && wavInfo.Uid.Length >= 6)
+        {
+            string yy = wavInfo.Uid.Substring(4, 2);
+            if (yy == "04" || yy == "10" || yy == "16")
+            {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    public static System.Collections.Generic.List<ExperimentNoteSpec> BuildRuntimeExperimentNotes(System.Collections.Generic.IReadOnlyList<ExperimentNoteSpec> specs)
+    {
+        var runtimeSpecs = new System.Collections.Generic.List<ExperimentNoteSpec>();
+        if (specs == null || specs.Count == 0)
+        {
+            return runtimeSpecs;
+        }
+
+        bool waitingForSwapIn = false;
+        double lastOutTick = 0.0;
+
+        for (int i = 0; i < specs.Count; i++)
+        {
+            var spec = CloneExperimentNoteSpec(specs[i]);
+            if (spec == null)
+            {
+                continue;
+            }
+
+            if (IsBossOutAction(spec))
+            {
+                waitingForSwapIn = true;
+                lastOutTick = spec.StartTick;
+                runtimeSpecs.Add(spec);
+                continue;
+            }
+
+            if (waitingForSwapIn && IsBossInAction(spec) && spec.StartTick > lastOutTick)
+            {
+                string swapAction = BuildBossSwapAction(spec);
+                if (!string.IsNullOrWhiteSpace(swapAction))
+                {
+                    MelonLogger.Msg($"[BossAutoSwap] out 이후 in 감지: label={spec.Label}, tick={spec.StartTick}, action={swapAction}");
+                    spec.BossAction = swapAction;
+                    spec.NoteType = 0;
+                    spec.PrefabName = "empty_000";
+                    spec.KeyAudio = "";
+                }
+                else
+                {
+                    MelonLogger.Warning($"[BossAutoSwap] out 이후 in을 감지했지만 BossName/BossScene을 결정하지 못했습니다: label={spec.Label}, uid={spec.Uid}");
+                }
+
+                waitingForSwapIn = false;
+            }
+
+            runtimeSpecs.Add(spec);
+        }
+
+        return runtimeSpecs;
+    }
+
+    public static ExperimentNoteSpec CloneExperimentNoteSpec(ExperimentNoteSpec source)
+    {
+        if (source == null) return null;
+
+        return new ExperimentNoteSpec
+        {
+            Label = source.Label,
+            Uid = source.Uid,
+            Des = source.Des,
+            PrefabName = source.PrefabName,
+            KeyAudio = source.KeyAudio,
+            BossAction = source.BossAction,
+            BossName = source.BossName,
+            BossScene = source.BossScene,
+            Scene = source.Scene,
+            IbmsId = source.IbmsId,
+            NoteType = source.NoteType,
+            Pathway = source.Pathway,
+            IsLong = source.IsLong,
+            IsMul = source.IsMul,
+            StartTick = source.StartTick,
+            Count = source.Count,
+            Interval = source.Interval,
+            Length = source.Length,
+            Speed = source.Speed,
+            Dt = source.Dt
+        };
+    }
+
+    public static bool IsBossOutAction(ExperimentNoteSpec spec)
+    {
+        return string.Equals(spec?.BossAction, "out", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsBossInAction(ExperimentNoteSpec spec)
+    {
+        return string.Equals(spec?.BossAction, "in", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string BuildBossSwapAction(ExperimentNoteSpec spec)
+    {
+        if (spec == null)
+        {
+            return string.Empty;
+        }
+
+        string bossName = !string.IsNullOrWhiteSpace(spec.BossName) ? spec.BossName : TryInferBossNameFromUid(spec.Uid);
+        int bossScene = spec.BossScene >= 0 ? spec.BossScene : TryInferBossSceneFromUid(spec.Uid);
+        if (string.IsNullOrWhiteSpace(bossName) || bossScene < 0)
+        {
+            return string.Empty;
+        }
+
+        return $"swap:{bossName}:{bossScene}";
+    }
+
+    public static string TryInferBossNameFromUid(string uid)
+    {
+        if (string.IsNullOrWhiteSpace(uid) || uid.Length < 2)
+        {
+            return string.Empty;
+        }
+
+        if (!int.TryParse(uid.Substring(0, 2), out int scene))
+        {
+            return string.Empty;
+        }
+
+        return $"{scene:00}01_boss";
+    }
+
+    public static int TryInferBossSceneFromUid(string uid)
+    {
+        if (string.IsNullOrWhiteSpace(uid) || uid.Length < 2)
+        {
+            return -1;
+        }
+
+        if (int.TryParse(uid.Substring(0, 2), out int scene))
+        {
+            return scene;
+        }
+
+        return -1;
+    }
+
     public static void MoveNote(ref MusicData note, int objId, double tick, double length, ExperimentNoteSpec spec)
     {
+        double normalizedTick = NormalizeTimingValue(tick);
+        double normalizedDt = NormalizeTimingValue(GetEffectiveDt(note, spec));
+        double normalizedShowTick = NormalizeShowTickValue(normalizedTick - normalizedDt);
+
         note.objId = (short)objId;
-        note.tick = (Il2CppSystem.Decimal)tick;
-        note.dt = (Il2CppSystem.Decimal)GetEffectiveDt(note, spec);
-        note.showTick = note.tick - note.dt;
+        note.tick = (Il2CppSystem.Decimal)normalizedTick;
+        note.dt = (Il2CppSystem.Decimal)normalizedDt;
+        note.showTick = (Il2CppSystem.Decimal)normalizedShowTick;
+
+        if (note.noteData != null)
+        {
+            note.noteData.id = objId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
 
         if (note.configData != null)
         {
             var configData = CloneMusicConfigData(note.configData);
             configData.id = objId;
-            configData.time = (Il2CppSystem.Decimal)tick;
-            configData.length = (Il2CppSystem.Decimal)length;
+            configData.time = (Il2CppSystem.Decimal)normalizedTick;
+            configData.length = (Il2CppSystem.Decimal)NormalizeTimingValue(length);
             note.configData = configData;
         }
+    }
+
+    public static double NormalizeTimingValue(double value)
+    {
+        return System.Math.Round(value, 3, System.MidpointRounding.AwayFromZero);
+    }
+
+    public static double NormalizeShowTickValue(double value)
+    {
+        return System.Math.Round(value, 2, System.MidpointRounding.AwayFromZero);
     }
 
     public static double GetEffectiveDt(MusicData note)
@@ -180,7 +501,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         if (spec != null && spec.Dt >= 0.0) return spec.Dt;
 
-        string uid = note.noteData?.uid;
+        string uid = !string.IsNullOrEmpty(spec?.Uid) ? spec.Uid : note.noteData?.uid;
         if (string.IsNullOrEmpty(uid) || uid.Length < 6) return BaseDt;
 
         if (IsBossProjectileUid(uid)) return BossProjectileDt;
@@ -202,27 +523,31 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static void LogInsertedNote(string label, MusicData note)
     {
         string uid = note.noteData?.uid ?? "(null)";
-        if (!IsUidMiddlePair(uid, "09")) return;
+        bool isBmsNote = label != null && label.StartsWith("BMS ", System.StringComparison.OrdinalIgnoreCase);
+        if (!isBmsNote && !IsUidMiddlePair(uid, "09")) return;
         string prefab = note.noteData?.prefab_name ?? "(null)";
         string type = note.noteData != null ? note.noteData.type.ToString() : "(null)";
         string pathway = note.noteData != null ? note.noteData.pathway.ToString() : "(null)";
+        string pathwayLabel = note.noteData != null ? GetPathwayLabel(note.noteData.pathway) : "(null)";
         string speed = note.noteData != null ? note.noteData.speed.ToString() : "(null)";
         string scene = note.noteData?.scene ?? "(null)";
         string bossAction = note.noteData?.boss_action ?? "(null)";
-        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, speed={speed}, uid={uid}, type={type}, pathway={pathway}, scene={scene}, prefab={prefab}, boss_action={bossAction}");
+        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, speed={speed}, uid={uid}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, prefab={prefab}, boss_action={bossAction}");
     }
 
     public static void LogSpec(string label, ExperimentNoteSpec spec)
     {
-        MelonLogger.Msg($"{label}: Label={spec.Label}, Uid={spec.Uid}, NoteType={spec.NoteType}, Pathway={spec.Pathway}, PrefabName={spec.PrefabName}, KeyAudio={spec.KeyAudio}, BossAction={spec.BossAction}, Scene={spec.Scene}, IbmsId={spec.IbmsId}, IsLong={spec.IsLong}, IsMul={spec.IsMul}, StartTick={spec.StartTick}, Count={spec.Count}, Interval={spec.Interval}, Length={spec.Length}, Speed={spec.Speed}, Dt={spec.Dt}");
+        MelonLogger.Msg($"{label}: Label={spec.Label}, Uid={spec.Uid}, NoteType={spec.NoteType}, Pathway={spec.Pathway}, PrefabName={spec.PrefabName}, KeyAudio={spec.KeyAudio}, BossAction={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}, IbmsId={spec.IbmsId}, IsLong={spec.IsLong}, IsMul={spec.IsMul}, StartTick={spec.StartTick}, Count={spec.Count}, Interval={spec.Interval}, Length={spec.Length}, Speed={spec.Speed}, Dt={spec.Dt}");
     }
 
     public static void LogNoteState(string label, MusicData note)
     {
         string noteUid = SafeLogValue(() => note.noteData?.uid);
-        if (!IsUidMiddlePair(noteUid, "09")) return;
+        bool isExperimentDebug = label != null && label.StartsWith("[ExperimentDebug]", System.StringComparison.OrdinalIgnoreCase);
+        if (!isExperimentDebug && !IsUidMiddlePair(noteUid, "09")) return;
         string noteType = SafeLogValue(() => note.noteData?.type);
         string notePathway = SafeLogValue(() => note.noteData?.pathway);
+        string notePathwayLabel = SafeLogValue(() => GetPathwayLabel(note.noteData?.pathway ?? 0));
         string noteScene = SafeLogValue(() => note.noteData?.scene);
         string prefab = SafeLogValue(() => note.noteData?.prefab_name);
         string keyAudio = SafeLogValue(() => note.noteData?.key_audio);
@@ -237,7 +562,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string configLength = SafeLogValue(() => note.configData?.length);
         string configPathway = SafeLogValue(() => note.configData?.pathway);
 
-        MelonLogger.Msg($"{label}: objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, note.uid={noteUid}, note.type={noteType}, note.pathway={notePathway}, note.scene={noteScene}, note.noteUid={noteUidValue}, note.m_BmsUid={bmsUid}, note.prefab={prefab}, note.speed={speed}, note.key_audio={keyAudio}, note.boss_action={bossAction}, config.id={configId}, config.time={configTime}, config.note_uid={configUid}, config.length={configLength}, config.pathway={configPathway}, isLongPressing={note.isLongPressing}, isLongPressEnd={note.isLongPressEnd}, longPressPTick={note.longPressPTick}, endIndex={note.endIndex}, longPressNum={note.longPressNum}");
+        MelonLogger.Msg($"{label}: objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, note.uid={noteUid}, note.type={noteType}, note.pathway={notePathway}({notePathwayLabel}), note.scene={noteScene}, note.noteUid={noteUidValue}, note.m_BmsUid={bmsUid}, note.prefab={prefab}, note.speed={speed}, note.key_audio={keyAudio}, note.boss_action={bossAction}, config.id={configId}, config.time={configTime}, config.note_uid={configUid}, config.length={configLength}, config.pathway={configPathway}, isLongPressing={note.isLongPressing}, isLongPressEnd={note.isLongPressEnd}, longPressPTick={note.longPressPTick}, endIndex={note.endIndex}, longPressNum={note.longPressNum}");
     }
 
     public static string SafeLogValue(System.Func<object> getter)

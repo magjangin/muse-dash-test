@@ -287,13 +287,8 @@ public static class StageBattleComponent_LoadMedia_Patch
                 return null;
             }
 
-            string[] txtFiles = Directory.GetFiles(HwaFolderPath, "*.txt", SearchOption.TopDirectoryOnly);
-            string[] oggFiles = Directory.GetFiles(HwaFolderPath, "*.ogg", SearchOption.TopDirectoryOnly);
-
-            if (oggFiles == null || oggFiles.Length == 0)
-            {
-                oggFiles = Directory.GetFiles(HwaFolderPath, "*.ogg", SearchOption.AllDirectories);
-            }
+            string[] txtFiles = Directory.GetFiles(HwaFolderPath, "*.txt", SearchOption.AllDirectories);
+            string[] oggFiles = Directory.GetFiles(HwaFolderPath, "*.ogg", SearchOption.AllDirectories);
 
             if (oggFiles == null || oggFiles.Length == 0)
             {
@@ -403,13 +398,14 @@ public static class StageBattleComponent_LoadMedia_Patch
                 return;
             }
 
-            string[] mp4Files = Directory.GetFiles(HwaFolderPath, "*.mp4", SearchOption.TopDirectoryOnly);
+            string[] mp4Files = Directory.GetFiles(HwaFolderPath, "*.mp4", SearchOption.AllDirectories);
             if (mp4Files == null || mp4Files.Length == 0)
             {
-                MelonLogger.Msg("[StageBattleComponent.Load.Video] hwa 폴더에 mp4 파일이 없습니다.");
+                MelonLogger.Msg("[StageBattleComponent.Load.Video] hwa 폴더 및 하위 폴더에 mp4 파일이 없습니다.");
                 return;
             }
 
+            Array.Sort(mp4Files, StringComparer.OrdinalIgnoreCase);
             string mp4Path = mp4Files[0];
             FileInfo mp4Info = new FileInfo(mp4Path);
             MelonLogger.Msg($"[StageBattleComponent.Load.Video] mp4 비디오 주입 대상 발견: path={mp4Path}, fileName={mp4Info.Name}, size={mp4Info.Length}");
