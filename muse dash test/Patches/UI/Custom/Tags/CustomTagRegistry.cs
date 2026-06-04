@@ -236,14 +236,20 @@ namespace muse_dash_test
                             if (clonedAlbum != null)
                             {
                                 var albumWrapper = new AlbumsInfoWrapper(clonedAlbum);
+                                
                                 albumWrapper.uid = AlbumUidString;
                                 albumWrapper.title = AlbumTitle;
                                 albumWrapper.tag = TagUidString;
                                 albumWrapper.jsonName = "custom_album_998_0";
                                 albumWrapper.prefabsName = AlbumCoverPrefabName;
-                                albumWrapper.free = true;
-                                albumWrapper.needPurchase = false;
-                                albumWrapper.price = "";
+                                
+                                // 앨범 본체 및 상세 정보의 DLC/구매 플래그들 동적 세정
+                                CleanPurchaseProperties(clonedAlbum);
+                                var albumExInfo = ModReflection.GetValue(clonedAlbum, "m_AlbumExInfo");
+                                if (albumExInfo != null)
+                                {
+                                    CleanPurchaseProperties(albumExInfo);
+                                }
 
                                 albumInfo = clonedAlbum;
                                 CustomAlbumInfo = clonedAlbum;
@@ -282,9 +288,8 @@ namespace muse_dash_test
                 fallbackWrapper.tag = TagUidString;
                 fallbackWrapper.jsonName = "custom_album_998_0";
                 fallbackWrapper.prefabsName = AlbumCoverPrefabName;
-                fallbackWrapper.free = true;
-                fallbackWrapper.needPurchase = false;
-                fallbackWrapper.price = "";
+                
+                CleanPurchaseProperties(fallbackAlbum);
 
                 albumInfo = fallbackAlbum;
                 CustomAlbumInfo = fallbackAlbum;
@@ -319,6 +324,15 @@ namespace muse_dash_test
                 }
 
                 ApplyVirtualSongMetadata(clonedInfo, uid, name, author, levelDesigner, diff1, diff2, diff3, diff4, diff5);
+
+                // 가상 곡 본체 및 상세 정보의 DLC/구매 플래그들 동적 세정
+                CleanPurchaseProperties(clonedInfo);
+                var musicExInfo = ModReflection.GetValue(clonedInfo, "m_MusicExInfo");
+                if (musicExInfo != null)
+                {
+                    CleanPurchaseProperties(musicExInfo);
+                }
+
                 if (!ApplyVirtualSongAlbumMetadata(clonedInfo, uid))
                 {
                     return;
@@ -517,6 +531,15 @@ namespace muse_dash_test
         private static string FormatValue(object value)
         {
             return value == null ? "(null)" : value.ToString();
+        }
+
+        private static void CleanPurchaseProperties(object obj)
+        {
+            if (obj == null) return;
+            ModReflection.SetValue(obj, "needPurchase", false, silent: true);
+            ModReflection.SetValue(obj, "free", true, silent: true);
+            ModReflection.SetValue(obj, "pay_ids", null, silent: true);
+            ModReflection.SetValue(obj, "dlc", "", silent: true);
         }
     }
 }
