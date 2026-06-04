@@ -9,6 +9,7 @@ namespace muse_dash_test
     public static class ModReflection
     {
         private static readonly Dictionary<string, MemberInfo> MemberCache = new Dictionary<string, MemberInfo>();
+        private static readonly HashSet<string> LoggedFailures = new HashSet<string>();
         private static readonly object CacheLock = new object();
 
         /// <summary>
@@ -21,20 +22,20 @@ namespace muse_dash_test
             string cacheKey = $"{type.FullName}_{memberName}";
 
             MemberInfo member;
+            bool hasCache;
+
             lock (CacheLock)
             {
-                MemberCache.TryGetValue(cacheKey, out member);
+                hasCache = MemberCache.TryGetValue(cacheKey, out member);
             }
 
-            if (member == null)
+            if (!hasCache)
             {
                 member = ResolveMember(type, memberName);
-                if (member != null)
+                lock (CacheLock)
                 {
-                    lock (CacheLock)
-                    {
-                        MemberCache[cacheKey] = member;
-                    }
+                    // 조회에 실패했더라도 null 값 그대로 캐싱하여 매 틱마다 리플렉션이 재실행되는 것을 방지합니다.
+                    MemberCache[cacheKey] = member;
                 }
             }
 
@@ -42,7 +43,15 @@ namespace muse_dash_test
             {
                 if (!silent)
                 {
-                    MelonLogger.Warning($"[ModReflection] 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없습니다.");
+                    bool isFirstLog = false;
+                    lock (CacheLock)
+                    {
+                        isFirstLog = LoggedFailures.Add(cacheKey);
+                    }
+                    if (isFirstLog)
+                    {
+                        MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없습니다. (이 경고는 1회만 표시됩니다)");
+                    }
                 }
                 return null;
             }
@@ -56,7 +65,16 @@ namespace muse_dash_test
             {
                 if (!silent)
                 {
-                    MelonLogger.Error($"[ModReflection] '{memberName}' 값을 읽는 중 오류 발생: {ex.Message}");
+                    bool isFirstLog = false;
+                    string errKey = $"{cacheKey}_read_err";
+                    lock (CacheLock)
+                    {
+                        isFirstLog = LoggedFailures.Add(errKey);
+                    }
+                    if (isFirstLog)
+                    {
+                        MelonLogger.Error($"[ModReflection] '{memberName}' 값을 읽는 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
+                    }
                 }
             }
             return null;
@@ -72,20 +90,19 @@ namespace muse_dash_test
             string cacheKey = $"{type.FullName}_{memberName}";
 
             MemberInfo member;
+            bool hasCache;
+
             lock (CacheLock)
             {
-                MemberCache.TryGetValue(cacheKey, out member);
+                hasCache = MemberCache.TryGetValue(cacheKey, out member);
             }
 
-            if (member == null)
+            if (!hasCache)
             {
                 member = ResolveMember(type, memberName);
-                if (member != null)
+                lock (CacheLock)
                 {
-                    lock (CacheLock)
-                    {
-                        MemberCache[cacheKey] = member;
-                    }
+                    MemberCache[cacheKey] = member;
                 }
             }
 
@@ -93,7 +110,15 @@ namespace muse_dash_test
             {
                 if (!silent)
                 {
-                    MelonLogger.Warning($"[ModReflection] 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없어 값을 주입할 수 없습니다.");
+                    bool isFirstLog = false;
+                    lock (CacheLock)
+                    {
+                        isFirstLog = LoggedFailures.Add(cacheKey);
+                    }
+                    if (isFirstLog)
+                    {
+                        MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없어 값을 주입할 수 없습니다. (이 경고는 1회만 표시됩니다)");
+                    }
                 }
                 return false;
             }
@@ -118,7 +143,16 @@ namespace muse_dash_test
             {
                 if (!silent)
                 {
-                    MelonLogger.Error($"[ModReflection] '{memberName}' 값 설정 중 오류 발생: {ex.Message}");
+                    bool isFirstLog = false;
+                    string errKey = $"{cacheKey}_write_err";
+                    lock (CacheLock)
+                    {
+                        isFirstLog = LoggedFailures.Add(errKey);
+                    }
+                    if (isFirstLog)
+                    {
+                        MelonLogger.Error($"[ModReflection] '{memberName}' 값 설정 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
+                    }
                 }
             }
             return false;

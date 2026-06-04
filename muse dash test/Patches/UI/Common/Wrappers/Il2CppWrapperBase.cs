@@ -1,5 +1,6 @@
 using MelonLoader;
 using System;
+using System.Collections.Generic;
 
 namespace muse_dash_test
 {
@@ -9,6 +10,8 @@ namespace muse_dash_test
     public abstract class Il2CppWrapperBase
     {
         public object RawObject { get; }
+        private static readonly HashSet<string> LoggedFailures = new HashSet<string>();
+        private static readonly object CacheLock = new object();
 
         protected Il2CppWrapperBase(object rawObject)
         {
@@ -33,7 +36,17 @@ namespace muse_dash_test
             {
                 if (!silent)
                 {
-                    MelonLogger.Error($"[Il2CppWrapperBase] '{memberName}' 형변환 오류 (Target: {typeof(T).Name}): {ex.Message}");
+                    string targetName = RawObject != null ? RawObject.GetType().FullName : "Unknown";
+                    string cacheKey = $"{targetName}_{memberName}_cast_{typeof(T).Name}";
+                    bool isFirstLog = false;
+                    lock (CacheLock)
+                    {
+                        isFirstLog = LoggedFailures.Add(cacheKey);
+                    }
+                    if (isFirstLog)
+                    {
+                        MelonLogger.Error($"[Il2CppWrapperBase] '{memberName}' 형변환 오류 (Target: {typeof(T).Name}): {ex.Message} (이 에러는 1회만 표시됩니다)");
+                    }
                 }
             }
             return default;

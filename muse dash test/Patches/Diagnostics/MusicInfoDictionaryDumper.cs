@@ -105,6 +105,7 @@ namespace muse_dash_test
         }
     }
 
+    /*
     [HarmonyPatch(typeof(DBMusicTag), "AddAlbumTagData")]
     public class DBMusicTag_AddAlbumTagData_Patch
     {
@@ -169,4 +170,5 @@ namespace muse_dash_test
             }
         }
     }
+    */
 }
