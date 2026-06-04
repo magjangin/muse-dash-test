@@ -17,8 +17,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     private static readonly bool DebugExperimentNotes = false;
 
-    private static readonly bool UseBmsInjection = true;
-
     // 여기만 수정하면 됩니다. 자세한 규칙은 docs/NOTE_EXPERIMENTS.md를 참고하세요.
     // NoteType: 1=일반, 2=톱니, 3=롱, 6=하트, 7=음표, 8=샌드백
     // Pathway: 0=지상, 1=공중
@@ -28,7 +26,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 이 배열만 수정하면 됩니다.
         // 줄을 복사/삭제하면서 원하는 노트만 남기세요.
         new ExperimentNoteSpec { Label = "보스1 등장", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 15.0, BossAction = "in" },
+        new ExperimentNoteSpec { Label = "보스1 공격", Uid = "050107", NoteType = 0, Pathway = 0, StartTick = 17.5, BossAction = "boss_far_atk_1_start" },
         new ExperimentNoteSpec { Label = "보스1 퇴장", Uid = "050102", NoteType = 0, Pathway = 0, StartTick = 22.0, BossAction = "out" },
+        new ExperimentNoteSpec { Label = "보스2 교체", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 24.0, BossAction = "swap:0401_boss:4" },
+        new ExperimentNoteSpec { Label = "보스2 공격", Uid = "050107", NoteType = 0, Pathway = 0, StartTick = 26.5, BossAction = "boss_far_atk_1_start" },
+        new ExperimentNoteSpec { Label = "보스2 퇴장", Uid = "050108", NoteType = 0, Pathway = 0, StartTick = 31.0, BossAction = "boss_far_atk_1_end" },
 
 
         // 원하는 실험은 아래 예시를 복사해서 주석을 해제하세요.
@@ -37,6 +39,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // new ExperimentNoteSpec { Label = "속도/dt 직접 지정", Uid = "051001", NoteType = 1, Pathway = 0, StartTick = 15.0, Speed = 12.0, Dt = 0.75 },
         // new ExperimentNoteSpec { Label = "롱노트 1개", Uid = "050201", NoteType = 3, Pathway = 0, IsLong = true, StartTick = 20.0, Length = 1.6 },
         // new ExperimentNoteSpec { Label = "샌드백 1개", Uid = "020401", NoteType = 8, Pathway = 0, IsMul = true, StartTick = 24.0, Length = 1.2 },
+        // new ExperimentNoteSpec { Label = "하트 1개", Uid = "000201", NoteType = 6, Pathway = 0, KeyAudio = "sfx_hp", StartTick = 28.0 },
+        // new ExperimentNoteSpec { Label = "음표 1개", Uid = "000301", NoteType = 7, Pathway = 0, KeyAudio = "sfx_score", StartTick = 30.0 },
 
         // 보스 액션 트리거(type 0)는 empty_000, 보스 발사체(type 1)는 일반 노트 프리팹을 씁니다.
         // 보스 발사체만 만들 때는 BossAction을 비우면 됩니다.
@@ -57,8 +61,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         public string PrefabName = "";
         public string KeyAudio = "";
         public string BossAction = "";
-        public string BossName = "";
-        public int BossScene = -1;
         public string Scene = "";
         public string IbmsId = "";
         public int NoteType = -1;
@@ -75,27 +77,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void Postfix(DBStageInfo __instance)
     {
+        MelonLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: {__instance}");
+
         try
         {
-            // 진입 시점에 안전하게 현재 선택된 곡 UID를 확인하여 플래그 재업데이트
-            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
-            }
-
-            if (!string.IsNullOrEmpty(uid))
-            {
-                ExperimentPlayContext.RememberMusicSelection(uid);
-            }
-
-            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
-            {
-                MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"}, apply={ExperimentPlayContext.ShouldApplyExperimentChart})");
-                DumpMusicList(__instance);
-                return;
-            }
-
             ApplyExperimentChart(__instance);
         }
         catch (System.Exception ex)
@@ -106,26 +91,5 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 삽입 후 덤프 헬퍼 메서드 호출
         //MelonLogger.Msg("노트 삽입 후 덤프:");
         //DumpMusicList(__instance);
-    }
-}
-
-public static class ExperimentPlayContext
-{
-    public static bool ShouldApplyExperimentChart { get; private set; }
-
-    public static void RememberMusicSelection(string uid)
-    {
-        // 999-0, 999-1 및 999-2 곡은 우리 실험 모드 전용 가상 곡이므로, 이 UID면 무조건 실험 차트와 보스 변경을 적용합니다.
-        // UID를 못 찾았으면 이전 상태를 끌고 가지 않도록 false로 리셋합니다.
-        if (string.IsNullOrEmpty(uid))
-        {
-            ShouldApplyExperimentChart = false;
-        }
-        else
-        {
-            ShouldApplyExperimentChart = (uid == "999-0" || uid == "999-1" || uid == "999-2");
-        }
-
-        MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, apply={ShouldApplyExperimentChart}");
     }
 }

@@ -29,8 +29,8 @@ namespace muse_dash_test
         // 시작과 끝의 틱(마디 비례 시간) 간격
         public float LengthInTicks => EndNote.Tick - StartNote.Tick;
 
-        // 배치된 레인 (0: 지상, 1: 공중 등)
-        public int Lane => StartNote.Lane;
+        // 배치된 레인 (지상, 공중 등)
+        public BmsLane Lane => StartNote.Lane;
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ namespace muse_dash_test
             }
 
             // 1. 레인(Lane)별로 노트를 임시 격리 분류합니다.
-            var notesByLane = new Dictionary<int, List<BmsNote>>();
+            var notesByLane = new Dictionary<BmsLane, List<BmsNote>>();
             for (int i = 0; i < rawNotes.Count; i++)
             {
                 var note = rawNotes[i];
@@ -65,7 +65,7 @@ namespace muse_dash_test
             // 2. 레인별로 틱 순서대로 순회하며 매칭을 가동합니다.
             foreach (var kvp in notesByLane)
             {
-                int lane = kvp.Key;
+                BmsLane lane = kvp.Key;
                 var sortedNotesInLane = kvp.Value.OrderBy(n => n.Tick).ToList();
 
                 // 각 레인별 실시간 홀드/샌드백 매칭 상태 추적 슬롯

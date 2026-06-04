@@ -257,7 +257,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             BossScene = wavInfo.BossScene,
             NoteType = wavInfo.NoteType,
             Pathway = ResolveBmsPathway(note, wavInfo),
-            StartTick = NormalizeTimingValue(note.Time),
+            StartTick = System.Math.Round(note.Time, 2, System.MidpointRounding.AwayFromZero),
             Dt = wavInfo.Dt >= 0.0 ? NormalizeTimingValue(wavInfo.Dt) : wavInfo.Dt
         };
 
@@ -269,6 +269,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.MainMod.TryGetCachedHwaScene(out int manifestScene))
         {
             spec.Scene = $"scene_{manifestScene:00}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(spec.BossAction))
+        {
+            MelonLogger.Msg($"[ExperimentChart.Bms.BossFields] raw={note.RawValue}, uid={spec.Uid}, action={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}");
         }
 
         return spec;
@@ -301,7 +306,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return 0;
         }
 
-        if (note.Lane == 1 || note.Lane == 3)
+        if (note.Lane == muse_dash_test.BmsLane.Air)
         {
             return 1;
         }
@@ -548,7 +553,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string noteType = SafeLogValue(() => note.noteData?.type);
         string notePathway = SafeLogValue(() => note.noteData?.pathway);
         string notePathwayLabel = SafeLogValue(() => GetPathwayLabel(note.noteData?.pathway ?? 0));
-        string noteScene = SafeLogValue(() => note.noteData?.scene);
         string prefab = SafeLogValue(() => note.noteData?.prefab_name);
         string keyAudio = SafeLogValue(() => note.noteData?.key_audio);
         string bossAction = SafeLogValue(() => note.noteData?.boss_action);
@@ -562,7 +566,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string configLength = SafeLogValue(() => note.configData?.length);
         string configPathway = SafeLogValue(() => note.configData?.pathway);
 
-        MelonLogger.Msg($"{label}: objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, note.uid={noteUid}, note.type={noteType}, note.pathway={notePathway}({notePathwayLabel}), note.scene={noteScene}, note.noteUid={noteUidValue}, note.m_BmsUid={bmsUid}, note.prefab={prefab}, note.speed={speed}, note.key_audio={keyAudio}, note.boss_action={bossAction}, config.id={configId}, config.time={configTime}, config.note_uid={configUid}, config.length={configLength}, config.pathway={configPathway}, isLongPressing={note.isLongPressing}, isLongPressEnd={note.isLongPressEnd}, longPressPTick={note.longPressPTick}, endIndex={note.endIndex}, longPressNum={note.longPressNum}");
+        MelonLogger.Msg($"{label}: objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, note.uid={noteUid}, note.type={noteType}, note.pathway={notePathway}({notePathwayLabel}), note.noteUid={noteUidValue}, note.m_BmsUid={bmsUid}, note.prefab={prefab}, note.speed={speed}, note.key_audio={keyAudio}, note.boss_action={bossAction}, config.id={configId}, config.time={configTime}, config.note_uid={configUid}, config.length={configLength}, config.pathway={configPathway}, isLongPressing={note.isLongPressing}, isLongPressEnd={note.isLongPressEnd}, longPressPTick={note.longPressPTick}, endIndex={note.endIndex}, longPressNum={note.longPressNum}");
     }
 
     public static string SafeLogValue(System.Func<object> getter)

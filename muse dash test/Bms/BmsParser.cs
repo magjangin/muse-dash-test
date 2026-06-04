@@ -7,6 +7,15 @@ using System.Text.RegularExpressions;
 
 namespace muse_dash_test
 {
+    public enum BmsLane
+    {
+        Ground = 0,      // 지상 (Pathway 0)
+        Air = 1,         // 공중 (Pathway 1)
+        BossInOut = 2,   // 보스 등장/퇴장
+        BossAction = 3,  // 보스 액션/패턴
+        Unknown = -1
+    }
+
     public static class BmsParser
     {
         private static readonly Regex HeaderBpmRegex = new Regex(@"^#BPM\s+([0-9]+(?:\.[0-9]+)?)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -14,12 +23,12 @@ namespace muse_dash_test
         private static readonly Regex MeasureLineRegex = new Regex(@"^#(?<measure>\d{3})(?<channel>[0-9A-Fa-f]{2})\s*:\s*(?<data>[0-9A-Za-z\s]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex MetadataRegex = new Regex(@"^#(?<key>[A-Za-z0-9_]+)\s+(?<value>.+)$", RegexOptions.Compiled);
 
-        private static readonly Dictionary<int, int> ChannelToLaneMap = new Dictionary<int, int>
+        private static readonly Dictionary<int, BmsLane> ChannelToLaneMap = new Dictionary<int, BmsLane>
         {
-            { 0x13, 1 },
-            { 0x14, 0 },
-            { 0x15, 2 },
-            { 0x18, 3 },
+            { 0x13, BmsLane.Ground },     // 지상 (BMS Channel 13)
+            { 0x14, BmsLane.Air },        // 공중 (BMS Channel 14)
+            { 0x15, BmsLane.BossInOut },  // 보스 등장/퇴장 (BMS Channel 15)
+            { 0x18, BmsLane.BossAction }, // 보스 액션 (BMS Channel 18)
         };
 
         public static BmsChart ParseFile(string filePath)
@@ -93,6 +102,7 @@ namespace muse_dash_test
             chart.DefaultBpm = defaultBpm;
             chart.BpmDefinitions = bpmDefinitions;
             chart.Metadata = metadata;
+            int noteCellWidth = DetectWavCellWidth(metadata);
 
             var bpmChanges = new List<BpmChange>
             {
@@ -119,12 +129,12 @@ namespace muse_dash_test
             var notes = new List<BmsNote>();
             foreach (var evt in measureEvents)
             {
-                if (!ChannelToLaneMap.TryGetValue(evt.Channel, out int lane))
+                if (!ChannelToLaneMap.TryGetValue(evt.Channel, out BmsLane lane))
                 {
                     continue;
                 }
 
-                AddNoteEvents(evt, lane, notes);
+                AddNoteEvents(evt, lane, notes, noteCellWidth);
             }
 
             bpmChanges = bpmChanges
@@ -187,7 +197,7 @@ namespace muse_dash_test
 
         private static void AddBpmReferenceChanges(RawMeasureEvent evt, Dictionary<string, float> bpmDefinitions, List<BpmChange> bpmChanges)
         {
-            var cells = SplitCells(evt.Data);
+            var cells = SplitCells(evt.Data, 2);
             if (cells.Count == 0)
             {
                 return;
@@ -196,7 +206,7 @@ namespace muse_dash_test
             for (int i = 0; i < cells.Count; i++)
             {
                 var cell = cells[i];
-                if (string.IsNullOrWhiteSpace(cell) || cell == "00")
+                if (string.IsNullOrWhiteSpace(cell) || IsZeroCell(cell))
                 {
                     continue;
                 }
@@ -217,7 +227,7 @@ namespace muse_dash_test
 
         private static void AddDirectBpmChanges(RawMeasureEvent evt, List<BpmChange> bpmChanges)
         {
-            var cells = SplitCells(evt.Data);
+            var cells = SplitCells(evt.Data, 2);
             if (cells.Count == 0)
             {
                 return;
@@ -226,7 +236,7 @@ namespace muse_dash_test
             for (int i = 0; i < cells.Count; i++)
             {
                 var cell = cells[i];
-                if (string.IsNullOrWhiteSpace(cell) || cell == "00")
+                if (string.IsNullOrWhiteSpace(cell) || IsZeroCell(cell))
                 {
                     continue;
                 }
@@ -245,9 +255,9 @@ namespace muse_dash_test
             }
         }
 
-        private static void AddNoteEvents(RawMeasureEvent evt, int lane, List<BmsNote> notes)
+        private static void AddNoteEvents(RawMeasureEvent evt, BmsLane lane, List<BmsNote> notes, int cellWidth)
         {
-            var cells = SplitCells(evt.Data);
+            var cells = SplitCells(evt.Data, cellWidth);
             if (cells.Count == 0)
             {
                 return;
@@ -256,7 +266,7 @@ namespace muse_dash_test
             for (int i = 0; i < cells.Count; i++)
             {
                 var cell = cells[i];
-                if (string.IsNullOrWhiteSpace(cell) || cell == "00")
+                if (string.IsNullOrWhiteSpace(cell) || IsZeroCell(cell))
                 {
                     continue;
                 }
@@ -370,7 +380,7 @@ namespace muse_dash_test
             return false;
         }
 
-        private static List<string> SplitCells(string data)
+        private static List<string> SplitCells(string data, int cellWidth)
         {
             var cells = new List<string>();
             if (string.IsNullOrWhiteSpace(data))
@@ -379,17 +389,61 @@ namespace muse_dash_test
             }
 
             var cleaned = NormalizeHexData(data);
-            if (cleaned.Length < 2)
+            int width = Math.Max(2, cellWidth);
+            if (cleaned.Length < width)
             {
                 return cells;
             }
 
-            for (int i = 0; i + 1 < cleaned.Length; i += 2)
+            for (int i = 0; i + width <= cleaned.Length; i += width)
             {
-                cells.Add(cleaned.Substring(i, 2));
+                cells.Add(cleaned.Substring(i, width));
             }
 
             return cells;
+        }
+
+        private static int DetectWavCellWidth(IReadOnlyDictionary<string, string> metadata)
+        {
+            int width = 2;
+            if (metadata == null || metadata.Count == 0)
+            {
+                return width;
+            }
+
+            foreach (var key in metadata.Keys)
+            {
+                if (string.IsNullOrWhiteSpace(key) || !key.StartsWith("WAV", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string rawKey = key.Substring(3);
+                if (rawKey.Length > width)
+                {
+                    width = rawKey.Length;
+                }
+            }
+
+            return width;
+        }
+
+        private static bool IsZeroCell(string cell)
+        {
+            if (string.IsNullOrWhiteSpace(cell))
+            {
+                return true;
+            }
+
+            for (int i = 0; i < cell.Length; i++)
+            {
+                if (cell[i] != '0')
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static string NormalizeHexData(string data)
@@ -459,7 +513,7 @@ namespace muse_dash_test
         public int Measure { get; internal set; }
         public int Channel { get; internal set; }
         public int CellIndex { get; internal set; }
-        public int Lane { get; internal set; }
+        public BmsLane Lane { get; internal set; }
         public string RawValue { get; internal set; }
         public float Tick { get; internal set; }
         public float Time { get; internal set; }

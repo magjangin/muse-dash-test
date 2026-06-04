@@ -1,8 +1,6 @@
 using MelonLoader;
 using System;
 using System.Reflection;
-using System.Linq;
-using muse_dash_test;
 
 // Il2Cpp.Boss 후킹: Play(string key, bool playAnimator = true) 및 SetBoss()
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "Play", new Type[] { typeof(string), typeof(bool) })]
@@ -53,11 +51,6 @@ public class Boss_Play_Patch
     {
         try
         {
-            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
-            {
-                return true;
-            }
-
             MelonLogger.Msg($"Il2Cpp.Boss.Play 호출: key={key}, playAnimator={playAnimator}, instance={__instance}");
 
             if (key != null && key.StartsWith("swap:"))
@@ -68,6 +61,8 @@ public class Boss_Play_Patch
                     string newName = parts[1];
                     if (int.TryParse(parts[2], out int newScene))
                     {
+                        MelonLogger.Msg($"[DynamicSwap] 실시간 보스 교체 시작 -> name={newName}, scene={newScene}");
+                        
                         // 보스 오브젝트와 그 부모를 강제로 활성화 (out 등으로 비활성화되었을 가능성 방지)
                         try
                         {
@@ -75,10 +70,12 @@ public class Boss_Play_Patch
                             if (component != null && component.gameObject != null)
                             {
                                 component.gameObject.SetActive(true);
-
+                                MelonLogger.Msg("[DynamicSwap] Boss gameObject 강제 활성화 완료");
+                                
                                 if (component.transform != null && component.transform.parent != null)
                                 {
                                     component.transform.parent.gameObject.SetActive(true);
+                                    MelonLogger.Msg("[DynamicSwap] Boss parent gameObject 강제 활성화 완료");
                                 }
                             }
                         }
@@ -86,6 +83,9 @@ public class Boss_Play_Patch
                         {
                             MelonLogger.Warning($"[DynamicSwap] gameObject 활성화 시도 중 경고: {ex.Message}");
                         }
+
+                        // 보스 내부 필드 상태 덤프 (디버그 용도)
+                        DumpBossFields(__instance);
 
                         isDynamicSwapping = true;
                         try
@@ -108,6 +108,7 @@ public class Boss_Play_Patch
                         }
                         catch {}
                         
+                        MelonLogger.Msg($"[DynamicSwap] 실시간 보스 교체 완료. 등장 애니메이션(in) 실행");
                         __instance.Play("in", playAnimator);
                     }
                 }
@@ -123,8 +124,14 @@ public class Boss_Play_Patch
 
     public static void Postfix(Il2Cpp.Boss __instance, string key, bool playAnimator)
     {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"Boss.Play Postfix 예외: {ex}"); }
+        try
+        {
+            MelonLogger.Msg($"Il2Cpp.Boss.Play 완료: key={key}");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"Boss.Play Postfix 예외: {ex}");
+        }
     }
 }
 
@@ -133,14 +140,26 @@ public class Boss_SetBoss_Patch
 {
     public static void Prefix(Il2Cpp.Boss __instance)
     {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"Boss.SetBoss Prefix 예외: {ex}"); }
+        try
+        {
+            MelonLogger.Msg($"Il2Cpp.Boss.SetBoss 호출: instance={__instance}");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"Boss.SetBoss Prefix 예외: {ex}");
+        }
     }
 
     public static void Postfix(Il2Cpp.Boss __instance)
     {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"Boss.SetBoss Postfix 예외: {ex}"); }
+        try
+        {
+            MelonLogger.Msg("Il2Cpp.Boss.SetBoss 완료");
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"Boss.SetBoss Postfix 예외: {ex}");
+        }
     }
 }
 
@@ -153,7 +172,7 @@ public class Boss_InitBossObject_Patch
 
      확인한 정답:
      - name: 0401_boss
-     - scene: txt의 씬 번호를 그대로 사용
+     - scene: 4
 
      다른 보스를 실험하려면 BossRewriteRules의 NewName/NewScene만 바꾸면 됩니다.
     */
@@ -164,52 +183,11 @@ public class Boss_InitBossObject_Patch
     // 편집 예시: 모든 보스 호출("*")을 0401_boss, scene 4로 리디렉션합니다.
     // 기본: 모든 보스 호출을 확인한 정답 보스(0401_boss, scene 4)로 리디렉션합니다.
     // 편집하려면 이 배열만 수정하세요.
+    // 주의: 원래 씬을 무시하려면 OrigScene에 null을 사용하세요(이전의 -1 표식 대신).
     private static readonly BossRule[] BossRewriteRules = new[]
     {
         new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0701_boss", NewScene = 7 },
     };
-
-    private static bool TryGetFirstBmsBoss(out string bossName, out int bossScene)
-    {
-        bossName = null;
-        bossScene = -1;
-
-        try
-        {
-            if (MainMod.TryGetCachedHwaBmsChart(out var chart, out _))
-            {
-                if (chart != null && chart.Notes != null)
-                {
-                    // 시간 순서대로 정렬하여 첫 번째 'in' 노트를 검색
-                    var firstInNote = chart.Notes
-                        .OrderBy(n => n.Time)
-                        .ThenBy(n => n.Tick)
-                        .FirstOrDefault(n => 
-                        {
-                            var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, n);
-                            return wavInfo != null && string.Equals(wavInfo.BossTransition, "in", System.StringComparison.OrdinalIgnoreCase);
-                        });
-
-                    if (firstInNote != null)
-                    {
-                        var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, firstInNote);
-                        if (wavInfo != null && !string.IsNullOrWhiteSpace(wavInfo.BossName) && wavInfo.BossScene >= 0)
-                        {
-                            bossName = wavInfo.BossName;
-                            bossScene = wavInfo.BossScene;
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"TryGetFirstBmsBoss 예외: {ex}");
-        }
-
-        return false;
-    }
 
     public static void Prefix(Il2Cpp.Boss __instance, ref string name, ref int scene, ref bool isLast)
     {
@@ -217,28 +195,12 @@ public class Boss_InitBossObject_Patch
         {
             MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
 
-            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
-            {
-                MelonLogger.Msg("Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (실험 차트 아님)");
-                return;
-            }
-
             if (Boss_Play_Patch.isDynamicSwapping)
             {
                 MelonLogger.Msg("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
                 return;
             }
 
-            // 1. BMS 차트의 첫 번째 'in' 노트를 검색하여 보스 동적 결정 시도
-            if (TryGetFirstBmsBoss(out string firstBossName, out int firstBossScene))
-            {
-                MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: BMS 첫 'in' 노트를 통한 동적 보스 매핑 적용 -> name={firstBossName}, scene={firstBossScene}");
-                name = firstBossName;
-                scene = firstBossScene;
-                return;
-            }
-
-            // 2. BMS에서 찾지 못한 경우 기존 Static Rewrite Rules를 폴백으로 수행
             foreach (var r in BossRewriteRules)
             {
                 bool nameMatch = (r.OrigName == "*") || (name == r.OrigName);
@@ -246,7 +208,7 @@ public class Boss_InitBossObject_Patch
                 bool isLastMatch = (!r.OrigIsLast.HasValue) || (isLast == r.OrigIsLast.Value);
                 if (nameMatch && sceneMatch && isLastMatch)
                 {
-                    MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: Static 폴백 변경 적용 -> name={r.NewName}, scene={r.NewScene}");
+                    MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: 변경 적용 -> name={r.NewName}, scene={r.NewScene}");
                     name = r.NewName;
                     scene = r.NewScene;
                     break;
