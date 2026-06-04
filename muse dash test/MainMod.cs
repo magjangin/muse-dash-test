@@ -48,11 +48,64 @@ namespace muse_dash_test
             {
                 Directory.CreateDirectory(HwaFolderPath);
                 MelonLogger.Msg($"hwa 폴더를 확인/생성했습니다: {HwaFolderPath}");
+                
+                string albumDumpPath = Path.Combine(HwaFolderPath, "album_tag_dump.txt");
+                if (File.Exists(albumDumpPath)) File.Delete(albumDumpPath);
+                
+                string albumDumpMdPath = Path.Combine(HwaFolderPath, "album_tag_dump.md");
+                if (File.Exists(albumDumpMdPath)) File.Delete(albumDumpMdPath);
+                
+                string musicDumpPath = Path.Combine(HwaFolderPath, "music_info_dump.txt");
+                if (File.Exists(musicDumpPath)) File.Delete(musicDumpPath);
+
+                // hwa tag image 폴더 생성
+                string hwaTagImageFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa tag image");
+                Directory.CreateDirectory(hwaTagImageFolderPath);
+                MelonLogger.Msg($"hwa tag image 폴더를 확인/생성했습니다: {hwaTagImageFolderPath}");
+
+                // tag_icon.png 추출
+                string pngPath = Path.Combine(hwaTagImageFolderPath, "tag_icon.png");
+                if (!File.Exists(pngPath))
+                {
+                    try
+                    {
+                        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                        string resourceName = "muse_dash_test.Resources.tag_icon.png";
+                        using (var stream = assembly.GetManifestResourceStream(resourceName))
+                        {
+                            if (stream != null)
+                            {
+                                byte[] fileData = new byte[stream.Length];
+                                stream.Read(fileData, 0, fileData.Length);
+                                File.WriteAllBytes(pngPath, fileData);
+                                MelonLogger.Msg($"[APMod.TagIcon] OnInitializeMelon: 내장 리소스 '{resourceName}'를 '{pngPath}'에 복사 및 추출 완료!");
+                            }
+                            else
+                            {
+                                MelonLogger.Error($"[APMod.TagIcon] OnInitializeMelon: 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MelonLogger.Error($"[APMod.TagIcon] OnInitializeMelon: 내장 리소스 추출 중 예외 발생: {ex}");
+                    }
+                }
+
                 PreloadHwaManifest();
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"hwa 폴더 생성 중 예외: {ex}");
+                MelonLogger.Error($"hwa 폴더 생성 및 초기화 중 예외: {ex}");
+            }
+
+            try
+            {
+                AlbumTagToggle_Init_Patch.PatchResourcesManager(this.HarmonyInstance);
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[APMod] ResourcesManager 패치 등록 실패: {ex}");
             }
         }
 

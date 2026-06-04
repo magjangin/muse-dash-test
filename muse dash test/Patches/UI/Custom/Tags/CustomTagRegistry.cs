@@ -144,7 +144,7 @@ namespace muse_dash_test
                 var customInfo = new CustomTagInfo
                 {
                     tag_name = il2CppLanguages,
-                    tag_picture = "https://cdn.mdmc.moe/static/melon.png",
+                    tag_picture = System.IO.Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa tag image", "tag_icon.png"),
                     music_list = customInfoMusicList
                 };
 

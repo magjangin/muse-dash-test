@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.IO;
+using Il2CppAssets.Scripts.PeroTools.Commons;
 
 namespace muse_dash_test
 {
@@ -15,12 +16,10 @@ namespace muse_dash_test
     public class AlbumTagToggle_Init_Patch
     {
         private static Texture2D cachedCustomTexture;
+        private static Sprite cachedCustomSprite;
         private static bool hasTriedLoading = false;
 
-        /// <summary>
-        /// 모드 어셈블리에 내장된 리소스(Embedded Resource)에서 tag_icon.png 파일을 읽어 유니티 Texture2D로 디코딩하고 정적 캐싱합니다.
-        /// </summary>
-        private static Texture2D GetCustomTexture()
+        public static Texture2D GetCustomTexture()
         {
             if (hasTriedLoading)
             {
@@ -30,39 +29,97 @@ namespace muse_dash_test
             hasTriedLoading = true;
             try
             {
-                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                string resourceName = "muse_dash_test.Resources.tag_icon.png";
+                string gameDir = MelonLoader.Utils.MelonEnvironment.GameRootDirectory;
+                string pngPath = Path.Combine(gameDir, "hwa tag image", "tag_icon.png");
 
-                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                // 1. hwa tag image/tag_icon.png 가 없으면 내장 리소스에서 추출
+                if (!File.Exists(pngPath))
                 {
-                    if (stream == null)
+                    try
                     {
-                        MelonLogger.Error($"[APMod.TagIcon] 내장 리소스를 찾을 수 없습니다: {resourceName}");
-                        return null;
+                        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                        string resourceName = "muse_dash_test.Resources.tag_icon.png";
+
+                        using (var stream = assembly.GetManifestResourceStream(resourceName))
+                        {
+                            if (stream != null)
+                            {
+                                byte[] fileData = new byte[stream.Length];
+                                stream.Read(fileData, 0, fileData.Length);
+                                File.WriteAllBytes(pngPath, fileData);
+                                MelonLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 복사 및 추출 완료!");
+                            }
+                            else
+                            {
+                                MelonLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
+                            }
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        MelonLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 도중 예외 발생: {ex}");
+                    }
+                }
 
-                    byte[] fileData = new byte[stream.Length];
-                    stream.Read(fileData, 0, fileData.Length);
-
+                // 2. 물리 파일이 존재하면 로드 진행
+                if (File.Exists(pngPath))
+                {
+                    byte[] fileData = File.ReadAllBytes(pngPath);
                     Texture2D texture = new Texture2D(2, 2);
                     
-                    // UnityEngine.ImageConversion을 통해 원시 바이너리 바이트 데이터를 Unity Texture2D로 디코딩합니다.
                     if (UnityEngine.ImageConversion.LoadImage(texture, fileData))
                     {
                         texture.name = "CustomTagIconTexture";
+                        texture.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC 방지
                         cachedCustomTexture = texture;
-                        MelonLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}' 로드 및 텍스처 디코딩 완료! 해상도: {texture.width}x{texture.height}");
+                        MelonLogger.Msg($"[APMod.TagIcon] 물리 파일 '{pngPath}' 로드 및 텍스처 디코딩 성공! 해상도: {texture.width}x{texture.height}");
                         return texture;
                     }
+                    else
+                    {
+                        MelonLogger.Error($"[APMod.TagIcon] 물리 파일 '{pngPath}'를 Texture2D로 디코딩하는 데 실패했습니다.");
+                    }
                 }
-                
-                MelonLogger.Error("[APMod.TagIcon] tag_icon.png 바이너리를 Texture2D로 변환하는 데 실패했습니다.");
+                else
+                {
+                    MelonLogger.Error($"[APMod.TagIcon] 로드할 파일 '{pngPath}'가 존재하지 않습니다.");
+                }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod.TagIcon] 내장 텍스처 로딩 및 생성 중 치명적 예외: {ex}");
+                MelonLogger.Error($"[APMod.TagIcon] 물리 텍스처 로딩 및 생성 중 예외 발생: {ex}");
             }
 
+            return null;
+        }
+
+        /// <summary>
+        /// 캐싱된 Texture2D로부터 Sprite를 생성하고 영구 캐싱하여 반환합니다.
+        /// </summary>
+        public static Sprite GetCustomSprite()
+        {
+            if (cachedCustomSprite != null)
+            {
+                return cachedCustomSprite;
+            }
+
+            Texture2D texture = GetCustomTexture();
+            if (texture != null)
+            {
+                try
+                {
+                    Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                    sprite.name = "CustomTagIconSprite";
+                    sprite.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC(UnloadUnusedAssets)에 의해 해제되는 현상 방지
+                    cachedCustomSprite = sprite;
+                    MelonLogger.Msg("[APMod.TagIcon] Texture2D로부터 영구 Sprite 생성 완료!");
+                    return sprite;
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error($"[APMod.TagIcon] Sprite 생성 중 예외 발생: {ex}");
+                }
+            }
             return null;
         }
 
@@ -107,6 +164,140 @@ namespace muse_dash_test
             {
                 MelonLogger.Error($"[APMod.TagIcon] AlbumTagToggle Postfix 패치 처리 중 오류: {ex}");
             }
+        }
+
+        /// <summary>
+        /// 런타임 어셈블리 조회를 통해 Il2CppPeroTools2.Resources.ResourcesManager의 LoadFromName 메소드를 동적으로 찾아 후킹합니다.
+        /// </summary>
+        public static void PatchResourcesManager(HarmonyLib.Harmony harmony)
+        {
+            try
+            {
+                Type resMgrType = null;
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    resMgrType = assembly.GetType("Il2CppPeroTools2.Resources.ResourcesManager");
+                    if (resMgrType != null) break;
+                }
+
+                if (resMgrType != null)
+                {
+                    var loadMethod = resMgrType.GetMethod("LoadFromName", new Type[] { typeof(string), typeof(Il2CppSystem.Type) });
+                    if (loadMethod != null)
+                    {
+                        var prefix = typeof(ResourcesManager_LoadFromName_Patch).GetMethod("Prefix");
+                        harmony.Patch(loadMethod, new HarmonyMethod(prefix));
+                        MelonLogger.Msg("[APMod.ResourcesHook] ResourcesManager.LoadFromName 수동 패치 적용 완료!");
+                    }
+                    else
+                    {
+                        MelonLogger.Warning("[APMod.ResourcesHook] ResourcesManager.LoadFromName 메소드를 찾을 수 없습니다.");
+                    }
+                }
+                else
+                {
+                    MelonLogger.Warning("[APMod.ResourcesHook] ResourcesManager 타입을 찾지 못했습니다.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[APMod.ResourcesHook] 수동 패치 도중 예외 발생: {ex}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 비동기적으로 아이콘 텍스처가 로드되어 지정될 때, 커스텀 텍스처로 대체해 주는 패치입니다.
+    /// </summary>
+    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), "SetIconAsync")]
+    public class AlbumTagToggle_SetIconAsync_Patch
+    {
+        public static bool Prefix(Il2Cpp.AlbumTagToggle __instance, ref Texture2D tex)
+        {
+            if (__instance == null) return true;
+            try
+            {
+                var tagInfo = __instance.tagInfo;
+                if (tagInfo != null && tagInfo.tagUid == CustomTagRegistry.TagUidString)
+                {
+                    Texture2D customTexture = AlbumTagToggle_Init_Patch.GetCustomTexture();
+                    if (customTexture != null)
+                    {
+                        tex = customTexture;
+                        MelonLogger.Msg("[APMod.TagIcon] SetIconAsync 호출 감지 - 가상 태그의 아이콘 텍스처를 커스텀 이미지로 오버라이드합니다.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[APMod.TagIcon] SetIconAsync 패치 처리 중 예외 발생: {ex}");
+            }
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// 토글 상태 변경(선택/비선택) 시 아이콘 텍스처 및 연출이 덮어쓰이는 문제를 방지하기 위한 패치입니다.
+    /// </summary>
+    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), "SetStateIcon")]
+    public class AlbumTagToggle_SetStateIcon_Patch
+    {
+        public static void Postfix(Il2Cpp.AlbumTagToggle __instance, bool weekFree, bool newAlbum)
+        {
+            if (__instance == null) return;
+            try
+            {
+                var tagInfo = __instance.tagInfo;
+                if (tagInfo != null && tagInfo.tagUid == CustomTagRegistry.TagUidString)
+                {
+                    Texture2D customTexture = AlbumTagToggle_Init_Patch.GetCustomTexture();
+                    if (customTexture != null && __instance.m_IconImg != null)
+                    {
+                        __instance.m_IconImg.texture = customTexture;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[APMod.TagIcon] SetStateIcon 패치 처리 중 예외 발생: {ex}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// ResourcesManager.LoadFromName을 가로채어 커스텀 tag_picture 에셋 요청이 들어왔을 때 
+    /// 우리의 커스텀 Sprite 또는 Texture2D를 안전하게 주입해 주는 수동 패치 클래스입니다.
+    /// </summary>
+    public static class ResourcesManager_LoadFromName_Patch
+    {
+        public static bool Prefix(string assetName, Il2CppSystem.Type type, ref UnityEngine.Object __result)
+        {
+            if (!string.IsNullOrEmpty(assetName) && assetName.EndsWith("tag_icon.png", StringComparison.OrdinalIgnoreCase))
+            {
+                string typeName = type != null ? type.FullName : "";
+                
+                if (typeName.Contains("Sprite"))
+                {
+                    Sprite customSprite = AlbumTagToggle_Init_Patch.GetCustomSprite();
+                    if (customSprite != null)
+                    {
+                        __result = customSprite;
+                        MelonLogger.Msg($"[APMod.ResourcesHook] ResourcesManager.LoadFromName('{assetName}') 요청 감지 -> 커스텀 Sprite 반환!");
+                        return false; // 원래 메소드 실행 건너뜀
+                    }
+                }
+                else if (typeName.Contains("Texture2D"))
+                {
+                    Texture2D customTexture = AlbumTagToggle_Init_Patch.GetCustomTexture();
+                    if (customTexture != null)
+                    {
+                        __result = customTexture;
+                        MelonLogger.Msg($"[APMod.ResourcesHook] ResourcesManager.LoadFromName('{assetName}') 요청 감지 -> 커스텀 Texture2D 반환!");
+                        return false; // 원래 메소드 실행 건너뜀
+                    }
+                }
+            }
+            return true;
         }
     }
 }
