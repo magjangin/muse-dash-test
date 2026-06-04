@@ -38,25 +38,8 @@ namespace muse_dash_test
 
             try
             {
-                // 1. 태그 탭 다국어 명칭 정의
-                var languages = new Dictionary<string, string>
-                {
-                    { "Korean", "실험 모드" },
-                    { "English", "Experiment Mod" },
-                    { "Japanese", "実験モード" },
-                    { "ChineseSimplified", "实验模式" },
-                    { "ChineseTraditional", "實驗模式" }
-                };
-
-                var il2CppLanguages = new Il2CppSystem.Collections.Generic.Dictionary<string, string>(languages.Count);
-                foreach (var kvp in languages)
-                {
-                    il2CppLanguages.Add(kvp.Key, kvp.Value);
-                }
-
-                string defaultName = languages.ContainsKey("English") ? languages["English"] : "Experiment Mod";
-
-                // 2. AlbumTagInfo 인스턴스 생성 및 기본 정보 기입
+                // 1. 태그 탭 다국어 명칭 정의 및 인스턴스 생성
+                var il2CppLanguages = CreateTagLanguages(out string defaultName);
                 var info = new AlbumTagInfo
                 {
                     name = defaultName,
@@ -64,83 +47,11 @@ namespace muse_dash_test
                     iconName = "IconCustomAlbums"
                 };
 
-                // 3. 이 태그 탭 하위에 노출할 곡 UIDs 정의
-                var musicList = new List<string>();
-
-                try
-                {
-                    MainMod.TryGetCachedHwaSearchTerms(out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceDescription);
-                    string lookupQuery = string.IsNullOrWhiteSpace(sourceUid) ? null : sourceUid;
-                    if (string.IsNullOrWhiteSpace(lookupQuery))
-                    {
-                        lookupQuery = sourceTitle;
-                    }
-                    if (string.IsNullOrWhiteSpace(lookupQuery))
-                    {
-                        lookupQuery = sourceArtist;
-                    }
-
-                    var originalInfo = string.IsNullOrWhiteSpace(lookupQuery) ? null : GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(lookupQuery);
-                    if (originalInfo == null && !string.IsNullOrWhiteSpace(lookupQuery))
-                    {
-                        PnlStagePatchHelper.TryFindMusicInfoByQuery(lookupQuery, out originalInfo, out _);
-                    }
-
-                    if (originalInfo != null)
-                    {
-                        MelonLogger.Msg($"[CustomTagRegistry] === 얇은 복사 및 주입 실험 시작 === lookup={lookupQuery ?? "(null)"}, sourceUid={originalInfo.uid}");
-                        LogMusicInfoDump("[CustomTagRegistry] [원본 곡 상세 덤프] originalInfo", originalInfo);
-
-                        string primaryName = "화영왕 0";
-                        string primaryAuthor = "화영왕 0";
-                        string primaryLevelDesigner = "화영왕 0";
-                        int primaryDiff1 = 2;
-                        int primaryDiff2 = 5;
-                        int primaryDiff3 = 0;
-                        int primaryDiff4 = 0;
-                        int primaryDiff5 = 0;
-                        if (MainMod.TryGetCachedHwaPrimaryVirtualSong(out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out string manifestDescription))
-                        {
-                            if (!string.IsNullOrWhiteSpace(manifestTitle))
-                            {
-                                primaryName = manifestTitle;
-                            }
-                            if (!string.IsNullOrWhiteSpace(manifestArtist))
-                            {
-                                primaryAuthor = manifestArtist;
-                            }
-                            if (!string.IsNullOrWhiteSpace(manifestLevelDesigner))
-                            {
-                                primaryLevelDesigner = manifestLevelDesigner;
-                            }
-                            primaryDiff1 = manifestDiff1;
-                            primaryDiff2 = manifestDiff2;
-                            primaryDiff3 = manifestDiff3;
-                            primaryDiff4 = manifestDiff4;
-                            primaryDiff5 = manifestDiff5;
-                            MelonLogger.Msg($"[CustomTagRegistry] 999-0 manifest 반영: {manifestDescription}");
-                        }
-
-                        // "999-0", "999-1", "999-2" 가상 곡 주입
-                        InjectVirtualSong(originalInfo, "999-0", primaryName, primaryAuthor, primaryLevelDesigner, "iyaiya_cover", "iyaiya_map", "iyaiya_music", primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
-                        InjectVirtualSong(originalInfo, "999-1", "화영왕 1", "화영왕 1", "화영왕 1", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 3, 6, musicList);
-                        InjectVirtualSong(originalInfo, "999-2", "화영왕 2", "화영왕 2", "화영왕 2", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 4, 7, musicList);
-
-                        MelonLogger.Msg("[CustomTagRegistry] =======================================");
-                    }
-                    else
-                    {
-                        MelonLogger.Warning("[CustomTagRegistry] 검색된 원본 MusicInfo를 찾지 못했습니다.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MelonLogger.Error($"[CustomTagRegistry] 얇은 복사 및 주입 실험 중 예외 발생: {ex}");
-                }
-
+                // 2. 가상 곡 생성 및 주입
+                var musicList = BuildAndInjectVirtualSongs();
                 var customInfoMusicList = ToIl2CppStringList(musicList);
 
-                // 4. CustomTagInfo 설정
+                // 3. CustomTagInfo 설정
                 var customInfo = new CustomTagInfo
                 {
                     tag_name = il2CppLanguages,
@@ -154,80 +65,10 @@ namespace muse_dash_test
                 var displayMusicList = ToIl2CppStringList(musicList);
                 info.SetTagUids(ToIl2CppStringList(musicList));
 
-                DBConfigAlbums.AlbumsInfo albumInfo = null;
+                // 4. 가상 앨범 생성 및 주입
+                var albumInfo = CreateAndInjectAlbumInfo();
 
-                // 5. 기존의 안전한 앨범을 복제하여 가상 앨범 생성 및 주입
-                try
-                {
-                    var albumsConfig = Singleton<ConfigManager>.instance.GetConfigObject<DBConfigAlbums>();
-                    if (albumsConfig != null)
-                    {
-                        var items = albumsConfig.m_Items;
-                        if (items != null && items.Count > 0)
-                        {
-                            var originalAlbum = items[0];
-                            var clonedObj = originalAlbum.MemberwiseClone();
-                            if (clonedObj != null)
-                            {
-                                var clonedAlbum = clonedObj.TryCast<DBConfigAlbums.AlbumsInfo>();
-                                if (clonedAlbum != null)
-                                {
-                                    var albumWrapper = new AlbumsInfoWrapper(clonedAlbum);
-                                    albumWrapper.uid = AlbumUidString;
-                                    albumWrapper.title = AlbumTitle;
-                                    albumWrapper.tag = TagUidString;
-                                    albumWrapper.jsonName = "custom_album_998_0";
-                                    albumWrapper.prefabsName = AlbumCoverPrefabName;
-                                    albumWrapper.free = true;
-                                    albumWrapper.needPurchase = false;
-                                    albumWrapper.price = "";
-
-                                    albumInfo = clonedAlbum;
-                                    CustomAlbumInfo = clonedAlbum;
-
-                                    bool exists = false;
-                                    for (int i = 0; i < items.Count; i++)
-                                    {
-                                        if (items[i].uid == AlbumUidString)
-                                        {
-                                            exists = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!exists)
-                                    {
-                                        items.Add(clonedAlbum);
-                                        MelonLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(998-0) 주입 완료!");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MelonLogger.Error($"[CustomTagRegistry] 앨범 복제 주입 중 예외 발생: {ex}");
-                }
-
-                // 5.2 복제 실패에 대비한 안전 폴백
-                if (albumInfo == null)
-                {
-                    var fallbackAlbum = new DBConfigAlbums.AlbumsInfo();
-                    var fallbackWrapper = new AlbumsInfoWrapper(fallbackAlbum);
-                    fallbackWrapper.uid = AlbumUidString;
-                    fallbackWrapper.title = AlbumTitle;
-                    fallbackWrapper.tag = TagUidString;
-                    fallbackWrapper.jsonName = "custom_album_998_0";
-                    fallbackWrapper.prefabsName = AlbumCoverPrefabName;
-                    fallbackWrapper.free = true;
-                    fallbackWrapper.needPurchase = false;
-                    fallbackWrapper.price = "";
-
-                    albumInfo = fallbackAlbum;
-                    CustomAlbumInfo = fallbackAlbum;
-                    MelonLogger.Warning("[CustomTagRegistry] [경고] 복제에 실패하여 new AlbumsInfo 폴백을 생성했습니다.");
-                }
-
+                // 5. 앨범 정보 맵에 바인딩
                 var albumInfos = new Il2CppSystem.Collections.Generic.List<DBConfigAlbums.AlbumsInfo>(1);
                 albumInfos.Add(albumInfo);
                 info.m_AlbumsInfos = albumInfos;
@@ -253,6 +94,192 @@ namespace muse_dash_test
             {
                 MelonLogger.Error($"[CustomTagRegistry] 커스텀 태그 주입 중 치명적인 예외가 발생했습니다: {ex}");
             }
+        }
+
+        /// <summary>
+        /// 커스텀 태그의 다국어 번역 언어 사전을 생성합니다.
+        /// </summary>
+        private static Il2CppSystem.Collections.Generic.Dictionary<string, string> CreateTagLanguages(out string defaultName)
+        {
+            var languages = new Dictionary<string, string>
+            {
+                { "Korean", "실험 모드" },
+                { "English", "Experiment Mod" },
+                { "Japanese", "実験モード" },
+                { "ChineseSimplified", "实验模式" },
+                { "ChineseTraditional", "實驗模式" }
+            };
+
+            var il2CppLanguages = new Il2CppSystem.Collections.Generic.Dictionary<string, string>(languages.Count);
+            foreach (var kvp in languages)
+            {
+                il2CppLanguages.Add(kvp.Key, kvp.Value);
+            }
+
+            defaultName = languages.ContainsKey("English") ? languages["English"] : "Experiment Mod";
+            return il2CppLanguages;
+        }
+
+        /// <summary>
+        /// 외부 매니페스트 설정 정보를 바탕으로 가상 곡들을 클로닝하여 데이터베이스에 등록하고 등록된 Uids 리스트를 반환합니다.
+        /// </summary>
+        private static List<string> BuildAndInjectVirtualSongs()
+        {
+            var musicList = new List<string>();
+
+            try
+            {
+                MainMod.TryGetCachedHwaSearchTerms(out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceDescription);
+                string lookupQuery = string.IsNullOrWhiteSpace(sourceUid) ? null : sourceUid;
+                if (string.IsNullOrWhiteSpace(lookupQuery))
+                {
+                    lookupQuery = sourceTitle;
+                }
+                if (string.IsNullOrWhiteSpace(lookupQuery))
+                {
+                    lookupQuery = sourceArtist;
+                }
+
+                var originalInfo = string.IsNullOrWhiteSpace(lookupQuery) ? null : GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(lookupQuery);
+                if (originalInfo == null && !string.IsNullOrWhiteSpace(lookupQuery))
+                {
+                    PnlStagePatchHelper.TryFindMusicInfoByQuery(lookupQuery, out originalInfo, out _);
+                }
+
+                if (originalInfo != null)
+                {
+                    MelonLogger.Msg($"[CustomTagRegistry] === 얇은 복사 및 주입 실험 시작 === lookup={lookupQuery ?? "(null)"}, sourceUid={originalInfo.uid}");
+                    LogMusicInfoDump("[CustomTagRegistry] [원본 곡 상세 덤프] originalInfo", originalInfo);
+
+                    string primaryName = "화영왕 0";
+                    string primaryAuthor = "화영왕 0";
+                    string primaryLevelDesigner = "화영왕 0";
+                    int primaryDiff1 = 2;
+                    int primaryDiff2 = 5;
+                    int primaryDiff3 = 0;
+                    int primaryDiff4 = 0;
+                    int primaryDiff5 = 0;
+                    if (MainMod.TryGetCachedHwaPrimaryVirtualSong(out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out string manifestDescription))
+                    {
+                        if (!string.IsNullOrWhiteSpace(manifestTitle))
+                        {
+                            primaryName = manifestTitle;
+                        }
+                        if (!string.IsNullOrWhiteSpace(manifestArtist))
+                        {
+                            primaryAuthor = manifestArtist;
+                        }
+                        if (!string.IsNullOrWhiteSpace(manifestLevelDesigner))
+                        {
+                            primaryLevelDesigner = manifestLevelDesigner;
+                        }
+                        primaryDiff1 = manifestDiff1;
+                        primaryDiff2 = manifestDiff2;
+                        primaryDiff3 = manifestDiff3;
+                        primaryDiff4 = manifestDiff4;
+                        primaryDiff5 = manifestDiff5;
+                        MelonLogger.Msg($"[CustomTagRegistry] 999-0 manifest 반영: {manifestDescription}");
+                    }
+
+                    // "999-0", "999-1", "999-2" 가상 곡 주입
+                    InjectVirtualSong(originalInfo, "999-0", primaryName, primaryAuthor, primaryLevelDesigner, "iyaiya_cover", "iyaiya_map", "iyaiya_music", primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
+                    InjectVirtualSong(originalInfo, "999-1", "화영왕 1", "화영왕 1", "화영왕 1", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 3, 6, musicList);
+                    InjectVirtualSong(originalInfo, "999-2", "화영왕 2", "화영왕 2", "화영왕 2", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 4, 7, musicList);
+
+                    MelonLogger.Msg("[CustomTagRegistry] =======================================");
+                }
+                else
+                {
+                    MelonLogger.Warning("[CustomTagRegistry] 검색된 원본 MusicInfo를 찾지 못했습니다.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[CustomTagRegistry] 얇은 복사 및 주입 실험 중 예외 발생: {ex}");
+            }
+
+            return musicList;
+        }
+
+        /// <summary>
+        /// 기존 앨범을 복제하거나 폴백 객체를 생성하여 DBConfigAlbums의 m_Items에 안전하게 주입하고 앨범 정보를 반환합니다.
+        /// </summary>
+        private static DBConfigAlbums.AlbumsInfo CreateAndInjectAlbumInfo()
+        {
+            DBConfigAlbums.AlbumsInfo albumInfo = null;
+
+            try
+            {
+                var albumsConfig = Singleton<ConfigManager>.instance.GetConfigObject<DBConfigAlbums>();
+                if (albumsConfig != null)
+                {
+                    var items = albumsConfig.m_Items;
+                    if (items != null && items.Count > 0)
+                    {
+                        var originalAlbum = items[0];
+                        var clonedObj = originalAlbum.MemberwiseClone();
+                        if (clonedObj != null)
+                        {
+                            var clonedAlbum = clonedObj.TryCast<DBConfigAlbums.AlbumsInfo>();
+                            if (clonedAlbum != null)
+                            {
+                                var albumWrapper = new AlbumsInfoWrapper(clonedAlbum);
+                                albumWrapper.uid = AlbumUidString;
+                                albumWrapper.title = AlbumTitle;
+                                albumWrapper.tag = TagUidString;
+                                albumWrapper.jsonName = "custom_album_998_0";
+                                albumWrapper.prefabsName = AlbumCoverPrefabName;
+                                albumWrapper.free = true;
+                                albumWrapper.needPurchase = false;
+                                albumWrapper.price = "";
+
+                                albumInfo = clonedAlbum;
+                                CustomAlbumInfo = clonedAlbum;
+
+                                bool exists = false;
+                                for (int i = 0; i < items.Count; i++)
+                                {
+                                    if (items[i].uid == AlbumUidString)
+                                    {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+                                if (!exists)
+                                {
+                                    items.Add(clonedAlbum);
+                                    MelonLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(998-0) 주입 완료!");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[CustomTagRegistry] 앨범 복제 주입 중 예외 발생: {ex}");
+            }
+
+            // 복제 실패 시 폴백
+            if (albumInfo == null)
+            {
+                var fallbackAlbum = new DBConfigAlbums.AlbumsInfo();
+                var fallbackWrapper = new AlbumsInfoWrapper(fallbackAlbum);
+                fallbackWrapper.uid = AlbumUidString;
+                fallbackWrapper.title = AlbumTitle;
+                fallbackWrapper.tag = TagUidString;
+                fallbackWrapper.jsonName = "custom_album_998_0";
+                fallbackWrapper.prefabsName = AlbumCoverPrefabName;
+                fallbackWrapper.free = true;
+                fallbackWrapper.needPurchase = false;
+                fallbackWrapper.price = "";
+
+                albumInfo = fallbackAlbum;
+                CustomAlbumInfo = fallbackAlbum;
+                MelonLogger.Warning("[CustomTagRegistry] [경고] 복제에 실패하여 new AlbumsInfo 폴백을 생성했습니다.");
+            }
+
+            return albumInfo;
         }
 
         private static Il2CppSystem.Collections.Generic.List<string> ToIl2CppStringList(List<string> source)

@@ -118,6 +118,15 @@ namespace muse_dash_test
 
         public override void OnUpdate()
         {
+            HandleBattleSynchronization();
+            HandleExperimentStageUpdate();
+        }
+
+        /// <summary>
+        /// 배틀 진행 중인 경우, BGM 오디오와 BGA 비디오의 재생 시점을 분석하여 상호 싱크 오차를 계산하고 실시간으로 보정합니다.
+        /// </summary>
+        private void HandleBattleSynchronization()
+        {
             try
             {
                 var pnl = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
@@ -126,7 +135,6 @@ namespace muse_dash_test
                     var sld = pnl.CurrentBattleUIComp.sldProgress;
                     if (sld != null && sld.gameObject.activeInHierarchy)
                     {
-
                         if (ExperimentPlayContext.ShouldApplyExperimentChart)
                         {
                             if (syncCooldownTimer > 0f)
@@ -194,9 +202,15 @@ namespace muse_dash_test
             }
             catch (Exception)
             {
+                // 동기화 보정 예외 무시
             }
+        }
 
-
+        /// <summary>
+        /// 실험 모드가 활성화되어 있다면, 주기적으로 인게임 스테이지 진입 여부 및 노트 이벤트를 모니터링하여 가상 노트를 생성/조작합니다.
+        /// </summary>
+        private void HandleExperimentStageUpdate()
+        {
             if (!ExperimentPlayContext.ShouldApplyExperimentChart)
             {
                 return;
