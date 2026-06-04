@@ -35,14 +35,33 @@ namespace muse_dash_test.Patches
                     {
                         var scoreValue = battleInstance.currentComps.scoreValue;
                         Font font = null;
-                        if (scoreValue.text != null) font = scoreValue.text.font;
-                        if (font == null && scoreValue.djmaxText != null) font = scoreValue.djmaxText.font;
-                        if (font == null && scoreValue.arkNightText != null) font = scoreValue.arkNightText.font;
+                        
+                        MelonLogger.Msg($"[APMod.Debug.Font] HUD 폰트 캐싱 시도 시작 - textObj={scoreValue.text != null}, djmaxTextObj={scoreValue.djmaxText != null}, arkNightTextObj={scoreValue.arkNightText != null}");
+                        
+                        if (scoreValue.text != null) 
+                        {
+                            font = scoreValue.text.font;
+                            if (font != null) MelonLogger.Msg($"[APMod.Debug.Font] 일반 폰트 획득 완료: '{font.name}'");
+                        }
+                        if (font == null && scoreValue.djmaxText != null) 
+                        {
+                            font = scoreValue.djmaxText.font;
+                            if (font != null) MelonLogger.Msg($"[APMod.Debug.Font] DJMAX 폰트 획득 완료: '{font.name}'");
+                        }
+                        if (font == null && scoreValue.arkNightText != null) 
+                        {
+                            font = scoreValue.arkNightText.font;
+                            if (font != null) MelonLogger.Msg($"[APMod.Debug.Font] 아크나이츠 폰트 획득 완료: '{font.name}'");
+                        }
 
                         if (font != null)
                         {
                             VictoryDataCache.PremiumFont = font;
-                            MelonLogger.Msg($"[APMod] 게임플레이 HUD에서 메인 시그니처 폰트 캐싱 성공: '{font.name}'");
+                            MelonLogger.Msg($"[APMod] 게임플레이 HUD에서 최종 메인 시그니처 폰트 캐싱 완료: '{font.name}'");
+                        }
+                        else
+                        {
+                            MelonLogger.Warning("[APMod.Debug.Font] HUD 텍스트 컴포넌트들을 찾았으나 Font 리소스가 null 상태입니다.");
                         }
                     }
                 }
@@ -136,7 +155,7 @@ namespace muse_dash_test.Patches
                     int missCount = VictoryDataCache.ActiveTarget.m_MissResult;
                     float accuracy = VictoryDataCache.ActiveTarget.GetAccuracy();
                     
-                    MelonLogger.Msg($"[APMod] 판정 결과 확인: 풀콤보={isFullCombo}, Great={greatCount}, Miss={missCount}, 정확도={accuracy}");
+                    MelonLogger.Msg($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
                     
                     // If it is a full combo, and there are zero Greats and zero Misses, it is an All Perfect!
                     if (isFullCombo && greatCount == 0 && missCount == 0)
@@ -146,7 +165,7 @@ namespace muse_dash_test.Patches
                 }
                 else
                 {
-                    MelonLogger.Msg("[APMod] [오류] VictoryDataCache.ActiveTarget가 NULL입니다! 올 퍼펙트 판정 불가능.");
+                    MelonLogger.Msg("[APMod.Debug.Victory] [주의] VictoryDataCache.ActiveTarget가 null입니다! 콤보 판정을 가져올 수 없습니다.");
                 }
 
                 if (isAllPerfect)
@@ -158,20 +177,24 @@ namespace muse_dash_test.Patches
                     for (int i = 0; i < fcGo.transform.childCount; i++)
                     {
                         var child = fcGo.transform.GetChild(i);
-                        if (child != null && child.name.StartsWith("Img"))
+                        if (child != null)
                         {
-                            child.gameObject.SetActive(false);
-                            hiddenCount++;
+                            MelonLogger.Msg($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
+                            if (child.name != "CustomAPText")
+                            {
+                                child.gameObject.SetActive(false);
+                                hiddenCount++;
+                            }
                         }
                     }
-                    MelonLogger.Msg($"[APMod] 기존 FULL COMBO 개별 문자 오브젝트 {hiddenCount}개 비활성화 완료.");
+                    MelonLogger.Msg($"[APMod.Debug.Victory] 기존 FULL COMBO 관련 오브젝트 총 {hiddenCount}개 숨김 처리 완료.");
 
                     // 2. Create or activate our custom "ALL PERFECT!" text
                     var customApTransform = fcGo.transform.Find("CustomAPText");
                     Text customTextComp = null;
                     if (customApTransform == null)
                     {
-                        MelonLogger.Msg("[APMod] CustomAPText 게임 오브젝트 생성 중...");
+                        MelonLogger.Msg("[APMod] CustomAPText 게임 오브젝트 신규 생성 프로세스 시작...");
                         var apGo = new GameObject("CustomAPText");
                         apGo.transform.SetParent(fcGo.transform, false);
 
@@ -182,15 +205,16 @@ namespace muse_dash_test.Patches
                         Font targetFont = VictoryDataCache.PremiumFont;
                         if (targetFont != null)
                         {
-                            MelonLogger.Msg($"[APMod] 캐싱된 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
+                            MelonLogger.Msg($"[APMod.Debug.Victory] 캐싱해 둔 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
                         }
                         else
                         {
+                            MelonLogger.Msg("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
                             var victoryPanel = GameObject.FindObjectOfType<Il2Cpp.PnlVictory>();
                             if (victoryPanel != null && victoryPanel.m_CurControls != null && victoryPanel.m_CurControls.accuracyTxt != null)
                             {
                                 targetFont = victoryPanel.m_CurControls.accuracyTxt.font;
-                                MelonLogger.Msg("[APMod] PnlVictory에서 기본 고화질 폰트 획득 완료.");
+                                MelonLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 성공: '{(targetFont != null ? targetFont.name : "null")}'");
                             }
                         }
 
