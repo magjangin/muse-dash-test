@@ -11,6 +11,7 @@ namespace muse_dash_test.Patches
     {
         public static Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget ActiveTarget { get; set; }
         public static Font PremiumFont { get; set; }
+        public static bool AttemptedFontCache { get; set; }
     }
 
     // Cache the TaskStageTarget instance during gameplay when score is updated
@@ -28,12 +29,20 @@ namespace muse_dash_test.Patches
                 }
 
                 // Cache the premium stylized gameplay font from the HUD
-                if (VictoryDataCache.PremiumFont == null)
+                if (VictoryDataCache.PremiumFont == null && !VictoryDataCache.AttemptedFontCache)
                 {
                     var battleInstance = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
                     if (battleInstance != null && battleInstance.currentComps != null && battleInstance.currentComps.scoreValue != null)
                     {
                         var scoreValue = battleInstance.currentComps.scoreValue;
+                        
+                        // Prevent querying every hit when UI objects are not initialized yet
+                        if (scoreValue.text == null && scoreValue.djmaxText == null && scoreValue.arkNightText == null)
+                        {
+                            return;
+                        }
+
+                        VictoryDataCache.AttemptedFontCache = true;
                         Font font = null;
                         
                         MelonLogger.Msg($"[APMod.Debug.Font] HUD 폰트 캐싱 시도 시작 - textObj={scoreValue.text != null}, djmaxTextObj={scoreValue.djmaxText != null}, arkNightTextObj={scoreValue.arkNightText != null}");
@@ -214,7 +223,11 @@ namespace muse_dash_test.Patches
                             if (victoryPanel != null && victoryPanel.m_CurControls != null && victoryPanel.m_CurControls.accuracyTxt != null)
                             {
                                 targetFont = victoryPanel.m_CurControls.accuracyTxt.font;
-                                MelonLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 성공: '{(targetFont != null ? targetFont.name : "null")}'");
+                                if (targetFont != null)
+                                {
+                                    VictoryDataCache.PremiumFont = targetFont; // Cache it to avoid FindObjectOfType next time
+                                    MelonLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 및 캐싱 성공: '{targetFont.name}'");
+                                }
                             }
                         }
 
@@ -224,7 +237,8 @@ namespace muse_dash_test.Patches
                             if (anyText != null && anyText.font != null)
                             {
                                 targetFont = anyText.font;
-                                MelonLogger.Msg("[APMod] 활성화된 씬 내 Text 컴포넌트에서 폰트 획득 완료.");
+                                VictoryDataCache.PremiumFont = targetFont; // Cache it to avoid FindObjectOfType next time
+                                MelonLogger.Msg("[APMod] 활성화된 씬 내 Text 컴포넌트에서 폰트 획득 및 캐싱 완료.");
                             }
                         }
 

@@ -23,6 +23,16 @@ public static partial class PnlStagePatchHelper
             bool hasQuery = !string.IsNullOrEmpty(normalizedQuery);
             bool hasAlbumQuery = !string.IsNullOrEmpty(normalizedAlbumQuery);
 
+            DBConfigAlbums albumsConfig = null;
+            if (hasAlbumQuery)
+            {
+                try
+                {
+                    albumsConfig = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Managers.ConfigManager>.instance.GetConfigObject<DBConfigAlbums>();
+                }
+                catch {}
+            }
+
             MusicInfo firstMusicInfo = null;
             string firstUid = null;
             int bestScore = -1;
@@ -45,7 +55,7 @@ public static partial class PnlStagePatchHelper
                     continue;
                 }
 
-                int score = ScoreMusicSearchMatch(entry.Key, entry.Value, normalizedQuery, normalizedAlbumQuery);
+                int score = ScoreMusicSearchMatch(entry.Key, entry.Value, normalizedQuery, normalizedAlbumQuery, albumsConfig);
                 if (score > bestScore)
                 {
                     bestScore = score;
@@ -82,7 +92,7 @@ public static partial class PnlStagePatchHelper
         }
     }
 
-    private static int ScoreMusicSearchMatch(string uid, MusicInfo musicInfo, string normalizedQuery, string normalizedAlbumQuery)
+    private static int ScoreMusicSearchMatch(string uid, MusicInfo musicInfo, string normalizedQuery, string normalizedAlbumQuery, DBConfigAlbums albumsConfig)
     {
         if (musicInfo == null)
         {
@@ -92,16 +102,18 @@ public static partial class PnlStagePatchHelper
         if (!string.IsNullOrEmpty(normalizedAlbumQuery))
         {
             string albumTitle = "";
-            try
+            if (albumsConfig != null)
             {
-                var albumsConfig = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Managers.ConfigManager>.instance.GetConfigObject<DBConfigAlbums>();
-                var albumInfo = albumsConfig?.GetAlbumsInfoByUid(musicInfo.albumUidName);
-                if (albumInfo != null)
+                try
                 {
-                    albumTitle = albumInfo.title;
+                    var albumInfo = albumsConfig.GetAlbumsInfoByUid(musicInfo.albumUidName);
+                    if (albumInfo != null)
+                    {
+                        albumTitle = albumInfo.title;
+                    }
                 }
+                catch {}
             }
-            catch {}
 
             string normalizedAlbumUid = NormalizeMusicSearchText(musicInfo.albumUidName);
             string normalizedAlbumJson = NormalizeMusicSearchText(musicInfo.albumJsonName);

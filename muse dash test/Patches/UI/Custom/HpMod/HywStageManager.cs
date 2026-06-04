@@ -16,6 +16,22 @@ namespace muse_dash_test
         {
             try
             {
+                var pnl = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
+                bool isBattleActive = pnl != null && pnl.CurrentBattleUIComp != null;
+
+                if (!isBattleActive)
+                {
+                    if (isInStage)
+                    {
+                        // 스테이지 종료
+                        isInStage = false;
+                        targetTextComponent = null;
+                        lastText = "";
+                        MelonLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
+                    }
+                    return;
+                }
+
                 bool foundHealth = HealthBarFinder.FindHealthBar() != null;
 
                 if (foundHealth)

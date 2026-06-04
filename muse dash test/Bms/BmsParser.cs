@@ -62,6 +62,18 @@ namespace muse_dash_test
                     continue;
                 }
 
+                // Check TryParseMeasureLine first as 95%+ lines in BMS are measure lines
+                if (TryParseMeasureLine(line, out int measure, out int channel, out string data))
+                {
+                    measureEvents.Add(new RawMeasureEvent
+                    {
+                        Measure = measure,
+                        Channel = channel,
+                        Data = NormalizeHexData(data),
+                    });
+                    continue;
+                }
+
                 if (TryParseHeaderBpm(line, out float headerBpm))
                 {
                     defaultBpm = headerBpm;
@@ -86,16 +98,6 @@ namespace muse_dash_test
                         chart.Artist = metaValue;
                     }
                     continue;
-                }
-
-                if (TryParseMeasureLine(line, out int measure, out int channel, out string data))
-                {
-                    measureEvents.Add(new RawMeasureEvent
-                    {
-                        Measure = measure,
-                        Channel = channel,
-                        Data = NormalizeHexData(data),
-                    });
                 }
             }
 
@@ -142,12 +144,42 @@ namespace muse_dash_test
                 .ThenBy(change => change.Source, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            foreach (var note in notes)
+            // O(N + M) single sweep to calculate time for all notes
+            var sortedNotes = notes.OrderBy(note => note.Tick).ToList();
+            float time = 0f;
+            float currentTick = 0f;
+            float currentBpm = (bpmChanges.Count > 0 && bpmChanges[0].Bpm > 0f) ? bpmChanges[0].Bpm : defaultBpm;
+            int bpmIndex = 0;
+
+            foreach (var note in sortedNotes)
             {
-                note.Time = CalculateTime(note.Tick, bpmChanges);
+                while (bpmIndex < bpmChanges.Count)
+                {
+                    var change = bpmChanges[bpmIndex];
+                    if (change.Tick > note.Tick)
+                    {
+                        break;
+                    }
+
+                    if (change.Tick > currentTick)
+                    {
+                        time += (change.Tick - currentTick) * 4f * (60f / currentBpm);
+                        currentTick = change.Tick;
+                    }
+
+                    currentBpm = change.Bpm > 0f ? change.Bpm : currentBpm;
+                    bpmIndex++;
+                }
+
+                float noteTime = time;
+                if (note.Tick > currentTick)
+                {
+                    noteTime += (note.Tick - currentTick) * 4f * (60f / currentBpm);
+                }
+                note.Time = noteTime;
             }
 
-            notes = notes
+            notes = sortedNotes
                 .OrderBy(note => note.Time)
                 .ThenBy(note => note.Tick)
                 .ThenBy(note => note.Lane)
@@ -169,7 +201,7 @@ namespace muse_dash_test
             float currentTick = 0f;
             float currentBpm = bpmChanges[0].Bpm <= 0f ? 120f : bpmChanges[0].Bpm;
 
-            foreach (var change in bpmChanges.OrderBy(change => change.Tick))
+            foreach (var change in bpmChanges)
             {
                 if (change.Tick <= currentTick)
                 {
@@ -320,11 +352,8 @@ namespace muse_dash_test
                 return false;
             }
 
-            if (MeasureLineRegex.IsMatch(line) || HeaderBpmRegex.IsMatch(line) || BpmAliasRegex.IsMatch(line))
-            {
-                return false;
-            }
-
+            // Other types of # lines (measure lines, header bpms, and bpm aliases) are already checked before
+            // calling TryParseMetadata in the loop, so we don't need redundant Regex IsMatch checks.
             var match = MetadataRegex.Match(line);
             if (!match.Success)
             {
@@ -388,7 +417,8 @@ namespace muse_dash_test
                 return cells;
             }
 
-            var cleaned = NormalizeHexData(data);
+            // The data string is already normalized when measure events are added, so we can avoid redundant normalization.
+            var cleaned = data;
             int width = Math.Max(2, cellWidth);
             if (cleaned.Length < width)
             {

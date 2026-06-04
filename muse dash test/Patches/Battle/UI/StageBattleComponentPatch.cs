@@ -37,6 +37,9 @@ namespace muse_dash_test
                 // 매 배틀 로드 시마다 미디어 주입 시작 상태 초기화 및 주입 실행
                 HwaBattleMediaController.ResetState();
                 HwaBattleMediaController.StartBattleMediaInjection();
+
+                // APMod (All Perfect Mod) 폰트 탐색 상태 리셋
+                Patches.VictoryDataCache.AttemptedFontCache = false;
             }
             catch (Exception ex)
             {

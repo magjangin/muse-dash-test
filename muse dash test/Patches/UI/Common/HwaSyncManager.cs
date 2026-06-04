@@ -11,6 +11,9 @@ namespace muse_dash_test
     public static class HwaSyncManager
     {
         private static float syncCooldownTimer = 0f;
+        private static AudioSource cachedBgmSource = null;
+        private static VideoPlayer cachedBgaPlayer = null;
+        private static bool isCacheInitialized = false;
 
         public static void HandleBattleSynchronization()
         {
@@ -29,23 +32,28 @@ namespace muse_dash_test
                                 syncCooldownTimer -= Time.deltaTime;
                             }
 
-                            AudioSource bgmSource = null;
-                            GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
-                            if (bgmGo != null)
+                            if (!isCacheInitialized)
                             {
-                                bgmSource = bgmGo.GetComponent<AudioSource>();
+                                GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
+                                if (bgmGo != null)
+                                {
+                                    cachedBgmSource = bgmGo.GetComponent<AudioSource>();
+                                }
+
+                                Camera mainCam = Camera.main;
+                                if (mainCam != null)
+                                {
+                                    Transform quad = mainCam.transform.Find("VideoBackgroundQuad");
+                                    if (quad != null)
+                                    {
+                                        cachedBgaPlayer = quad.GetComponent<VideoPlayer>();
+                                    }
+                                }
+                                isCacheInitialized = true;
                             }
 
-                            VideoPlayer bgaPlayer = null;
-                            Camera mainCam = Camera.main;
-                            if (mainCam != null)
-                            {
-                                Transform quad = mainCam.transform.Find("VideoBackgroundQuad");
-                                if (quad != null)
-                                {
-                                    bgaPlayer = quad.GetComponent<VideoPlayer>();
-                                }
-                            }
+                            AudioSource bgmSource = cachedBgmSource;
+                            VideoPlayer bgaPlayer = cachedBgaPlayer;
 
                             if (syncCooldownTimer <= 0f && Time.timeScale > 0f)
                             {
@@ -85,6 +93,9 @@ namespace muse_dash_test
                 else
                 {
                     syncCooldownTimer = 0f; // 배틀 중이 아닐 때는 타이머 초기화
+                    cachedBgmSource = null;
+                    cachedBgaPlayer = null;
+                    isCacheInitialized = false;
                 }
             }
             catch (Exception)
