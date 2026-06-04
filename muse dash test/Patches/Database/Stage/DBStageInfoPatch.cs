@@ -96,7 +96,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 return;
             }
 
-            ApplyExperimentChart(__instance);
+            ApplyExperimentChart(__instance, uid);
         }
         catch (System.Exception ex)
         {
@@ -123,7 +123,7 @@ public static class ExperimentPlayContext
         }
         else
         {
-            ShouldApplyExperimentChart = (uid == "999-0" || uid == "999-1" || uid == "999-2");
+            ShouldApplyExperimentChart = (uid != null && uid.StartsWith("999-"));
         }
 
         MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, apply={ShouldApplyExperimentChart}");

@@ -96,7 +96,7 @@ public class LongSongNameController_Refresh_Patch
                 {
                     text = customTitle;
                 }
-                else if (targetUid == "999-0" || targetUid == "999-1" || targetUid == "999-2")
+                else if (targetUid != null && targetUid.StartsWith("999-"))
                 {
                     var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
                     if (musicInfo != null)
@@ -111,7 +111,7 @@ public class LongSongNameController_Refresh_Patch
                 {
                     text = customArtist;
                 }
-                else if (targetUid == "999-0" || targetUid == "999-1" || targetUid == "999-2")
+                else if (targetUid != null && targetUid.StartsWith("999-"))
                 {
                     var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
                     if (musicInfo != null)

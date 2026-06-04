@@ -129,73 +129,85 @@ namespace muse_dash_test
 
             try
             {
-                MainMod.TryGetCachedHwaSearchTerms(out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceDescription);
-                string lookupQuery = string.IsNullOrWhiteSpace(sourceUid) ? null : sourceUid;
-                if (string.IsNullOrWhiteSpace(lookupQuery))
-                {
-                    lookupQuery = sourceTitle;
-                }
-                if (string.IsNullOrWhiteSpace(lookupQuery))
-                {
-                    lookupQuery = sourceArtist;
-                }
+                var vUids = MainMod.GetVirtualUids();
+                MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 생성 시작: count={vUids.Count}");
 
-                var originalInfo = string.IsNullOrWhiteSpace(lookupQuery) ? null : GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(lookupQuery);
-                if (originalInfo == null && !string.IsNullOrWhiteSpace(lookupQuery))
+                foreach (var uid in vUids)
                 {
-                    PnlStagePatchHelper.TryFindMusicInfoByQuery(lookupQuery, out originalInfo, out _);
-                }
-
-                if (originalInfo != null)
-                {
-                    MelonLogger.Msg($"[CustomTagRegistry] === 얇은 복사 및 주입 실험 시작 === lookup={lookupQuery ?? "(null)"}, sourceUid={originalInfo.uid}");
-                    LogMusicInfoDump("[CustomTagRegistry] [원본 곡 상세 덤프] originalInfo", originalInfo);
-
-                    string primaryName = "화영왕 0";
-                    string primaryAuthor = "화영왕 0";
-                    string primaryLevelDesigner = "화영왕 0";
-                    int primaryDiff1 = 2;
-                    int primaryDiff2 = 5;
-                    int primaryDiff3 = 0;
-                    int primaryDiff4 = 0;
-                    int primaryDiff5 = 0;
-                    if (MainMod.TryGetCachedHwaPrimaryVirtualSong(out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out string manifestDescription))
+                    MainMod.TryGetCachedHwaSearchTerms(uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string sourceDescription);
+                    
+                    string lookupQuery = string.IsNullOrWhiteSpace(sourceUid) ? null : sourceUid;
+                    if (string.IsNullOrWhiteSpace(lookupQuery))
                     {
-                        if (!string.IsNullOrWhiteSpace(manifestTitle))
-                        {
-                            primaryName = manifestTitle;
-                        }
-                        if (!string.IsNullOrWhiteSpace(manifestArtist))
-                        {
-                            primaryAuthor = manifestArtist;
-                        }
-                        if (!string.IsNullOrWhiteSpace(manifestLevelDesigner))
-                        {
-                            primaryLevelDesigner = manifestLevelDesigner;
-                        }
-                        primaryDiff1 = manifestDiff1;
-                        primaryDiff2 = manifestDiff2;
-                        primaryDiff3 = manifestDiff3;
-                        primaryDiff4 = manifestDiff4;
-                        primaryDiff5 = manifestDiff5;
-                        MelonLogger.Msg($"[CustomTagRegistry] 999-0 manifest 반영: {manifestDescription}");
+                        lookupQuery = sourceTitle;
+                    }
+                    if (string.IsNullOrWhiteSpace(lookupQuery))
+                    {
+                        lookupQuery = sourceArtist;
                     }
 
-                    // "999-0", "999-1", "999-2" 가상 곡 주입
-                    InjectVirtualSong(originalInfo, "999-0", primaryName, primaryAuthor, primaryLevelDesigner, "iyaiya_cover", "iyaiya_map", "iyaiya_music", primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
-                    InjectVirtualSong(originalInfo, "999-1", "화영왕 1", "화영왕 1", "화영왕 1", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 3, 6, musicList);
-                    InjectVirtualSong(originalInfo, "999-2", "화영왕 2", "화영왕 2", "화영왕 2", "iyaiya_cover", "iyaiya_map", "iyaiya_music", 4, 7, musicList);
+                    MusicInfo originalInfo = null;
+                    if (!string.IsNullOrWhiteSpace(lookupQuery))
+                    {
+                        originalInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(lookupQuery);
+                        if (originalInfo == null)
+                        {
+                            PnlStagePatchHelper.TryFindMusicInfoByQuery(lookupQuery, sourceAlbum, out originalInfo, out _);
+                        }
+                    }
+                    
+                    if (originalInfo == null && !string.IsNullOrWhiteSpace(sourceAlbum))
+                    {
+                        PnlStagePatchHelper.TryFindMusicInfoByQuery("", sourceAlbum, out originalInfo, out _);
+                    }
 
-                    MelonLogger.Msg("[CustomTagRegistry] =======================================");
+                    if (originalInfo == null)
+                    {
+                        originalInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll("0-0");
+                        MelonLogger.Warning($"[CustomTagRegistry] [{uid}] 원본 곡을 찾지 못하여 기본 곡(0-0)으로 폴백합니다. query={lookupQuery ?? "(null)"}, album={sourceAlbum ?? "(null)"}");
+                    }
+
+                    if (originalInfo != null)
+                    {
+                        string primaryName = $"화영왕 {uid.Substring(4)}";
+                        string primaryAuthor = $"화영왕 {uid.Substring(4)}";
+                        string primaryLevelDesigner = $"화영왕 {uid.Substring(4)}";
+                        int primaryDiff1 = 2;
+                        int primaryDiff2 = 5;
+                        int primaryDiff3 = 0;
+                        int primaryDiff4 = 0;
+                        int primaryDiff5 = 0;
+
+                        if (MainMod.TryGetCachedHwaPrimaryVirtualSong(uid, out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out _))
+                        {
+                            if (!string.IsNullOrWhiteSpace(manifestTitle))
+                            {
+                                primaryName = manifestTitle;
+                            }
+                            if (!string.IsNullOrWhiteSpace(manifestArtist))
+                            {
+                                primaryAuthor = manifestArtist;
+                            }
+                            if (!string.IsNullOrWhiteSpace(manifestLevelDesigner))
+                            {
+                                primaryLevelDesigner = manifestLevelDesigner;
+                            }
+                            primaryDiff1 = manifestDiff1;
+                            primaryDiff2 = manifestDiff2;
+                            primaryDiff3 = manifestDiff3;
+                            primaryDiff4 = manifestDiff4;
+                            primaryDiff5 = manifestDiff5;
+                        }
+
+                        MelonLogger.Msg($"[CustomTagRegistry] === [{uid}] 주입 시도 === sourceUid={originalInfo.uid}, title={primaryName}, artist={primaryAuthor}, diff={primaryDiff1}/{primaryDiff2}");
+                        InjectVirtualSong(originalInfo, uid, primaryName, primaryAuthor, primaryLevelDesigner, "iyaiya_cover", "iyaiya_map", "iyaiya_music", primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
+                    }
                 }
-                else
-                {
-                    MelonLogger.Warning("[CustomTagRegistry] 검색된 원본 MusicInfo를 찾지 못했습니다.");
-                }
+                MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 생성 완료: count={musicList.Count}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomTagRegistry] 얇은 복사 및 주입 실험 중 예외 발생: {ex}");
+                MelonLogger.Error($"[CustomTagRegistry] 가상 곡 생성/주입 중 예외 발생: {ex}");
             }
 
             return musicList;

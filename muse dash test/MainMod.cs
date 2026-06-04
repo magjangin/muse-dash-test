@@ -14,8 +14,9 @@ namespace muse_dash_test
     {
 
         private static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
-        private static HwaManifest cachedManifest;
-        private static BmsChart cachedBmsChart;
+        private static readonly Dictionary<string, HwaManifest> cachedManifests = new Dictionary<string, HwaManifest>();
+        private static readonly Dictionary<string, BmsChart> cachedBmsCharts = new Dictionary<string, BmsChart>();
+        private static readonly List<string> virtualUids = new List<string>();
 
         private static readonly HywStageManager hywStageManager = new HywStageManager();
         private static float hywCheckTimer = 0f;
@@ -31,6 +32,7 @@ namespace muse_dash_test
             public string Artist;
             public string CustomArtist;
             public string LevelDesigner;
+            public string Album;
             public int? Scene;
             public int? Difficulty1;
             public int? Difficulty2;
@@ -246,40 +248,112 @@ namespace muse_dash_test
             try
             {
                 MelonLogger.Msg("[MainMod.Hwa] 모드 로드 시 manifest 선읽기 시작");
-                cachedManifest = LoadHwaManifest(HwaFolderPath);
+                cachedManifests.Clear();
+                cachedBmsCharts.Clear();
+                virtualUids.Clear();
 
-                if (cachedManifest != null)
+                List<string> songDirs = new List<string>();
+
+                if (Directory.Exists(HwaFolderPath))
                 {
-                    MelonLogger.Msg($"[MainMod.Hwa] 모드 로드 시 manifest 캐시 완료: {DescribeManifest(cachedManifest)}");
+                    string[] subDirs = Directory.GetDirectories(HwaFolderPath);
+                    if (subDirs != null && subDirs.Length > 0)
+                    {
+                        Array.Sort(subDirs, StringComparer.OrdinalIgnoreCase);
+                        songDirs.AddRange(subDirs);
+                    }
+
+                    if (songDirs.Count == 0)
+                    {
+                        string[] rootTxts = Directory.GetFiles(HwaFolderPath, "*.txt", SearchOption.TopDirectoryOnly);
+                        string[] rootBms = Directory.GetFiles(HwaFolderPath, "*.bms", SearchOption.TopDirectoryOnly);
+                        if ((rootTxts != null && rootTxts.Length > 0) || (rootBms != null && rootBms.Length > 0))
+                        {
+                            songDirs.Add(HwaFolderPath);
+                        }
+                    }
+                }
+
+                if (songDirs.Count > 0)
+                {
+                    MelonLogger.Msg($"[MainMod.Hwa] 총 {songDirs.Count}개의 하위 폴더/곡 폴더를 발견했습니다.");
+                    for (int i = 0; i < songDirs.Count; i++)
+                    {
+                        string dir = songDirs[i];
+                        string uid = $"999-{i}";
+
+                        MelonLogger.Msg($"[MainMod.Hwa] [{uid}] 매핑 시도: folder={dir}");
+                        HwaManifest manifest = LoadHwaManifest(dir);
+                        if (manifest == null)
+                        {
+                            string dirName = Path.GetFileName(dir);
+                            if (string.Equals(dir, HwaFolderPath, StringComparison.OrdinalIgnoreCase))
+                            {
+                                dirName = "HwaRoot";
+                            }
+                            manifest = new HwaManifest
+                            {
+                                SourcePath = Path.Combine(dir, "info.txt"),
+                                Title = dirName,
+                                Artist = "Unknown",
+                                LevelDesigner = "Hwa"
+                            };
+                            MelonLogger.Msg($"[MainMod.Hwa] [{uid}] 설정 파일(info.txt)이 없어 폴백 설정을 생성했습니다.");
+                        }
+
+                        if (string.IsNullOrEmpty(manifest.SourcePath))
+                        {
+                            manifest.SourcePath = Path.Combine(dir, "info.txt");
+                        }
+
+                        BmsChart bmsChart = LoadHwaBmsChart(dir, manifest);
+
+                        cachedManifests[uid] = manifest;
+                        if (bmsChart != null)
+                        {
+                            cachedBmsCharts[uid] = bmsChart;
+                            MelonLogger.Msg($"[MainMod.Hwa] [{uid}] BMS 로드 성공: {DescribeBmsChart(bmsChart)}");
+                        }
+                        else
+                        {
+                            MelonLogger.Warning($"[MainMod.Hwa] [{uid}] BMS 로드 실패 또는 파일 없음");
+                        }
+
+                        virtualUids.Add(uid);
+                        MelonLogger.Msg($"[MainMod.Hwa] [{uid}] 등록 완료: {DescribeManifest(manifest)}");
+                    }
                 }
                 else
                 {
-                    MelonLogger.Msg("[MainMod.Hwa] 모드 로드 시 manifest 캐시 실패 또는 비어 있음");
-                }
-
-                cachedBmsChart = LoadHwaBmsChart(HwaFolderPath, cachedManifest);
-                if (cachedBmsChart != null)
-                {
-                    MelonLogger.Msg($"[MainMod.Hwa.Bms] 모드 로드 시 BMS 캐시 완료: {DescribeBmsChart(cachedBmsChart)}");
-                }
-                else
-                {
-                    MelonLogger.Msg("[MainMod.Hwa.Bms] 모드 로드 시 BMS 캐시 실패 또는 비어 있음");
+                    MelonLogger.Msg("[MainMod.Hwa] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(999-0~2)을 기본 생성합니다.");
+                    for (int i = 0; i < 3; i++)
+                    {
+                        string uid = $"999-{i}";
+                        HwaManifest manifest = new HwaManifest
+                        {
+                            SourcePath = Path.Combine(HwaFolderPath, $"info.txt"),
+                            Title = $"화영왕 {i}",
+                            Artist = $"화영왕 {i}",
+                            LevelDesigner = $"화영왕 {i}",
+                            Difficulty1 = 2 + i,
+                            Difficulty2 = 5 + i
+                        };
+                        cachedManifests[uid] = manifest;
+                        virtualUids.Add(uid);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                cachedManifest = null;
-                cachedBmsChart = null;
                 MelonLogger.Error($"[MainMod.Hwa] 모드 로드 시 manifest 선읽기 실패: {ex}");
             }
         }
 
-        public static bool TryGetCachedHwaManifest(out string description)
+        public static bool TryGetCachedHwaManifest(string uid, out string description)
         {
-            if (cachedManifest != null)
+            if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))
             {
-                description = DescribeManifest(cachedManifest);
+                description = DescribeManifest(manifest);
                 return true;
             }
 
@@ -287,26 +361,28 @@ namespace muse_dash_test
             return false;
         }
 
-        public static bool TryGetCachedHwaSearchTerms(out string uid, out string title, out string artist, out string description)
+        public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string description)
         {
-            uid = null;
-            title = null;
-            artist = null;
+            sourceUid = null;
+            sourceTitle = null;
+            sourceArtist = null;
+            sourceAlbum = null;
 
-            if (cachedManifest == null)
+            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
             {
                 description = string.Empty;
                 return false;
             }
 
-            uid = cachedManifest.Uid;
-            title = cachedManifest.Title;
-            artist = cachedManifest.Artist;
-            description = DescribeManifest(cachedManifest);
+            sourceUid = manifest.Uid;
+            sourceTitle = manifest.Title;
+            sourceArtist = manifest.Artist;
+            sourceAlbum = manifest.Album;
+            description = DescribeManifest(manifest);
             return true;
         }
 
-        public static bool TryGetCachedHwaPrimaryVirtualSong(out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
+        public static bool TryGetCachedHwaPrimaryVirtualSong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
         {
             title = null;
             artist = null;
@@ -317,48 +393,68 @@ namespace muse_dash_test
             diff4 = 0;
             diff5 = 0;
 
-            if (cachedManifest == null)
+            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
             {
                 description = string.Empty;
                 return false;
             }
 
-            title = !string.IsNullOrWhiteSpace(cachedManifest.CustomTitle) ? cachedManifest.CustomTitle : cachedManifest.Title;
-            artist = !string.IsNullOrWhiteSpace(cachedManifest.CustomArtist) ? cachedManifest.CustomArtist : cachedManifest.Artist;
-            levelDesigner = cachedManifest.LevelDesigner;
-            diff1 = cachedManifest.Difficulty1 ?? diff1;
-            diff2 = cachedManifest.Difficulty2 ?? diff2;
-            diff3 = cachedManifest.Difficulty3 ?? diff3;
-            diff4 = cachedManifest.Difficulty4 ?? diff4;
-            diff5 = cachedManifest.Difficulty5 ?? diff5;
-            description = DescribeManifest(cachedManifest);
+            title = !string.IsNullOrWhiteSpace(manifest.CustomTitle) ? manifest.CustomTitle : manifest.Title;
+            artist = !string.IsNullOrWhiteSpace(manifest.CustomArtist) ? manifest.CustomArtist : manifest.Artist;
+            levelDesigner = manifest.LevelDesigner;
+            diff1 = manifest.Difficulty1 ?? diff1;
+            diff2 = manifest.Difficulty2 ?? diff2;
+            diff3 = manifest.Difficulty3 ?? diff3;
+            diff4 = manifest.Difficulty4 ?? diff4;
+            diff5 = manifest.Difficulty5 ?? diff5;
+            description = DescribeManifest(manifest);
             return true;
         }
 
-        public static bool TryGetCachedHwaScene(out int scene)
+        public static bool TryGetCachedHwaScene(string uid, out int scene)
         {
             scene = default;
 
-            if (cachedManifest == null || !cachedManifest.Scene.HasValue)
+            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest) || !manifest.Scene.HasValue)
             {
                 return false;
             }
 
-            scene = cachedManifest.Scene.Value;
+            scene = manifest.Scene.Value;
             return true;
         }
 
-        public static bool TryGetCachedHwaBmsChart(out BmsChart chart, out string description)
+        public static bool TryGetCachedHwaBmsChart(string uid, out BmsChart chart, out string description)
         {
-            chart = cachedBmsChart;
-            if (chart == null)
+            chart = null;
+            description = string.Empty;
+
+            if (uid != null && cachedBmsCharts.TryGetValue(uid, out chart))
             {
-                description = string.Empty;
-                return false;
+                description = DescribeBmsChart(chart);
+                return true;
             }
 
-            description = DescribeBmsChart(chart);
-            return true;
+            return false;
+        }
+
+        public static bool TryGetSongDirectory(string uid, out string songDir)
+        {
+            songDir = null;
+            if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))
+            {
+                if (!string.IsNullOrEmpty(manifest.SourcePath))
+                {
+                    songDir = Path.GetDirectoryName(manifest.SourcePath);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static List<string> GetVirtualUids()
+        {
+            return new List<string>(virtualUids);
         }
 
         private static HwaManifest LoadHwaManifest(string folderPath)
@@ -669,6 +765,12 @@ namespace muse_dash_test
             }
 
             string normalizedKey = NormalizeManifestKey(key);
+            if (normalizedKey.Contains("가져올앨범") || normalizedKey.Contains("앨범") || normalizedKey.Contains("album"))
+            {
+                manifest.Album = value;
+                return;
+            }
+
             if (normalizedKey.Contains("uid"))
             {
                 manifest.Uid = value;
@@ -792,6 +894,7 @@ namespace muse_dash_test
                 + ", artist=" + (manifest.Artist ?? "(null)")
                 + ", customArtist=" + (manifest.CustomArtist ?? "(null)")
                 + ", levelDesigner=" + (manifest.LevelDesigner ?? "(null)")
+                + ", album=" + (manifest.Album ?? "(null)")
                 + ", scene=" + (manifest.Scene.HasValue ? manifest.Scene.Value.ToString() : "(null)")
                 + ", diff1=" + (manifest.Difficulty1.HasValue ? manifest.Difficulty1.Value.ToString() : "(null)")
                 + ", diff2=" + (manifest.Difficulty2.HasValue ? manifest.Difficulty2.Value.ToString() : "(null)")

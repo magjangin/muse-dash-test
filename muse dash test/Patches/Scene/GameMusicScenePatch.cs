@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using System;
 
 // Il2CppGameLogic.GameMusicScene.LoadScene(string sceneName) 후킹
@@ -11,7 +11,13 @@ public class GameMusicScene_LoadScene_Patch
         {
             if (!ExperimentPlayContext.ShouldApplyExperimentChart) return;
 
-            if (!muse_dash_test.MainMod.TryGetCachedHwaScene(out int scene))
+            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            if (string.IsNullOrEmpty(uid))
+            {
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+
+            if (!muse_dash_test.MainMod.TryGetCachedHwaScene(uid, out int scene))
             {
                 MelonLogger.Msg($"[GameMusicScene.LoadScene] manifest scene이 없어 리다이렉션을 건너뜁니다: current={sceneName}");
                 return;

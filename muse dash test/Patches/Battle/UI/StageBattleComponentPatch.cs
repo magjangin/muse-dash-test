@@ -182,21 +182,33 @@ public static class StageBattleComponent_LoadMedia_Patch
 
     private static void InjectBattleMedia()
     {
+        string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+        if (string.IsNullOrEmpty(uid))
+        {
+            uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid ?? "(unknown)";
+        }
+
+        string songDir = HwaFolderPath;
+        if (muse_dash_test.MainMod.TryGetSongDirectory(uid, out string customDir) && !string.IsNullOrEmpty(customDir))
+        {
+            songDir = customDir;
+        }
+
         Camera mainCam = Camera.main;
         if (mainCam != null)
         {
             MelonLogger.Msg($"[StageBattleComponent.Load.Bgm] 메인 카메라 감지 완료: name={mainCam.name}, position={mainCam.transform.position}");
-            TryPlayVideo(mainCam);
+            TryPlayVideo(mainCam, songDir);
         }
         else
         {
             MelonLogger.Warning("[StageBattleComponent.Load.Bgm] 메인 카메라를 찾지 못했습니다.");
         }
 
-        string oggPath = ResolveHwaOggPath();
+        string oggPath = ResolveHwaOggPath(songDir);
         if (string.IsNullOrWhiteSpace(oggPath))
         {
-            MelonLogger.Msg($"[StageBattleComponent.Load.Bgm] ogg 파일을 찾지 못했습니다: folder={HwaFolderPath}");
+            MelonLogger.Msg($"[StageBattleComponent.Load.Bgm] ogg 파일을 찾지 못했습니다: folder={songDir}");
             return;
         }
 
@@ -278,17 +290,17 @@ public static class StageBattleComponent_LoadMedia_Patch
         MelonLogger.Msg($"[StageBattleComponent.Load.Bgm] 배틀 BGM 주입 완료: before={beforeState}, after={DescribeAudioSource(targetSource)}, loadedClip={DescribeAudioClip(clip)}");
     }
 
-    private static string ResolveHwaOggPath()
+    private static string ResolveHwaOggPath(string folderPath)
     {
         try
         {
-            if (!Directory.Exists(HwaFolderPath))
+            if (!Directory.Exists(folderPath))
             {
                 return null;
             }
 
-            string[] txtFiles = Directory.GetFiles(HwaFolderPath, "*.txt", SearchOption.AllDirectories);
-            string[] oggFiles = Directory.GetFiles(HwaFolderPath, "*.ogg", SearchOption.AllDirectories);
+            string[] txtFiles = Directory.GetFiles(folderPath, "*.txt", SearchOption.AllDirectories);
+            string[] oggFiles = Directory.GetFiles(folderPath, "*.ogg", SearchOption.AllDirectories);
 
             if (oggFiles == null || oggFiles.Length == 0)
             {
@@ -389,19 +401,19 @@ public static class StageBattleComponent_LoadMedia_Patch
         }
     }
 
-    private static void TryPlayVideo(Camera mainCam)
+    private static void TryPlayVideo(Camera mainCam, string folderPath)
     {
         try
         {
-            if (!Directory.Exists(HwaFolderPath))
+            if (!Directory.Exists(folderPath))
             {
                 return;
             }
 
-            string[] mp4Files = Directory.GetFiles(HwaFolderPath, "*.mp4", SearchOption.AllDirectories);
+            string[] mp4Files = Directory.GetFiles(folderPath, "*.mp4", SearchOption.AllDirectories);
             if (mp4Files == null || mp4Files.Length == 0)
             {
-                MelonLogger.Msg("[StageBattleComponent.Load.Video] hwa 폴더 및 하위 폴더에 mp4 파일이 없습니다.");
+                MelonLogger.Msg($"[StageBattleComponent.Load.Video] {folderPath} 폴더 및 하위 폴더에 mp4 파일이 없습니다.");
                 return;
             }
 

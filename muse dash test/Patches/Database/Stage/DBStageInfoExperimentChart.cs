@@ -65,7 +65,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
     }
 
-    public static void ApplyExperimentChart(DBStageInfo __instance)
+    public static void ApplyExperimentChart(DBStageInfo __instance, string activeUid)
     {
         var musicList = __instance._musicList_k__BackingField;
         if (musicList == null || musicList.Count <= SourceNoteIndex)
@@ -95,9 +95,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         musicList.Add(anchor);
 
         var runtimeSpecs = BuildRuntimeExperimentNotes(ExperimentNotes);
-        if (muse_dash_test.MainMod.TryGetCachedHwaBmsChart(out var bmsChart, out string bmsDescription))
+        if (muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
         {
-            var bmsSpecs = BuildBmsExperimentNotes(bmsChart);
+            var bmsSpecs = BuildBmsExperimentNotes(bmsChart, activeUid);
             if (bmsSpecs.Count > 0)
             {
                 runtimeSpecs = BuildRuntimeExperimentNotes(bmsSpecs);
@@ -114,7 +114,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             AddExperimentNotes(musicList, sourceNote, spec);
         }
 
-        if (muse_dash_test.MainMod.TryGetCachedHwaBmsChart(out _, out _) && musicList.Count > 1)
+        if (muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
         {
             ApplyBmsDoubleState(musicList, 1);
         }

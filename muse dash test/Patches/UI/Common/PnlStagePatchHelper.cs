@@ -46,7 +46,7 @@ public static partial class PnlStagePatchHelper
         {
             uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
         }
-        return uid == "999-0" || uid == "999-1" || uid == "999-2";
+        return uid != null && uid.StartsWith("999-");
     }
 
     public static void ApplyCustomTagTitleAccessors(string source, PnlStage stage)
@@ -154,7 +154,7 @@ public static partial class PnlStagePatchHelper
                 return false;
             }
 
-            if (musicInfo.uid != "999-0" && musicInfo.uid != "999-1" && musicInfo.uid != "999-2")
+            if (musicInfo.uid == null || !musicInfo.uid.StartsWith("999-"))
             {
                 return false;
             }

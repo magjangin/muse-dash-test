@@ -176,7 +176,12 @@ public class Boss_InitBossObject_Patch
 
         try
         {
-            if (MainMod.TryGetCachedHwaBmsChart(out var chart, out _))
+            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            if (string.IsNullOrEmpty(uid))
+            {
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+            if (MainMod.TryGetCachedHwaBmsChart(uid, out var chart, out _))
             {
                 if (chart != null && chart.Notes != null)
                 {

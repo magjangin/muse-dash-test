@@ -176,7 +176,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return note.noteData.type == 9 || uid.StartsWith("0004");
     }
 
-    public static System.Collections.Generic.List<ExperimentNoteSpec> BuildBmsExperimentNotes(muse_dash_test.BmsChart chart)
+    public static System.Collections.Generic.List<ExperimentNoteSpec> BuildBmsExperimentNotes(muse_dash_test.BmsChart chart, string activeUid)
     {
         var specs = new System.Collections.Generic.List<ExperimentNoteSpec>();
         if (chart?.Notes == null || chart.Notes.Count == 0)
@@ -202,7 +202,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             pairedNotes.Add(pair.StartNote);
             pairedNotes.Add(pair.EndNote);
 
-            var spec = CreateExperimentNoteSpecFromBms(pair.StartNote, wavInfo);
+            var spec = CreateExperimentNoteSpecFromBms(pair.StartNote, wavInfo, activeUid);
             spec.Label = $"BMS {pair.Type} {pair.StartNote.RawValue}";
             spec.StartTick = pair.StartNote.Time;
             spec.Length = System.Math.Max(0.0, pair.Duration);
@@ -230,7 +230,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 continue;
             }
 
-            specs.Add(CreateExperimentNoteSpecFromBms(note, wavInfo));
+            specs.Add(CreateExperimentNoteSpecFromBms(note, wavInfo, activeUid));
         }
 
         specs.Sort((left, right) =>
@@ -244,7 +244,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return specs;
     }
 
-    public static ExperimentNoteSpec CreateExperimentNoteSpecFromBms(muse_dash_test.BmsNote note, muse_dash_test.BmsWavInfo wavInfo)
+    public static ExperimentNoteSpec CreateExperimentNoteSpecFromBms(muse_dash_test.BmsNote note, muse_dash_test.BmsWavInfo wavInfo, string activeUid)
     {
         var spec = new ExperimentNoteSpec
         {
@@ -266,7 +266,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             spec.Scene = "scene_" + spec.Uid.Substring(0, 2);
         }
 
-        if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.MainMod.TryGetCachedHwaScene(out int manifestScene))
+        if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.MainMod.TryGetCachedHwaScene(activeUid, out int manifestScene))
         {
             spec.Scene = $"scene_{manifestScene:00}";
         }

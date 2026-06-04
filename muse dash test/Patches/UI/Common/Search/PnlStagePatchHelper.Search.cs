@@ -5,7 +5,7 @@ using Il2CppAssets.Scripts.Database;
 
 public static partial class PnlStagePatchHelper
 {
-    public static bool TryFindMusicInfoByQuery(string query, out MusicInfo musicInfo, out string matchedUid)
+    public static bool TryFindMusicInfoByQuery(string query, string albumQuery, out MusicInfo musicInfo, out string matchedUid)
     {
         musicInfo = null;
         matchedUid = null;
@@ -19,7 +19,9 @@ public static partial class PnlStagePatchHelper
             }
 
             string normalizedQuery = NormalizeMusicSearchText(query);
+            string normalizedAlbumQuery = NormalizeMusicSearchText(albumQuery);
             bool hasQuery = !string.IsNullOrEmpty(normalizedQuery);
+            bool hasAlbumQuery = !string.IsNullOrEmpty(normalizedAlbumQuery);
 
             MusicInfo firstMusicInfo = null;
             string firstUid = null;
@@ -38,12 +40,12 @@ public static partial class PnlStagePatchHelper
                     firstUid = entry.Key;
                 }
 
-                if (!hasQuery)
+                if (!hasQuery && !hasAlbumQuery)
                 {
                     continue;
                 }
 
-                int score = ScoreMusicSearchMatch(entry.Key, entry.Value, normalizedQuery);
+                int score = ScoreMusicSearchMatch(entry.Key, entry.Value, normalizedQuery, normalizedAlbumQuery);
                 if (score > bestScore)
                 {
                     bestScore = score;
@@ -52,7 +54,7 @@ public static partial class PnlStagePatchHelper
                 }
             }
 
-            if (!hasQuery)
+            if (!hasQuery && !hasAlbumQuery)
             {
                 if (firstMusicInfo != null)
                 {
@@ -80,11 +82,45 @@ public static partial class PnlStagePatchHelper
         }
     }
 
-    private static int ScoreMusicSearchMatch(string uid, MusicInfo musicInfo, string normalizedQuery)
+    private static int ScoreMusicSearchMatch(string uid, MusicInfo musicInfo, string normalizedQuery, string normalizedAlbumQuery)
     {
         if (musicInfo == null)
         {
             return -1;
+        }
+
+        if (!string.IsNullOrEmpty(normalizedAlbumQuery))
+        {
+            string albumTitle = "";
+            try
+            {
+                var albumsConfig = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Managers.ConfigManager>.instance.GetConfigObject<DBConfigAlbums>();
+                var albumInfo = albumsConfig?.GetAlbumsInfoByUid(musicInfo.albumUidName);
+                if (albumInfo != null)
+                {
+                    albumTitle = albumInfo.title;
+                }
+            }
+            catch {}
+
+            string normalizedAlbumUid = NormalizeMusicSearchText(musicInfo.albumUidName);
+            string normalizedAlbumJson = NormalizeMusicSearchText(musicInfo.albumJsonName);
+            string normalizedAlbumTitle = NormalizeMusicSearchText(albumTitle);
+
+            bool isAlbumMatch = 
+                (!string.IsNullOrEmpty(normalizedAlbumUid) && normalizedAlbumUid.Contains(normalizedAlbumQuery)) ||
+                (!string.IsNullOrEmpty(normalizedAlbumJson) && normalizedAlbumJson.Contains(normalizedAlbumQuery)) ||
+                (!string.IsNullOrEmpty(normalizedAlbumTitle) && normalizedAlbumTitle.Contains(normalizedAlbumQuery));
+
+            if (!isAlbumMatch)
+            {
+                return -1;
+            }
+        }
+
+        if (string.IsNullOrEmpty(normalizedQuery))
+        {
+            return 100;
         }
 
         string normalizedUid = NormalizeMusicSearchText(uid);
