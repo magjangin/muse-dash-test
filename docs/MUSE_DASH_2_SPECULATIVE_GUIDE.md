@@ -77,6 +77,20 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 > 커스텀 태그 명칭을 추가 및 수정했는데 UI 탭 라벨이 빈 칸(빈 문자열)으로 표시되는 문제가 발생한다면, **가장 먼저 다국어 로컬 네임 사전(Languages Dictionary)에 등록된 언어 키값을 의심**해야 합니다.
 > 게임이 현재 기동 중인 로컬 언어 환경(예: `Korean`, `English`, `Japanese`, `ChineseSimplified` 등)의 시스템 언어 코드 키가 주입하려는 딕셔너리에 정확히 포함되어 있는지, 문자열 스펠링에 오타가 없는지 ILSpy 번역 관리 매니저를 통해 반드시 교차 확인하십시오.
 
+### 💡 1편의 커스텀 태그 주입 성공 공식 10줄 요약
+
+1. **타이밍 후킹**: 게임이 순정 태그를 메모리에 올리는 시점(`MusicTagManager.InitAlbumTagInfo`)의 Postfix 훅을 잡는다.
+2. **태그 인스턴스화**: 가상 태그의 고유 식별 명칭(예: `tag-muse-dash-test`)을 가진 `AlbumTagInfo` 객체를 새로 생성한다.
+3. **다국어 매핑**: `Korean`, `English` 등 시스템 번역 사전(Dictionary)에 매치할 태그 제목 명칭을 등록하여 주입한다.
+4. **순정 곡 얇은 복제**: 메모리 포인터 꼬임 방지를 위해 기존 `MusicInfo`를 `MemberwiseClone()`하여 가상 곡으로 복제한다.
+5. **가상 곡 주입**: 복제된 곡에 가상 UID(`999-0`)를 할당하고 글로벌 곡 DB(`GlobalDataBase.dbMusic.m_MusicList`)에 추가한다.
+6. **가상 앨범 주입**: 기존 `AlbumsInfo`를 복제해 가상 앨범(`998-0`)을 생성하고 앨범 리스트(`DBConfigAlbums.m_Items`)에 등록한다.
+7. **태그-곡 바인딩**: 가상 곡의 UID를 주입 대상인 가상 태그의 곡 리스트(`music_list`) 컬렉션에 문자열로 등록한다.
+8. **글로벌 태그 등록**: 가상 태그 정보를 최종 글로벌 태그 DB에 얹고 정렬 함수(`AddCustomAlbumTagsSort`)를 실행해 빌드한다.
+9. **조회 인터셉터 우회**: 곡 스크롤 시 가상 UID에 대한 `AlbumsInfo` 반환 훅을 설치해 Null 예외를 방지하고 가상 앨범 정보를 뱉게 한다.
+10. **내장 이미지 오버라이드**: 탭 컴포넌트(`AlbumTagToggle.Init`) 후크로 진입해 DLL 리소스에서 이미지 바이너리를 추출하고 태그 아이콘을 강제 오버라이딩한다.
+
+
 
 ---
 
