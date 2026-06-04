@@ -6,15 +6,37 @@ using System.Text;
 
 namespace muse_dash_test
 {
+    /// <summary>
+    /// IL2CPP 환경에서 C# 컴파일 타임 종속성을 완전히 제거하기 위해
+    /// 동적 멤버 조회, 캐싱, 타입 변환 및 패턴 매칭 역매핑을 제공하는 고성능 리플렉션 유틸리티입니다.
+    /// 게임 업데이트로 인한 변수명 변경이나 난독화 패턴 변형에 대해 강력한 내성(Resilience)을 제공합니다.
+    /// </summary>
     public static class ModReflection
     {
+        /// <summary>
+        /// 리플렉션 탐색 부하를 최소화하기 위해 타겟 타입 및 멤버명을 기반으로 조회 완료된 MemberInfo를 캐싱합니다.
+        /// 조회에 실패한 멤버도 null 상태로 캐싱하여 반복적인 실패 탐색 부하를 원천 차단합니다.
+        /// </summary>
         private static readonly Dictionary<string, MemberInfo> MemberCache = new Dictionary<string, MemberInfo>();
+
+        /// <summary>
+        /// 특정 멤버의 부재 또는 예외로 인해 로그 파일이 스패밍되는 현상을 방지하기 위해
+        /// 에러/경고가 출력된 고유 식별자 키들을 기록하고 중복 로그 출력을 억제합니다.
+        /// </summary>
         private static readonly HashSet<string> LoggedFailures = new HashSet<string>();
+
+        /// <summary>
+        /// 캐시 딕셔너리 및 로그 기록 리스트에 안전하게 동시 접근(Thread-safe)하기 위한 크리티컬 섹션 락 객체입니다.
+        /// </summary>
         private static readonly object CacheLock = new object();
 
         /// <summary>
-        /// 캐싱을 사용하여 객체의 멤버(프로퍼티 또는 필드)로부터 값을 안전하게 읽어옵니다.
+        /// 캐싱 및 다각 패턴 조회를 지원하며, 특정 객체의 멤버(프로퍼티 또는 필드)로부터 값을 안전하게 읽어옵니다.
         /// </summary>
+        /// <param name="target">값을 조회할 대상 인스턴스 객체</param>
+        /// <param name="memberName">읽어올 프로퍼티 혹은 필드 명칭</param>
+        /// <param name="silent">true로 설정할 경우, 멤버를 찾지 못하거나 읽기에 실패하더라도 로깅 경고를 발생시키지 않습니다.</param>
+        /// <returns>조회된 값 객체. 대상이 null이거나 멤버 부재 시, 혹은 에러 발생 시 null을 반환합니다.</returns>
         public static object GetValue(object target, string memberName, bool silent = false)
         {
             if (target == null) return null;
@@ -81,8 +103,14 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 캐싱을 사용하여 객체의 멤버(프로퍼티 또는 필드)에 값을 안전하게 주입합니다.
+        /// 캐싱 및 다각 패턴 조회를 지원하며, 특정 객체의 멤버(프로퍼티 또는 필드)에 안전하게 새로운 값을 주입합니다.
+        /// 주입 시 대상 멤버의 타입에 맞춰 데이터 형식을 동적으로 변환(Convert)하여 세팅합니다.
         /// </summary>
+        /// <param name="target">값을 설정할 대상 인스턴스 객체</param>
+        /// <param name="memberName">수정하고자 하는 프로퍼티 혹은 필드 명칭</param>
+        /// <param name="value">주입할 데이터 객체</param>
+        /// <param name="silent">true로 설정할 경우, 멤버를 찾지 못하거나 설정 실패 시 로깅을 생략합니다.</param>
+        /// <returns>성공적으로 값이 주입되었을 경우 true, 실패했을 경우 false를 반환합니다.</returns>
         public static bool SetValue(object target, string memberName, object value, bool silent = false)
         {
             if (target == null) return false;
@@ -159,8 +187,16 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 컴파일 타임 및 런타임 빌드 변경을 극복하기 위해 다각적 패턴으로 멤버를 자동 해제 및 역매핑합니다.
+        /// 컴파일 타임 빌드 사양 차이 및 런타임 난독화 접두사를 극복하기 위해 다각적 패턴으로 멤버를 스캔하고 반환합니다.
+        /// <para>- 패턴 1: 정확히 일치하는 프로퍼티 명칭</para>
+        /// <para>- 패턴 2: 정확히 일치하는 필드 명칭</para>
+        /// <para>- 패턴 3: C# 컴파일러 자동 생성 백킹 필드 패턴 (_[name]_k__BackingField)</para>
+        /// <para>- 패턴 4: Unity/PeroTools 등에서 사용되는 m_ 접두사 패턴 (m_name, m_Name 등)</para>
+        /// <para>- 패턴 5: 대소문자 구분을 무시한 폴백 완화 매칭</para>
         /// </summary>
+        /// <param name="type">대상 클래스의 시스템 타입(Type)</param>
+        /// <param name="memberName">스캔할 멤버의 영문 기준 명칭</param>
+        /// <returns>검색에 성공한 PropertyInfo 또는 FieldInfo 인스턴스. 부재 시 null을 반환합니다.</returns>
         private static MemberInfo ResolveMember(Type type, string memberName)
         {
             const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
@@ -234,6 +270,13 @@ namespace muse_dash_test
             return null;
         }
 
+        /// <summary>
+        /// 입력된 데이터를 타겟 필드/프로퍼티의 지정된 C# 시스템 형식으로 동적으로 변환합니다.
+        /// Nullable 언박싱, 이늄(Enum) 매핑, Convert.ChangeType을 차례대로 수행합니다.
+        /// </summary>
+        /// <param name="value">변환하고자 하는 입력 데이터 값</param>
+        /// <param name="targetType">목표하고자 하는 C# 데이터 타입(Type)</param>
+        /// <returns>지정 형식으로 최종 변환 완료된 인스턴스 객체</returns>
         private static object ConvertValue(object value, Type targetType)
         {
             if (value == null) return null;
