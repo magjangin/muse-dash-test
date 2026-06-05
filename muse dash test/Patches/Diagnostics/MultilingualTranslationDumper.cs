@@ -9,14 +9,21 @@ using System.Text;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 게임 내 앨범 태그 정보(DBMusicTag)를 가로채어 다국어 현지화 정보와 함께 참조 가이드용 마크다운 파일로 덤프하는 클래스입니다.
-    /// 개발자가 다국어 딕셔너리 조회 및 주입 코드를 작성할 때 힌트로 삼을 수 있는 상세 치트시트를 문서에 기재합니다.
+    /// 게임 내 앨범 태그 정보(DBMusicTag)를 가로채어 다국어 현지화 정보와 함께 참조용 마크다운 파일로 덤프할 때 필요한 다국어 유틸리티 기능을 제공하는 클래스입니다.
     /// </summary>
     public static class TranslationDumperUtils
     {
+        /// <summary>
+        /// 언어 코드 또는 식별 명칭에 상응하는 국가 국기와 언어 표시명을 반환합니다.
+        /// </summary>
+        /// <param name="langKey">언어 코드 식별자 (예: "Korean", "ko_KR", "ChineseS" 등)</param>
+        /// <returns>국기와 언어 한글 설명이 포함된 표시 문자열</returns>
         public static string GetLanguageDisplayName(string langKey)
         {
-            if (string.IsNullOrEmpty(langKey)) return "Unknown";
+            if (string.IsNullOrEmpty(langKey))
+            {
+                return "Unknown";
+            }
             
             switch (langKey.Trim())
             {
@@ -71,6 +78,11 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>
+        /// 다국어 딕셔너리 맵 데이터를 마크다운 표 문자열 형태로 직렬화하여 반환합니다.
+        /// </summary>
+        /// <param name="dict">IL2CPP 언어-번역 값 딕셔너리</param>
+        /// <returns>마크다운 테이블 구조의 문자열</returns>
         public static string FormatMultilingualDictionary(Il2CppSystem.Collections.Generic.Dictionary<string, string> dict)
         {
             if (dict == null || dict.Count == 0)
@@ -95,6 +107,9 @@ namespace muse_dash_test
             return sb.ToString();
         }
 
+        /// <summary>
+        /// 매칭 가능한 주요 다국어 식별 코드 세트 정의
+        /// </summary>
         private static readonly string[][] LanguageAliasGroups = new string[][]
         {
             new string[] { "Korean", "ko_KR", "ko" },
@@ -104,6 +119,11 @@ namespace muse_dash_test
             new string[] { "ChineseTraditional", "ChineseT", "zh_TW", "tw" }
         };
 
+        /// <summary>
+        /// 주어진 언어 식별 코드와 연관된 모든 별칭(Alias) 키 목록을 반환합니다.
+        /// </summary>
+        /// <param name="language">조회하려는 기본 언어 키</param>
+        /// <returns>해당 언어의 별칭 목록 (예: "ChineseSimplified" -> "ChineseSimplified", "ChineseS", "zh_CN", "cn")</returns>
         public static System.Collections.Generic.List<string> GetLanguageAliases(string language)
         {
             var list = new System.Collections.Generic.List<string> { language };
@@ -133,12 +153,22 @@ namespace muse_dash_test
             return list;
         }
 
+        /// <summary>
+        /// 앨범 태그 정보에 대한 다국어 현지화 번역명을 다양한 경로(커스텀 태그 딕셔너리 및 게임 내 ConfigManager 테이블)를 통해 복합 탐색하여 반환합니다.
+        /// </summary>
+        /// <param name="tag">번역을 찾을 앨범 태그 객체</param>
+        /// <param name="language">요청할 대상 언어 식별 키 (예: "Korean", "Japanese" 등)</param>
+        /// <returns>탐색된 현지화 번역명 문자열. 찾지 못할 시 null 반환</returns>
         public static string GetLocalizedTagName(AlbumTagInfo tag, string language)
         {
-            if (tag == null) return null;
+            if (tag == null)
+            {
+                return null;
+            }
 
             var aliases = GetLanguageAliases(language);
 
+            // 1. 주입된 커스텀 태그 딕셔너리에서 별칭으로 다국어 이름 우선 조회
             try
             {
                 if (tag.customInfo != null && tag.customInfo.tag_name != null)
@@ -154,6 +184,7 @@ namespace muse_dash_test
             }
             catch {}
 
+            // 2. 게임 내부 내장 ConfigManager 테이블에서 매칭되는 현지화 설정 문자열 조회
             try
             {
                 var configManager = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Managers.ConfigManager>.instance;
@@ -188,19 +219,31 @@ namespace muse_dash_test
         }
     }
 
+    /// <summary>
+    /// 게임 내 DBMusicTag.AddAlbumTagData 실행 시점에 개입하여, 로드되는 모든 태그의 정보를 다국어 메타데이터와 함께 가이드 마크다운 파일로 내보내는 Harmony 패치 클래스입니다.
+    /// </summary>
     [HarmonyPatch(typeof(DBMusicTag), "AddAlbumTagData")]
     public class DBMusicTag_AddAlbumTagData_Patch
     {
+        /// <summary>
+        /// DBMusicTag.AddAlbumTagData 호출 완료 후 각 태그의 정보를 마크다운 파일에 추가 기록합니다.
+        /// </summary>
+        /// <param name="__instance">DBMusicTag 대상 인스턴스</param>
+        /// <param name="index">태그 고유 인덱스</param>
+        /// <param name="tag">등록 완료된 앨범 태그 정보 인스턴스</param>
         public static void Postfix(DBMusicTag __instance, int index, AlbumTagInfo tag)
         {
             try
             {
-                if (tag == null) return;
+                if (tag == null)
+                {
+                    return;
+                }
 
                 string gameDir = MelonLoader.Utils.MelonEnvironment.GameRootDirectory;
                 string dumpPath = Path.Combine(gameDir, "hwa", "album_tag_localization_reference.md");
 
-                // 인덱스가 0이면 헤더와 가이드를 새로 쓰면서 시작합니다.
+                // 첫 번째 태그(인덱스 0)가 등록될 때 파일을 초기화하여 새로 작성합니다.
                 bool isAppend = index != 0 && File.Exists(dumpPath);
 
                 using (var writer = new StreamWriter(dumpPath, isAppend, Encoding.UTF8))
@@ -215,6 +258,7 @@ namespace muse_dash_test
                     string displayName = tag.name ?? "(null)";
                     string localName = tag.tagName ?? "(null)";
 
+                    // 각 대상 언어별 현지화 명칭을 복합 조회
                     string engName = TranslationDumperUtils.GetLocalizedTagName(tag, "English") ?? "(null)";
                     string korName = TranslationDumperUtils.GetLocalizedTagName(tag, "Korean") ?? localName;
                     string jpnName = TranslationDumperUtils.GetLocalizedTagName(tag, "Japanese") ?? "(null)";
@@ -236,6 +280,7 @@ namespace muse_dash_test
                     writer.WriteLine($"| **Is Custom Tag** | `{tag.isCustomTag}` |");
                     writer.WriteLine();
 
+                    // 주입된 사용자 정의 메타데이터가 존재할 경우 번역 딕셔너리와 설정 정보를 추가 출력
                     var customInfo = tag.customInfo;
                     if (customInfo != null)
                     {
