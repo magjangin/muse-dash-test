@@ -33,10 +33,12 @@ namespace muse_dash_test
                 case "jp":
                     return "🇯🇵 Japanese (일본어)";
                 case "ChineseSimplified":
+                case "ChineseS":
                 case "zh_CN":
                 case "cn":
                     return "🇨🇳 Chinese Simplified (중국어 간체)";
                 case "ChineseTraditional":
+                case "ChineseT":
                 case "zh_TW":
                 case "tw":
                     return "🇹🇼 Chinese Traditional (중국어 번체)";
@@ -91,6 +93,98 @@ namespace muse_dash_test
             }
 
             return sb.ToString();
+        }
+
+        private static readonly string[][] LanguageAliasGroups = new string[][]
+        {
+            new string[] { "Korean", "ko_KR", "ko" },
+            new string[] { "English", "en_US", "en" },
+            new string[] { "Japanese", "ja_JP", "jp" },
+            new string[] { "ChineseSimplified", "ChineseS", "zh_CN", "cn" },
+            new string[] { "ChineseTraditional", "ChineseT", "zh_TW", "tw" }
+        };
+
+        public static System.Collections.Generic.List<string> GetLanguageAliases(string language)
+        {
+            var list = new System.Collections.Generic.List<string> { language };
+            foreach (var group in LanguageAliasGroups)
+            {
+                bool matches = false;
+                foreach (var alias in group)
+                {
+                    if (string.Equals(alias, language, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matches = true;
+                        break;
+                    }
+                }
+                if (matches)
+                {
+                    foreach (var alias in group)
+                    {
+                        if (!list.Contains(alias))
+                        {
+                            list.Add(alias);
+                        }
+                    }
+                    break;
+                }
+            }
+            return list;
+        }
+
+        public static string GetLocalizedTagName(AlbumTagInfo tag, string language)
+        {
+            if (tag == null) return null;
+
+            var aliases = GetLanguageAliases(language);
+
+            try
+            {
+                if (tag.customInfo != null && tag.customInfo.tag_name != null)
+                {
+                    foreach (var alias in aliases)
+                    {
+                        if (tag.customInfo.tag_name.TryGetValue(alias, out string val))
+                        {
+                            return val;
+                        }
+                    }
+                }
+            }
+            catch {}
+
+            try
+            {
+                var configManager = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Managers.ConfigManager>.instance;
+                if (configManager != null && !string.IsNullOrEmpty(tag.tagUid))
+                {
+                    string[] configs = { "languages", "language", "custom_tags", "music_tag" };
+                    string[] cmpKeys = { "key", "uid", "id", "tagUid" };
+
+                    foreach (var configName in configs)
+                    {
+                        foreach (var cmpKey in cmpKeys)
+                        {
+                            foreach (var alias in aliases)
+                            {
+                                try
+                                {
+                                    string val = configManager.GetConfigStringValue(configName, cmpKey, alias, (Il2CppSystem.String)tag.tagUid);
+                                    if (!string.IsNullOrEmpty(val))
+                                    {
+                                        return val;
+                                    }
+                                }
+                                catch {}
+                            }
+                        }
+                    }
+                }
+            }
+            catch {}
+
+            return null;
         }
 
         /// <summary>
@@ -186,13 +280,23 @@ namespace muse_dash_test
                     string displayName = tag.name ?? "(null)";
                     string localName = tag.tagName ?? "(null)";
 
+                    string engName = TranslationDumperUtils.GetLocalizedTagName(tag, "English") ?? "(null)";
+                    string korName = TranslationDumperUtils.GetLocalizedTagName(tag, "Korean") ?? localName;
+                    string jpnName = TranslationDumperUtils.GetLocalizedTagName(tag, "Japanese") ?? "(null)";
+                    string chsName = TranslationDumperUtils.GetLocalizedTagName(tag, "ChineseSimplified") ?? "(null)";
+                    string chtName = TranslationDumperUtils.GetLocalizedTagName(tag, "ChineseTraditional") ?? "(null)";
+
                     writer.WriteLine($"## 🏷️ [태그 인덱스: {index}] {displayName}");
                     writer.WriteLine();
                     writer.WriteLine("| Property | Value |");
                     writer.WriteLine("| :--- | :--- |");
                     writer.WriteLine($"| **Tag UID** | `{tag.tagUid ?? "(null)"}` |");
                     writer.WriteLine($"| **Default Name** | `{displayName}` |");
-                    writer.WriteLine($"| **Korean Name (Local)** | `{localName}` |");
+                    writer.WriteLine($"| **English Name (Local)** | `{engName}` |");
+                    writer.WriteLine($"| **Korean Name (Local)** | `{korName}` |");
+                    writer.WriteLine($"| **Japanese Name (Local)** | `{jpnName}` |");
+                    writer.WriteLine($"| **Chinese Simplified Name (Local)** | `{chsName}` |");
+                    writer.WriteLine($"| **Chinese Traditional Name (Local)** | `{chtName}` |");
                     writer.WriteLine($"| **Icon Name** | `{tag.iconName ?? "(null)"}` |");
                     writer.WriteLine($"| **Is Custom Tag** | `{tag.isCustomTag}` |");
                     writer.WriteLine();
