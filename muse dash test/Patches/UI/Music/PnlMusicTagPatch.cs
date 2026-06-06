@@ -41,7 +41,7 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    if (musicInfo.uid == null || !musicInfo.uid.StartsWith("1000-"))
+                    if (musicInfo.uid == null || !musicInfo.uid.StartsWith("1999-"))
                     {
                         continue;
                     }

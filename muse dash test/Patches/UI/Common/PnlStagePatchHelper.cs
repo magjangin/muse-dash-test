@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 public static partial class PnlStagePatchHelper
 {
-    private const int CustomTagUid = 999;
+    private const int CustomTagUid = 1998;
     private const string CustomMusicUid = "0-0";
     private const string CustomTitle = "화영왕 0";
     private const string CustomArtist = "화영왕 0";
@@ -46,7 +46,7 @@ public static partial class PnlStagePatchHelper
         {
             uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
         }
-        return uid != null && uid.StartsWith("1000-");
+        return uid != null && uid.StartsWith("1999-");
     }
 
     public static void ApplyCustomTagTitleAccessors(string source, PnlStage stage)
@@ -154,7 +154,7 @@ public static partial class PnlStagePatchHelper
                 return false;
             }
 
-            if (musicInfo.uid == null || !musicInfo.uid.StartsWith("1000-"))
+            if (musicInfo.uid == null || !musicInfo.uid.StartsWith("1999-"))
             {
                 return false;
             }

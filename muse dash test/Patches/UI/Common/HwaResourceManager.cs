@@ -70,7 +70,7 @@ namespace muse_dash_test
                     for (int i = 0; i < songDirs.Count; i++)
                     {
                         string dir = songDirs[i];
-                        string uid = $"1000-{i}";
+                        string uid = $"1999-{i}";
 
                         MelonLogger.Msg($"[HwaResourceManager] [{uid}] 매핑 시도: folder={dir}");
                         HwaManifest manifest = LoadHwaManifest(dir);
@@ -115,10 +115,10 @@ namespace muse_dash_test
                 }
                 else
                 {
-                    MelonLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1000-0~2)을 기본 생성합니다.");
+                    MelonLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1999-0~2)을 기본 생성합니다.");
                     for (int i = 0; i < 3; i++)
                     {
-                        string uid = $"1000-{i}";
+                        string uid = $"1999-{i}";
                         HwaManifest manifest = new HwaManifest
                         {
                             SourcePath = Path.Combine(HwaFolderPath, $"info.txt"),
