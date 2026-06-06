@@ -7,7 +7,7 @@ using UnityEngine;
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.LongSongNameController), "Refresh", new Type[] { typeof(string), typeof(bool), typeof(float) })]
 public class LongSongNameController_Refresh_Patch
 {
-    private const int CustomTagUid = 9998;
+    private const int CustomTagUid = 999;
     private const string CustomMusicUid = "0-0";
     private const string CustomAlbumTitle = "실험 앨범";
 
@@ -22,9 +22,9 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomTitles = new Dictionary<string, string>
     {
-        { "9999-0", "화영왕 0" },
-        { "9999-1", "화영왕 1" },
-        { "9999-2", "화영왕 2" },
+        { "1000-0", "화영왕 0" },
+        { "1000-1", "화영왕 1" },
+        { "1000-2", "화영왕 2" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -32,9 +32,9 @@ public class LongSongNameController_Refresh_Patch
 
     private static readonly Dictionary<string, string> CustomArtists = new Dictionary<string, string>
     {
-        { "9999-0", "화영왕 0" },
-        { "9999-1", "화영왕 1" },
-        { "9999-2", "화영왕 2" },
+        { "1000-0", "화영왕 0" },
+        { "1000-1", "화영왕 1" },
+        { "1000-2", "화영왕 2" },
         { "0-100", "화영왕1" },
         { "0-101", "화영왕2" },
         { "0-102", "화영왕3" }
@@ -96,7 +96,7 @@ public class LongSongNameController_Refresh_Patch
                 {
                     text = customTitle;
                 }
-                else if (targetUid != null && targetUid.StartsWith("9999-"))
+                else if (targetUid != null && targetUid.StartsWith("1000-"))
                 {
                     var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
                     if (musicInfo != null)
@@ -111,7 +111,7 @@ public class LongSongNameController_Refresh_Patch
                 {
                     text = customArtist;
                 }
-                else if (targetUid != null && targetUid.StartsWith("9999-"))
+                else if (targetUid != null && targetUid.StartsWith("1000-"))
                 {
                     var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(targetUid);
                     if (musicInfo != null)

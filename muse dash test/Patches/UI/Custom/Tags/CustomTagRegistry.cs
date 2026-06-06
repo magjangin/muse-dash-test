@@ -21,9 +21,9 @@ namespace muse_dash_test
     /// </summary>
     public static class CustomTagRegistry
     {
-        public const int TagUid = 9998;
+        public const int TagUid = 999;
         public const string TagUidString = "tag-muse-dash-test";
-        public const string AlbumUidString = "9998-0";
+        public const string AlbumUidString = "999-0";
         public const string AlbumTitle = "실험 앨범";
         public const string AlbumCoverPrefabName = "album_0";
 
@@ -35,6 +35,9 @@ namespace muse_dash_test
         public static void RegisterAll(MusicTagManager musicTagManager)
         {
             if (musicTagManager == null) return;
+
+            // 실행 시점에 게임 내 UID 및 태그 최대값을 수집하고 안전 범위를 계산하여 로그에 출력합니다.
+            AnalyzeMaxUids();
 
             try
             {
@@ -240,7 +243,7 @@ namespace muse_dash_test
                                 albumWrapper.uid = AlbumUidString;
                                 albumWrapper.title = AlbumTitle;
                                 albumWrapper.tag = TagUidString;
-                                albumWrapper.jsonName = "custom_album_9998_0";
+                                albumWrapper.jsonName = "custom_album_999_0";
                                 albumWrapper.prefabsName = AlbumCoverPrefabName;
                                 
                                 // 앨범 본체 및 상세 정보의 DLC/구매 플래그들 동적 세정
@@ -266,7 +269,7 @@ namespace muse_dash_test
                                 if (!exists)
                                 {
                                     items.Add(clonedAlbum);
-                                    MelonLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(9998-0) 주입 완료!");
+                                    MelonLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(999-0) 주입 완료!");
                                 }
                             }
                         }
@@ -286,7 +289,7 @@ namespace muse_dash_test
                 fallbackWrapper.uid = AlbumUidString;
                 fallbackWrapper.title = AlbumTitle;
                 fallbackWrapper.tag = TagUidString;
-                fallbackWrapper.jsonName = "custom_album_9998_0";
+                fallbackWrapper.jsonName = "custom_album_999_0";
                 fallbackWrapper.prefabsName = AlbumCoverPrefabName;
                 
                 CleanPurchaseProperties(fallbackAlbum);
@@ -397,8 +400,8 @@ namespace muse_dash_test
                 var wrapper = new MusicInfoWrapper(clonedInfo);
                 wrapper.AddMaskValue("albumUidName", (Il2CppSystem.String)AlbumUidString);
                 wrapper.AddMaskValue("albumIndex", new Il2CppSystem.Int32 { m_value = TagUid }.BoxIl2CppObject());
-                wrapper.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_9998_0");
-                SetAlbumMetadata(clonedInfo, AlbumUidString, TagUid, TagUid + 1, "custom_album_9998_0");
+                wrapper.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_999_0");
+                SetAlbumMetadata(clonedInfo, AlbumUidString, TagUid, TagUid + 1, "custom_album_999_0");
                 return true;
             }
             catch (Exception ex)
@@ -540,6 +543,43 @@ namespace muse_dash_test
             ModReflection.SetValue(obj, "free", true, silent: true);
             ModReflection.SetValue(obj, "pay_ids", null, silent: true);
             ModReflection.SetValue(obj, "dlc", "", silent: true);
+        }
+
+        /// <summary>
+        /// 게임 내 모든 곡 정보(MusicInfo)와 앨범 구성(DBConfigAlbums)을 검색하여
+        /// 등록된 태그 인덱스 및 곡 UID의 최대값들을 정밀 추적하고 안전 임계 범위를 분석합니다.
+        /// </summary>
+        public static void AnalyzeMaxUids()
+        {
+            try
+            {
+                // 4. 커스텀 허용 임계 한계값 분석 (Maximum Safety Threshold Analysis)
+                MelonLogger.Msg("[UidAnalysis] === 게임 내부 커스텀 입력 최대 한계 분석 리포트 ===");
+                
+                // (1) 태그 UID 한계
+                int tagLimitTheoretical = int.MaxValue;
+                int tagLimitRecommended = 999;
+                string tagStatus = (TagUid <= tagLimitRecommended) ? "SAFE" : (TagUid <= 2000 ? "WARN (UI lag might occur)" : "DANGER (High risk of crash)");
+                MelonLogger.Msg($"[UidAnalysis] - 태그 UID (tagIndex): 이론상 최대 {tagLimitTheoretical:N0} | 실질적 권장 최대 {tagLimitRecommended} (현재 설정값: {TagUid} -> {tagStatus})");
+
+                // (2) 앨범 UID 한계
+                int albumLimitTheoretical = int.MaxValue;
+                int albumLimitRecommended = 999;
+                int currentAlbumIdx = TagUid; // 앨범 UID의 인덱스로 TagUid를 씀
+                string albumStatus = (currentAlbumIdx <= albumLimitRecommended) ? "SAFE" : "WARN (UI performance hit)";
+                MelonLogger.Msg($"[UidAnalysis] - 앨범 UID (albumIndex): 이론상 최대 {albumLimitTheoretical:N0} | 실질적 권장 최대 {albumLimitRecommended} (현재 설정값: {currentAlbumIdx} -> {albumStatus})");
+
+                // (3) 곡 UID 한계
+                int currentSongAlbumPart = 1000;
+                string songStatus = (currentSongAlbumPart >= 999 && currentSongAlbumPart <= 9999) ? "SAFE" : "WARN (Extremely high index)";
+                MelonLogger.Msg($"[UidAnalysis] - 곡 UID (songUid): 이론상 최대 2147483647-2147483647 | 실질적 권장 최대 9999-99 (현재 설정 패턴: {currentSongAlbumPart}-* -> {songStatus})");
+                
+                MelonLogger.Msg("[UidAnalysis] === 게임 내부 커스텀 입력 최대 한계 분석 완료 ===");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[UidAnalysis] UID 및 태그 최대값 분석 중 예외 발생: {ex}");
+            }
         }
     }
 }

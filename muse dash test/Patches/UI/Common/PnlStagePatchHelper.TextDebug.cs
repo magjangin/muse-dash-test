@@ -60,7 +60,7 @@ public static partial class PnlStagePatchHelper
             for (int i = 0; i < tag.albumsInfos.Count; i++)
             {
                 var album = tag.albumsInfos[i];
-                if (album != null && album.uid == "9998-0" && album.title == "실험 앨범")
+                if (album != null && album.uid == "999-0" && album.title == "실험 앨범")
                 {
                     hasExpectedAlbum = true;
                     break;

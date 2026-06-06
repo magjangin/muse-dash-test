@@ -16,7 +16,7 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 앨범의 고유 식별자 UID (예: "music_package_0", "9998-0")
+        /// 앨범의 고유 식별자 UID (예: "music_package_0", "999-0")
         /// </summary>
         public string uid
         {
