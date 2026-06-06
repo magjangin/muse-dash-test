@@ -17,8 +17,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     private static readonly bool DebugExperimentNotes = false;
 
-    private static readonly bool UseBmsInjection = true;
-
     // 여기만 수정하면 됩니다. 자세한 규칙은 docs/NOTE_EXPERIMENTS.md를 참고하세요.
     // NoteType: 1=일반, 2=톱니, 3=롱, 6=하트, 7=음표, 8=샌드백
     // Pathway: 0=지상, 1=공중

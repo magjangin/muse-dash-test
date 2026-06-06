@@ -5,6 +5,9 @@ using System.Reflection;
 
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
+    // true: BMS 파일이 있으면 BMS 차트를 주입, false: ExperimentNotes 배열만 사용
+    private static readonly bool UseBmsInjection = true;
+
     public static void DumpMusicList(DBStageInfo __instance)
     {
         if (__instance._musicList_k__BackingField != null)
@@ -95,7 +98,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         musicList.Add(anchor);
 
         var runtimeSpecs = BuildRuntimeExperimentNotes(ExperimentNotes);
-        if (muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
+        if (UseBmsInjection && muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
         {
             var bmsSpecs = BuildBmsExperimentNotes(bmsChart, activeUid);
             if (bmsSpecs.Count > 0)
@@ -114,7 +117,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             AddExperimentNotes(musicList, sourceNote, spec);
         }
 
-        if (muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
+        if (UseBmsInjection && muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
         {
             ApplyBmsDoubleState(musicList, 1);
         }
