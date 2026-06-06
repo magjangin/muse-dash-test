@@ -98,15 +98,16 @@ MelonLoader 모드 진입점 클래스입니다.
 캐릭터/엘핀 등의 스킬 설정이나 초기화를 제어하는 컴포넌트 패치입니다.
 
 ### 📂 [Save/SaveDataManagerPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs) [NEW]
-가상 곡/앨범(`999-`, `998-`) 플레이 데이터가 실제 게임 로컬 및 클라우드 세이브 파일에 기록되지 않도록, `DataManager.Save()` 시점에 컬렉션 데이터의 가상 키들을 안전하게 걸러내는 정밀 정화 모듈입니다.
+가상 곡/앨범(`1999-`, `1998-`) 플레이 데이터가 실제 게임 로컬 및 클라우드 세이브 파일에 기록되지 않도록, `DataManager.Save()` 시점에 컬렉션 데이터의 가상 키들을 안전하게 걸러내는 정밀 정화 모듈입니다.
 
 ---
 
 ## 5. UI 고도화 & 커스텀 가상 앨범 패치 (`Patches/UI/`)
 
 ### 📂 [Custom/Tags/CustomTagRegistry.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)
-게임 데이터베이스 구조를 뚫고 **"실험용 가상 앨범(UID: 998-0)"**을 동적으로 메모리에 우회 등록하는 핵심 매니저입니다.
+게임 데이터베이스 구조를 통해 **"실험용 가상 앨범(UID: 1998-0)"**을 동적으로 메모리에 등록하는 핵심 매니저입니다.
 * **`RegisterAll()`**: 가상 앨범 태그 설정 및 커스텀 곡들의 런타임 가상 레코드를 데이터베이스 정렬 맵(`dbMusicTag`)에 정밀 주입합니다.
+* **`CleanPurchaseProperties()`**: 얇은 복제본이 복제 원본의 DLC 상품 식별자(`needPurchase`, `pay_ids`, `dlc`)를 상속하지 않도록 가상 객체의 메타데이터를 격리하기 위한 함수입니다. 원본 콘텐츠의 구매 상태나 DLC 소유권을 변경하는 기능이 아닙니다. 단, `MemberwiseClone()`이 공유할 수 있는 하위 확장 정보에는 참조 분리 확인 후 적용해야 합니다.
 
 ### 📂 [Custom/Tags/CustomTagPatch.AlbumPatches.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)
 * `GetAlbumInfoByMusicInfo` 등을 후킹하여, 가상 곡의 고유 레코드 포인터를 요청할 때 메모리에 생성해 둔 커스텀 앨범 메타데이터(`CustomAlbumInfo`) 주소를 우회 반환해 주어 가상 앨범 UI 스크롤을 무사 통과시킵니다.

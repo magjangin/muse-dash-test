@@ -68,13 +68,21 @@ var info = new AlbumTagInfo
 `InjectVirtualSong`을 통해 선선택된 원본 곡(`Memory of Beach` 등)을 `MemberwiseClone()`으로 복제합니다.
 * **왜 얇은 복제를 수행하나요?**
   * PeroTools 내부적으로 사용하는 클래스 인메모리 포인터와 기본값 데이터 구조를 100% 안전하게 유지하기 위해서입니다. 무에서 새로운 객체를 `new`로 생성하면 메모리가 어긋나 강제 종료를 유발할 수 있습니다.
-* 복제된 `MusicInfo`에 `MusicInfoWrapper`를 씌워 가상 곡의 메타데이터(`999-0`, `999-1`, `999-2`)와 곡 이름 및 작곡가를 재기입합니다.
+* 복제된 `MusicInfo`에 `MusicInfoWrapper`를 씌워 가상 곡의 메타데이터(`1999-0`, `1999-1`, `1999-2`)와 곡 이름 및 작곡가를 재기입합니다.
 * 완성된 가상 곡들은 글로벌 데이터베이스의 `m_AllMusicInfo` 맵에 최종적으로 신규 주입하여 바인딩을 형성합니다.
 
-### 3.3 가상 앨범 생성 및 안전 폴백 (Safety Fallback)
-* `DBConfigAlbums` 설정 데이터 내의 `m_Items` 리스트에 우리의 가상 앨범(`998-0`, 타이틀: `실험 앨범`, 소속 태그: `tag-muse-dash-test`)을 복제 주입합니다.
+### 3.3 가상 앨범 생성 및 제한적 폴백 (Fallback)
+* `DBConfigAlbums` 설정 데이터 내의 `m_Items` 리스트에 우리의 가상 앨범(`1998-0`, 타이틀: `실험 앨범`, 소속 태그: `tag-muse-dash-test`)을 복제 주입합니다.
 * **복제 실패 대비 폴백 가드**:
-  * 만약 게임 엔진 내의 얇은 복제가 예외를 일으킬 시, 즉시 `new DBConfigAlbums.AlbumsInfo()` 인스턴스를 수동 생성하고 `AlbumsInfoWrapper`로 감싸 데이터를 주입하는 안전 폴백 객체를 형성하여 모드를 에러로부터 복구합니다.
+  * 얇은 복제가 실패하면 `new DBConfigAlbums.AlbumsInfo()` 인스턴스를 생성하는 폴백이 있습니다. 이 경로는 최소 메타데이터만 제공하는 복구 수단이며, 순정 객체가 가진 네이티브 참조나 에셋 구성을 보장하지 않습니다. 로그에 폴백 경고가 나타나면 정상 완료로 간주하지 말고 UI와 런타임 안정성을 별도로 검증해야 합니다.
+
+### 3.4 복제본의 DLC 식별자 격리
+얇은 복제는 원본 객체의 상품 관련 메타데이터도 함께 복사합니다. 이 상태를 그대로 두면 가상 곡이나 가상 앨범이 복제 원본의 DLC 상품으로 잘못 분류될 수 있습니다.
+
+`CleanPurchaseProperties`는 **새로 생성한 가상 복제본과 그 하위 확장 정보에만** 적용되어 `needPurchase`, `pay_ids`, `dlc` 등 상속된 식별자를 제거합니다. 목적은 커스텀 객체와 원본 DLC 상품의 연결을 끊는 것이며, 원본 객체, 사용자의 DLC 소유권, 구매 기록 또는 정식 콘텐츠 잠금을 변경하지 않습니다.
+
+> [!CAUTION]
+> `MemberwiseClone()`은 얕은 복사입니다. 최상위 복제본이 별도 객체여도 `m_MusicExInfo`, `m_AlbumExInfo` 같은 하위 확장 정보는 원본과 같은 참조를 유지할 수 있습니다. 하위 객체의 상품 식별자를 정리하기 전 참조가 분리되었는지 검증하고, 공유 중이라면 하위 객체도 복제해야 합니다.
 
 ---
 
@@ -95,7 +103,7 @@ var info = new AlbumTagInfo
   }
   ```
 * **[CustomTagPatch.AlbumPatches.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)**:
-  * 곡 선택이나 상세 화면 로드 시 게임 엔진이 해당 가 가상 앨범(`998-0`)에 소속된 것임을 알아챌 수 있도록 `GetAlbumInfoByMusicInfo`, `GetAlbumsInfoByUid`, `GetAlbumIndexByUid` 메서드가 호출될 때 중간에서 가로채(Prefix) 우리의 `CustomTagRegistry.CustomAlbumInfo` 참조로 우회시켜 반환해 주는 인터셉트 컨트롤러 역할을 수행합니다.
+  * 곡 선택이나 상세 화면 로드 시 게임 엔진이 해당 가상 앨범(`1998-0`)에 소속된 것임을 알아챌 수 있도록 `GetAlbumInfoByMusicInfo`, `GetAlbumsInfoByUid`, `GetAlbumIndexByUid` 메서드가 호출될 때 중간에서 가로채(Prefix) 우리의 `CustomTagRegistry.CustomAlbumInfo` 참조로 우회시켜 반환해 주는 인터셉트 컨트롤러 역할을 수행합니다.
 
 ---
 
@@ -105,10 +113,10 @@ var info = new AlbumTagInfo
 [CustomTagRegistry.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 파일 내의 `RegisterAll` 메소드 중간 지점(가상 곡 주입부)에 다음과 같이 신규 가상 곡 호출을 한 줄 적어넣으시면 즉시 적용됩니다.
 
 ```csharp
-// "999-3" 가상 곡 신규 추가 예시
+// "1999-3" 가상 곡 신규 추가 예시
 InjectVirtualSong(
     originalInfo, 
-    "999-3",              // 가상 곡 고유 UID
+    "1999-3",             // 가상 곡 고유 UID
     "새로운 실험곡 3",       // 표시될 곡 제목
     "작곡가 이름",          // 아티스트 명
     "레벨 디자이너",         // 디자이너 명

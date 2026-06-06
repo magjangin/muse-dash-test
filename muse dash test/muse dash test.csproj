@@ -29,10 +29,10 @@
 
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\net6\0Harmony.dll</HintPath>
+      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\net6\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</HintPath>
+      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Assembly-CSharp-firstpass.dll</HintPath>
@@ -47,10 +47,10 @@
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\net6\Il2CppInterop.HarmonySupport.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
+      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Il2Cppmscorlib">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2Cppmscorlib.dll</HintPath>
+      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2Cppmscorlib.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppSirenix.OdinInspector.Attributes">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSirenix.OdinInspector.Attributes.dll</HintPath>
@@ -74,7 +74,7 @@
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSystem.dll</HintPath>
     </Reference>
     <Reference Include="MelonLoader">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\net6\MelonLoader.dll</HintPath>
+      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\net6\MelonLoader.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.dll</HintPath>
@@ -86,7 +86,7 @@
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestModule">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.UnityWebRequestModule.dll</HintPath>
@@ -114,6 +114,9 @@
     </Reference>
     <Reference Include="Il2CppDOTween">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppDOTween.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2Cppcom.rlabrecque.steamworks.net">
+      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2Cppcom.rlabrecque.steamworks.net.dll</HintPath>
     </Reference>
     <Reference Include="Il2Cppspine-unity">
       <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2Cppspine-unity.dll</HintPath>
