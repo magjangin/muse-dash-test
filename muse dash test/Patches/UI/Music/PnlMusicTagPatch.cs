@@ -41,7 +41,7 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    if (musicInfo.uid == null || !musicInfo.uid.StartsWith("999-"))
+                    if (musicInfo.uid == null || !musicInfo.uid.StartsWith("9999-"))
                     {
                         continue;
                     }

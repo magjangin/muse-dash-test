@@ -7,7 +7,7 @@ using Il2CppSystem.Collections.Generic;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 세이브 파일 오염 방지를 위해 가상 앨범/곡 기록(999-x, 998-x)이 디스크에 물리적으로 저장되기 직전
+    /// 세이브 파일 오염 방지를 위해 가상 앨범/곡 기록(9999-x, 9998-x)이 디스크에 물리적으로 저장되기 직전
     /// DataManager.Save() 시점에 인메모리 DB에서 모든 가상 데이터(필드, 최고점수 리스트, 최근플레이 리스트 등)를
     /// 정밀하게 제거하여 원본 세이브 파일의 순수성을 보장하는 하모니 패치 클래스입니다.
     /// </summary>
@@ -46,7 +46,7 @@ namespace muse_dash_test
                             var keysToRemove = new System.Collections.Generic.List<string>();
                             foreach (var key in fields.Keys)
                             {
-                                if (key != null && (key.StartsWith("999-") || key.StartsWith("998-")))
+                                if (key != null && (key.StartsWith("9999-") || key.StartsWith("9998-")))
                                 {
                                     keysToRemove.Add(key);
                                 }
@@ -163,7 +163,7 @@ namespace muse_dash_test
                 if (songResult != null)
                 {
                     string uid = songResult.uid;
-                    if (uid != null && (uid.StartsWith("999-") || uid.StartsWith("998-")))
+                    if (uid != null && (uid.StartsWith("9999-") || uid.StartsWith("9998-")))
                     {
                         list.RemoveAt(i);
                         removedCount++;
@@ -182,7 +182,7 @@ namespace muse_dash_test
                         if (valObj != null)
                         {
                             string uid = valObj.ToString();
-                            if (uid != null && (uid.StartsWith("999-") || uid.StartsWith("998-")))
+                            if (uid != null && (uid.StartsWith("9999-") || uid.StartsWith("9998-")))
                             {
                                 list.RemoveAt(i);
                                 removedCount++;
@@ -205,7 +205,7 @@ namespace muse_dash_test
             for (int i = list.Count - 1; i >= 0; i--)
             {
                 string val = list[i];
-                if (val != null && (val.StartsWith("999-") || val.StartsWith("998-")))
+                if (val != null && (val.StartsWith("9999-") || val.StartsWith("9998-")))
                 {
                     list.RemoveAt(i);
                     removedCount++;

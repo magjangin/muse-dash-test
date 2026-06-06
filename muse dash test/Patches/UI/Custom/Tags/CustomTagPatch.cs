@@ -2,6 +2,7 @@ using MelonLoader;
 using HarmonyLib;
 using Il2Cpp;
 using Il2CppAssets.Scripts.Database;
+using System;
 
 namespace muse_dash_test
 {
@@ -21,6 +22,24 @@ namespace muse_dash_test
                 // 가상 곡 주입 및 가상 앨범/태그 생성 비즈니스 로직을 모듈러 레지스트리로 이송하여 단 1줄로 초슬림 처리합니다.
                 CustomTagRegistry.RegisterAll(__instance);
             }
+        }
+    }
+
+    /// <summary>
+    /// 커스텀 태그 인덱스가 큰 값(9998)일 때 게임 내부의 RefreshStageDisplayMusics에서 발생하는 NullReferenceException을 우회합니다.
+    /// </summary>
+    [HarmonyPatch(typeof(MusicTagManager), "RefreshStageDisplayMusics", new Type[] { typeof(int) })]
+    public class MusicTagManager_RefreshStageDisplayMusics_Patch
+    {
+        public static bool Prefix(MusicTagManager __instance, int tagIndex)
+        {
+            MelonLogger.Msg($"[RefreshStageDisplayMusics Patch] Prefix called: tagIndex={tagIndex}");
+            if (tagIndex == CustomTagRegistry.TagUid || tagIndex == -1)
+            {
+                MelonLogger.Msg($"[RefreshStageDisplayMusics Patch] Bypassing: tagIndex={tagIndex}");
+                return false; // 원래 메소드 실행 차단
+            }
+            return true;
         }
     }
 }

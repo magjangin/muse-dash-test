@@ -13,7 +13,7 @@ namespace muse_dash_test
     internal static class UidRewriteExperiment
     {
         public const string SourceUid = "0-0";
-        public const string TargetUid = "999-0";
+        public const string TargetUid = "9999-0";
         public const string TargetDisplayName = "화영왕 0";
 
         public static string MusicInfo(MusicInfo info)
@@ -312,12 +312,12 @@ namespace muse_dash_test
                 return TargetDisplayName;
             }
 
-            if (uid == "999-1")
+            if (uid == "9999-1")
             {
                 return "화영왕 1";
             }
 
-            if (uid == "999-2")
+            if (uid == "9999-2")
             {
                 return "화영왕 2";
             }

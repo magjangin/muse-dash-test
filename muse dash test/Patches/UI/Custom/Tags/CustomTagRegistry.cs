@@ -21,9 +21,9 @@ namespace muse_dash_test
     /// </summary>
     public static class CustomTagRegistry
     {
-        public const int TagUid = 998;
+        public const int TagUid = 9998;
         public const string TagUidString = "tag-muse-dash-test";
-        public const string AlbumUidString = "998-0";
+        public const string AlbumUidString = "9998-0";
         public const string AlbumTitle = "실험 앨범";
         public const string AlbumCoverPrefabName = "album_0";
 
@@ -240,7 +240,7 @@ namespace muse_dash_test
                                 albumWrapper.uid = AlbumUidString;
                                 albumWrapper.title = AlbumTitle;
                                 albumWrapper.tag = TagUidString;
-                                albumWrapper.jsonName = "custom_album_998_0";
+                                albumWrapper.jsonName = "custom_album_9998_0";
                                 albumWrapper.prefabsName = AlbumCoverPrefabName;
                                 
                                 // 앨범 본체 및 상세 정보의 DLC/구매 플래그들 동적 세정
@@ -266,7 +266,7 @@ namespace muse_dash_test
                                 if (!exists)
                                 {
                                     items.Add(clonedAlbum);
-                                    MelonLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(998-0) 주입 완료!");
+                                    MelonLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(9998-0) 주입 완료!");
                                 }
                             }
                         }
@@ -286,7 +286,7 @@ namespace muse_dash_test
                 fallbackWrapper.uid = AlbumUidString;
                 fallbackWrapper.title = AlbumTitle;
                 fallbackWrapper.tag = TagUidString;
-                fallbackWrapper.jsonName = "custom_album_998_0";
+                fallbackWrapper.jsonName = "custom_album_9998_0";
                 fallbackWrapper.prefabsName = AlbumCoverPrefabName;
                 
                 CleanPurchaseProperties(fallbackAlbum);
@@ -397,8 +397,8 @@ namespace muse_dash_test
                 var wrapper = new MusicInfoWrapper(clonedInfo);
                 wrapper.AddMaskValue("albumUidName", (Il2CppSystem.String)AlbumUidString);
                 wrapper.AddMaskValue("albumIndex", new Il2CppSystem.Int32 { m_value = TagUid }.BoxIl2CppObject());
-                wrapper.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_998_0");
-                SetAlbumMetadata(clonedInfo, AlbumUidString, TagUid, TagUid + 1, "custom_album_998_0");
+                wrapper.AddMaskValue("albumJsonName", (Il2CppSystem.String)"custom_album_9998_0");
+                SetAlbumMetadata(clonedInfo, AlbumUidString, TagUid, TagUid + 1, "custom_album_9998_0");
                 return true;
             }
             catch (Exception ex)
