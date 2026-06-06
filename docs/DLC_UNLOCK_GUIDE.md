@@ -6,7 +6,7 @@
 
 ## 🔍 동작 원리
 
-이 모드는 클라이언트 내 메모리에서 스팀 API의 응답을 가로채는 **로컬 API 후킹(Hooking)** 방식으로 동작합니다.
+이 모드는 **로컬 클라이언트 단에서 Steam API(BIsDlcInstalled)를 후킹하는 로직**을 기반으로 동작합니다.
 
 1. **`SteamApps.BIsDlcInstalled` 패치**
    - 게임이 스팀 클라이언트에 특정 DLC 소유 여부를 질문할 때, Harmony 패치를 통해 중간에서 가로채 항상 `true`를 반환하도록 속입니다.
