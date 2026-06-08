@@ -73,7 +73,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void ApplyDefaultKeyAudio(NoteConfigData noteData, int noteType, string uid)
     {
-        if (noteType == 6 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002")))
+        if (noteType == 1)
+            noteData.key_audio = "sfx_mezzo_1";
+        else if (noteType == 6 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002")))
             noteData.key_audio = "sfx_hp";
         else if (noteType == 7 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0003")))
             noteData.key_audio = "sfx_score";
@@ -204,8 +206,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             var spec = CreateExperimentNoteSpecFromBms(pair.StartNote, wavInfo, activeUid);
             spec.Label = $"BMS {pair.Type} {pair.StartNote.RawValue}";
-            spec.StartTick = pair.StartNote.Time;
-            spec.Length = System.Math.Max(0.0, pair.Duration);
+            spec.StartTick = NormalizeChartValue(pair.StartNote.Time);
+            spec.Length = NormalizeChartValue(System.Math.Max(0.0, pair.Duration));
             spec.IsLong = pair.Type == muse_dash_test.BmsSpecialNoteType.Hold;
             spec.IsMul = pair.Type == muse_dash_test.BmsSpecialNoteType.Sandbag;
             specs.Add(spec);
@@ -257,7 +259,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             BossScene = wavInfo.BossScene,
             NoteType = wavInfo.NoteType,
             Pathway = ResolveBmsPathway(note, wavInfo),
-            StartTick = System.Math.Round(note.Time, 2, System.MidpointRounding.AwayFromZero),
+            StartTick = NormalizeChartValue(note.Time),
             Dt = wavInfo.Dt >= 0.0 ? NormalizeTimingValue(wavInfo.Dt) : wavInfo.Dt
         };
 
@@ -465,7 +467,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         double normalizedTick = NormalizeTimingValue(tick);
         double normalizedDt = NormalizeTimingValue(GetEffectiveDt(note, spec));
-        double normalizedShowTick = NormalizeShowTickValue(normalizedTick - normalizedDt);
+        double normalizedShowTick = NormalizeChartValue(normalizedTick - normalizedDt);
 
         note.objId = (short)objId;
         note.tick = (Il2CppSystem.Decimal)normalizedTick;
@@ -482,7 +484,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             var configData = CloneMusicConfigData(note.configData);
             configData.id = objId;
             configData.time = (Il2CppSystem.Decimal)normalizedTick;
-            configData.length = (Il2CppSystem.Decimal)NormalizeTimingValue(length);
+            configData.length = (Il2CppSystem.Decimal)NormalizeChartValue(length);
             note.configData = configData;
         }
     }
@@ -490,6 +492,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static double NormalizeTimingValue(double value)
     {
         return System.Math.Round(value, 3, System.MidpointRounding.AwayFromZero);
+    }
+
+    public static double NormalizeChartValue(double value)
+    {
+        return System.Math.Round(value, 2, System.MidpointRounding.AwayFromZero);
     }
 
     public static double NormalizeShowTickValue(double value)
