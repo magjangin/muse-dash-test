@@ -70,6 +70,8 @@ public class PnlPreparation_OnDownloadBestReport_Patch
         {
             MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
             DumpRecordContext(__instance, "Postfix");
+            PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.OnDownloadBestReport");
+            MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnDownloadBestReport.Delay", 0.25f));
         }
         catch (Exception ex)
         {
@@ -198,6 +200,7 @@ public class PnlPreparation_RefreshUi_Patch
             }
 
             PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.RefreshUi");
+            MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.RefreshUi.Delay", 0.25f));
         }
         catch (Exception ex)
         {

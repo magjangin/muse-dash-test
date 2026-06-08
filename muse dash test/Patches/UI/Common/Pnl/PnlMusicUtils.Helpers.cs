@@ -118,19 +118,24 @@ public static partial class PnlMusicUtils
 
         if (EnableSongTitleExperiment && (string.IsNullOrWhiteSpace(info.LevelDesigner) || info.LevelDesigner == ExperimentLevelDesignerLabel || IsUiObjectName(info.LevelDesigner)))
         {
-            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-            if (string.IsNullOrEmpty(selectedUid) || selectedUid == "(null)")
+            string selectedUid = ResolveCustomMusicUid(pnlInstance);
+            if (!string.IsNullOrEmpty(selectedUid)
+                && MainMod.TryGetCachedHwaPrimaryVirtualSong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _, out _)
+                && !string.IsNullOrWhiteSpace(manifestLevelDesigner))
             {
-                selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
-            }
-            var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
-            if (musicInfo != null)
-            {
-                info.LevelDesigner = musicInfo.levelDesigner;
+                info.LevelDesigner = manifestLevelDesigner;
             }
             else
             {
-                info.LevelDesigner = ExperimentLevelDesignerName;
+                var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
+                if (musicInfo != null)
+                {
+                    info.LevelDesigner = musicInfo.levelDesigner;
+                }
+                else
+                {
+                    info.LevelDesigner = ExperimentLevelDesignerName;
+                }
             }
         }
 

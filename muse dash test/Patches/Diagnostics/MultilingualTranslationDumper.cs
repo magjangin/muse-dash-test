@@ -225,6 +225,8 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(DBMusicTag), "AddAlbumTagData")]
     public class DBMusicTag_AddAlbumTagData_Patch
     {
+        private static readonly bool EnableLocalizationReferenceDump = false;
+
         /// <summary>
         /// DBMusicTag.AddAlbumTagData 호출 완료 후 각 태그의 정보를 마크다운 파일에 추가 기록합니다.
         /// </summary>
@@ -233,6 +235,13 @@ namespace muse_dash_test
         /// <param name="tag">등록 완료된 앨범 태그 정보 인스턴스</param>
         public static void Postfix(DBMusicTag __instance, int index, AlbumTagInfo tag)
         {
+            // album_tag_localization_reference.md 생성은 현재 비활성화합니다.
+            // 필요할 때 EnableLocalizationReferenceDump를 true로 바꾸면 아래 덤프 로직을 다시 사용할 수 있습니다.
+            if (!EnableLocalizationReferenceDump)
+            {
+                return;
+            }
+
             try
             {
                 if (tag == null)

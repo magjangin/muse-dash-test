@@ -96,23 +96,33 @@ public static partial class PnlMusicUtils
     {
         if (!EnableSongTitleExperiment || pnlInstance == null) return;
 
-        // 통합 조건 검사 적용
-        if (!PnlStagePatchHelper.ShouldApplyHwayoungwang())
+        string selectedUid = ResolveCustomMusicUid(pnlInstance);
+        if (string.IsNullOrEmpty(selectedUid))
         {
             return;
-        }
-
-        string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-        if (string.IsNullOrEmpty(selectedUid) || selectedUid == "(null)")
-        {
-            selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
         }
 
         string title = ExperimentTitle;
         string artist = ExperimentArtist;
         string designer = ExperimentLevelDesignerName;
 
-        if (!string.IsNullOrEmpty(selectedUid))
+        if (MainMod.TryGetCachedHwaPrimaryVirtualSong(
+                selectedUid,
+                out string manifestTitle,
+                out string manifestArtist,
+                out string manifestLevelDesigner,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _))
+        {
+            if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
+            if (!string.IsNullOrWhiteSpace(manifestArtist)) artist = manifestArtist;
+            if (!string.IsNullOrWhiteSpace(manifestLevelDesigner)) designer = manifestLevelDesigner;
+        }
+        else
         {
             var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
             if (musicInfo != null)
@@ -155,6 +165,91 @@ public static partial class PnlMusicUtils
             SetSceneTextByNameOrCurrentValue(LevelDesignerLabelTextObjectNames, ExperimentLevelDesignerLabel, false);
             SetSceneTextByNameOrCurrentValue(LevelDesignerNameTextObjectNames, designer, false);
         }
+    }
+
+    private static string ResolveCustomMusicUid(object pnlInstance)
+    {
+        string uid = TryFindCustomMusicUidInObject(pnlInstance, 0, new HashSet<object>());
+        if (!string.IsNullOrEmpty(uid)) return uid;
+
+        uid = PnlStagePatchHelper.LastSelectedMusicUid;
+        if (IsCustomMusicUid(uid)) return uid;
+
+        uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+        if (IsCustomMusicUid(uid)) return uid;
+
+        uid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+        if (IsCustomMusicUid(uid)) return uid;
+
+        return null;
+    }
+
+    private static string TryFindCustomMusicUidInObject(object obj, int depth, HashSet<object> visited)
+    {
+        if (obj == null || depth > 2) return null;
+        if (obj is string text) return IsCustomMusicUid(text) ? text : null;
+        if (obj is UnityEngine.Object unityObject && !unityObject) return null;
+        if (!visited.Add(obj)) return null;
+
+        try
+        {
+            if (obj is Il2CppAssets.Scripts.Database.MusicInfo musicInfo && IsCustomMusicUid(musicInfo.uid))
+            {
+                return musicInfo.uid;
+            }
+
+            Type type = obj.GetType();
+            foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                string uid = TryReadCustomMusicUid(field.FieldType, () => field.GetValue(obj), depth, visited);
+                if (!string.IsNullOrEmpty(uid)) return uid;
+            }
+
+            foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                if (!property.CanRead || property.GetIndexParameters().Length != 0) continue;
+                string uid = TryReadCustomMusicUid(property.PropertyType, () => property.GetValue(obj), depth, visited);
+                if (!string.IsNullOrEmpty(uid)) return uid;
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    private static string TryReadCustomMusicUid(Type memberType, Func<object> read, int depth, HashSet<object> visited)
+    {
+        try
+        {
+            bool promisingType = memberType == typeof(string)
+                || memberType == typeof(Il2CppAssets.Scripts.Database.MusicInfo)
+                || IsMusicLike(memberType);
+            if (!promisingType) return null;
+
+            object value = read();
+            if (value == null) return null;
+
+            if (value is string text)
+            {
+                return IsCustomMusicUid(text) ? text : null;
+            }
+
+            if (value is Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
+            {
+                return IsCustomMusicUid(musicInfo.uid) ? musicInfo.uid : null;
+            }
+
+            return TryFindCustomMusicUidInObject(value, depth + 1, visited);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool IsCustomMusicUid(string uid)
+    {
+        return !string.IsNullOrEmpty(uid) && uid.StartsWith("1999-");
     }
 
     private static int SetMemberText(object obj, string memberName, string value)
