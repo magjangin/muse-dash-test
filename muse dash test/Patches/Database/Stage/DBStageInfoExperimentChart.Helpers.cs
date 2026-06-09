@@ -168,6 +168,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             note.doubleIdx = -1;
         }
+
+        if (note.noteData?.type == 0 && !string.IsNullOrWhiteSpace(note.noteData.boss_action))
+        {
+            note.doubleIdx = -1;
+        }
     }
 
     public static bool IsSceneToggleNote(MusicData note)
@@ -259,7 +264,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             BossScene = wavInfo.BossScene,
             NoteType = wavInfo.NoteType,
             Pathway = ResolveBmsPathway(note, wavInfo),
-            StartTick = NormalizeChartValue(note.Time),
+            StartTick = wavInfo.NoteType == 0 && !string.IsNullOrWhiteSpace(wavInfo.BossAction)
+                ? note.Time
+                : NormalizeChartValue(note.Time),
             Dt = wavInfo.Dt >= 0.0 ? NormalizeTimingValue(wavInfo.Dt) : wavInfo.Dt
         };
 
@@ -465,7 +472,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void MoveNote(ref MusicData note, int objId, double tick, double length, ExperimentNoteSpec spec)
     {
-        double normalizedTick = NormalizeTimingValue(tick);
+        bool isBossEvent = spec?.NoteType == 0 && !string.IsNullOrWhiteSpace(spec.BossAction);
+        double normalizedConfigTime = isBossEvent ? tick : NormalizeChartValue(tick);
+        double normalizedTick = NormalizeTimingValue(isBossEvent ? tick + BossEventTickOffset : tick);
         double normalizedDt = NormalizeTimingValue(GetEffectiveDt(note, spec));
         double normalizedShowTick = NormalizeChartValue(normalizedTick - normalizedDt);
 
@@ -483,7 +492,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             var configData = CloneMusicConfigData(note.configData);
             configData.id = objId;
-            configData.time = (Il2CppSystem.Decimal)normalizedTick;
+            configData.time = (Il2CppSystem.Decimal)(isBossEvent ? normalizedConfigTime : normalizedTick);
             configData.length = (Il2CppSystem.Decimal)NormalizeChartValue(length);
             note.configData = configData;
         }
@@ -544,7 +553,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string speed = note.noteData != null ? note.noteData.speed.ToString() : "(null)";
         string scene = note.noteData?.scene ?? "(null)";
         string bossAction = note.noteData?.boss_action ?? "(null)";
-        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, speed={speed}, uid={uid}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, prefab={prefab}, boss_action={bossAction}");
+        string configTime = note.configData != null ? note.configData.time.ToString() : "(null)";
+        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, prefab={prefab}, boss_action={bossAction}");
     }
 
     public static void LogSpec(string label, ExperimentNoteSpec spec)

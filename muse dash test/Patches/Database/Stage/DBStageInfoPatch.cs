@@ -11,6 +11,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     private const double BossProjectileDt = 0.7;
 
+    private const double BossEventTickOffset = 0.0;
+
     private const double LongMiddleStep = 0.1;
 
     private const int SourceNoteIndex = 1;

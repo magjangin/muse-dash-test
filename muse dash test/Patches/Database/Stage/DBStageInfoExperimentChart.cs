@@ -10,62 +10,59 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void DumpMusicList(DBStageInfo __instance)
     {
-        if (__instance._musicList_k__BackingField != null)
+        var musicList = __instance._musicList_k__BackingField;
+        if (musicList == null)
         {
-            int totalCount = __instance._musicList_k__BackingField.Count;
-            int count0908 = 0;
-            int count0902 = 0;
-            int count0911 = 0;
-            int other09yyCount = 0;
-            int road09yyCount = 0;
-            int air09yyCount = 0;
-            var seenOther09yy = new System.Collections.Generic.HashSet<string>();
-            var seenXxyy = new System.Collections.Generic.HashSet<string>();
-            MelonLogger.Msg($"[ExperimentChart.Debug] DumpMusicList 시작: total={totalCount}, filter=xxyy in [0908, 0902, 0911], unique only");
+            return;
+        }
 
-            for (int i = 0; i < totalCount; i++)
+        int bossEventCount = 0;
+        MelonLogger.Msg($"[OfficialBossContext] 원본 차트 보스 이벤트 주변 덤프 시작: total={musicList.Count}, neighbors=2");
+
+        for (int i = 0; i < musicList.Count; i++)
+        {
+            var note = musicList[i];
+            string bossAction = note.noteData?.boss_action ?? string.Empty;
+            if (note.noteData?.type != 0
+                || string.IsNullOrWhiteSpace(bossAction)
+                || string.Equals(bossAction, "0", System.StringComparison.OrdinalIgnoreCase))
             {
-                var musicData = __instance._musicList_k__BackingField[i];
-                string uid = musicData.noteData?.uid;
-                string xxyy = GetUidXxyy(uid);
-                string pathwayLabel = GetPathwayLabel(musicData.noteData?.pathway ?? 0);
-                string noteType = musicData.noteData != null ? musicData.noteData.type.ToString() : "(null)";
-                string scene = musicData.noteData?.scene ?? "(null)";
-                string prefab = musicData.noteData?.prefab_name ?? "(null)";
-                string bossAction = musicData.noteData?.boss_action ?? "(null)";
-                string configPathway = musicData.configData != null ? musicData.configData.pathway.ToString() : "(null)";
-                if (!IsTargetDebugXxyy(uid) || !seenXxyy.Add(xxyy))
-                {
-                    if (!string.IsNullOrEmpty(xxyy) && xxyy.StartsWith("09"))
-                    {
-                        other09yyCount++;
-                        if (string.Equals(pathwayLabel, "공중", System.StringComparison.Ordinal))
-                        {
-                            air09yyCount++;
-                        }
-                        else
-                        {
-                            road09yyCount++;
-                        }
-                        if (seenOther09yy.Add(xxyy))
-                        {
-                            MelonLogger.Msg($"[ExperimentChart.Debug] 발견된 추가 09yy: xxyy={xxyy}, idx={i}, uid={uid}, pathway={musicData.noteData?.pathway ?? -1}({pathwayLabel}), type={noteType}, scene={scene}, prefab={prefab}, config_pathway={configPathway}, boss_action={bossAction}, tick={musicData.tick}, dt={musicData.dt}, showTick={musicData.showTick}");
-                        }
-                    }
-
-                    continue;
-                }
-
-                if (xxyy == "0908") count0908++;
-                else if (xxyy == "0902") count0902++;
-                else if (xxyy == "0911") count0911++;
-
-                MelonLogger.Msg($"[ExperimentChart.Debug] xxyy={xxyy}: idx={i}, uid={uid}, pathway={musicData.noteData?.pathway ?? -1}({pathwayLabel}), type={noteType}, scene={scene}, prefab={prefab}, config_pathway={configPathway}, boss_action={bossAction}, tick={musicData.tick}, dt={musicData.dt}, showTick={musicData.showTick}");
-                LogNoteState($"[ExperimentChart.Debug] note[{i}]", musicData);
+                continue;
             }
 
-            MelonLogger.Msg($"[ExperimentChart.Debug] xxyy summary: 0908={count0908}, 0902={count0902}, 0911={count0911}, other09yy={other09yyCount}, road09yy={road09yyCount}, air09yy={air09yyCount}");
+            bossEventCount++;
+            MelonLogger.Msg($"[OfficialBossContext] === event#{bossEventCount}, index={i}, action={bossAction} ===");
+
+            int firstIndex = System.Math.Max(0, i - 2);
+            int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
+            for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
+            {
+                LogOfficialBossContextNote(contextIndex, i, musicList[contextIndex]);
+            }
         }
+
+        MelonLogger.Msg($"[OfficialBossContext] 원본 차트 보스 이벤트 주변 덤프 완료: events={bossEventCount}");
+    }
+
+    public static void LogOfficialBossContextNote(int index, int eventIndex, MusicData note)
+    {
+        if (note == null)
+        {
+            MelonLogger.Msg($"[OfficialBossContext] {(index == eventIndex ? "EVENT" : "NEIGHBOR")} index={index}, note=(null)");
+            return;
+        }
+
+        string role = index == eventIndex ? "EVENT" : index < eventIndex ? "PREV" : "NEXT";
+        MelonLogger.Msg(
+            $"[OfficialBossContext] {role} index={index}, objId={SafeLogValue(() => note.objId)}, " +
+            $"tick={SafeLogValue(() => note.tick)}, dt={SafeLogValue(() => note.dt)}, showTick={SafeLogValue(() => note.showTick)}, " +
+            $"uid={SafeLogValue(() => note.noteData?.uid)}, type={SafeLogValue(() => note.noteData?.type)}, " +
+            $"pathway={SafeLogValue(() => note.noteData?.pathway)}, boss_action={SafeLogValue(() => note.noteData?.boss_action)}, " +
+            $"prefab={SafeLogValue(() => note.noteData?.prefab_name)}, key_audio={SafeLogValue(() => note.noteData?.key_audio)}, " +
+            $"isDouble={SafeLogValue(() => note.isDouble)}, doubleIdx={SafeLogValue(() => note.doubleIdx)}, sameTickNoteIdx={SafeLogValue(() => note.sameTickNoteIdx)}, " +
+            $"isLongPressing={SafeLogValue(() => note.isLongPressing)}, isLongPressEnd={SafeLogValue(() => note.isLongPressEnd)}, endIndex={SafeLogValue(() => note.endIndex)}, " +
+            $"config.id={SafeLogValue(() => note.configData?.id)}, config.time={SafeLogValue(() => note.configData?.time)}, " +
+            $"config.length={SafeLogValue(() => note.configData?.length)}, config.pathway={SafeLogValue(() => note.configData?.pathway)}");
     }
 
     public static void ApplyExperimentChart(DBStageInfo __instance, string activeUid)
@@ -119,10 +116,125 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (UseBmsInjection && muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
         {
+            SortBmsRuntimeMusicListByShowTick(musicList, 1);
             ApplyBmsDoubleState(musicList, 1);
         }
 
         MelonLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
+    }
+
+    public static void SortBmsRuntimeMusicListByShowTick(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
+    {
+        if (musicList == null || musicList.Count <= startIndex)
+        {
+            return;
+        }
+
+        var runtimeNotes = new System.Collections.Generic.List<MusicData>();
+        var oldEndIndices = new System.Collections.Generic.Dictionary<short, int>();
+
+        for (int i = startIndex; i < musicList.Count; i++)
+        {
+            var note = musicList[i];
+            runtimeNotes.Add(note);
+            oldEndIndices[note.objId] = note.endIndex;
+        }
+
+        runtimeNotes.Sort((left, right) =>
+        {
+            int showTickCompare = ParseMusicDecimal(left.showTick).CompareTo(ParseMusicDecimal(right.showTick));
+            if (showTickCompare != 0) return showTickCompare;
+
+            int tickCompare = ParseMusicDecimal(left.tick).CompareTo(ParseMusicDecimal(right.tick));
+            if (tickCompare != 0) return tickCompare;
+
+            return left.objId.CompareTo(right.objId);
+        });
+
+        var newIndexByOldObjId = new System.Collections.Generic.Dictionary<short, int>();
+        for (int i = 0; i < runtimeNotes.Count; i++)
+        {
+            newIndexByOldObjId[runtimeNotes[i].objId] = startIndex + i;
+        }
+
+        while (musicList.Count > startIndex)
+        {
+            musicList.RemoveAt(musicList.Count - 1);
+        }
+
+        for (int i = 0; i < runtimeNotes.Count; i++)
+        {
+            var note = runtimeNotes[i];
+            short oldObjId = note.objId;
+            int newIndex = startIndex + i;
+
+            note.objId = (short)newIndex;
+            note.isDouble = false;
+            note.doubleIdx = note.noteData?.type == 0 ? -1 : 0;
+
+            if (IsSceneToggleNote(note))
+            {
+                note.doubleIdx = -1;
+            }
+
+            if (oldEndIndices.TryGetValue(oldObjId, out int oldEndIndex)
+                && oldEndIndex > 0
+                && newIndexByOldObjId.TryGetValue((short)oldEndIndex, out int newEndIndex))
+            {
+                note.endIndex = newEndIndex;
+            }
+
+            if (note.noteData != null)
+            {
+                note.noteData.id = newIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            if (note.configData != null)
+            {
+                note.configData.id = newIndex;
+            }
+
+            musicList.Add(note);
+        }
+
+        MelonLogger.Msg($"[ExperimentChart.Bms] 공식 방식 showTick 정렬 완료: notes={runtimeNotes.Count}, bossOffset={BossEventTickOffset}");
+        DumpSortedBmsBossContext(musicList, startIndex);
+    }
+
+    public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
+    {
+        for (int i = startIndex; i < musicList.Count; i++)
+        {
+            var note = musicList[i];
+            if (note.noteData?.type != 0 || string.IsNullOrWhiteSpace(note.noteData.boss_action))
+            {
+                continue;
+            }
+
+            MelonLogger.Msg($"[BmsSortedBossContext] === index={i}, action={note.noteData.boss_action} ===");
+            int firstIndex = System.Math.Max(startIndex, i - 2);
+            int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
+            for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
+            {
+                var contextNote = musicList[contextIndex];
+                string role = contextIndex == i ? "EVENT" : contextIndex < i ? "PREV" : "NEXT";
+                MelonLogger.Msg(
+                    $"[BmsSortedBossContext] {role} index={contextIndex}, objId={contextNote.objId}, " +
+                    $"tick={contextNote.tick}, dt={contextNote.dt}, showTick={contextNote.showTick}, " +
+                    $"config.time={SafeLogValue(() => contextNote.configData?.time)}, uid={SafeLogValue(() => contextNote.noteData?.uid)}, " +
+                    $"type={SafeLogValue(() => contextNote.noteData?.type)}, boss_action={SafeLogValue(() => contextNote.noteData?.boss_action)}");
+            }
+        }
+    }
+
+    public static double ParseMusicDecimal(Il2CppSystem.Decimal value)
+    {
+        if (double.TryParse(value.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double parsed))
+        {
+            return parsed;
+        }
+
+        return 0.0;
     }
 
     public static void ApplyBmsDoubleState(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
@@ -137,7 +249,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            if (note.noteData == null)
+            if (note.noteData == null || note.noteData.type == 0)
             {
                 continue;
             }
