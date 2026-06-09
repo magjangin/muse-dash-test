@@ -249,7 +249,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            if (note.noteData == null || note.noteData.type == 0)
+            if (note.noteData == null
+                || note.noteData.type == 0
+                || note.isLongPressing
+                || note.isLongPressEnd)
             {
                 continue;
             }
