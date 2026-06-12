@@ -388,48 +388,21 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             {
                 AddLongNote(outputList, template, tick, spec.Length > 0.0 ? spec.Length : 1.0, label, spec);
             }
-            else if (spec.IsMul)
-            {
-                AddMulNote(outputList, template, tick, spec.Length > 0.0 ? spec.Length : 1.0, label, spec);
-            }
             else
             {
-                AddMovedNote(outputList, template, tick, label, spec);
+                double length = spec.IsMul ? (spec.Length > 0.0 ? spec.Length : 1.0) : 0.0;
+                AddSingleNote(outputList, template, tick, length, label, spec);
             }
         }
     }
 
-    public static void AddMovedNote(Il2CppSystem.Collections.Generic.List<MusicData> musicList, MusicData template, double tick, string label, ExperimentNoteSpec spec)
-    {
-        var note = CloneMusicData(template);
-        MoveNote(ref note, musicList.Count, tick, 0.0, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} after MoveNote", note);
-        }
-        ApplyNoteSpec(ref note, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} after ApplyNoteSpec", note);
-        }
-        ResetRuntimeFlags(ref note);
-        musicList.Add(note);
-        LogInsertedNote(label, note);
-    }
-
-    public static void AddMulNote(Il2CppSystem.Collections.Generic.List<MusicData> musicList, MusicData template, double tick, double length, string label, ExperimentNoteSpec spec)
+    private static void AddSingleNote(Il2CppSystem.Collections.Generic.List<MusicData> musicList, MusicData template, double tick, double length, string label, ExperimentNoteSpec spec)
     {
         var note = CloneMusicData(template);
         MoveNote(ref note, musicList.Count, tick, length, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} after MoveNote", note);
-        }
+        if (DebugExperimentNotes) LogNoteState($"[ExperimentDebug] {label} after MoveNote", note);
         ApplyNoteSpec(ref note, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} after ApplyNoteSpec", note);
-        }
+        if (DebugExperimentNotes) LogNoteState($"[ExperimentDebug] {label} after ApplyNoteSpec", note);
         ResetRuntimeFlags(ref note);
         musicList.Add(note);
         LogInsertedNote(label, note);
@@ -539,31 +512,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             noteData.scene = spec.Scene;
         }
 
-        if (!string.IsNullOrEmpty(spec.PrefabName))
-        {
-            noteData.prefab_name = spec.PrefabName;
-        }
-        else if (ShouldUseEmptyBossActionPrefab(noteType, uid, spec.BossAction))
-        {
-            noteData.prefab_name = "empty_000";
-        }
-        else if (!string.IsNullOrEmpty(uid))
-        {
-            noteData.prefab_name = BuildPrefabName(uid, noteType, pathway);
-        }
+        string resolvedPrefab = ResolvePrefabName(spec, noteType, uid, pathway);
+        if (resolvedPrefab != null) noteData.prefab_name = resolvedPrefab;
 
-        if (!string.IsNullOrEmpty(spec.KeyAudio))
-        {
-            noteData.key_audio = spec.KeyAudio;
-        }
-        else if (!string.IsNullOrEmpty(spec.BossAction))
-        {
-            noteData.key_audio = "";
-        }
-        else
-        {
-            ApplyDefaultKeyAudio(noteData, noteType, uid);
-        }
+        string resolvedKeyAudio = ResolveKeyAudio(spec, noteType, uid);
+        if (resolvedKeyAudio != null) noteData.key_audio = resolvedKeyAudio;
 
         if (!string.IsNullOrEmpty(spec.BossAction))
         {

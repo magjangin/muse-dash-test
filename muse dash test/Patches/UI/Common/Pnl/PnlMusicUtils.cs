@@ -41,8 +41,9 @@ public static partial class PnlMusicUtils
     {
         try
         {
-            ApplySongTitleExperiment(source, pnlInstance);
-            var info = ExtractMusicInfo(pnlInstance);
+            string resolvedUid = ResolveCustomMusicUid(pnlInstance);
+            ApplySongTitleExperiment(source, pnlInstance, resolvedUid);
+            var info = ExtractMusicInfo(pnlInstance, resolvedUid);
             LogCompact(source, info);
         }
         catch (Exception ex) { MelonLogger.Error($"LogMusicInfo 예외: {ex}"); }
@@ -52,14 +53,15 @@ public static partial class PnlMusicUtils
     {
         try
         {
-            ApplySongTitleExperiment(source, pnlInstance);
-            var info = ExtractMusicInfo(pnlInstance);
+            string resolvedUid = ResolveCustomMusicUid(pnlInstance);
+            ApplySongTitleExperiment(source, pnlInstance, resolvedUid);
+            var info = ExtractMusicInfo(pnlInstance, resolvedUid);
             if (!IsUsefulTitle(info.Title))
             {
                 var stage = FindLivePnlStage();
                 if (stage != null)
                 {
-                    ApplySongTitleExperiment(source + "->PnlStage", stage);
+                    ApplySongTitleExperiment(source + "->PnlStage", stage, resolvedUid);
                     var stageInfo = ExtractMusicInfo(stage);
                     if (IsUsefulTitle(stageInfo.Title)) info.Title = stageInfo.Title;
                     if (!string.IsNullOrWhiteSpace(stageInfo.Clip)) info.Clip = stageInfo.Clip;
@@ -92,31 +94,21 @@ public static partial class PnlMusicUtils
         public string ClipReason;
     }
 
-    private static void ApplySongTitleExperiment(string source, object pnlInstance)
+    private static void ApplySongTitleExperiment(string source, object pnlInstance, string resolvedUid)
     {
         if (!EnableSongTitleExperiment || pnlInstance == null) return;
-
-        string selectedUid = ResolveCustomMusicUid(pnlInstance);
-        if (string.IsNullOrEmpty(selectedUid))
-        {
-            return;
-        }
+        if (string.IsNullOrEmpty(resolvedUid)) return;
 
         string title = ExperimentTitle;
         string artist = ExperimentArtist;
         string designer = ExperimentLevelDesignerName;
 
         if (MainMod.TryGetCachedHwaPrimaryVirtualSong(
-                selectedUid,
+                resolvedUid,
                 out string manifestTitle,
                 out string manifestArtist,
                 out string manifestLevelDesigner,
-                out _,
-                out _,
-                out _,
-                out _,
-                out _,
-                out _))
+                out _, out _, out _, out _, out _, out _))
         {
             if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
             if (!string.IsNullOrWhiteSpace(manifestArtist)) artist = manifestArtist;
@@ -124,7 +116,7 @@ public static partial class PnlMusicUtils
         }
         else
         {
-            var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
+            var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(resolvedUid);
             if (musicInfo != null)
             {
                 title = musicInfo.name;
@@ -152,10 +144,11 @@ public static partial class PnlMusicUtils
         var root = GetRootGameObject(pnlInstance);
         if (root != null)
         {
-            SetChildTextByNames(root, TitleTextObjectNames, title);
-            SetChildTextByNames(root, ArtistTextObjectNames, artist);
-            SetChildTextByNames(root, LevelDesignerLabelTextObjectNames, ExperimentLevelDesignerLabel);
-            SetChildTextByNames(root, LevelDesignerNameTextObjectNames, designer);
+            SetChildTextsBatch(root,
+                (TitleTextObjectNames,                title),
+                (ArtistTextObjectNames,               artist),
+                (LevelDesignerLabelTextObjectNames,   ExperimentLevelDesignerLabel),
+                (LevelDesignerNameTextObjectNames,    designer));
         }
 
         if (ApplySongTitleExperimentGlobally)
@@ -305,6 +298,44 @@ public static partial class PnlMusicUtils
     private static object GetMemberObject(object obj, string memberName)
     {
         return ModReflection.GetValue(obj, memberName, silent: true);
+    }
+
+    // 4번의 GetComponentsInChildren 호출을 1번으로 줄인 배치 버전
+    private static void SetChildTextsBatch(GameObject root, params (string[] names, string value)[] pairs)
+    {
+        if (root == null || pairs == null || pairs.Length == 0) return;
+        try
+        {
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            if (transforms == null) return;
+            foreach (var trans in transforms)
+            {
+                try
+                {
+                    if (trans == null || trans.gameObject == null) continue;
+                    var go = trans.gameObject;
+                    foreach (var (names, value) in pairs)
+                    {
+                        if (!NameMatches(go.name, names)) continue;
+                        var components = go.GetComponents<Component>();
+                        if (components != null)
+                        {
+                            foreach (var comp in components)
+                            {
+                                if (comp == null || comp is Transform || comp.GetType().Name == "CanvasRenderer") continue;
+                                SetTextValue(comp, value);
+                            }
+                        }
+                        SetAllTextUnder(go, value);
+                    }
+                }
+                catch { }
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error($"[PnlMusicUtils] SetChildTextsBatch 중 예외: {ex.Message}");
+        }
     }
 
     private static int SetChildTextByNames(GameObject root, string[] objectNames, string value)

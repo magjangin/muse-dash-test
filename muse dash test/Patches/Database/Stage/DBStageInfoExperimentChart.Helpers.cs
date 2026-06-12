@@ -71,14 +71,22 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return projectileSeries && normalLane;
     }
 
-    public static void ApplyDefaultKeyAudio(NoteConfigData noteData, int noteType, string uid)
+    public static string ResolvePrefabName(ExperimentNoteSpec spec, int noteType, string uid, int pathway)
     {
-        if (noteType == 1)
-            noteData.key_audio = "sfx_mezzo_1";
-        else if (noteType == 6 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002")))
-            noteData.key_audio = "sfx_hp";
-        else if (noteType == 7 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0003")))
-            noteData.key_audio = "sfx_score";
+        if (!string.IsNullOrEmpty(spec.PrefabName)) return spec.PrefabName;
+        if (ShouldUseEmptyBossActionPrefab(noteType, uid, spec.BossAction)) return "empty_000";
+        if (!string.IsNullOrEmpty(uid)) return BuildPrefabName(uid, noteType, pathway);
+        return null; // keep cloned value
+    }
+
+    public static string ResolveKeyAudio(ExperimentNoteSpec spec, int noteType, string uid)
+    {
+        if (!string.IsNullOrEmpty(spec.KeyAudio)) return spec.KeyAudio;
+        if (!string.IsNullOrEmpty(spec.BossAction)) return "";
+        if (noteType == 1) return "sfx_mezzo_1";
+        if (noteType == 6 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002"))) return "sfx_hp";
+        if (noteType == 7 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0003"))) return "sfx_score";
+        return null; // keep cloned value
     }
 
     public static MusicData CloneMusicData(MusicData originalNote)
@@ -313,11 +321,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (note == null)
         {
             return 0;
-        }
-
-        if (note.Lane == muse_dash_test.BmsLane.Air)
-        {
-            return 1;
         }
 
         if (!string.IsNullOrWhiteSpace(wavInfo?.Uid) && wavInfo.Uid.Length >= 6)

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(if \\(Test-Path \"$env:USERPROFILE\\\\.claude\\\\settings.json\"\\) { Get-Content \"$env:USERPROFILE\\\\.claude\\\\settings.json\" | Select-String \"hook\" -Context 2 } else { \"No global settings.json found\" })",
+      "Bash(xargs wc -l)",
+      "mcp__visualize__show_widget",
+      "Bash(dotnet build *)"
+    ]
+  }
+}

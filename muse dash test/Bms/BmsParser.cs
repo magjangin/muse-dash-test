@@ -2,15 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace muse_dash_test
 {
     public enum BmsLane
     {
-        Ground = 0,      // 지상 (Pathway 0)
-        Air = 1,         // 공중 (Pathway 1)
+        Note = 0,
         BossInOut = 2,   // 보스 등장/퇴장
         BossAction = 3,  // 보스 액션/패턴
         Unknown = -1
@@ -25,10 +24,10 @@ namespace muse_dash_test
 
         private static readonly Dictionary<int, BmsLane> ChannelToLaneMap = new Dictionary<int, BmsLane>
         {
-            { 0x13, BmsLane.Ground },     // 지상 (BMS Channel 13)
-            { 0x14, BmsLane.Air },        // 공중 (BMS Channel 14)
-            { 0x15, BmsLane.BossInOut },  // 보스 등장/퇴장 (BMS Channel 15)
-            { 0x18, BmsLane.BossAction }, // 보스 액션 (BMS Channel 18)
+            { 0x13, BmsLane.Note },
+            { 0x14, BmsLane.Note },
+            { 0x15, BmsLane.BossInOut },
+            { 0x18, BmsLane.BossAction },
         };
 
         public static BmsChart ParseFile(string filePath)
@@ -139,19 +138,26 @@ namespace muse_dash_test
                 AddNoteEvents(evt, lane, notes, noteCellWidth);
             }
 
-            bpmChanges = bpmChanges
-                .OrderBy(change => change.Tick)
-                .ThenBy(change => change.Source, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            bpmChanges.Sort((left, right) =>
+            {
+                int tickCompare = left.Tick.CompareTo(right.Tick);
+                return tickCompare != 0
+                    ? tickCompare
+                    : string.Compare(left.Source, right.Source, StringComparison.OrdinalIgnoreCase);
+            });
 
             // O(N + M) single sweep to calculate time for all notes
-            var sortedNotes = notes.OrderBy(note => note.Tick).ToList();
+            notes.Sort((left, right) =>
+            {
+                int tickCompare = left.Tick.CompareTo(right.Tick);
+                return tickCompare != 0 ? tickCompare : left.Channel.CompareTo(right.Channel);
+            });
             float time = 0f;
             float currentTick = 0f;
             float currentBpm = (bpmChanges.Count > 0 && bpmChanges[0].Bpm > 0f) ? bpmChanges[0].Bpm : defaultBpm;
             int bpmIndex = 0;
 
-            foreach (var note in sortedNotes)
+            foreach (var note in notes)
             {
                 while (bpmIndex < bpmChanges.Count)
                 {
@@ -178,12 +184,6 @@ namespace muse_dash_test
                 }
                 note.Time = noteTime;
             }
-
-            notes = sortedNotes
-                .OrderBy(note => note.Time)
-                .ThenBy(note => note.Tick)
-                .ThenBy(note => note.Lane)
-                .ToList();
 
             chart.BpmChanges = bpmChanges;
             chart.Notes = notes;
@@ -229,20 +229,22 @@ namespace muse_dash_test
 
         private static void AddBpmReferenceChanges(RawMeasureEvent evt, Dictionary<string, float> bpmDefinitions, List<BpmChange> bpmChanges)
         {
-            var cells = SplitCells(evt.Data, 2);
-            if (cells.Count == 0)
+            int cellWidth = 2;
+            int cellCount = GetCellCount(evt.Data, cellWidth);
+            if (cellCount == 0)
             {
                 return;
             }
 
-            for (int i = 0; i < cells.Count; i++)
+            for (int i = 0; i < cellCount; i++)
             {
-                var cell = cells[i];
-                if (string.IsNullOrWhiteSpace(cell) || IsZeroCell(cell))
+                int offset = i * cellWidth;
+                if (IsZeroCell(evt.Data, offset, cellWidth))
                 {
                     continue;
                 }
 
+                string cell = evt.Data.Substring(offset, cellWidth);
                 if (!bpmDefinitions.TryGetValue(cell, out float bpm))
                 {
                     continue;
@@ -250,7 +252,7 @@ namespace muse_dash_test
 
                 bpmChanges.Add(new BpmChange
                 {
-                    Tick = evt.Measure + (i / (float)cells.Count),
+                    Tick = evt.Measure + (i / (float)cellCount),
                     Bpm = bpm,
                     Source = $"BPM{cell}"
                 });
@@ -259,20 +261,22 @@ namespace muse_dash_test
 
         private static void AddDirectBpmChanges(RawMeasureEvent evt, List<BpmChange> bpmChanges)
         {
-            var cells = SplitCells(evt.Data, 2);
-            if (cells.Count == 0)
+            int cellWidth = 2;
+            int cellCount = GetCellCount(evt.Data, cellWidth);
+            if (cellCount == 0)
             {
                 return;
             }
 
-            for (int i = 0; i < cells.Count; i++)
+            for (int i = 0; i < cellCount; i++)
             {
-                var cell = cells[i];
-                if (string.IsNullOrWhiteSpace(cell) || IsZeroCell(cell))
+                int offset = i * cellWidth;
+                if (IsZeroCell(evt.Data, offset, cellWidth))
                 {
                     continue;
                 }
 
+                string cell = evt.Data.Substring(offset, cellWidth);
                 if (!TryParseBpmValue(cell, out float bpm))
                 {
                     continue;
@@ -280,7 +284,7 @@ namespace muse_dash_test
 
                 bpmChanges.Add(new BpmChange
                 {
-                    Tick = evt.Measure + (i / (float)cells.Count),
+                    Tick = evt.Measure + (i / (float)cellCount),
                     Bpm = bpm,
                     Source = "03"
                 });
@@ -289,20 +293,22 @@ namespace muse_dash_test
 
         private static void AddNoteEvents(RawMeasureEvent evt, BmsLane lane, List<BmsNote> notes, int cellWidth)
         {
-            var cells = SplitCells(evt.Data, cellWidth);
-            if (cells.Count == 0)
+            int width = Math.Max(2, cellWidth);
+            int cellCount = GetCellCount(evt.Data, width);
+            if (cellCount == 0)
             {
                 return;
             }
 
-            for (int i = 0; i < cells.Count; i++)
+            for (int i = 0; i < cellCount; i++)
             {
-                var cell = cells[i];
-                if (string.IsNullOrWhiteSpace(cell) || IsZeroCell(cell))
+                int offset = i * width;
+                if (IsZeroCell(evt.Data, offset, width))
                 {
                     continue;
                 }
 
+                string cell = evt.Data.Substring(offset, width);
                 notes.Add(new BmsNote
                 {
                     Measure = evt.Measure,
@@ -310,7 +316,7 @@ namespace muse_dash_test
                     CellIndex = i,
                     Lane = lane,
                     RawValue = cell,
-                    Tick = evt.Measure + (i / (float)cells.Count)
+                    Tick = evt.Measure + (i / (float)cellCount)
                 });
             }
         }
@@ -409,28 +415,15 @@ namespace muse_dash_test
             return false;
         }
 
-        private static List<string> SplitCells(string data, int cellWidth)
+        private static int GetCellCount(string data, int cellWidth)
         {
-            var cells = new List<string>();
             if (string.IsNullOrWhiteSpace(data))
             {
-                return cells;
+                return 0;
             }
 
-            // The data string is already normalized when measure events are added, so we can avoid redundant normalization.
-            var cleaned = data;
             int width = Math.Max(2, cellWidth);
-            if (cleaned.Length < width)
-            {
-                return cells;
-            }
-
-            for (int i = 0; i + width <= cleaned.Length; i += width)
-            {
-                cells.Add(cleaned.Substring(i, width));
-            }
-
-            return cells;
+            return data.Length / width;
         }
 
         private static int DetectWavCellWidth(IReadOnlyDictionary<string, string> metadata)
@@ -458,16 +451,11 @@ namespace muse_dash_test
             return width;
         }
 
-        private static bool IsZeroCell(string cell)
+        private static bool IsZeroCell(string data, int offset, int width)
         {
-            if (string.IsNullOrWhiteSpace(cell))
+            for (int i = offset; i < offset + width; i++)
             {
-                return true;
-            }
-
-            for (int i = 0; i < cell.Length; i++)
-            {
-                if (cell[i] != '0')
+                if (data[i] != '0')
                 {
                     return false;
                 }
@@ -483,8 +471,17 @@ namespace muse_dash_test
                 return string.Empty;
             }
 
-            var chars = data.Where(char.IsLetterOrDigit).ToArray();
-            return new string(chars).ToUpperInvariant();
+            var builder = new StringBuilder(data.Length);
+            for (int i = 0; i < data.Length; i++)
+            {
+                char ch = data[i];
+                if (char.IsLetterOrDigit(ch))
+                {
+                    builder.Append(char.ToUpperInvariant(ch));
+                }
+            }
+
+            return builder.ToString();
         }
 
         private static string StripComments(string line)
@@ -526,6 +523,7 @@ namespace muse_dash_test
             BpmChanges = new List<BpmChange>();
             BpmDefinitions = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
             Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            WavInfoCache = new Dictionary<string, BmsWavInfo>(StringComparer.OrdinalIgnoreCase);
         }
 
         public string SourcePath { get; }
@@ -536,6 +534,7 @@ namespace muse_dash_test
         public Dictionary<string, string> Metadata { get; internal set; }
         public IReadOnlyList<BpmChange> BpmChanges { get; internal set; }
         public IReadOnlyList<BmsNote> Notes { get; internal set; }
+        internal Dictionary<string, BmsWavInfo> WavInfoCache { get; }
     }
 
     public sealed class BmsNote

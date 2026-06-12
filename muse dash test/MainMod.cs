@@ -25,6 +25,9 @@ namespace muse_dash_test
 
             try
             {
+                // 게임이 켜질 때 즉시 설정 폴더/파일을 감지 및 생성/로드합니다.
+                InputOverlay.LoadConfigIfNeeded();
+
                 string hwaPath = HwaResourceManager.HwaFolderPath;
                 Directory.CreateDirectory(hwaPath);
                 MelonLogger.Msg($"hwa 폴더를 확인/생성했습니다: {hwaPath}");
@@ -79,25 +82,53 @@ namespace muse_dash_test
                 MelonLogger.Error($"hwa 폴더 생성 및 초기화 중 예외: {ex}");
             }
 
-            try
-            {
-                AlbumTagToggle_Init_Patch.PatchResourcesManager(this.HarmonyInstance);
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[APMod] ResourcesManager 패치 등록 실패: {ex}");
-            }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
             MelonLogger.Msg($"씬이 로드되었습니다: {sceneName} (빌드 인덱스: {buildIndex})");
+            InputOverlay.ResetCache();
         }
 
         public override void OnUpdate()
         {
             HwaSyncManager.HandleBattleSynchronization();
+            
+            // 1. 순정/실험 맵에 구애받지 않고 스테이지 상태를 지속적으로 모니터링합니다.
+            try
+            {
+                hywCheckTimer += Time.deltaTime;
+                if (hywCheckTimer >= HywCheckInterval)
+                {
+                    hywCheckTimer = 0f;
+                    hywStageManager.CheckForStageAndModify();
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[MainMod.StageCheck] 스테이지 상태 감지 오류: {ex}");
+            }
+
+            // 2. 실험 모드 관련 업데이트 처리
             HandleExperimentStageUpdate();
+
+            // 3. 디버그용 공격 키 입력 감지 테스트는 릴리즈 버전이므로 주석 처리합니다.
+            /*
+            if (hywStageManager != null && hywStageManager.IsInStage)
+            {
+                InputOverlay.UpdateKeyTest();
+            }
+            */
+        }
+
+        public override void OnGUI()
+        {
+            // 인게임 오버레이 및 판정바 그리기(GUI)
+            if (hywStageManager != null && hywStageManager.IsInStage)
+            {
+                InputOverlay.DrawInputOverlay();
+                JudgmentBar.DrawJudgmentBar();
+            }
         }
 
         /// <summary>
@@ -112,13 +143,6 @@ namespace muse_dash_test
 
             try
             {
-                hywCheckTimer += Time.deltaTime;
-                if (hywCheckTimer >= HywCheckInterval)
-                {
-                    hywCheckTimer = 0f;
-                    hywStageManager.CheckForStageAndModify();
-                }
-
                 if (hywStageManager.IsInStage)
                 {
                     hywStageManager.CheckForNoteEvents();

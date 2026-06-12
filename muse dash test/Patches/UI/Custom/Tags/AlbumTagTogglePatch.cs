@@ -166,44 +166,6 @@ namespace muse_dash_test
             }
         }
 
-        /// <summary>
-        /// 런타임 어셈블리 조회를 통해 Il2CppPeroTools2.Resources.ResourcesManager의 LoadFromName 메소드를 동적으로 찾아 후킹합니다.
-        /// </summary>
-        public static void PatchResourcesManager(HarmonyLib.Harmony harmony)
-        {
-            try
-            {
-                Type resMgrType = null;
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    resMgrType = assembly.GetType("Il2CppPeroTools2.Resources.ResourcesManager");
-                    if (resMgrType != null) break;
-                }
-
-                if (resMgrType != null)
-                {
-                    var loadMethod = resMgrType.GetMethod("LoadFromName", new Type[] { typeof(string), typeof(Il2CppSystem.Type) });
-                    if (loadMethod != null)
-                    {
-                        var prefix = typeof(ResourcesManager_LoadFromName_Patch).GetMethod("Prefix");
-                        harmony.Patch(loadMethod, new HarmonyMethod(prefix));
-                        MelonLogger.Msg("[APMod.ResourcesHook] ResourcesManager.LoadFromName 수동 패치 적용 완료!");
-                    }
-                    else
-                    {
-                        MelonLogger.Warning("[APMod.ResourcesHook] ResourcesManager.LoadFromName 메소드를 찾을 수 없습니다.");
-                    }
-                }
-                else
-                {
-                    MelonLogger.Warning("[APMod.ResourcesHook] ResourcesManager 타입을 찾지 못했습니다.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[APMod.ResourcesHook] 수동 패치 도중 예외 발생: {ex}");
-            }
-        }
     }
 
     /// <summary>
@@ -264,41 +226,5 @@ namespace muse_dash_test
         }
     }
 
-    /// <summary>
-    /// ResourcesManager.LoadFromName을 가로채어 커스텀 tag_picture 에셋 요청이 들어왔을 때 
-    /// 우리의 커스텀 Sprite 또는 Texture2D를 안전하게 주입해 주는 수동 패치 클래스입니다.
-    /// </summary>
-    public static class ResourcesManager_LoadFromName_Patch
-    {
-        public static bool Prefix(string assetName, Il2CppSystem.Type type, ref UnityEngine.Object __result)
-        {
-            if (!string.IsNullOrEmpty(assetName) && assetName.EndsWith("tag_icon.png", StringComparison.OrdinalIgnoreCase))
-            {
-                string typeName = type != null ? type.FullName : "";
-                
-                if (typeName.Contains("Sprite"))
-                {
-                    Sprite customSprite = AlbumTagToggle_Init_Patch.GetCustomSprite();
-                    if (customSprite != null)
-                    {
-                        __result = customSprite;
-                        MelonLogger.Msg($"[APMod.ResourcesHook] ResourcesManager.LoadFromName('{assetName}') 요청 감지 -> 커스텀 Sprite 반환!");
-                        return false; // 원래 메소드 실행 건너뜀
-                    }
-                }
-                else if (typeName.Contains("Texture2D"))
-                {
-                    Texture2D customTexture = AlbumTagToggle_Init_Patch.GetCustomTexture();
-                    if (customTexture != null)
-                    {
-                        __result = customTexture;
-                        MelonLogger.Msg($"[APMod.ResourcesHook] ResourcesManager.LoadFromName('{assetName}') 요청 감지 -> 커스텀 Texture2D 반환!");
-                        return false; // 원래 메소드 실행 건너뜀
-                    }
-                }
-            }
-            return true;
-        }
-    }
 }
 // Touched to force MSBuild to package the new tag_icon.png resource

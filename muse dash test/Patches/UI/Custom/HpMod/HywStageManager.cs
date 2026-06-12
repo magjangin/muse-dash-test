@@ -42,10 +42,14 @@ namespace muse_dash_test
                         isInStage = true;
                         targetTextComponent = null;
                         lastText = "";
-                        MelonLogger.Msg("[HywHpTextMod] 스테이지 진입 감지: UI 덮어쓰기를 실행합니다.");
-                        ModifyHealthBar();
+                        
+                        if (ExperimentPlayContext.ShouldApplyExperimentChart)
+                        {
+                            MelonLogger.Msg("[HywHpTextMod] 스테이지 진입 감지: UI 덮어쓰기를 실행합니다.");
+                            ModifyHealthBar();
+                        }
                     }
-                    else if (targetTextComponent == null)
+                    else if (ExperimentPlayContext.ShouldApplyExperimentChart && targetTextComponent == null)
                     {
                         // 재시작 감지 (이전 스테이지 컴포넌트가 파괴됨)
                         targetTextComponent = null;
@@ -74,6 +78,8 @@ namespace muse_dash_test
 
         public void CheckForNoteEvents()
         {
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart) return;
+
             if (targetTextComponent != null)
             {
                 string currentText = targetTextComponent.text;
@@ -94,6 +100,8 @@ namespace muse_dash_test
 
         private void ModifyHealthBar()
         {
+            if (!ExperimentPlayContext.ShouldApplyExperimentChart) return;
+
             try
             {
                 var textComponent = HealthBarFinder.FindHealthText();

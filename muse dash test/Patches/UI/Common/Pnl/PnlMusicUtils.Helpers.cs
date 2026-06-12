@@ -80,7 +80,7 @@ public static partial class PnlMusicUtils
         return false;
     }
 
-    private static MusicInfo ExtractMusicInfo(object pnlInstance)
+    private static MusicInfo ExtractMusicInfo(object pnlInstance, string resolvedUid = null)
     {
         var info = new MusicInfo();
         if (pnlInstance == null) return info;
@@ -118,7 +118,7 @@ public static partial class PnlMusicUtils
 
         if (EnableSongTitleExperiment && (string.IsNullOrWhiteSpace(info.LevelDesigner) || info.LevelDesigner == ExperimentLevelDesignerLabel || IsUiObjectName(info.LevelDesigner)))
         {
-            string selectedUid = ResolveCustomMusicUid(pnlInstance);
+            string selectedUid = resolvedUid ?? ResolveCustomMusicUid(pnlInstance);
             if (!string.IsNullOrEmpty(selectedUid)
                 && MainMod.TryGetCachedHwaPrimaryVirtualSong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _, out _)
                 && !string.IsNullOrWhiteSpace(manifestLevelDesigner))
@@ -127,7 +127,9 @@ public static partial class PnlMusicUtils
             }
             else
             {
-                var musicInfo = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid);
+                var musicInfo = !string.IsNullOrEmpty(selectedUid)
+                    ? Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(selectedUid)
+                    : null;
                 if (musicInfo != null)
                 {
                     info.LevelDesigner = musicInfo.levelDesigner;

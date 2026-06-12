@@ -1,6 +1,7 @@
 using MelonLoader;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace muse_dash_test
@@ -298,8 +299,10 @@ namespace muse_dash_test
                 }
 
                 MelonLogger.Msg($"[HwaResourceManager.Bms] BMS 읽기 대상: {preferred}");
+                var parseTimer = Stopwatch.StartNew();
                 var chart = BmsParser.ParseFile(preferred);
-                MelonLogger.Msg($"[HwaResourceManager.Bms] BMS 파싱 완료: {HwaChartDiagnostics.DescribeBmsChart(chart)}");
+                parseTimer.Stop();
+                MelonLogger.Msg($"[HwaResourceManager.Bms] BMS 파싱 완료: elapsed={parseTimer.ElapsedMilliseconds}ms, {HwaChartDiagnostics.DescribeBmsChart(chart)}");
                 HwaChartDiagnostics.LogBmsWavMappingSummary(chart);
                 return chart;
             }

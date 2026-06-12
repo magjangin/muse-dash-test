@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -23,6 +24,49 @@ namespace muse_dash_test
     {
         private static readonly Regex DtRegex = new Regex(@"_dt([0-9]+(?:\.[0-9]+)?)(?:\.wav)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex UidRegex = new Regex(@"^([0-9]{6})", RegexOptions.Compiled);
+
+        // UID 앞 4자리 → NoteType (접두사 우선 매핑)
+        private static readonly Dictionary<string, (int noteType, string keyAudio)> UidPrefixNoteType =
+            new Dictionary<string, (int, string)>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "0002", (6, "sfx_hp") },    // HP / Heart
+            { "0003", (7, "sfx_score") }, // Score Note
+        };
+
+        // UID xx(2~3번째 자리) → NoteType
+        private static readonly Dictionary<string, int> XxNoteType =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "02", 3 }, // Hold / Long note
+            { "03", 2 }, // Obstacle / Boss Gear
+            { "04", 8 }, // Sandbag / Multi-hit
+            { "09", 2 }, // Boss Gear
+            { "17", 4 }, // Ghost
+        };
+
+        // xxyy → (BossAction, BossTransition?) — xx=01 보스 전환 테이블
+        private static readonly Dictionary<string, (string action, string transition)> XxyyTransitionMap =
+            new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "0101", ("in",  "in") },
+            { "0102", ("out", "out") },
+            { "0107", ("boss_far_atk_1_start", null) },
+            { "0108", ("boss_far_atk_1_end",   null) },
+            { "0109", ("boss_far_atk_2_start", null) },
+            { "0110", ("boss_far_atk_2_end",   null) },
+        };
+
+        // xxyy → BossAction — 보스 발사체/톱니 자동 매핑 테이블
+        private static readonly Dictionary<string, string> XxyyProjectileAction =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "0601", "boss_far_atk_1_R" }, { "0902", "boss_far_atk_1_R" }, { "0903", "boss_far_atk_1_R" },
+            { "0604", "boss_far_atk_1_L" }, { "0906", "boss_far_atk_1_L" },
+            { "0701", "boss_far_atk_2" }, { "0704", "boss_far_atk_2" },
+            { "0801", "boss_far_atk_2" }, { "0804", "boss_far_atk_2" },
+            { "0908", "boss_far_atk_2" }, { "0909", "boss_far_atk_2" },
+            { "0911", "boss_far_atk_2" }, { "0912", "boss_far_atk_2" },
+        };
 
         public static BmsWavInfo ParseWavName(string wavName)
         {
@@ -62,31 +106,16 @@ namespace muse_dash_test
             {
                 string xx = info.Uid.Substring(2, 2);
                 string xxyy = info.Uid.Substring(2, 4);
-                if (info.Uid.StartsWith("0002"))
+                string prefix4 = info.Uid.Substring(0, 4);
+
+                if (UidPrefixNoteType.TryGetValue(prefix4, out var prefixEntry))
                 {
-                    info.NoteType = 6; // HP / Heart
-                    info.KeyAudio = "sfx_hp";
+                    info.NoteType = prefixEntry.noteType;
+                    info.KeyAudio = prefixEntry.keyAudio;
                 }
-                else if (info.Uid.StartsWith("0003"))
+                else if (XxNoteType.TryGetValue(xx, out int xxType))
                 {
-                    info.NoteType = 7; // Score Note
-                    info.KeyAudio = "sfx_score";
-                }
-                else if (xx == "02")
-                {
-                    info.NoteType = 3; // Hold / Long note
-                }
-                else if (xx == "04")
-                {
-                    info.NoteType = 8; // Sandbag / Multi-hit
-                }
-                else if (xx == "03" || xx == "09")
-                {
-                    info.NoteType = 2; // Obstacle / Gear / Boss Gear
-                }
-                else if (xx == "17")
-                {
-                    info.NoteType = 4; // Ghost
+                    info.NoteType = xxType;
                 }
 
                 ApplyBossTransitionFromXxyy(info, xxyy);
@@ -97,46 +126,21 @@ namespace muse_dash_test
 
                 if (isBossProjectile || isBossGear)
                 {
-                    // 영어 예약 키워드(_boss, _atk) 감지 시 '보스 있는 버전'으로 분류
                     if (lowerName.Contains("_boss") || lowerName.Contains("_atk"))
                     {
-                        // 파일명에 구체적인 액션명이 직접 명시되어 있는지 우선 확인
                         if (lowerName.Contains("boss_far_atk_1_r"))
-                        {
                             info.BossAction = "boss_far_atk_1_R";
-                        }
                         else if (lowerName.Contains("boss_far_atk_1_l"))
-                        {
                             info.BossAction = "boss_far_atk_1_L";
-                        }
                         else if (lowerName.Contains("boss_far_atk_2"))
-                        {
                             info.BossAction = "boss_far_atk_2";
-                        }
-                        // 명시되지 않은 경우 UID 패턴에 기반하여 가장 어울리는 액션 자동 매핑
-                        else
-                        {
-                            if (xxyy == "0601" || xxyy == "0902" || xxyy == "0903")
-                            {
-                                info.BossAction = "boss_far_atk_1_R";
-                            }
-                            else if (xxyy == "0604" || xxyy == "0906")
-                            {
-                                info.BossAction = "boss_far_atk_1_L";
-                            }
-                            else if (xxyy == "0701" || xxyy == "0704" || xxyy == "0801" || xxyy == "0804" || 
-                                     xxyy == "0908" || xxyy == "0909" || xxyy == "0911" || xxyy == "0912")
-                            {
-                                info.BossAction = "boss_far_atk_2";
-                            }
-                        }
+                        else if (XxyyProjectileAction.TryGetValue(xxyy, out string mappedAction))
+                            info.BossAction = mappedAction;
 
-                        // 보스 모션 싱크용 권장 dt인 0.7초 적용
                         info.Dt = 0.7;
                     }
                     else
                     {
-                        // 보스 없는 버전이므로 BossAction을 비움
                         info.BossAction = "";
                     }
                 }
@@ -270,55 +274,14 @@ namespace muse_dash_test
 
         private static void ApplyBossTransitionFromXxyy(BmsWavInfo info, string xxyy)
         {
-            if (info == null || string.IsNullOrWhiteSpace(xxyy))
-            {
-                return;
-            }
-
-            if (string.Equals(xxyy, "0101", StringComparison.OrdinalIgnoreCase))
-            {
-                info.NoteType = 0;
-                info.PrefabName = "empty_000";
-                info.BossAction = "in";
-                info.BossTransition = "in";
-                ApplyBossTargetFromUid(info);
-            }
-            else if (string.Equals(xxyy, "0102", StringComparison.OrdinalIgnoreCase))
-            {
-                info.NoteType = 0;
-                info.PrefabName = "empty_000";
-                info.BossAction = "out";
-                info.BossTransition = "out";
-                ApplyBossTargetFromUid(info);
-            }
-            else if (string.Equals(xxyy, "0107", StringComparison.OrdinalIgnoreCase))
-            {
-                ApplyBossActionTrigger(info, "boss_far_atk_1_start");
-            }
-            else if (string.Equals(xxyy, "0108", StringComparison.OrdinalIgnoreCase))
-            {
-                ApplyBossActionTrigger(info, "boss_far_atk_1_end");
-            }
-            else if (string.Equals(xxyy, "0109", StringComparison.OrdinalIgnoreCase))
-            {
-                ApplyBossActionTrigger(info, "boss_far_atk_2_start");
-            }
-            else if (string.Equals(xxyy, "0110", StringComparison.OrdinalIgnoreCase))
-            {
-                ApplyBossActionTrigger(info, "boss_far_atk_2_end");
-            }
-        }
-
-        private static void ApplyBossActionTrigger(BmsWavInfo info, string bossAction)
-        {
-            if (info == null)
-            {
-                return;
-            }
+            if (info == null || string.IsNullOrWhiteSpace(xxyy)) return;
+            if (!XxyyTransitionMap.TryGetValue(xxyy, out var entry)) return;
 
             info.NoteType = 0;
             info.PrefabName = "empty_000";
-            info.BossAction = bossAction;
+            info.BossAction = entry.action;
+            if (entry.transition != null)
+                info.BossTransition = entry.transition;
             ApplyBossTargetFromUid(info);
         }
 

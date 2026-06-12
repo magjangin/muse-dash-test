@@ -74,6 +74,10 @@ public static partial class PnlStagePatchHelper
             {
                 uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
             }
+            if (string.IsNullOrEmpty(uid))
+            {
+                return;
+            }
 
             var musicInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
             if (musicInfo == null)
@@ -118,6 +122,10 @@ public static partial class PnlStagePatchHelper
             if (string.IsNullOrEmpty(uid))
             {
                 uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            }
+            if (string.IsNullOrEmpty(uid))
+            {
+                return;
             }
 
             var musicInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);

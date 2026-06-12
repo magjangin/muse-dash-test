@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace muse_dash_test
 {
@@ -27,7 +26,7 @@ namespace muse_dash_test
             BmsNote pendingOutNote = null;
             BmsWavInfo pendingOutWav = null;
 
-            foreach (var note in chart.Notes.OrderBy(note => note.Time).ThenBy(note => note.Tick))
+            foreach (var note in chart.Notes)
             {
                 var wavInfo = ResolveWavInfo(chart, note);
                 if (wavInfo == null)
@@ -72,7 +71,13 @@ namespace muse_dash_test
                 return null;
             }
 
-            string wavKey = "WAV" + note.RawValue.ToUpperInvariant();
+            string rawValue = note.RawValue ?? string.Empty;
+            if (chart.WavInfoCache.TryGetValue(rawValue, out var cachedWavInfo))
+            {
+                return cachedWavInfo;
+            }
+
+            string wavKey = "WAV" + rawValue.ToUpperInvariant();
             string wavName = null;
             if (chart.Metadata != null && chart.Metadata.TryGetValue(wavKey, out string metadataWavName))
             {
@@ -81,10 +86,12 @@ namespace muse_dash_test
 
             if (string.IsNullOrWhiteSpace(wavName))
             {
-                wavName = note.RawValue + ".wav";
+                wavName = rawValue + ".wav";
             }
 
-            return BmsWavParser.ParseWavName(wavName);
+            var wavInfo = BmsWavParser.ParseWavName(wavName);
+            chart.WavInfoCache[rawValue] = wavInfo;
+            return wavInfo;
         }
 
         public static string BuildSwapAction(BmsWavInfo inWav)

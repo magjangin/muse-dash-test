@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using MelonLoader;
 
 namespace muse_dash_test
@@ -50,23 +49,24 @@ namespace muse_dash_test
                 return matchedPairs;
             }
 
-            // 1. 레인(Lane)별로 노트를 임시 격리 분류합니다.
-            var notesByLane = new Dictionary<BmsLane, List<BmsNote>>();
+            // 1. 채널별로 노트를 임시 격리 분류합니다.
+            var notesByChannel = new Dictionary<int, List<BmsNote>>();
             for (int i = 0; i < rawNotes.Count; i++)
             {
                 var note = rawNotes[i];
-                if (!notesByLane.ContainsKey(note.Lane))
+                if (!notesByChannel.ContainsKey(note.Channel))
                 {
-                    notesByLane[note.Lane] = new List<BmsNote>();
+                    notesByChannel[note.Channel] = new List<BmsNote>();
                 }
-                notesByLane[note.Lane].Add(note);
+                notesByChannel[note.Channel].Add(note);
             }
 
-            // 2. 레인별로 틱 순서대로 순회하며 매칭을 가동합니다.
-            foreach (var kvp in notesByLane)
+            // 2. 채널별로 틱 순서대로 순회하며 매칭을 가동합니다.
+            foreach (var kvp in notesByChannel)
             {
-                BmsLane lane = kvp.Key;
-                var sortedNotesInLane = kvp.Value.OrderBy(n => n.Tick).ToList();
+                int channel = kvp.Key;
+                // BmsParser already returns notes in tick order, and channel grouping preserves that order.
+                var sortedNotesInLane = kvp.Value;
 
                 // 각 레인별 실시간 홀드/샌드백 매칭 상태 추적 슬롯
                 BmsNote activeHoldStart = null;
@@ -77,21 +77,7 @@ namespace muse_dash_test
                     var currentNote = sortedNotesInLane[i];
                     
                     // WAV 매핑 데이터 조회
-                    string wavKey = "WAV" + currentNote.RawValue.ToUpperInvariant();
-                    string wavName = null;
-                    if (chart.Metadata != null && chart.Metadata.ContainsKey(wavKey))
-                    {
-                        wavName = chart.Metadata[wavKey];
-                    }
-
-                    if (string.IsNullOrWhiteSpace(wavName))
-                    {
-                        // WAV 헤더 정보가 없는 경우 폴백 기본값 적용
-                        wavName = currentNote.RawValue + ".wav";
-                    }
-
-                    // 파일명으로부터 노트 속성을 파싱합니다.
-                    var wavInfo = BmsWavParser.ParseWavName(wavName);
+                    var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, currentNote);
                     if (wavInfo == null)
                     {
                         continue;
@@ -107,7 +93,7 @@ namespace muse_dash_test
                         {
                             // 홀드 시작 지점 지정
                             activeHoldStart = currentNote;
-                            MelonLogger.Msg($"[BmsMatcher] 홀드 시작 등록 완료: Lane={lane}, Tick={currentNote.Tick}");
+                            MelonLogger.Msg($"[BmsMatcher] 홀드 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
                         }
                         else
                         {
@@ -119,7 +105,7 @@ namespace muse_dash_test
                                 EndNote = currentNote
                             };
                             matchedPairs.Add(pair);
-                            MelonLogger.Msg($"[BmsMatcher] ★홀드 매칭 완성★ Lane={lane} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (길이={pair.Duration:F2}초, {pair.LengthInTicks:F2}틱)");
+                            MelonLogger.Msg($"[BmsMatcher] ★홀드 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (길이={pair.Duration:F2}초, {pair.LengthInTicks:F2}틱)");
                             
                             // 상태 초기화하여 다음 롱노트 매칭을 준비시킴
                             activeHoldStart = null;
@@ -133,7 +119,7 @@ namespace muse_dash_test
                         {
                             // 샌드백 시작 지점 지정
                             activeSandbagStart = currentNote;
-                            MelonLogger.Msg($"[BmsMatcher] 샌드백 시작 등록 완료: Lane={lane}, Tick={currentNote.Tick}");
+                            MelonLogger.Msg($"[BmsMatcher] 샌드백 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
                         }
                         else
                         {
@@ -145,7 +131,7 @@ namespace muse_dash_test
                                 EndNote = currentNote
                             };
                             matchedPairs.Add(pair);
-                            MelonLogger.Msg($"[BmsMatcher] ★샌드백 매칭 완성★ Lane={lane} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (연타구간={pair.Duration:F2}초)");
+                            MelonLogger.Msg($"[BmsMatcher] ★샌드백 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (연타구간={pair.Duration:F2}초)");
                             
                             activeSandbagStart = null;
                         }
@@ -155,11 +141,11 @@ namespace muse_dash_test
                 // 3. 루프 종료 후 짝을 찾지 못하고 남은 비정상 노드 경고 로깅 (차트 버그 진단용)
                 if (activeHoldStart != null)
                 {
-                    MelonLogger.Warning($"[BmsMatcher.Bug] 홀드 매칭 경고: 레인 {lane}의 Tick {activeHoldStart.Tick}에 선언된 롱노트의 짝(종료 노트)을 찾지 못했습니다.");
+                    MelonLogger.Warning($"[BmsMatcher.Bug] 홀드 매칭 경고: 채널 {channel}의 Tick {activeHoldStart.Tick}에 선언된 롱노트의 짝(종료 노트)을 찾지 못했습니다.");
                 }
                 if (activeSandbagStart != null)
                 {
-                    MelonLogger.Warning($"[BmsMatcher.Bug] 샌드백 매칭 경고: 레인 {lane}의 Tick {activeSandbagStart.Tick}에 선언된 샌드백의 짝(종료 노트)을 찾지 못했습니다.");
+                    MelonLogger.Warning($"[BmsMatcher.Bug] 샌드백 매칭 경고: 채널 {channel}의 Tick {activeSandbagStart.Tick}에 선언된 샌드백의 짝(종료 노트)을 찾지 못했습니다.");
                 }
             }
 
