@@ -88,6 +88,7 @@ namespace muse_dash_test
         {
             MelonLogger.Msg($"씬이 로드되었습니다: {sceneName} (빌드 인덱스: {buildIndex})");
             InputOverlay.ResetCache();
+            ExperimentHitPointInstaller.Reset();
         }
 
         public override void OnUpdate()
@@ -111,6 +112,7 @@ namespace muse_dash_test
 
             // 2. 실험 모드 관련 업데이트 처리
             HandleExperimentStageUpdate();
+            ExperimentHitPointInstaller.Update(hywStageManager != null && hywStageManager.IsInStage);
 
             // 3. 디버그용 공격 키 입력 감지 테스트는 릴리즈 버전이므로 주석 처리합니다.
             /*

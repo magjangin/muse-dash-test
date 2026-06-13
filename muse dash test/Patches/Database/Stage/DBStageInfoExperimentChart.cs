@@ -116,8 +116,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (UseBmsInjection && muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
         {
-            SortBmsRuntimeMusicListByShowTick(musicList, 1);
             ApplyBmsDoubleState(musicList, 1);
+            SortBmsRuntimeMusicListByShowTick(musicList, 1);
         }
 
         MelonLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
@@ -132,12 +132,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         var runtimeNotes = new System.Collections.Generic.List<MusicData>();
         var oldEndIndices = new System.Collections.Generic.Dictionary<short, int>();
+        var oldDoubleIndices = new System.Collections.Generic.Dictionary<short, int>();
+        var oldDoubleStates = new System.Collections.Generic.Dictionary<short, bool>();
 
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
             runtimeNotes.Add(note);
             oldEndIndices[note.objId] = note.endIndex;
+            oldDoubleIndices[note.objId] = note.doubleIdx;
+            oldDoubleStates[note.objId] = note.isDouble;
         }
 
         runtimeNotes.Sort((left, right) =>
@@ -169,8 +173,15 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             int newIndex = startIndex + i;
 
             note.objId = (short)newIndex;
-            note.isDouble = false;
+            note.isDouble = oldDoubleStates.TryGetValue(oldObjId, out bool wasDouble) && wasDouble;
             note.doubleIdx = note.noteData?.type == 0 ? -1 : 0;
+
+            if (note.isDouble
+                && oldDoubleIndices.TryGetValue(oldObjId, out int oldDoubleIndex)
+                && newIndexByOldObjId.TryGetValue((short)oldDoubleIndex, out int newDoubleIndex))
+            {
+                note.doubleIdx = newDoubleIndex;
+            }
 
             if (IsSceneToggleNote(note))
             {
@@ -249,10 +260,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            if (note.noteData == null
-                || note.noteData.type == 0
-                || note.isLongPressing
-                || note.isLongPressEnd)
+            if (note?.noteData == null)
             {
                 continue;
             }
@@ -276,28 +284,68 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
 
             group.Sort();
-            doubleGroupCount++;
+            var roadIndices = new System.Collections.Generic.List<int>();
+            var airIndices = new System.Collections.Generic.List<int>();
 
             for (int i = 0; i < group.Count; i++)
             {
-                int currentIndex = group[i];
-                int partnerIndex = group[(i + 1) % group.Count];
-                if (currentIndex == partnerIndex)
+                int noteIndex = group[i];
+                var note = musicList[noteIndex];
+                string exclusionReason = GetDoubleExclusionReason(note);
+
+                if (exclusionReason != null)
                 {
                     continue;
                 }
 
-                var currentNote = musicList[currentIndex];
-                var partnerNote = musicList[partnerIndex];
+                if (note.noteData.pathway == 1)
+                {
+                    airIndices.Add(noteIndex);
+                }
+                else
+                {
+                    roadIndices.Add(noteIndex);
+                }
+            }
 
-                currentNote.isDouble = true;
-                currentNote.doubleIdx = partnerNote.objId;
+            int pairCount = group.Count == 2 && roadIndices.Count == 1 && airIndices.Count == 1 ? 1 : 0;
+            for (int i = 0; i < pairCount; i++)
+            {
+                int roadIndex = roadIndices[i];
+                int airIndex = airIndices[i];
+                var roadNote = musicList[roadIndex];
+                var airNote = musicList[airIndex];
 
-                musicList[currentIndex] = currentNote;
+                double sharedDt = System.Math.Max(ParseMusicDecimal(roadNote.dt), ParseMusicDecimal(airNote.dt));
+                double roadTick = ParseMusicDecimal(roadNote.tick);
+                double airTick = ParseMusicDecimal(airNote.tick);
+
+                roadNote.dt = (Il2CppSystem.Decimal)NormalizeTimingValue(sharedDt);
+                roadNote.showTick = (Il2CppSystem.Decimal)NormalizeChartValue(roadTick - sharedDt);
+                roadNote.isDouble = true;
+                roadNote.doubleIdx = airNote.objId;
+
+                airNote.dt = (Il2CppSystem.Decimal)NormalizeTimingValue(sharedDt);
+                airNote.showTick = (Il2CppSystem.Decimal)NormalizeChartValue(airTick - sharedDt);
+                airNote.isDouble = true;
+                airNote.doubleIdx = roadNote.objId;
+
+                musicList[roadIndex] = roadNote;
+                musicList[airIndex] = airNote;
+                doubleGroupCount++;
             }
         }
 
-        MelonLogger.Msg($"[ExperimentChart.Bms] 더블 상태 적용 완료: groups={doubleGroupCount}, notes={musicList.Count - startIndex}");
+        MelonLogger.Msg($"[ExperimentChart.Bms] 더블 상태 적용 완료: pairs={doubleGroupCount}, notes={musicList.Count - startIndex}");
+    }
+
+    public static string GetDoubleExclusionReason(MusicData note)
+    {
+        if (note?.noteData == null) return "missing-note-data";
+        if (note.noteData.type != 1) return $"type-{note.noteData.type}";
+        if (note.isLongPressing) return "long-press-middle";
+        if (note.isLongPressEnd) return "long-press-end";
+        return null;
     }
 
     public static void LogOriginalUidMatches(MusicData[] sourceNotes, string targetScene, string targetXx)
