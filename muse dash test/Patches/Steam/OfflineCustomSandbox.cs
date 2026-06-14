@@ -46,10 +46,15 @@ namespace muse_dash_test
         {
             LoggerInstance.Msg("[OfflineSandbox] 개인 연구 및 오프라인 커스텀 샌드박스 로드 완료");
 
-            // 덤프 파일 생성 경로 설정 (게임 설치 경로 루트)
+            // 덤프 파일 생성 경로 설정 (hwa 폴더 내의 md 파일)
             try
             {
-                string dumpPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "OfflineSandbox_DiscoveryDump.txt");
+                string hwaDir = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
+                if (!Directory.Exists(hwaDir))
+                {
+                    Directory.CreateDirectory(hwaDir);
+                }
+                string dumpPath = Path.Combine(hwaDir, "OfflineSandbox_DiscoveryDump.md");
                 SandboxDumper.ExecuteDump(dumpPath);
             }
             catch (Exception ex)
@@ -67,11 +72,12 @@ namespace muse_dash_test
             {
                 MelonLogger.Msg("[OfflineSandbox.Dumper] 오프라인 샌드박스 분석용 디스커버리 덤프 시작...");
                 var sb = new StringBuilder();
-                sb.AppendLine("==========================================================================");
-                sb.AppendLine("   오프라인 샌드박스 패치용 스팀/DLC/인증 관련 API 디스커버리 덤프");
-                sb.AppendLine("   생성 일시: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                sb.AppendLine("   이 파일은 뮤즈대시 2 등의 신작 모딩 시 훅 타겟 탐색을 돕기 위해 생성되었습니다.");
-                sb.AppendLine("==========================================================================");
+                sb.AppendLine("# 🧪 오프라인 샌드박스 패치용 API 디스커버리 덤프");
+                sb.AppendLine();
+                sb.AppendLine($"- **생성 일시**: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                sb.AppendLine("- **설명**: 이 파일은 뮤즈대시 2 등의 신작 모딩 시 훅 타겟 탐색을 돕기 위해 리플렉션으로 추출된 정보입니다.");
+                sb.AppendLine();
+                sb.AppendLine("---");
                 sb.AppendLine();
 
                 string[] keywords = { "steam", "dlc", "verify", "purchase", "license", "ownership", "install", "store", "authorize", "drm" };
@@ -103,6 +109,8 @@ namespace muse_dash_test
 
                     if (types == null) continue;
 
+                    var matchedTypesInAssembly = new List<(Type type, List<FieldInfo> fields, List<MethodInfo> methods)>();
+
                     foreach (var type in types)
                     {
                         if (type == null) continue;
@@ -110,11 +118,23 @@ namespace muse_dash_test
                         string typeName = type.FullName ?? type.Name;
                         bool typeMatches = ContainsAnyKeyword(typeName, keywords);
 
-                        var matchedMethods = new List<MethodInfo>();
-                        
+                        var matchedFields = new List<FieldInfo>();
                         try
                         {
-                            // 타입 내부의 모든 메서드 스캔
+                            var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                            foreach (var field in fields)
+                            {
+                                if (ContainsAnyKeyword(field.Name, keywords) || typeMatches)
+                                {
+                                    matchedFields.Add(field);
+                                }
+                            }
+                        }
+                        catch {}
+
+                        var matchedMethods = new List<MethodInfo>();
+                        try
+                        {
                             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
                             foreach (var method in methods)
                             {
@@ -125,45 +145,56 @@ namespace muse_dash_test
                                 }
                             }
                         }
-                        catch
-                        {
-                            // 일부 난독화되거나 네이티브 결합된 메서드는 리플렉션 오류가 날 수 있음
-                        }
+                        catch {}
 
-                        if (typeMatches || matchedMethods.Count > 0)
+                        if (typeMatches || matchedFields.Count > 0 || matchedMethods.Count > 0)
+                        {
+                            matchedTypesInAssembly.Add((type, matchedFields, matchedMethods));
+                        }
+                    }
+
+                    if (matchedTypesInAssembly.Count > 0)
+                    {
+                        sb.AppendLine($"## 📦 Assembly: `{asmName}`");
+                        sb.AppendLine();
+
+                        foreach (var item in matchedTypesInAssembly)
                         {
                             matchedTypesCount++;
-                            sb.AppendLine($"[Class] {typeName} (Assembly: {asmName})");
+                            string typeName = item.type.FullName ?? item.type.Name;
+                            sb.AppendLine($"### 🔍 Class: `{typeName}`");
+                            sb.AppendLine();
 
-                            // 필드 정보 스캔
-                            try
+                            if (item.fields.Count > 0)
                             {
-                                var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                                foreach (var field in fields)
+                                sb.AppendLine("#### 📋 Fields");
+                                foreach (var field in item.fields)
                                 {
-                                    if (ContainsAnyKeyword(field.Name, keywords) || typeMatches)
+                                    sb.AppendLine($"- `{field.FieldType.Name} {field.Name}`");
+                                }
+                                sb.AppendLine();
+                            }
+
+                            if (item.methods.Count > 0)
+                            {
+                                sb.AppendLine("#### ⚙️ Methods");
+                                foreach (var method in item.methods)
+                                {
+                                    matchedMethodsCount++;
+                                    var paramsSb = new StringBuilder();
+                                    var parameters = method.GetParameters();
+                                    for (int i = 0; i < parameters.Length; i++)
                                     {
-                                        sb.AppendLine($"  [Field] {field.FieldType.Name} {field.Name}");
+                                        paramsSb.Append($"{parameters[i].ParameterType.Name} {parameters[i].Name}");
+                                        if (i < parameters.Length - 1) paramsSb.Append(", ");
                                     }
-                                }
-                            }
-                            catch {}
 
-                            // 메서드 정보 스캔
-                            foreach (var method in matchedMethods)
-                            {
-                                matchedMethodsCount++;
-                                var paramsSb = new StringBuilder();
-                                var parameters = method.GetParameters();
-                                for (int i = 0; i < parameters.Length; i++)
-                                {
-                                    paramsSb.Append($"{parameters[i].ParameterType.Name} {parameters[i].Name}");
-                                    if (i < parameters.Length - 1) paramsSb.Append(", ");
+                                    string modifier = method.IsStatic ? "static " : "";
+                                    sb.AppendLine($"- `{modifier}{method.ReturnType.Name} {method.Name}({paramsSb})`");
                                 }
-
-                                string modifier = method.IsStatic ? "static " : "";
-                                sb.AppendLine($"  [Method] {modifier}{method.ReturnType.Name} {method.Name}({paramsSb.ToString()})");
+                                sb.AppendLine();
                             }
+                            sb.AppendLine("---");
                             sb.AppendLine();
                         }
                     }
