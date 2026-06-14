@@ -44,8 +44,6 @@ namespace muse_dash_test
     {
         public static void Initialize()
         {
-            MelonLogger.Msg("[OfflineSandbox] 개인 연구 및 오프라인 커스텀 샌드박스 초기화 시작...");
-
             // 덤프 파일 생성 경로 설정 (hwa 폴더 내의 md 파일)
             try
             {
@@ -53,7 +51,6 @@ namespace muse_dash_test
                 if (!Directory.Exists(hwaDir))
                 {
                     Directory.CreateDirectory(hwaDir);
-                    MelonLogger.Msg($"[OfflineSandbox] hwa 디렉토리가 없어 새로 생성했습니다: {hwaDir}");
                 }
                 string dumpPath = Path.Combine(hwaDir, "OfflineSandbox_DiscoveryDump.md");
                 SandboxDumper.ExecuteDump(dumpPath);
@@ -71,36 +68,26 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("[OfflineSandbox.Dumper] 오프라인 샌드박스 분석용 디스커버리 덤프 시작...");
-                MelonLogger.Msg($"[OfflineSandbox.Dumper] 대상 경로: {outputPath}");
-
                 var sb = new StringBuilder();
                 sb.AppendLine("# 🧪 오프라인 샌드박스 패치용 API 디스커버리 덤프");
                 sb.AppendLine();
                 sb.AppendLine($"- **생성 일시**: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                sb.AppendLine("- **설명**: 이 파일은 뮤즈대시 2 등의 신작 모딩 시 훅 타겟 탐색을 돕기 위해 리플렉션으로 추출된 정보입니다.");
+                sb.AppendLine("- **설명**: 이 파일은 Steamworks.NET 라이브러리(Il2Cppcom.rlabrecque.steamworks.net)의 훅 타겟 탐색을 위해 추출된 정보입니다.");
                 sb.AppendLine();
                 sb.AppendLine("---");
                 sb.AppendLine();
 
-                string[] keywords = { "steam", "dlc", "verify", "purchase", "license", "ownership", "install", "store", "authorize", "drm" };
-                
                 var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                MelonLogger.Msg($"[OfflineSandbox.Dumper] 현재 로드된 총 {assemblies.Length}개의 어셈블리 스캔 시작...");
-
                 int matchedTypesCount = 0;
                 int matchedMethodsCount = 0;
-                int processedAssemblies = 0;
 
                 foreach (var assembly in assemblies)
                 {
                     string asmName = assembly.GetName().Name;
-                    // 게임 및 스팀 관련 바이너리만 타겟팅 (성능 및 노이즈 방지)
-                    if (!asmName.StartsWith("Il2Cpp") && asmName != "Assembly-CSharp")
+                    
+                    // 오직 Il2Cppcom.rlabrecque.steamworks.net 어셈블리만 스캔합니다.
+                    if (asmName != "Il2Cppcom.rlabrecque.steamworks.net")
                         continue;
-
-                    processedAssemblies++;
-                    MelonLogger.Msg($"[OfflineSandbox.Dumper] 어셈블리 스캔 중: {asmName}");
 
                     Type[] types;
                     try
@@ -110,86 +97,51 @@ namespace muse_dash_test
                     catch (ReflectionTypeLoadException ex)
                     {
                         types = ex.Types;
-                        MelonLogger.Warning($"[OfflineSandbox.Dumper] 어셈블리 {asmName} 로드 중 일부 타입 로드 경고 발생 (복구 스캔 진행)");
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        MelonLogger.Error($"[OfflineSandbox.Dumper] 어셈블리 {asmName} 스캔 실패: {ex.Message}");
                         continue;
                     }
 
                     if (types == null) continue;
 
-                    var matchedTypesInAssembly = new List<(Type type, List<FieldInfo> fields, List<MethodInfo> methods)>();
+                    sb.AppendLine($"## 📦 Assembly: `{asmName}`");
+                    sb.AppendLine();
 
                     foreach (var type in types)
                     {
                         if (type == null) continue;
 
                         string typeName = type.FullName ?? type.Name;
-                        bool typeMatches = ContainsAnyKeyword(typeName, keywords);
+                        matchedTypesCount++;
 
-                        var matchedFields = new List<FieldInfo>();
+                        sb.AppendLine($"### 🔍 Class: `{typeName}`");
+                        sb.AppendLine();
+
+                        // 필드 정보 스캔
                         try
                         {
                             var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                            foreach (var field in fields)
-                            {
-                                if (ContainsAnyKeyword(field.Name, keywords) || typeMatches)
-                                {
-                                    matchedFields.Add(field);
-                                }
-                            }
-                        }
-                        catch {}
-
-                        var matchedMethods = new List<MethodInfo>();
-                        try
-                        {
-                            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                            foreach (var method in methods)
-                            {
-                                if (method == null) continue;
-                                if (typeMatches || ContainsAnyKeyword(method.Name, keywords))
-                                {
-                                    matchedMethods.Add(method);
-                                }
-                            }
-                        }
-                        catch {}
-
-                        if (typeMatches || matchedFields.Count > 0 || matchedMethods.Count > 0)
-                        {
-                            matchedTypesInAssembly.Add((type, matchedFields, matchedMethods));
-                        }
-                    }
-
-                    if (matchedTypesInAssembly.Count > 0)
-                    {
-                        sb.AppendLine($"## 📦 Assembly: `{asmName}`");
-                        sb.AppendLine();
-
-                        foreach (var item in matchedTypesInAssembly)
-                        {
-                            matchedTypesCount++;
-                            string typeName = item.type.FullName ?? item.type.Name;
-                            sb.AppendLine($"### 🔍 Class: `{typeName}`");
-                            sb.AppendLine();
-
-                            if (item.fields.Count > 0)
+                            if (fields.Length > 0)
                             {
                                 sb.AppendLine("#### 📋 Fields");
-                                foreach (var field in item.fields)
+                                foreach (var field in fields)
                                 {
                                     sb.AppendLine($"- `{field.FieldType.Name} {field.Name}`");
                                 }
                                 sb.AppendLine();
                             }
+                        }
+                        catch {}
 
-                            if (item.methods.Count > 0)
+                        // 메서드 정보 스캔
+                        try
+                        {
+                            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
+                            if (methods.Length > 0)
                             {
                                 sb.AppendLine("#### ⚙️ Methods");
-                                foreach (var method in item.methods)
+                                foreach (var method in methods)
                                 {
                                     matchedMethodsCount++;
                                     var paramsSb = new StringBuilder();
@@ -205,32 +157,21 @@ namespace muse_dash_test
                                 }
                                 sb.AppendLine();
                             }
-                            sb.AppendLine("---");
-                            sb.AppendLine();
                         }
+                        catch {}
+                        
+                        sb.AppendLine("---");
+                        sb.AppendLine();
                     }
                 }
 
                 File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
-                MelonLogger.Msg($"[OfflineSandbox.Dumper] 스캔한 대상 어셈블리 개수: {processedAssemblies}개");
-                MelonLogger.Msg($"[OfflineSandbox.Dumper] 덤프 완료! 발견된 클래스: {matchedTypesCount}개, 메서드: {matchedMethodsCount}개");
-                MelonLogger.Msg($"[OfflineSandbox.Dumper] 저장 완료 경로: {outputPath}");
+                MelonLogger.Msg($"[OfflineSandbox] 덤프 완료! 발견된 클래스: {matchedTypesCount}개, 메서드: {matchedMethodsCount}개");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OfflineSandbox.Dumper] 분석 덤프 도중 오류 발생: {ex}");
+                MelonLogger.Error($"[OfflineSandbox] 분석 덤프 도중 오류 발생: {ex}");
             }
-        }
-
-        private static bool ContainsAnyKeyword(string value, string[] keywords)
-        {
-            if (string.IsNullOrEmpty(value)) return false;
-            foreach (var kw in keywords)
-            {
-                if (value.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
-                    return true;
-            }
-            return false;
         }
     }
 }
