@@ -42,19 +42,8 @@ public class LongSongNameController_Refresh_Patch
 
     public static void Prefix(Il2Cpp.LongSongNameController __instance, ref string text, bool isSpecialFont, float delay)
     {
-        if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
-        {
-            return;
-        }
         try
         {
-            // 등록된 커스텀 텍스트 우선 적용 (Refresh 시에도 유지)
-            if (_customTextMap.TryGetValue(__instance.Pointer, out var mapped))
-            {
-                text = mapped;
-                return;
-            }
-            
             // 현재 이 Controller가 속한 곡의 UID를 구한다.
             // 우선 parent MusicButtonCell을 찾아보고, 있으면 그 셀의 곡 UID를 사용한다.
             string targetUid = null;
@@ -71,6 +60,21 @@ public class LongSongNameController_Refresh_Patch
                 {
                     targetUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
                 }
+            }
+
+            bool isCustomSong = targetUid != null && targetUid.StartsWith("1999-");
+
+            // 실험 모드가 비활성화되어 있고, 가상 곡도 아니라면 얼리 리턴합니다.
+            if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive && !isCustomSong)
+            {
+                return;
+            }
+
+            // 등록된 커스텀 텍스트 우선 적용 (Refresh 시에도 유지)
+            if (_customTextMap.TryGetValue(__instance.Pointer, out var mapped))
+            {
+                text = mapped;
+                return;
             }
 
             if (string.IsNullOrEmpty(targetUid) || targetUid == "(null)")

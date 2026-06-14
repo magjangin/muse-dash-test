@@ -12,11 +12,6 @@ namespace muse_dash_test
 
         public static void ApplyCustomCellTitle(PnlMusicTag panel)
         {
-            if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
-            {
-                return;
-            }
-
             try
             {
                 var viewItems = panel?.viewItems;
