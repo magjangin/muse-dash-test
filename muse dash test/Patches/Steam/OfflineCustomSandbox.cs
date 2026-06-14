@@ -40,11 +40,11 @@ namespace muse_dash_test
         }
     }
 
-    public class OfflineCustomSandbox : MelonMod
+    public static class OfflineCustomSandbox
     {
-        public override void OnInitializeMelon()
+        public static void Initialize()
         {
-            LoggerInstance.Msg("[OfflineSandbox] 개인 연구 및 오프라인 커스텀 샌드박스 로드 완료");
+            MelonLogger.Msg("[OfflineSandbox] 개인 연구 및 오프라인 커스텀 샌드박스 초기화 시작...");
 
             // 덤프 파일 생성 경로 설정 (hwa 폴더 내의 md 파일)
             try
@@ -53,13 +53,14 @@ namespace muse_dash_test
                 if (!Directory.Exists(hwaDir))
                 {
                     Directory.CreateDirectory(hwaDir);
+                    MelonLogger.Msg($"[OfflineSandbox] hwa 디렉토리가 없어 새로 생성했습니다: {hwaDir}");
                 }
                 string dumpPath = Path.Combine(hwaDir, "OfflineSandbox_DiscoveryDump.md");
                 SandboxDumper.ExecuteDump(dumpPath);
             }
             catch (Exception ex)
             {
-                LoggerInstance.Error($"[OfflineSandbox] 덤프 프로세스 시작 실패: {ex.Message}");
+                MelonLogger.Error($"[OfflineSandbox] 덤프 프로세스 시작 실패: {ex.Message}");
             }
         }
     }
@@ -71,6 +72,8 @@ namespace muse_dash_test
             try
             {
                 MelonLogger.Msg("[OfflineSandbox.Dumper] 오프라인 샌드박스 분석용 디스커버리 덤프 시작...");
+                MelonLogger.Msg($"[OfflineSandbox.Dumper] 대상 경로: {outputPath}");
+
                 var sb = new StringBuilder();
                 sb.AppendLine("# 🧪 오프라인 샌드박스 패치용 API 디스커버리 덤프");
                 sb.AppendLine();
@@ -83,8 +86,11 @@ namespace muse_dash_test
                 string[] keywords = { "steam", "dlc", "verify", "purchase", "license", "ownership", "install", "store", "authorize", "drm" };
                 
                 var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                MelonLogger.Msg($"[OfflineSandbox.Dumper] 현재 로드된 총 {assemblies.Length}개의 어셈블리 스캔 시작...");
+
                 int matchedTypesCount = 0;
                 int matchedMethodsCount = 0;
+                int processedAssemblies = 0;
 
                 foreach (var assembly in assemblies)
                 {
@@ -92,6 +98,9 @@ namespace muse_dash_test
                     // 게임 및 스팀 관련 바이너리만 타겟팅 (성능 및 노이즈 방지)
                     if (!asmName.StartsWith("Il2Cpp") && asmName != "Assembly-CSharp")
                         continue;
+
+                    processedAssemblies++;
+                    MelonLogger.Msg($"[OfflineSandbox.Dumper] 어셈블리 스캔 중: {asmName}");
 
                     Type[] types;
                     try
@@ -101,9 +110,11 @@ namespace muse_dash_test
                     catch (ReflectionTypeLoadException ex)
                     {
                         types = ex.Types;
+                        MelonLogger.Warning($"[OfflineSandbox.Dumper] 어셈블리 {asmName} 로드 중 일부 타입 로드 경고 발생 (복구 스캔 진행)");
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        MelonLogger.Error($"[OfflineSandbox.Dumper] 어셈블리 {asmName} 스캔 실패: {ex.Message}");
                         continue;
                     }
 
@@ -201,8 +212,9 @@ namespace muse_dash_test
                 }
 
                 File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+                MelonLogger.Msg($"[OfflineSandbox.Dumper] 스캔한 대상 어셈블리 개수: {processedAssemblies}개");
                 MelonLogger.Msg($"[OfflineSandbox.Dumper] 덤프 완료! 발견된 클래스: {matchedTypesCount}개, 메서드: {matchedMethodsCount}개");
-                MelonLogger.Msg($"[OfflineSandbox.Dumper] 저장 경로: {outputPath}");
+                MelonLogger.Msg($"[OfflineSandbox.Dumper] 저장 완료 경로: {outputPath}");
             }
             catch (Exception ex)
             {

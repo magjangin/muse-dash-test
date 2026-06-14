@@ -25,6 +25,16 @@ namespace muse_dash_test
 
             try
             {
+                // 오프라인 커스텀 샌드박스 및 디스커버리 덤프 실행
+                OfflineCustomSandbox.Initialize();
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[OfflineSandbox] 초기화 중 예외 발생: {ex}");
+            }
+
+            try
+            {
                 // 게임이 켜질 때 즉시 설정 폴더/파일을 감지 및 생성/로드합니다.
                 InputOverlay.LoadConfigIfNeeded();
 
