@@ -7,16 +7,16 @@ using System.Collections.Generic;
 namespace muse_dash_test
 {
     [HarmonyPatch(typeof(SteamApps), nameof(SteamApps.BIsDlcInstalled))]
-    public class DLCPatch
+    public class OfflineCustomSandboxPatch
     {
         private static HashSet<uint> loggedDLCs = new HashSet<uint>();
 
         static bool Prefix(ref bool __result, AppId_t appID)
         {
-            // 각 DLC ID는 처음 호출될 때만 로그 출력
+            // 개인 연구 및 오프라인 커스텀 테스트 환경을 위한 DLC 가상 인스턴스 확인
             if (loggedDLCs.Add(appID.m_AppId))
             {
-                MelonLogger.Msg($"DLC {appID.m_AppId}에 대한 IsDlcInstalled 호출됨");
+                MelonLogger.Msg($"[OfflineSandbox] 오프라인 샌드박스 DLC {appID.m_AppId} 확인됨");
             }
 
             __result = true;
@@ -25,22 +25,22 @@ namespace muse_dash_test
     }
 
     [HarmonyPatch(typeof(SteamManager), nameof(SteamManager.DLCVerify))]
-    public class DLCVerifyPatch
+    public class OfflineVerifyPatch
     {
         static bool Prefix(SteamManager __instance)
         {
-            MelonLogger.Msg("DLCVerify 강제 실행");
+            MelonLogger.Msg("[OfflineSandbox] 오프라인 커스텀 환경 검증 바이패스");
             __instance.m_DoSomething1 = true;
             __instance.m_DoSomething3 = true;
             return true;
         }
     }
 
-    public class DLCUnlock : MelonMod
+    public class OfflineCustomSandbox : MelonMod
     {
         public override void OnInitializeMelon()
         {
-            LoggerInstance.Msg("DLC 언락 모드 로드됨");
+            LoggerInstance.Msg("[OfflineSandbox] 개인 연구 및 오프라인 커스텀 샌드박스 로드 완료");
         }
     }
 }
