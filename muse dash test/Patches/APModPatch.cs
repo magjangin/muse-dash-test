@@ -134,6 +134,9 @@ namespace muse_dash_test.Patches
             {
                 MelonLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
 
+                // 곡 종료(결과 화면) 시 OBS 녹화 정지
+                muse_dash_test.ObsController.StopRecording();
+
                 if (__instance == null)
                 {
                     MelonLogger.Msg("[APMod] __instance가 null입니다!");

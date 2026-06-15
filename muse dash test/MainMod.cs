@@ -38,6 +38,9 @@ namespace muse_dash_test
                 // 게임이 켜질 때 즉시 설정 폴더/파일을 감지 및 생성/로드합니다.
                 InputOverlay.LoadConfigIfNeeded();
 
+                // OBS 자동 녹화 연동 설정 로드 (설정 파일 없으면 기본값 생성)
+                ObsController.LoadConfig();
+
                 string hwaPath = HwaResourceManager.HwaFolderPath;
                 Directory.CreateDirectory(hwaPath);
                 MelonLogger.Msg($"hwa 폴더를 확인/생성했습니다: {hwaPath}");
