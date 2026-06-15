@@ -465,6 +465,7 @@ namespace muse_dash_test
                         vp.Stop();
                         MelonLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 완전히 멈췄습니다.");
                     }
+
                 }
 
                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");

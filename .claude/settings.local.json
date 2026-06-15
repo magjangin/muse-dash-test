@@ -4,7 +4,12 @@
       "PowerShell(if \\(Test-Path \"$env:USERPROFILE\\\\.claude\\\\settings.json\"\\) { Get-Content \"$env:USERPROFILE\\\\.claude\\\\settings.json\" | Select-String \"hook\" -Context 2 } else { \"No global settings.json found\" })",
       "Bash(xargs wc -l)",
       "mcp__visualize__show_widget",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(cmd /c build.bat)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"H:\\\\source\\\\repos\\\\muse dash test\\\\muse dash test\\\\muse dash test.csproj\" /p:Configuration=Debug /p:Platform=\"AnyCPU\" /p:GamePath=\"H:\\\\steam\\\\steamapps\\\\common\\\\Muse Dash\" /p:UseSharedCompilation=false /nr:false /t:Build /v:minimal /nologo)",
+      "Bash(git checkout *)",
+      "Bash(git rm *)",
+      "Bash(git add *)"
     ]
   }
 }

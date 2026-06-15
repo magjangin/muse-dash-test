@@ -1,11 +1,11 @@
+using System;
 using MelonLoader;
 using Il2CppAssets.Scripts.Database;
-using Il2CppAssets.Scripts.GameCore.Managers;
-using Il2CppGameLogic;
-using Il2CppFormulaBase;
 
 namespace muse_dash_test
 {
+    // === 오토플레이 설정 파일 연동 패치 ===
+
     [HarmonyLib.HarmonyPatch(typeof(DBSkill), "SetAutoPlay")]
     public class DBSkill_SetAutoPlay_Patch
     {
@@ -13,25 +13,14 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg($"[DBSkill.SetAutoPlay.Prefix] 호출 감지: 기존 인자 enable={enable}");
+                // 설정 파일에 적힌 오토플레이 강제 값으로 덮어씌웁니다.
+                enable = InputOverlay.forceAutoPlay;
+                MelonLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay 강제 조작: enable -> {enable}");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 MelonLogger.Error($"[DBSkill.SetAutoPlay.Prefix] Prefix 예외 발생: {ex}");
             }
         }
-
-        public static void Postfix(DBSkill __instance, bool enable)
-        {
-            try
-            {
-                MelonLogger.Msg($"[DBSkill.SetAutoPlay.Postfix] 최종 설정 적용완료: enable={enable}, instance={__instance}");
-            }
-            catch (System.Exception ex)
-            {
-                MelonLogger.Error($"[DBSkill.SetAutoPlay.Postfix] Postfix 예외 발생: {ex}");
-            }
-        }
     }
-
 }

@@ -41,6 +41,10 @@ namespace muse_dash_test
         public static float tickDuration = 1.2f;
         public static bool barResponsive = false;
 
+        // 추가 설정 필드 (오토플레이 & 피버 차단)
+        public static bool blockFever = false;
+        public static bool forceAutoPlay = false;
+
         private static string airColorName = "파랑";
         private static float airAlpha = 85f;
 
@@ -127,6 +131,10 @@ namespace muse_dash_test
                 sb.AppendLine($"판정바글자크기={barFontSize}");
                 sb.AppendLine($"판정바틱유지시간={tickDuration}");
                 sb.AppendLine($"판정바반응형={barResponsive.ToString().ToLower()}");
+                sb.AppendLine();
+                sb.AppendLine("# 오토플레이 및 피버 설정");
+                sb.AppendLine($"오토플레이={forceAutoPlay.ToString().ToLower()}");
+                sb.AppendLine($"피버충전금지={blockFever.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), Encoding.UTF8);
                 MelonLogger.Msg($"[InputOverlay] 기본 설정 파일(config.txt)을 새로 생성했습니다: {configPath}");
@@ -214,6 +222,12 @@ namespace muse_dash_test
                             break;
                         case "판정바반응형":
                             bool.TryParse(val, out barResponsive);
+                            break;
+                        case "오토플레이":
+                            bool.TryParse(val, out forceAutoPlay);
+                            break;
+                        case "피버충전금지":
+                            bool.TryParse(val, out blockFever);
                             break;
                     }
                 }
