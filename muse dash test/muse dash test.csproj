@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>muse_dash_test</RootNamespace>
-    <AssemblyName>muse_dash_test</AssemblyName>
+    <AssemblyName>muse dash custom chart</AssemblyName>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
