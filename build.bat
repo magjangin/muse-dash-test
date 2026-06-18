@@ -12,7 +12,7 @@ echo.
 set "PROJECT_NAME=muse_dash_test"
 set "PROJECT_DIR=muse dash test"
 set "SOLUTION_FILE=%PROJECT_DIR%\muse dash test.csproj"
-set "DLL_NAME=%PROJECT_NAME%.dll"
+set "DLL_NAME=muse dash custom chart.dll"
 set "DEFAULT_GAME_PATH=H:\steam\steamapps\common\Muse Dash"
 :: Find MSBuild
 set "MSBUILD_PATH="
