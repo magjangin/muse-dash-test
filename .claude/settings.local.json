@@ -9,7 +9,17 @@
       "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"H:\\\\source\\\\repos\\\\muse dash test\\\\muse dash test\\\\muse dash test.csproj\" /p:Configuration=Debug /p:Platform=\"AnyCPU\" /p:GamePath=\"H:\\\\steam\\\\steamapps\\\\common\\\\Muse Dash\" /p:UseSharedCompilation=false /nr:false /t:Build /v:minimal /nologo)",
       "Bash(git checkout *)",
       "Bash(git rm *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m '@ *)",
+      "Bash(git commit --amend -m 'feat: OBS 자동 녹화 연동 추가 및 플레이 기록 가상 곡 노출 버그 수정' -m '- OBS WebSocket\\(v5\\) 연동: 곡 시작 시 녹화 시작, 결과 화면에서 지연 후 정지 \\(Integration/ObsController, 의존성 없이 ClientWebSocket 사용, 설정 파일로 인증/지연 조정\\) *)",
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"MainMod.cs\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(grep -v \"\\\\.codex\\\\|scratch\\\\|obj\\\\\\\\\")",
+      "mcp__mcp-registry__search_mcp_registry",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:hwa.moe)"
     ]
   }
 }

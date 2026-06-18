@@ -1,69 +1,13 @@
 using MelonLoader;
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
-using System.Reflection;
 
+// 실험 차트 핵심 파이프라인: 원본 노트 복제 → 스펙 적용 → 노트 삽입.
+// (보조 로직은 같은 partial 클래스의 .Bms / .Resolve / .Sorting / .Diagnostics 파일로 분리되어 있습니다.)
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
     // true: BMS 파일이 있으면 BMS 차트를 주입, false: ExperimentNotes 배열만 사용
     private static readonly bool UseBmsInjection = true;
-
-    public static void DumpMusicList(DBStageInfo __instance)
-    {
-        var musicList = __instance._musicList_k__BackingField;
-        if (musicList == null)
-        {
-            return;
-        }
-
-        int bossEventCount = 0;
-        MelonLogger.Msg($"[OfficialBossContext] 원본 차트 보스 이벤트 주변 덤프 시작: total={musicList.Count}, neighbors=2");
-
-        for (int i = 0; i < musicList.Count; i++)
-        {
-            var note = musicList[i];
-            string bossAction = note.noteData?.boss_action ?? string.Empty;
-            if (note.noteData?.type != 0
-                || string.IsNullOrWhiteSpace(bossAction)
-                || string.Equals(bossAction, "0", System.StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            bossEventCount++;
-            MelonLogger.Msg($"[OfficialBossContext] === event#{bossEventCount}, index={i}, action={bossAction} ===");
-
-            int firstIndex = System.Math.Max(0, i - 2);
-            int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
-            for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
-            {
-                LogOfficialBossContextNote(contextIndex, i, musicList[contextIndex]);
-            }
-        }
-
-        MelonLogger.Msg($"[OfficialBossContext] 원본 차트 보스 이벤트 주변 덤프 완료: events={bossEventCount}");
-    }
-
-    public static void LogOfficialBossContextNote(int index, int eventIndex, MusicData note)
-    {
-        if (note == null)
-        {
-            MelonLogger.Msg($"[OfficialBossContext] {(index == eventIndex ? "EVENT" : "NEIGHBOR")} index={index}, note=(null)");
-            return;
-        }
-
-        string role = index == eventIndex ? "EVENT" : index < eventIndex ? "PREV" : "NEXT";
-        MelonLogger.Msg(
-            $"[OfficialBossContext] {role} index={index}, objId={SafeLogValue(() => note.objId)}, " +
-            $"tick={SafeLogValue(() => note.tick)}, dt={SafeLogValue(() => note.dt)}, showTick={SafeLogValue(() => note.showTick)}, " +
-            $"uid={SafeLogValue(() => note.noteData?.uid)}, type={SafeLogValue(() => note.noteData?.type)}, " +
-            $"pathway={SafeLogValue(() => note.noteData?.pathway)}, boss_action={SafeLogValue(() => note.noteData?.boss_action)}, " +
-            $"prefab={SafeLogValue(() => note.noteData?.prefab_name)}, key_audio={SafeLogValue(() => note.noteData?.key_audio)}, " +
-            $"isDouble={SafeLogValue(() => note.isDouble)}, doubleIdx={SafeLogValue(() => note.doubleIdx)}, sameTickNoteIdx={SafeLogValue(() => note.sameTickNoteIdx)}, " +
-            $"isLongPressing={SafeLogValue(() => note.isLongPressing)}, isLongPressEnd={SafeLogValue(() => note.isLongPressEnd)}, endIndex={SafeLogValue(() => note.endIndex)}, " +
-            $"config.id={SafeLogValue(() => note.configData?.id)}, config.time={SafeLogValue(() => note.configData?.time)}, " +
-            $"config.length={SafeLogValue(() => note.configData?.length)}, config.pathway={SafeLogValue(() => note.configData?.pathway)}");
-    }
 
     public static void ApplyExperimentChart(DBStageInfo __instance, string activeUid)
     {
@@ -121,299 +65,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         MelonLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
-    }
-
-    public static void SortBmsRuntimeMusicListByShowTick(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
-    {
-        if (musicList == null || musicList.Count <= startIndex)
-        {
-            return;
-        }
-
-        var runtimeNotes = new System.Collections.Generic.List<MusicData>();
-        var oldEndIndices = new System.Collections.Generic.Dictionary<short, int>();
-        var oldDoubleIndices = new System.Collections.Generic.Dictionary<short, int>();
-        var oldDoubleStates = new System.Collections.Generic.Dictionary<short, bool>();
-
-        for (int i = startIndex; i < musicList.Count; i++)
-        {
-            var note = musicList[i];
-            runtimeNotes.Add(note);
-            oldEndIndices[note.objId] = note.endIndex;
-            oldDoubleIndices[note.objId] = note.doubleIdx;
-            oldDoubleStates[note.objId] = note.isDouble;
-        }
-
-        runtimeNotes.Sort((left, right) =>
-        {
-            int showTickCompare = ParseMusicDecimal(left.showTick).CompareTo(ParseMusicDecimal(right.showTick));
-            if (showTickCompare != 0) return showTickCompare;
-
-            int tickCompare = ParseMusicDecimal(left.tick).CompareTo(ParseMusicDecimal(right.tick));
-            if (tickCompare != 0) return tickCompare;
-
-            return left.objId.CompareTo(right.objId);
-        });
-
-        var newIndexByOldObjId = new System.Collections.Generic.Dictionary<short, int>();
-        for (int i = 0; i < runtimeNotes.Count; i++)
-        {
-            newIndexByOldObjId[runtimeNotes[i].objId] = startIndex + i;
-        }
-
-        while (musicList.Count > startIndex)
-        {
-            musicList.RemoveAt(musicList.Count - 1);
-        }
-
-        for (int i = 0; i < runtimeNotes.Count; i++)
-        {
-            var note = runtimeNotes[i];
-            short oldObjId = note.objId;
-            int newIndex = startIndex + i;
-
-            note.objId = (short)newIndex;
-            note.isDouble = oldDoubleStates.TryGetValue(oldObjId, out bool wasDouble) && wasDouble;
-            note.doubleIdx = note.noteData?.type == 0 ? -1 : 0;
-
-            if (note.isDouble
-                && oldDoubleIndices.TryGetValue(oldObjId, out int oldDoubleIndex)
-                && newIndexByOldObjId.TryGetValue((short)oldDoubleIndex, out int newDoubleIndex))
-            {
-                note.doubleIdx = newDoubleIndex;
-            }
-
-            if (IsSceneToggleNote(note))
-            {
-                note.doubleIdx = -1;
-            }
-
-            if (oldEndIndices.TryGetValue(oldObjId, out int oldEndIndex)
-                && oldEndIndex > 0
-                && newIndexByOldObjId.TryGetValue((short)oldEndIndex, out int newEndIndex))
-            {
-                note.endIndex = newEndIndex;
-            }
-
-            if (note.noteData != null)
-            {
-                note.noteData.id = newIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            }
-
-            if (note.configData != null)
-            {
-                note.configData.id = newIndex;
-            }
-
-            musicList.Add(note);
-        }
-
-        MelonLogger.Msg($"[ExperimentChart.Bms] 공식 방식 showTick 정렬 완료: notes={runtimeNotes.Count}, bossOffset={BossEventTickOffset}");
-        DumpSortedBmsBossContext(musicList, startIndex);
-    }
-
-    public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
-    {
-        for (int i = startIndex; i < musicList.Count; i++)
-        {
-            var note = musicList[i];
-            if (note.noteData?.type != 0 || string.IsNullOrWhiteSpace(note.noteData.boss_action))
-            {
-                continue;
-            }
-
-            MelonLogger.Msg($"[BmsSortedBossContext] === index={i}, action={note.noteData.boss_action} ===");
-            int firstIndex = System.Math.Max(startIndex, i - 2);
-            int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
-            for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
-            {
-                var contextNote = musicList[contextIndex];
-                string role = contextIndex == i ? "EVENT" : contextIndex < i ? "PREV" : "NEXT";
-                MelonLogger.Msg(
-                    $"[BmsSortedBossContext] {role} index={contextIndex}, objId={contextNote.objId}, " +
-                    $"tick={contextNote.tick}, dt={contextNote.dt}, showTick={contextNote.showTick}, " +
-                    $"config.time={SafeLogValue(() => contextNote.configData?.time)}, uid={SafeLogValue(() => contextNote.noteData?.uid)}, " +
-                    $"type={SafeLogValue(() => contextNote.noteData?.type)}, boss_action={SafeLogValue(() => contextNote.noteData?.boss_action)}");
-            }
-        }
-    }
-
-    public static double ParseMusicDecimal(Il2CppSystem.Decimal value)
-    {
-        if (double.TryParse(value.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double parsed))
-        {
-            return parsed;
-        }
-
-        return 0.0;
-    }
-
-    public static void ApplyBmsDoubleState(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
-    {
-        if (musicList == null || musicList.Count <= startIndex)
-        {
-            return;
-        }
-
-        var groupsByTick = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>>(System.StringComparer.Ordinal);
-
-        for (int i = startIndex; i < musicList.Count; i++)
-        {
-            var note = musicList[i];
-            if (note?.noteData == null)
-            {
-                continue;
-            }
-
-            string tickKey = note.tick.ToString();
-            if (!groupsByTick.TryGetValue(tickKey, out var indices))
-            {
-                indices = new System.Collections.Generic.List<int>();
-                groupsByTick[tickKey] = indices;
-            }
-
-            indices.Add(i);
-        }
-
-        int doubleGroupCount = 0;
-        foreach (var group in groupsByTick.Values)
-        {
-            if (group == null || group.Count < 2)
-            {
-                continue;
-            }
-
-            group.Sort();
-            var roadIndices = new System.Collections.Generic.List<int>();
-            var airIndices = new System.Collections.Generic.List<int>();
-
-            for (int i = 0; i < group.Count; i++)
-            {
-                int noteIndex = group[i];
-                var note = musicList[noteIndex];
-                string exclusionReason = GetDoubleExclusionReason(note);
-
-                if (exclusionReason != null)
-                {
-                    continue;
-                }
-
-                if (note.noteData.pathway == 1)
-                {
-                    airIndices.Add(noteIndex);
-                }
-                else
-                {
-                    roadIndices.Add(noteIndex);
-                }
-            }
-
-            int pairCount = group.Count == 2 && roadIndices.Count == 1 && airIndices.Count == 1 ? 1 : 0;
-            for (int i = 0; i < pairCount; i++)
-            {
-                int roadIndex = roadIndices[i];
-                int airIndex = airIndices[i];
-                var roadNote = musicList[roadIndex];
-                var airNote = musicList[airIndex];
-
-                double sharedDt = System.Math.Max(ParseMusicDecimal(roadNote.dt), ParseMusicDecimal(airNote.dt));
-                double roadTick = ParseMusicDecimal(roadNote.tick);
-                double airTick = ParseMusicDecimal(airNote.tick);
-
-                roadNote.dt = (Il2CppSystem.Decimal)NormalizeTimingValue(sharedDt);
-                roadNote.showTick = (Il2CppSystem.Decimal)NormalizeChartValue(roadTick - sharedDt);
-                roadNote.isDouble = true;
-                roadNote.doubleIdx = airNote.objId;
-
-                airNote.dt = (Il2CppSystem.Decimal)NormalizeTimingValue(sharedDt);
-                airNote.showTick = (Il2CppSystem.Decimal)NormalizeChartValue(airTick - sharedDt);
-                airNote.isDouble = true;
-                airNote.doubleIdx = roadNote.objId;
-
-                musicList[roadIndex] = roadNote;
-                musicList[airIndex] = airNote;
-                doubleGroupCount++;
-            }
-        }
-
-        MelonLogger.Msg($"[ExperimentChart.Bms] 더블 상태 적용 완료: pairs={doubleGroupCount}, notes={musicList.Count - startIndex}");
-    }
-
-    public static string GetDoubleExclusionReason(MusicData note)
-    {
-        if (note?.noteData == null) return "missing-note-data";
-        if (note.noteData.type != 1) return $"type-{note.noteData.type}";
-        if (note.isLongPressing) return "long-press-middle";
-        if (note.isLongPressEnd) return "long-press-end";
-        return null;
-    }
-
-    public static void LogOriginalUidMatches(MusicData[] sourceNotes, string targetScene, string targetXx)
-    {
-        if (sourceNotes == null || string.IsNullOrWhiteSpace(targetScene) || string.IsNullOrWhiteSpace(targetXx))
-        {
-            return;
-        }
-
-        int count = 0;
-        for (int i = 0; i < sourceNotes.Length; i++)
-        {
-            try
-            {
-                var note = sourceNotes[i];
-                if (note == null)
-                {
-                    continue;
-                }
-
-                var noteData = note.noteData;
-                if (noteData == null)
-                {
-                    continue;
-                }
-
-                string uid = noteData.uid;
-                if (string.IsNullOrEmpty(uid) || uid.Length < 4)
-                {
-                    continue;
-                }
-
-                string scene = uid.Substring(0, 2);
-                string xxyy = uid.Substring(2, 2);
-                if (!string.Equals(scene, targetScene, System.StringComparison.OrdinalIgnoreCase) || !string.Equals(xxyy, targetXx, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                count++;
-                string type = SafeLogValue(() => noteData.type);
-                string pathway = SafeLogValue(() => noteData.pathway);
-                string pathwayLabel = SafeLogValue(() => GetPathwayLabel(noteData.pathway));
-                string sceneName = SafeLogValue(() => noteData.scene);
-                string prefab = SafeLogValue(() => noteData.prefab_name);
-                string keyAudio = SafeLogValue(() => noteData.key_audio);
-                string bossAction = SafeLogValue(() => noteData.boss_action);
-                string configTime = SafeLogValue(() => note.configData?.time);
-                string configPathway = SafeLogValue(() => note.configData?.pathway);
-                string doubleIdx = SafeLogValue(() => note.doubleIdx);
-                string sameTickNoteIdx = SafeLogValue(() => note.sameTickNoteIdx);
-                string isDouble = SafeLogValue(() => note.isDouble);
-                string jumpNote = SafeLogValue(() => noteData.jumpNote);
-                string score = SafeLogValue(() => noteData.score);
-                string objId = SafeLogValue(() => note.objId);
-                string tick = SafeLogValue(() => note.tick);
-                string dt = SafeLogValue(() => note.dt);
-                string showTick = SafeLogValue(() => note.showTick);
-
-                MelonLogger.Msg($"[ExperimentDebug.Search] 원본 UID 발견: uid={uid}, idx={i}, objId={objId}, tick={tick}, dt={dt}, showTick={showTick}, type={type}, pathway={pathway}({pathwayLabel}), scene={sceneName}, prefab={prefab}, keyAudio={keyAudio}, bossAction={bossAction}, doubleIdx={doubleIdx}, sameTickNoteIdx={sameTickNoteIdx}, isDouble={isDouble}, jumpNote={jumpNote}, score={score}, config.time={configTime}, config.pathway={configPathway}");
-            }
-            catch (System.Exception ex)
-            {
-                MelonLogger.Warning($"[ExperimentDebug.Search] 원본 UID 검사 중 예외 발생: idx={i}, error={ex.Message}");
-            }
-        }
-
-        MelonLogger.Msg($"[ExperimentDebug.Search] 원본 UID 검색 완료: scene={targetScene}, xx={targetXx}, count={count}");
     }
 
     public static void AddExperimentNotes(Il2CppSystem.Collections.Generic.List<MusicData> outputList, MusicData sourceNote, ExperimentNoteSpec spec)
@@ -591,6 +242,55 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             MelonLogger.Msg($"[ExperimentDebug] ApplyNoteSpec resolved uid={uid}, noteType={noteType}, pathway={pathway}, scene={noteData.scene}, prefab={noteData.prefab_name}, keyAudio={noteData.key_audio}");
             LogNoteState("[ExperimentDebug] ApplyNoteSpec output", note);
+        }
+    }
+
+    public static void MoveNote(ref MusicData note, int objId, double tick, double length, ExperimentNoteSpec spec)
+    {
+        bool isBossEvent = spec?.NoteType == 0 && !string.IsNullOrWhiteSpace(spec.BossAction);
+        double normalizedConfigTime = isBossEvent ? tick : NormalizeChartValue(tick);
+        double normalizedTick = NormalizeTimingValue(isBossEvent ? tick + BossEventTickOffset : tick);
+        double normalizedDt = NormalizeTimingValue(GetEffectiveDt(note, spec));
+        double normalizedShowTick = NormalizeChartValue(normalizedTick - normalizedDt);
+
+        note.objId = (short)objId;
+        note.tick = (Il2CppSystem.Decimal)normalizedTick;
+        note.dt = (Il2CppSystem.Decimal)normalizedDt;
+        note.showTick = (Il2CppSystem.Decimal)normalizedShowTick;
+
+        if (note.noteData != null)
+        {
+            note.noteData.id = objId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (note.configData != null)
+        {
+            var configData = CloneMusicConfigData(note.configData);
+            configData.id = objId;
+            configData.time = (Il2CppSystem.Decimal)(isBossEvent ? normalizedConfigTime : normalizedTick);
+            configData.length = (Il2CppSystem.Decimal)NormalizeChartValue(length);
+            note.configData = configData;
+        }
+    }
+
+    public static void ResetRuntimeFlags(ref MusicData note)
+    {
+        note.doubleIdx = 0;
+        note.isDouble = false;
+        note.isLongPressing = false;
+        note.isLongPressEnd = false;
+        note.longPressPTick = (Il2CppSystem.Decimal)0.0;
+        note.endIndex = 0;
+        note.longPressNum = 0;
+
+        if (IsSceneToggleNote(note))
+        {
+            note.doubleIdx = -1;
+        }
+
+        if (note.noteData?.type == 0 && !string.IsNullOrWhiteSpace(note.noteData.boss_action))
+        {
+            note.doubleIdx = -1;
         }
     }
 }
