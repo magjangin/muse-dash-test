@@ -178,3 +178,11 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug
 * **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse dash custom chart.dll` (또는 Release 빌드 시 `bin/Release/net6.0/muse dash custom chart.dll`)
 * **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉토리
 
+---
+
+## 🤝 Contributors (기여자)
+
+* **[화영왕 (Hwa-young-wang)](https://github.com/magjangin)** - Lead Modder / Admin
+* **[지미니 (Gemini)](https://gemini.google.com)** - AI Coding Assistant
+* **[클로드 (Claude)](https://anthropic.com)** - AI Coding Assistant
+* **[코덱스 (Codex)](https://openai.com)** - AI Coding Assistant
