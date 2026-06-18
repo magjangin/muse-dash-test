@@ -1,4 +1,4 @@
-# muse-dash-test 🎵
+# muse-dash-custom-chart 🎵
 
 > **뮤즈대시(Muse Dash)에서 네이티브 훅(Native Hook) 없이도 실시간 커스텀 차트 및 보스 연출이 가능하다는 것을 증명하는 PoC(Proof of Concept) 실험용 모드입니다.**
 
