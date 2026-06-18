@@ -21,9 +21,13 @@
   * 커스텀 태그 하위에 원하는 곡 목록(`music_list`)을 바인딩하고, `m_AlbumTagsSort` 정렬 목록에 안전하게 삽입하는 전 과정이 검증 완료되었습니다.
   * `MusicTagManager.InitDatas` Postfix 패치로 1000개 앨범 순회 병목(`m_MaxAlbumUid` 초과)으로 인한 메뉴 렉을 방지하는 성능 최적화가 적용되어 있습니다.
 
-* **ALL PERFECT! Banner Customization (올 퍼펙트 전용 배너 커스텀) [NEW]** ✅
+* **ALL PERFECT! Banner Customization (올 퍼펙트 전용 배너 커스텀)** ✅
   * 곡 완료 시 플레이어의 판정(Great 0, Miss 0, Full Combo)을 실시간으로 감지하여, 기존 FULL COMBO 배너 대신 찬란한 골드빛의 **"ALL PERFECT !"** 커스텀 텍스트 배너를 동적으로 교환 적용합니다.
   * 인게임 HUD 스코어 컴포넌트(`ChangeScoreValue`)로부터 뮤즈 대시 메인 서체인 `LuckiestGuy-Regular` 등의 **프리미엄 시그니처 폰트를 실시간 추출/캐싱**하여 결과창에 완벽히 연동시켰으며, 입체적인 3D 섀도우 및 검은색 아웃라인(`Outline`) 효과까지 그대로 재현해 인게임 정체성을 지켰습니다.
+
+* **Offline Sandbox Toggle (오프라인 샌드박스 동적 토글) [NEW]** ✅
+  * `save custom key/OFFLINE_SANDBOX.txt` 플래그 파일의 설정값(`오프라인_샌드박스=활성화/비활성화`)에 따라 게임을 재시작하지 않고도 실시간으로 오프라인 샌드박스 패치(전체 DLC 잠금 해제 및 검증 우회)를 활성화/비활성화할 수 있습니다.
+
 
 ---
 
@@ -43,6 +47,8 @@
 | UID 단독 변조 한계 확인 및 정식 등록 방향 정리 | ✅ 완료 |
 | 네이티브 훅 없는 인메모리 차트 재구성 | ✅ 완료 |
 | **ALL PERFECT! 배너 동적 교체 및 폰트/외곽선 적용** | ✅ 완료 |
+| **오프라인 샌드박스 플래그 제어 및 실시간 토글** | ✅ 완료 |
+
 
 ---
 
@@ -52,10 +58,12 @@
 * **완료**: 곡 제목·아티스트·레벨 디자이너 UI 실시간 변조
 * **완료**: UID 단독 변조가 UI/`MusicInfo` 불일치를 만든다는 점 확인 및 정식 등록 방향 문서화
 * **완료**: `1999-0` 같은 커스텀 UID가 `GetMusicInfoFromAll` 조회에서 주입한 `MusicInfo`로 돌아오도록 게임 DB 저장소에 등록
-* **진행 중**: `MusicButtonCell` 곡 셀 데이터 가로채기 성공 ➡️ 곡 셀 커버 주입 및 커스텀 앨범 정렬/순서 변경 구현 ⏳
+* **완료**: 오프라인 샌드박스 한글 플래그 제어 및 동적 온/오프
+* **완료**: `MusicButtonCell` 곡 셀 데이터 가로채기 성공 ➡️ 곡 셀 커버 주입 및 커스텀 앨범 정렬/순서 변경 구현
 * **진행 예정**: 커스텀 곡 선택 시 외부 JSON/채보 파일로부터 노트를 실시간으로 읽어와 실제 플레이 가능한 커스텀 차트 로더 구현
 * **진행 예정**: 로컬 이미지를 커스텀 곡 커버 썸네일로 주입하는 실험
 * **진행 예정**: 채보 특정 구간에서 보스 연출 트리거(`swap:[보스명]:[씬번호]`) 실시간 연동 기믹 심화
+
 
 ### DLC 메타데이터 정리의 목적
 
@@ -143,8 +151,14 @@
 │   ├── NOTE_EXPERIMENTS.md             # 커스텀 노트 스펙 설계 가이드
 │   ├── BOSS_EXPERIMENTS.md             # 실시간 보스 교환 기믹 가이드
 │   ├── UID_INJECTION.md                # 커스텀 UID 정식 등록 및 UI 선택 흐름 정리
+│   ├── CAST_AND_CUSTOM_TAG_GUIDE.md    # 커스텀 태그 및 캐스트 제어 가이드
+│   ├── CUSTOM_CHART_GUIDE.md           # 커스텀 차트 환경 가이드
+│   ├── BMS_PARSING.md                  # BMS 채보 데이터 분석 및 파싱 명세
+│   ├── MD2_TAG_RETARGET_MAP.md         # 다국어 및 태그 리타게팅 맵 분석
+│   ├── OFFLINE_CUSTOM_SANDBOX_GUIDE.md  # 오프라인 샌드박스 플래그 설정법
 │   ├── CODE_REFERENCE.md               # C# 패치 코드 상세 분석 참고서
-│   └── LOGGING_AND_TROUBLESHOOTING.md  # 로그 분석 및 트러블슈팅 가이드
+│   ├── LOGGING_AND_TROUBLESHOOTING.md  # 로그 분석 및 트러블슈팅 가이드
+│   └── MUSE_DASH_2_SPECULATIVE_GUIDE.md # 뮤즈대시 2 대비 분석 가이드
 │
 ├── build.bat                 # MSBuild 자동 추적 및 모드 파일(DLL) 빌드/배포 스크립트
 └── README.md                 # 본 프로젝트 소개 파일
@@ -161,5 +175,6 @@
 dotnet build "muse dash test\muse dash test.csproj" --configuration Debug
 ```
 
-* **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse_dash_test.dll`
+* **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse dash custom chart.dll` (또는 Release 빌드 시 `bin/Release/net6.0/muse dash custom chart.dll`)
 * **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉토리
+
