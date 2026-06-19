@@ -62,7 +62,14 @@ namespace muse_dash_test
             if (mainCam != null)
             {
                 MelonLogger.Msg($"[HwaBattleMediaController] 메인 카메라 감지 완료: name={mainCam.name}, position={mainCam.transform.position}");
-                TryPlayVideo(mainCam, songDir);
+                if (InputOverlay.enableCinema)
+                {
+                    TryPlayVideo(mainCam, songDir);
+                }
+                else
+                {
+                    MelonLogger.Msg("[HwaBattleMediaController] 시네마(BGA)가 설정에서 비활성화되어 있어 비디오 재생을 건너뜁니다.");
+                }
             }
             else
             {
