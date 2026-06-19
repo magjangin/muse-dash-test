@@ -183,6 +183,6 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug
 ## 🤝 Contributors (기여자)
 
 * **[화영왕 (Hwa-young-wang)](https://github.com/magjangin)** - Lead Modder / Admin
-* **[지미니 (Gemini)](https://gemini.google.com)** - AI Coding Assistant
+* **[지미니(안티그래피티) (Gemini/Antigravity)](https://gemini.google.com)** - AI Coding Assistant
 * **[클로드 (Claude)](https://anthropic.com)** - AI Coding Assistant
 * **[코덱스 (Codex)](https://openai.com)** - AI Coding Assistant
