@@ -39,7 +39,7 @@ namespace muse_dash_test
         {
             private static bool Prefix(DBConfigAlbums __instance, MusicInfo musicInfo, ref DBConfigAlbums.AlbumsInfo __result)
             {
-                if (musicInfo != null && musicInfo.uid != null && musicInfo.uid.StartsWith("1999-") && CustomTagRegistry.CustomAlbumInfo != null)
+                if (musicInfo != null && CustomContentIds.IsVirtualSong(musicInfo.uid) && CustomTagRegistry.CustomAlbumInfo != null)
                 {
                     __result = CustomTagRegistry.CustomAlbumInfo;
                     return false;

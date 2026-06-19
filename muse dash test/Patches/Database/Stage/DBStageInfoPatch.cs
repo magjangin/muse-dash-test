@@ -2,6 +2,7 @@ using MelonLoader;
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
 using System.Reflection;
+using muse_dash_test;
 
 // DBStageInfo.SetRuntimeMusicData 하모니 패치
 [HarmonyLib.HarmonyPatch(typeof(DBStageInfo), "SetRuntimeMusicData")]
@@ -78,20 +79,20 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         try
         {
             // 진입 시점에 안전하게 현재 선택된 곡 UID를 확인하여 플래그 재업데이트
-            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
 
             if (!string.IsNullOrEmpty(uid))
             {
-                ExperimentPlayContext.RememberMusicSelection(uid);
+                CustomPlaySession.Current.RememberMusicSelection(uid);
             }
 
-            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
-                MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"}, apply={ExperimentPlayContext.ShouldApplyExperimentChart})");
+                MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart})");
                 DumpMusicList(__instance);
                 return;
             }
@@ -106,26 +107,5 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 삽입 후 덤프 헬퍼 메서드 호출
         //MelonLogger.Msg("노트 삽입 후 덤프:");
         //DumpMusicList(__instance);
-    }
-}
-
-public static class ExperimentPlayContext
-{
-    public static bool ShouldApplyExperimentChart { get; private set; }
-
-    public static void RememberMusicSelection(string uid)
-    {
-        // 1999-0, 1999-1 및 1999-2 곡은 우리 실험 모드 전용 가상 곡이므로, 이 UID면 무조건 실험 차트와 보스 변경을 적용합니다.
-        // UID를 못 찾았으면 이전 상태를 끌고 가지 않도록 false로 리셋합니다.
-        if (string.IsNullOrEmpty(uid))
-        {
-            ShouldApplyExperimentChart = false;
-        }
-        else
-        {
-            ShouldApplyExperimentChart = (uid != null && uid.StartsWith("1999-"));
-        }
-
-        MelonLogger.Msg($"[ExperimentChart] selection uid={uid ?? "(null)"}, apply={ShouldApplyExperimentChart}");
     }
 }

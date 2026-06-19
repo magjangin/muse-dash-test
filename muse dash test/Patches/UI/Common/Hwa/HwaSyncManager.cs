@@ -25,7 +25,7 @@ namespace muse_dash_test
                     var sld = pnl.CurrentBattleUIComp.sldProgress;
                     if (sld != null && sld.gameObject.activeInHierarchy)
                     {
-                        if (ExperimentPlayContext.ShouldApplyExperimentChart)
+                        if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                         {
                             if (syncCooldownTimer > 0f)
                             {

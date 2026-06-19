@@ -1,6 +1,7 @@
 using MelonLoader;
 using System;
 using System.Reflection;
+using muse_dash_test;
 
 // Il2Cpp.PnlPreparation OnEnable 후킹
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "OnEnable")]
@@ -86,7 +87,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
             string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
             if (string.IsNullOrEmpty(selectedUid))
             {
-                selectedUid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                selectedUid = CustomPlaySession.Current.LastClickedMusicUid;
             }
 
             MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.{phase}] selectedUid={selectedUid ?? "(null)"}");

@@ -21,9 +21,9 @@ namespace muse_dash_test
     /// </summary>
     public static class CustomTagRegistry
     {
-        public const int TagUid = 1998;
-        public const string TagUidString = "tag-muse-dash-test";
-        public const string AlbumUidString = "1998-0";
+        public const int TagUid = CustomContentIds.TagIndex;
+        public const string TagUidString = CustomContentIds.TagUid;
+        public const string AlbumUidString = CustomContentIds.AlbumUid;
         public const string AlbumTitle = "실험 앨범";
         public const string AlbumCoverPrefabName = "album_0";
 

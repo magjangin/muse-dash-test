@@ -46,7 +46,7 @@ namespace muse_dash_test
                             var keysToRemove = new System.Collections.Generic.List<string>();
                             foreach (var key in fields.Keys)
                             {
-                                if (key != null && (key.StartsWith("1999-") || key.StartsWith("1998-")))
+                                if (CustomContentIds.IsVirtualContent(key))
                                 {
                                     keysToRemove.Add(key);
                                 }
@@ -163,7 +163,7 @@ namespace muse_dash_test
                 if (songResult != null)
                 {
                     string uid = songResult.uid;
-                    if (uid != null && (uid.StartsWith("1999-") || uid.StartsWith("1998-")))
+                    if (CustomContentIds.IsVirtualContent(uid))
                     {
                         list.RemoveAt(i);
                         removedCount++;
@@ -182,7 +182,7 @@ namespace muse_dash_test
                         if (valObj != null)
                         {
                             string uid = valObj.ToString();
-                            if (uid != null && (uid.StartsWith("1999-") || uid.StartsWith("1998-")))
+                            if (CustomContentIds.IsVirtualContent(uid))
                             {
                                 list.RemoveAt(i);
                                 removedCount++;
@@ -205,7 +205,7 @@ namespace muse_dash_test
             for (int i = list.Count - 1; i >= 0; i--)
             {
                 string val = list[i];
-                if (val != null && (val.StartsWith("1999-") || val.StartsWith("1998-")))
+                if (CustomContentIds.IsVirtualContent(val))
                 {
                     list.RemoveAt(i);
                     removedCount++;

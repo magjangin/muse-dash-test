@@ -69,7 +69,7 @@ namespace muse_dash_test
 
                     if (originalInfo == null)
                     {
-                        originalInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll("0-0");
+                        originalInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(CustomContentIds.FallbackSourceMusicUid);
                         MelonLogger.Warning($"[CustomTagRegistry] [{uid}] 원본 곡을 찾지 못하여 기본 곡(0-0)으로 폴백합니다. query={lookupQuery ?? "(null)"}, album={sourceAlbum ?? "(null)"}");
                     }
 

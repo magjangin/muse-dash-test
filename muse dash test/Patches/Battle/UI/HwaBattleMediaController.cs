@@ -30,7 +30,7 @@ namespace muse_dash_test
                     return;
                 }
 
-                if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+                if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
                     return;
                 }
@@ -46,10 +46,10 @@ namespace muse_dash_test
 
         private static void InjectBattleMedia()
         {
-            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid ?? "(unknown)";
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
             }
 
             string songDir = HwaResourceManager.HwaFolderPath;

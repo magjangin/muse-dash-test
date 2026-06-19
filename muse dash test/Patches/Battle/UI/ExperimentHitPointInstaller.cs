@@ -23,7 +23,7 @@ namespace muse_dash_test
         {
             if (installed
                 || !isInStage
-                || !ExperimentPlayContext.ShouldApplyExperimentChart
+                || !CustomPlaySession.Current.ShouldApplyExperimentChart
                 || Time.unscaledTime < nextAttemptTime)
             {
                 return;
@@ -33,11 +33,11 @@ namespace muse_dash_test
 
             try
             {
-                string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+                string uid = CustomPlaySession.Current.SelectedMusicUid;
                 if (string.IsNullOrEmpty(uid))
                 {
                     uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid()
-                        ?? MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                        ?? CustomPlaySession.Current.LastClickedMusicUid;
                 }
 
                 if (!MainMod.TryGetCachedHwaScene(uid, out int scene))

@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Il2CppAssets.Scripts.PeroTools.Nice.Interface;
 using Il2CppAssets.Scripts.PeroTools.Nice.Datas;
 using Il2CppAssets.Scripts.PeroTools.Commons;
+using muse_dash_test;
 
 // PnlStage.OnEnable 후킹
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), "OnEnable")]
@@ -312,8 +313,8 @@ public class PnlStage_RefreshDiffUI_Patch
 
             if (musicInfo != null && !string.IsNullOrEmpty(musicInfo.uid))
             {
-                PnlStagePatchHelper.LastSelectedMusicUid = musicInfo.uid;
-                ExperimentPlayContext.RememberMusicSelection(musicInfo.uid);
+                CustomPlaySession.Current.SelectedMusicUid = musicInfo.uid;
+                CustomPlaySession.Current.RememberMusicSelection(musicInfo.uid);
             }
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";

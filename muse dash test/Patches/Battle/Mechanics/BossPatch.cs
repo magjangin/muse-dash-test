@@ -8,8 +8,6 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "Play", new Type[] { typeof(string), typeof(bool) })]
 public class Boss_Play_Patch
 {
-    public static bool isDynamicSwapping = false;
-
     private static void DumpBossFields(Il2Cpp.Boss boss)
     {
         try
@@ -53,7 +51,7 @@ public class Boss_Play_Patch
     {
         try
         {
-            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
                 return true;
             }
@@ -87,14 +85,14 @@ public class Boss_Play_Patch
                             MelonLogger.Warning($"[DynamicSwap] gameObject 활성화 시도 중 경고: {ex.Message}");
                         }
 
-                        isDynamicSwapping = true;
+                        CustomPlaySession.Current.IsDynamicBossSwap = true;
                         try
                         {
                             __instance.InitBossObject(newName, newScene, true);
                         }
                         finally
                         {
-                            isDynamicSwapping = false;
+                            CustomPlaySession.Current.IsDynamicBossSwap = false;
                         }
 
                         // 교체 후에도 다시 한번 강제 활성화
@@ -176,10 +174,10 @@ public class Boss_InitBossObject_Patch
 
         try
         {
-            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
             if (MainMod.TryGetCachedHwaBmsChart(uid, out var chart, out _))
             {
@@ -222,13 +220,13 @@ public class Boss_InitBossObject_Patch
         {
             MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
 
-            if (!ExperimentPlayContext.ShouldApplyExperimentChart)
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
                 MelonLogger.Msg("Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (실험 차트 아님)");
                 return;
             }
 
-            if (Boss_Play_Patch.isDynamicSwapping)
+            if (CustomPlaySession.Current.IsDynamicBossSwap)
             {
                 MelonLogger.Msg("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
                 return;

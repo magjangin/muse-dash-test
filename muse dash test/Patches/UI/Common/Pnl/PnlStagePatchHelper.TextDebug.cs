@@ -6,6 +6,7 @@ using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
+using muse_dash_test;
 
 public static partial class PnlStagePatchHelper
 {
@@ -60,7 +61,7 @@ public static partial class PnlStagePatchHelper
             for (int i = 0; i < tag.albumsInfos.Count; i++)
             {
                 var album = tag.albumsInfos[i];
-                if (album != null && album.uid == "1998-0" && album.title == "실험 앨범")
+                if (album != null && album.uid == CustomContentIds.AlbumUid && album.title == "실험 앨범")
                 {
                     hasExpectedAlbum = true;
                     break;
@@ -90,9 +91,9 @@ public static partial class PnlStagePatchHelper
 
     public static string GetCurrentSelectedMusicUid()
     {
-        if (!string.IsNullOrEmpty(LastSelectedMusicUid))
+        if (!string.IsNullOrEmpty(CustomPlaySession.Current.SelectedMusicUid))
         {
-            return LastSelectedMusicUid;
+            return CustomPlaySession.Current.SelectedMusicUid;
         }
         try
         {
@@ -312,9 +313,9 @@ public static partial class PnlStagePatchHelper
             bool isExp = false;
             foreach (var t in ExperimentModeTitles)
                 if (text == t) { isExp = true; break; }
-            if (isExp != MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
+            if (isExp != CustomPlaySession.Current.IsExperimentModeActive)
             {
-                MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive = isExp;
+                CustomPlaySession.Current.IsExperimentModeActive = isExp;
             }
         }
         catch (Exception ex)

@@ -10,8 +10,6 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.OnButtonClicked))]
     public class MusicButtonCell_OnButtonClicked_Patch
     {
-        public static string LastClickedMusicUid = "";
-
         public static bool Prepare() => true;
 
         public static void Prefix(MusicButtonCell __instance)
@@ -22,8 +20,8 @@ namespace muse_dash_test
                 {
                     var musicInfo = __instance.musicInfo;
                     string uid = musicInfo != null ? musicInfo.uid : "(null)";
-                    LastClickedMusicUid = uid;
-                    ExperimentPlayContext.RememberMusicSelection(uid);
+                    CustomPlaySession.Current.LastClickedMusicUid = uid;
+                    CustomPlaySession.Current.RememberMusicSelection(uid);
                 }
             }
             catch (Exception ex)

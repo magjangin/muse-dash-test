@@ -7,7 +7,7 @@ namespace muse_dash_test
 {
     internal static class PnlMusicTagPatchLogger
     {
-        private const string CustomMusicUid = "0-0";
+        private const string CustomMusicUid = CustomContentIds.FallbackSourceMusicUid;
         private const string CustomCellTitle = "화영왕 0";
 
         public static void ApplyCustomCellTitle(PnlMusicTag panel)
@@ -36,7 +36,7 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    if (musicInfo.uid == null || !musicInfo.uid.StartsWith("1999-"))
+                    if (!CustomContentIds.IsVirtualSong(musicInfo.uid))
                     {
                         continue;
                     }

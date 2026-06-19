@@ -17,10 +17,10 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
-            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid ?? "(unknown)";
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
             }
             MelonLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
         }

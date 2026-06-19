@@ -14,6 +14,12 @@ set "PROJECT_DIR=muse dash test"
 set "SOLUTION_FILE=%PROJECT_DIR%\muse dash test.csproj"
 set "DLL_NAME=muse dash custom chart.dll"
 set "DEFAULT_GAME_PATH=H:\steam\steamapps\common\Muse Dash"
+
+set "CONFIG=Debug"
+if /I "%~1"=="release" (
+    set "CONFIG=Release"
+)
+
 :: Find MSBuild
 set "MSBUILD_PATH="
 for %%v in (18 2026 2022) do (
@@ -43,7 +49,7 @@ echo.
 set "SCRIPT_DIR=%~dp0"
 set "SOURCE_ROOT=!SCRIPT_DIR!"
 set "SOLUTION_PATH=!SCRIPT_DIR!!SOLUTION_FILE!"
-set "SOURCE_DLL=!SCRIPT_DIR!!PROJECT_DIR!\bin\Debug\net6.0\%DLL_NAME%"
+set "SOURCE_DLL=!SCRIPT_DIR!!PROJECT_DIR!\bin\!CONFIG!\net6.0\%DLL_NAME%"
 
 if not defined GAME_PATH (
     if exist "!DEFAULT_GAME_PATH!" (
@@ -54,7 +60,7 @@ if not defined GAME_PATH (
 set "MODS_DIR=!GAME_PATH!\Mods"
 set "TARGET_DLL=!MODS_DIR!\%DLL_NAME%"
 
-echo [INFO] Starting Debug build...
+echo [INFO] Starting !CONFIG! build...
 echo [INFO] GamePath: !GAME_PATH!
 echo.
 
@@ -63,11 +69,11 @@ taskkill /IM VBCSCompiler.exe /F >nul 2>&1
 
 :: Restore NuGet packages
 echo [INFO] Restoring NuGet packages...
-"!MSBUILD_PATH!" "!SOLUTION_PATH!" /p:Configuration=Debug /p:Platform="AnyCPU" /p:GamePath="!GAME_PATH!" /p:UseSharedCompilation=false /nr:false /t:Restore /v:minimal /nologo
+"!MSBUILD_PATH!" "!SOLUTION_PATH!" /p:Configuration=!CONFIG! /p:Platform="AnyCPU" /p:GamePath="!GAME_PATH!" /p:UseSharedCompilation=false /nr:false /t:Restore /v:minimal /nologo
 
 :: Build project
 echo [INFO] Building project...
-"!MSBUILD_PATH!" "!SOLUTION_PATH!" /p:Configuration=Debug /p:Platform="AnyCPU" /p:GamePath="!GAME_PATH!" /p:UseSharedCompilation=false /nr:false /t:Build /v:minimal /nologo
+"!MSBUILD_PATH!" "!SOLUTION_PATH!" /p:Configuration=!CONFIG! /p:Platform="AnyCPU" /p:GamePath="!GAME_PATH!" /p:UseSharedCompilation=false /nr:false /t:Build /v:minimal /nologo
 
 if errorlevel 1 (
     echo.

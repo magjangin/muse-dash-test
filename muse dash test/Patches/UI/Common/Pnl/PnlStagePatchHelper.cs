@@ -6,16 +6,15 @@ using System.Text;
 using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI.Panels;
 using UnityEngine;
+using muse_dash_test;
 using UnityEngine.UI;
 
 public static partial class PnlStagePatchHelper
 {
-    private const int CustomTagUid = 1998;
-    private const string CustomMusicUid = "0-0";
+    private const int CustomTagUid = muse_dash_test.CustomContentIds.TagIndex;
+    private const string CustomMusicUid = muse_dash_test.CustomContentIds.FallbackSourceMusicUid;
     private const string CustomTitle = "화영왕 0";
     private const string CustomArtist = "화영왕 0";
-
-    public static string LastSelectedMusicUid = "";
 
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -41,12 +40,12 @@ public static partial class PnlStagePatchHelper
 
     public static bool ShouldApplyHwayoungwang()
     {
-        string uid = LastSelectedMusicUid;
+        string uid = CustomPlaySession.Current.SelectedMusicUid;
         if (string.IsNullOrEmpty(uid))
         {
-            uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+            uid = GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
         }
-        return uid != null && uid.StartsWith("1999-");
+        return CustomContentIds.IsVirtualSong(uid);
     }
 
     public static void ApplyCustomTagTitleAccessors(string source, PnlStage stage)
@@ -69,10 +68,10 @@ public static partial class PnlStagePatchHelper
                 return;
             }
 
-            string uid = LastSelectedMusicUid;
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
-                uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                uid = GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
             if (string.IsNullOrEmpty(uid))
             {
@@ -113,15 +112,15 @@ public static partial class PnlStagePatchHelper
                 return;
             }
 
-            if (!MusicButtonAreaTitle_RefreshTxt_Patch.IsExperimentModActive)
+            if (!CustomPlaySession.Current.IsExperimentModeActive)
             {
                 return;
             }
 
-            string uid = LastSelectedMusicUid;
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
-                uid = GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                uid = GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
             if (string.IsNullOrEmpty(uid))
             {
@@ -162,7 +161,7 @@ public static partial class PnlStagePatchHelper
                 return false;
             }
 
-            if (musicInfo.uid == null || !musicInfo.uid.StartsWith("1999-"))
+            if (!CustomContentIds.IsVirtualSong(musicInfo.uid))
             {
                 return false;
             }

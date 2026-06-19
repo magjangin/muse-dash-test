@@ -1,5 +1,6 @@
 using MelonLoader;
 using System;
+using muse_dash_test;
 
 // Il2CppGameLogic.GameMusicScene.LoadScene(string sceneName) 후킹
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "LoadScene")]
@@ -9,12 +10,12 @@ public class GameMusicScene_LoadScene_Patch
     {
         try
         {
-            if (!ExperimentPlayContext.ShouldApplyExperimentChart) return;
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
-            string uid = PnlStagePatchHelper.LastSelectedMusicUid;
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
 
             if (!muse_dash_test.MainMod.TryGetCachedHwaScene(uid, out int scene))

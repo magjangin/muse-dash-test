@@ -165,13 +165,13 @@ public static partial class PnlMusicUtils
         string uid = TryFindCustomMusicUidInObject(pnlInstance, 0, new HashSet<object>());
         if (!string.IsNullOrEmpty(uid)) return uid;
 
-        uid = PnlStagePatchHelper.LastSelectedMusicUid;
+        uid = CustomPlaySession.Current.SelectedMusicUid;
         if (IsCustomMusicUid(uid)) return uid;
 
         uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
         if (IsCustomMusicUid(uid)) return uid;
 
-        uid = muse_dash_test.MusicButtonCell_OnButtonClicked_Patch.LastClickedMusicUid;
+        uid = CustomPlaySession.Current.LastClickedMusicUid;
         if (IsCustomMusicUid(uid)) return uid;
 
         return null;
@@ -242,7 +242,7 @@ public static partial class PnlMusicUtils
 
     private static bool IsCustomMusicUid(string uid)
     {
-        return !string.IsNullOrEmpty(uid) && uid.StartsWith("1999-");
+        return CustomContentIds.IsVirtualSong(uid);
     }
 
     private static int SetMemberText(object obj, string memberName, string value)
