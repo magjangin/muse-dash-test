@@ -1,13 +1,13 @@
 # muse-dash-custom-chart 🎵
 
-> **뮤즈대시(Muse Dash)에서 네이티브 훅(Native Hook) 없이도 실시간 커스텀 차트 및 보스 연출이 가능하다는 것을 증명하는 PoC(Proof of Concept) 실험용 모드입니다.**
+> **뮤즈대시(Muse Dash)에서 네이티브 훅(Native Hook) 없이도 실시간 커스텀 차트 및 보스 연출을 지원하는 최초의 정식 커스텀 차트 모드(첫 배포 버전)입니다.**
 
 ---
 
 ## 🌟 Key Features (핵심 특징)
 
 * **No Native Hook (네이티브 훅 불필요)**
-  * 기존의 어려운 메모리 패치나 네이티브 훅 방식 대신, 게임 런타임에 인메모리에 생성된 `m_MusicTickData` 계열의 `MusicData` 리스트를 **In-place(메모리 내부 제자리 수정)** 방식으로 안전하게 재구성하여 완벽하고 안정적인 커스텀 차트 로드를 증명합니다.
+  * 기존의 어려운 메모리 패치나 네이티브 훅 방식 대신, 게임 런타임에 인메모리에 생성된 `m_MusicTickData` 계열의 `MusicData` 리스트를 **In-place(메모리 내부 제자리 수정)** 방식으로 안전하게 재구성하여 완벽하고 안정적인 커스텀 차트 로드를 구현합니다.
 
 * **Dynamic Boss Swap & Rescue (실시간 보스 교체 및 부활)**
   * 런타임 보스 초기화(`Boss.InitBossObject`)를 제어합니다.
