@@ -22,6 +22,8 @@ namespace muse_dash_test
         private static string password = "";
         private static float stopDelaySeconds = 5f;
         private static bool configLoaded = false;
+        private static DateTime lastFailureTime = DateTime.MinValue;
+        private static readonly TimeSpan FailureCooldown = TimeSpan.FromSeconds(30);
 
         private static readonly string configFolder = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "save custom key");
         private static readonly string configPath = Path.Combine(configFolder, "obs config.txt");
@@ -129,6 +131,11 @@ namespace muse_dash_test
                 return;
             }
 
+            if (DateTime.Now - lastFailureTime < FailureCooldown)
+            {
+                return;
+            }
+
             // 게임 메인 스레드를 막지 않도록 백그라운드에서 실행
             Task.Run(async () =>
             {
@@ -144,7 +151,8 @@ namespace muse_dash_test
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"[OBS] '{requestType}' 명령 전송 실패 (OBS가 켜져 있고 WebSocket 서버가 활성화되어 있는지 확인하세요): {ex.Message}");
+                    lastFailureTime = DateTime.Now;
+                    MelonLogger.Warning($"[OBS] '{requestType}' 명령 전송 실패 (OBS가 켜져 있고 WebSocket 서버가 활성화되어 있는지 확인하세요. 30초 동안 재시도가 차단됩니다): {ex.Message}");
                 }
             });
         }
@@ -152,7 +160,7 @@ namespace muse_dash_test
         private static async Task DoRequestAsync(string requestType)
         {
             using (var ws = new ClientWebSocket())
-            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1)))
             {
                 var uri = new Uri($"ws://{host}:{port}");
                 await ws.ConnectAsync(uri, cts.Token);
