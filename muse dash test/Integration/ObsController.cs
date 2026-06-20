@@ -22,6 +22,7 @@ namespace muse_dash_test
         private static string password = "";
         private static float stopDelaySeconds = 5f;
         private static bool configLoaded = false;
+        private static bool hasFailedToWrite = false;   // 쓰기 오류 시 무한 반복 방지
         private static DateTime lastFailureTime = DateTime.MinValue;
         private static readonly TimeSpan FailureCooldown = TimeSpan.FromSeconds(30);
 
@@ -32,44 +33,50 @@ namespace muse_dash_test
         {
             try
             {
-                if (!Directory.Exists(configFolder))
+                if (!hasFailedToWrite)
                 {
-                    Directory.CreateDirectory(configFolder);
-                }
-
-                if (!File.Exists(configPath))
-                {
-                    SaveDefaultConfig();
-                }
-
-                foreach (string raw in File.ReadAllLines(configPath))
-                {
-                    string line = raw.Trim();
-                    if (string.IsNullOrEmpty(line) || line.StartsWith("#")) continue;
-
-                    int idx = line.IndexOf('=');
-                    if (idx <= 0) continue;
-
-                    string key = line.Substring(0, idx).Trim();
-                    string val = line.Substring(idx + 1).Trim();
-
-                    switch (key.ToLower())
+                    if (!Directory.Exists(configFolder))
                     {
-                        case "obs연동":
-                            bool.TryParse(val, out enabled);
-                            break;
-                        case "주소":
-                            if (!string.IsNullOrEmpty(val)) host = val;
-                            break;
-                        case "포트":
-                            int.TryParse(val, out port);
-                            break;
-                        case "비밀번호":
-                            password = val;
-                            break;
-                        case "녹화정지지연초":
-                            float.TryParse(val, out stopDelaySeconds);
-                            break;
+                        Directory.CreateDirectory(configFolder);
+                    }
+
+                    if (!File.Exists(configPath))
+                    {
+                        SaveDefaultConfig();
+                    }
+                }
+
+                if (File.Exists(configPath))
+                {
+                    foreach (string raw in File.ReadAllLines(configPath))
+                    {
+                        string line = raw.Trim();
+                        if (string.IsNullOrEmpty(line) || line.StartsWith("#")) continue;
+
+                        int idx = line.IndexOf('=');
+                        if (idx <= 0) continue;
+
+                        string key = line.Substring(0, idx).Trim();
+                        string val = line.Substring(idx + 1).Trim();
+
+                        switch (key.ToLower())
+                        {
+                            case "obs연동":
+                                bool.TryParse(val, out enabled);
+                                break;
+                            case "주소":
+                                if (!string.IsNullOrEmpty(val)) host = val;
+                                break;
+                            case "포트":
+                                int.TryParse(val, out port);
+                                break;
+                            case "비밀번호":
+                                password = val;
+                                break;
+                            case "녹화정지지연초":
+                                float.TryParse(val, out stopDelaySeconds);
+                                break;
+                        }
                     }
                 }
 
@@ -78,7 +85,8 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OBS] 설정 로드 실패: {ex.Message}");
+                configLoaded = true; // 오류 발생 시에도 true로 세팅하여 매 플레이 시작마다 중복 예외 발생/체크 차단
+                MelonLogger.Error($"[OBS] 설정 로드 실패 (기본 설정값을 사용합니다): {ex.Message}");
             }
         }
 
@@ -105,7 +113,8 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OBS] 기본 설정 저장 실패: {ex.Message}");
+                hasFailedToWrite = true;
+                MelonLogger.Error($"[OBS] 기본 설정 저장 실패 (기본 설정값으로 동작합니다): {ex.Message}");
             }
         }
 

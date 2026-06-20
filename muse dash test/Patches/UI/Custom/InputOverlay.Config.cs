@@ -13,6 +13,9 @@ namespace muse_dash_test
         private static readonly string configFolder = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "save custom key");
         private static readonly string configPath = Path.Combine(configFolder, "config.txt");
         private static DateTime lastWriteTime = DateTime.MinValue;
+        private static float lastConfigCheckTime = 0f;
+        private const float ConfigCheckInterval = 1.0f; // 1초마다 실시간 변경 감지 (디스크 I/O 최적화)
+        private static bool hasFailedToWrite = false;   // 쓰기/생성 실패 시 반복적인 시도 및 로그 스패밍 방지
 
         // 실제 런타임에 사용할 설정 필드 (기본값 제공)
         private static float keyWidth = 55f;
@@ -55,31 +58,44 @@ namespace muse_dash_test
         private static string cachedInactiveColorHex = "";
 
         /// <summary>
-        /// 설정 파일이 변경되었거나 아직 로드되지 않았다면 실시간으로 다시 읽어옵니다.
+        /// 설정 파일이 변경되었거나 아직 로드되지 않았다면 실시간으로 다시 읽어옵니다. (1초 주기 스캔)
         /// </summary>
         public static void LoadConfigIfNeeded()
         {
+            float currentTime = Time.time;
+            if (currentTime - lastConfigCheckTime < ConfigCheckInterval)
+            {
+                return;
+            }
+            lastConfigCheckTime = currentTime;
+
             try
             {
-                if (!Directory.Exists(configFolder))
+                if (!hasFailedToWrite)
                 {
-                    Directory.CreateDirectory(configFolder);
+                    if (!Directory.Exists(configFolder))
+                    {
+                        Directory.CreateDirectory(configFolder);
+                    }
+
+                    if (!File.Exists(configPath))
+                    {
+                        SaveDefaultConfig();
+                    }
+                    else
+                    {
+                        EnsureMissingKeysAdded();
+                    }
                 }
 
-                if (!File.Exists(configPath))
+                if (File.Exists(configPath))
                 {
-                    SaveDefaultConfig();
-                }
-                else
-                {
-                    EnsureMissingKeysAdded();
-                }
-
-                DateTime currentWriteTime = File.GetLastWriteTime(configPath);
-                if (currentWriteTime != lastWriteTime)
-                {
-                    lastWriteTime = currentWriteTime;
-                    ParseConfigFile();
+                    DateTime currentWriteTime = File.GetLastWriteTime(configPath);
+                    if (currentWriteTime != lastWriteTime)
+                    {
+                        lastWriteTime = currentWriteTime;
+                        ParseConfigFile();
+                    }
                 }
             }
             catch (Exception ex)
@@ -133,7 +149,8 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[InputOverlay] 기본 설정 저장 중 실패: {ex.Message}");
+                hasFailedToWrite = true;
+                MelonLogger.Error($"[InputOverlay] 기본 설정 저장 중 실패 (쓰기 시도가 중단됩니다): {ex.Message}");
             }
         }
 
@@ -173,7 +190,8 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[InputOverlay] 누락된 설정 추가 중 예외 발생: {ex.Message}");
+                hasFailedToWrite = true;
+                MelonLogger.Error($"[InputOverlay] 누락된 설정 추가 중 예외 발생 (쓰기 시도가 중단됩니다): {ex.Message}");
             }
         }
 
