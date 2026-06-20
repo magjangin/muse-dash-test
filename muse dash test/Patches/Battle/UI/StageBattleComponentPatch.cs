@@ -53,6 +53,7 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance, bool pauseCorountine)
         {
+            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Pause 호출됨");
             HwaBattleMediaController.PauseMedia();
         }
     }
@@ -62,6 +63,7 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance, bool isExit)
         {
+            MelonLogger.Msg($"[StageBattleComponentPatch] StageBattleComponent.Resume 호출됨 (isExit={isExit})");
             HwaBattleMediaController.ResumeMedia(isExit);
         }
     }
@@ -71,6 +73,37 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
+            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.End 호출됨");
+            HwaBattleMediaController.StopMedia();
+        }
+    }
+
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Exit")]
+    public class StageBattleComponent_Exit_Patch
+    {
+        public static void Postfix(StageBattleComponent __instance)
+        {
+            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Exit 호출됨");
+            HwaBattleMediaController.StopMedia();
+        }
+    }
+
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Release")]
+    public class StageBattleComponent_Release_Patch
+    {
+        public static void Postfix(StageBattleComponent __instance)
+        {
+            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Release 호출됨");
+            HwaBattleMediaController.StopMedia();
+        }
+    }
+
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "GameRestart")]
+    public class StageBattleComponent_GameRestart_Patch
+    {
+        public static void Postfix(StageBattleComponent __instance)
+        {
+            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.GameRestart 호출됨");
             HwaBattleMediaController.StopMedia();
         }
     }

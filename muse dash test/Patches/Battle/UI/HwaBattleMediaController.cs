@@ -15,10 +15,12 @@ namespace muse_dash_test
     public static partial class HwaBattleMediaController
     {
         private static bool battleMediaInjectionStarted;
+        private static AudioSource injectedAudioSource;
 
         public static void ResetState()
         {
             battleMediaInjectionStarted = false;
+            injectedAudioSource = null;
         }
 
         public static void StartBattleMediaInjection()
@@ -157,6 +159,7 @@ namespace muse_dash_test
             targetSource.playOnAwake = false;
             targetSource.Stop();
             targetSource.Play();
+            injectedAudioSource = targetSource;
 
             MelonLogger.Msg($"[HwaBattleMediaController] 배틀 BGM 주입 완료: before={beforeState}, after={DescribeAudioSource(targetSource)}, loadedClip={DescribeAudioClip(clip)}");
         }
