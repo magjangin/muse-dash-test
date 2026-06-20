@@ -50,8 +50,8 @@ MelonLoader 모드 진입점 클래스입니다.
   * 실행 스레드 차단 없이 활성화된 `TaskStageTarget` 주소를 정적 캐시에 자동 등록합니다.
   * 동시에, 배틀 HUD 스코어 컴포넌트(`PnlBattle.instance.currentComps.scoreValue`)로부터 인게임용 메인 시그니처 폰트인 `LuckiestGuy-Regular_150_115`를 dynamic 스캔하여 결과 배너로 넘기기 위해 캐싱 처리합니다.
 * **`TaskStageTarget_GetAccuracy_Patch`, `GetTrueAccuracy_Patch` & `GetTrueAccuracyNew_Patch` (Postfix)**:
-  * 커스텀 차트 플레이 시, 원본 곡의 고정 노드 개수 분모를 나누는 정확도 부정합을 해소하기 위해 실제 Perfect/Great/Miss 판수 누계를 바탕으로 동적 정확도 보정값을 계산하여 반환값을 재조정합니다.
-  * 정확도 갱신 시 분석 및 로깅을 위해 원본 스펙 변수 상태를 로그(`[APMod.Debug.Accuracy]`)로 기록합니다.
+  * 커스텀 차트 플레이 시, 원본 곡의 고정 분모로 인해 발생하는 정확도 부정합을 해소합니다. 차트 로딩 시점에 일반 노트(단타, 롱노트 머리, 샌드백 등), 톱니바퀴(기어), 하트, 파란 음표를 전수 스캔하여 분모를 캐싱하고, 인게임 판정 누계(`Perfect`, `Great`, `JumpOver`, `EnergyCount`, `BluePoint`)를 공식에 대입하여 실제 정확도를 정밀 산출합니다.
+  * 정확도 갱신 시 분석 및 로깅을 위해 원본 및 오버라이드 변수 상태를 로그(`[APMod.Debug.Accuracy]`)로 기록합니다.
 * **`TaskStageTarget_IsFullCombo_Patch` (Postfix)**:
   * 풀콤보 판단 타이밍에 `TaskStageTarget` 인스턴스를 확보하여 유실을 방지합니다.
 * **`PnlVictory2dManager_OnShowVictory_Patch` (Postfix)**:

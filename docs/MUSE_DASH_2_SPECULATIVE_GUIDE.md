@@ -176,6 +176,37 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 ---
 
+## 🎯 Phase 4.5. 정확도 보정(Accuracy Override) 및 결과 화면(Victory) 연출 개조
+
+1편 모드에서 발생했던 가장 정밀한 이슈 중 하나는 커스텀 차트 플레이 시 **정확도가 비정상적으로 계산(예: 올 퍼펙트인데 85.4%로 표시)되거나, 올 퍼펙트 전용 배너가 나오지 않는 문제**였습니다. 2편 모딩 시에도 동일한 원리로 정확도 공식 부정합이 발생할 것이므로, 이를 해결하기 위한 설계가 필요합니다.
+
+### 1. ILSpy 분석 및 훅 타겟 찾기
+- **정확도 함수 검색**: `GetAccuracy`, `GetTrueAccuracy`, `GetTrueAccuracyNew`
+- **결과 화면 매니저 검색**: `PnlVictory`, `VictoryManager`, `OnShowVictory`
+- **목표**: 
+  - 판정 점수가 누계되는 인게임 통계 객체(`TaskStageTarget` 계열)의 정확도 산출 메서드에 **Postfix 후크**를 걸어 올바른 런타임 계산값으로 덮어씁니다.
+  - 곡이 끝나는 연출 시점에 개입하여 판정 결과 이미지와 컴포넌트를 오버라이딩합니다.
+
+### 2. 정밀 정확도 산출 공식 설계
+2편에서도 판정 통계 변수들(`Perfect`, `Great`, `Miss`, `JumpOver`/톱니바퀴, `Energy`/하트, `BluePoint`/음표 등)은 각기 다른 필드에 보관될 것입니다.
+- **분모 스캔**: 차트 로드 시점에 더미/이벤트 노트를 제외하고 실제 판정이 발생하는 노트를 종류별로 전수 조사해 **진짜 분모값**을 미리 집계합니다.
+  - 일반 판정 노트(단타, 롱노트 머리, 샌드백 등) 수량: `TotalStandard`
+  - 톱니바퀴 수량: `TotalGears`
+  - 하트 수량: `TotalHearts`
+  - 음표 수량: `TotalBlueNotes`
+- **반환값 재보정 공식**:
+  - **`GetTrueAccuracy()`** (일반 노트 대상):
+    $$\text{Accuracy} = \frac{\text{Perfect} + \text{Great} \times 0.5}{\text{TotalStandard}}$$
+  - **`GetTrueAccuracyNew()`** (모든 오브젝트 대상):
+    $$\text{Accuracy} = \frac{\text{Perfect} + \text{Great} \times 0.5 + \text{JumpOver} + \text{EnergyCount} + \text{BluePoint}}{\text{TotalStandard} + \text{TotalGears} + \text{TotalHearts} + \text{TotalBlueNotes}}$$
+  - **`GetAccuracy()`** (최종 노출용): UI에 표시할 소수점 3째 자리 반올림 값을 반환합니다.
+
+### 3. 결과 화면 ALL PERFECT 골드 배너 동적 주입
+- 플레이어의 판정 결과가 **Great 0, Miss 0, Full Combo(정확도 100%)**를 만족하는 경우(`isAllPerfect`), 기존 `"FULL COMBO"` 낱개 문자 이미지를 비활성화합니다.
+- 가상의 텍스트 오브젝트를 생성하고, 인게임 HUD에서 추출한 골드빛 그라데이션 스타일의 두꺼운 외곽선 폰트(예: `LuckiestGuy-Regular`)를 동적 바인딩하여 화려한 **"ALL PERFECT !"** 골드 텍스트 배너를 동적으로 생성 및 배치합니다.
+
+---
+
 ## 🔒 Phase 5. 안전판 가동 (세이브 파일 오염 방지)
 
 가상 곡(`1999-0`)을 클리어했을 때 기록되는 점수와 결과 정보가 정식 세이브 파일 구조에 포함되면, 추후 모드를 껐을 때 세이브 데이터 손상(데이터 파싱 실패) 에러를 일으킬 수 있습니다.

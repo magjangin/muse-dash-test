@@ -82,6 +82,53 @@ namespace muse_dash_test.Patches
         }
     }
 
+    public static class AccuracyCalculator
+    {
+        public static float CalculateTrueAccuracy(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget instance)
+        {
+            int totalStandard = CustomPlaySession.Current.TotalStandard;
+            if (totalStandard > 0)
+            {
+                float numerator = instance.m_PerfectResult + instance.m_GreatResult * 0.5f;
+                return Math.Min(1.0f, numerator / totalStandard);
+            }
+            else
+            {
+                float total = instance.m_PerfectResult + instance.m_GreatResult + instance.m_MissResult;
+                if (total > 0f)
+                {
+                    return (instance.m_PerfectResult + instance.m_GreatResult * 0.5f) / total;
+                }
+                return 1.0f;
+            }
+        }
+
+        public static float CalculateTrueAccuracyNew(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget instance)
+        {
+            int totalStandard = CustomPlaySession.Current.TotalStandard;
+            int totalGears = CustomPlaySession.Current.TotalGears;
+            int totalHearts = CustomPlaySession.Current.TotalHearts;
+            int totalBlueNotes = CustomPlaySession.Current.TotalBlueNotes;
+
+            int denominator = totalStandard + totalGears + totalHearts + totalBlueNotes;
+            if (denominator > 0)
+            {
+                float numerator = instance.m_PerfectResult + (instance.m_GreatResult * 0.5f)
+                    + instance.m_JumpOverResult + instance.m_EnergyCount + instance.m_BluePoint;
+                return Math.Min(1.0f, numerator / denominator);
+            }
+            else
+            {
+                float total = instance.m_PerfectResult + instance.m_GreatResult + instance.m_MissResult;
+                if (total > 0f)
+                {
+                    return (instance.m_PerfectResult + instance.m_GreatResult * 0.5f) / total;
+                }
+                return 1.0f;
+            }
+        }
+    }
+
     // Cache the TaskStageTarget instance when accuracy is requested
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "GetAccuracy")]
     public class TaskStageTarget_GetAccuracy_Patch
@@ -103,11 +150,8 @@ namespace muse_dash_test.Patches
 
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
-                    float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
-                    if (total > 0f)
-                    {
-                        __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
-                    }
+                    float accuracyNew = AccuracyCalculator.CalculateTrueAccuracyNew(__instance);
+                    __result = (float)Math.Round(accuracyNew, 3);
                 }
 
                 // 원래의 로깅 형식 요구사항에 맞춰 그대로 한 줄 출력합니다.
@@ -141,11 +185,7 @@ namespace muse_dash_test.Patches
             {
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
-                    float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
-                    if (total > 0f)
-                    {
-                        __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
-                    }
+                    __result = AccuracyCalculator.CalculateTrueAccuracy(__instance);
                 }
             }
             catch (Exception ex)
@@ -164,11 +204,7 @@ namespace muse_dash_test.Patches
             {
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
-                    float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
-                    if (total > 0f)
-                    {
-                        __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
-                    }
+                    __result = AccuracyCalculator.CalculateTrueAccuracyNew(__instance);
                 }
             }
             catch (Exception ex)

@@ -13,6 +13,11 @@ namespace muse_dash_test
         public bool ShouldApplyExperimentChart { get; private set; }
         public bool IsDynamicBossSwap { get; set; }
 
+        public int TotalStandard { get; set; }
+        public int TotalGears { get; set; }
+        public int TotalHearts { get; set; }
+        public int TotalBlueNotes { get; set; }
+
         public string LastKnownMusicUid =>
             !string.IsNullOrEmpty(SelectedMusicUid) ? SelectedMusicUid : LastClickedMusicUid;
 
@@ -20,6 +25,14 @@ namespace muse_dash_test
         {
             SelectedMusicUid = uid ?? string.Empty;
             ShouldApplyExperimentChart = CustomContentIds.IsVirtualSong(uid);
+        }
+
+        public void ResetCounts()
+        {
+            TotalStandard = 0;
+            TotalGears = 0;
+            TotalHearts = 0;
+            TotalBlueNotes = 0;
         }
     }
 }

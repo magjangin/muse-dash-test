@@ -235,6 +235,28 @@ LevelDesignerNameTextObjectNames
 
 클릭음이나 효과음은 `click`, `sfx`, `button` 이름을 기준으로 제외합니다.
 
+## 정확도 계산 및 All Perfect 배너가 이상할 때
+
+올 퍼펙트(All Perfect) 판정이나 결과 화면의 골드 배너 연출이 동작하지 않는 경우 아래 로그와 설정을 점검하십시오.
+
+### 1. 정확도 디버그 로그 확인
+플레이가 끝날 때 콘솔에 아래와 같은 로그가 남는지 확인합니다.
+```text
+[APMod.Debug.Accuracy] m_MusicCount=0, m_PerfectResult=351, m_GreatResult=0, m_MissResult=0, m_CoolResult=0, m_HitCount=351, m_LongPressCount=10, m_LongPressHitCount=10, m_EnergyCount=0, GetAccuracy()=0.854000, GetTrueAccuracy()=0.914062, GetTrueAccuracyNew()=0.854015
+```
+* **확인할 점**:
+  * `m_GreatResult`와 `m_MissResult`가 모두 0이어야 All Perfect 조건이 만족됩니다.
+  * 커스텀 차트의 실제 노드 종류별 집계가 올바르게 작동했는지 `[APMod.Accuracy] Custom chart note counts: Standard=..., Gears=..., Hearts=..., BlueNotes=...` 로그를 통해 교차 검증합니다.
+
+### 2. HUD 폰트 캐싱 상태 점검
+올 퍼펙트 달성 시 골드 배너를 그리기 위해 인게임 메인 점수 폰트(`LuckiestGuy-Regular_150_115`)를 동적으로 캐싱해야 합니다.
+```text
+[APMod.Debug.Font] HUD 폰트 캐싱 시도 시작 - ...
+[APMod.Debug.Font] 일반 폰트 획득 완료: 'LuckiestGuy-Regular_150_115'
+```
+* **문제 상황**: 폰트 캐싱에 실패하여 순정 `"FULL COMBO"` 배너가 그대로 나오거나 골드 텍스트의 외곽선/스타일이 깨지는 경우.
+* **해결 방법**: `PnlBattle.instance.currentComps.scoreValue` 객체가 인게임 내에서 활성화되기 전에 조기 쿼리가 들어갔는지 확인하고, 폰트 획득 로그가 한 번이라도 제대로 출력되었는지 점검하십시오.
+
 ## 로그가 너무 많을 때
 
 아래 기능들은 로그가 길어질 수 있습니다.

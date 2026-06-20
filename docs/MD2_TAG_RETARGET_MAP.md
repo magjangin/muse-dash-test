@@ -187,3 +187,44 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 4. 각 칸을 채울 때마다 [CustomTagRegistry.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)의 디버그 로그(`[성공] m_AllMusicInfo 맵에...`, `[대성공] GetMusicInfoFromAll...`)로 단계별 검증.
 
 > **요약**: 이 지도에서 🟡(데이터)는 "칸 채우기"로 끝나고, 🔴(UI 아이콘)만 진짜 재분석이 필요합니다. 즉 **"태그 전체를 다시 짠다"가 아니라 "아이콘 부분만 다시 분석 + 나머지는 이름 교체"** 가 현실적인 규모입니다.
+
+---
+
+## 📋 정확도 보정 및 결과 화면(AP) 연출 재타깃팅 지도
+
+**파일**: [APModPatch.cs](../muse%20dash%20test/Patches/APModPatch.cs)
+
+| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
+|---|---|---|---|---|---|---|
+| C1.1 | `TaskStageTarget` | `GetAccuracy()` | 후크(Postfix) | 3자리 반올림 전체 정확도 반환 | 🟡 | |
+| C1.2 | `TaskStageTarget` | `GetTrueAccuracy()` | 후크(Postfix) | 일반 노트 정밀 정확도 반환 | 🟡 | |
+| C1.3 | `TaskStageTarget` | `GetTrueAccuracyNew()` | 후크(Postfix) | 전체 오브젝트 정밀 정확도 반환 | 🟡 | |
+| C1.4 | `TaskStageTarget` | `AddScore(int, int, string, ...)` | 후크(Prefix) | `TaskStageTarget` 캐싱 및 HUD 폰트 가로채기 | 🟡 | |
+| C1.5 | `TaskStageTarget` | `IsFullCombo()` | 후크(Postfix) | 결과창 노출 전 `TaskStageTarget` 인스턴스 백업 | 🟡 | |
+| C1.6 | `TaskStageTarget` | `m_PerfectResult`, `m_GreatResult`, `m_MissResult`, `m_JumpOverResult`, `m_EnergyCount`, `m_BluePoint` | 필드 | 판정 변수 값 조회 (분자/분모 산출) | 🟡 | |
+| C1.7 | `PnlVictory2dManager` | `OnShowVictory()` | 후크(Postfix) | AP 판정 검증 및 Custom AP 골드 배너 동적 주입 | 🔴 | |
+| C1.8 | `PnlBattle` | `instance.currentComps.scoreValue` | UI 경로 | 팝아트풍 폰트(`LuckiestGuy-Regular`) 리소스 추출 | 🔴 | |
+
+---
+
+## 📋 체력바 커스텀 및 수치 변경 감지 재타깃팅 지도
+
+**파일**: [ChangeHealthValuePatch.cs](../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs), [HywStageManager.cs](../muse%20dash%20test/Patches/UI/Custom/HpMod/HywStageManager.cs)
+
+| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
+|---|---|---|---|---|---|---|
+| H1.1 | `ChangeHealthValue` | `OnGameStart()` | 후크(Postfix) | 배틀 시작 시 체력 텍스트 스타일러 강제 시동 | 🟡 | |
+| H1.2 | `ChangeHealthValue` | `OnHpRateChange(float)` | 후크(Postfix) | 체력 비율 변경 시 체력바 텍스트 및 서식 갱신 | 🟡 | |
+| H1.3 | `ChangeHealthValue` | `OnHpDeduct(int)` | 후크(Postfix) | 피해 입을 시 스타일 갱신 및 유지 | 🟡 | |
+| H1.4 | `ChangeHealthValue` | `OnHpAdd(int)` | 후크(Postfix) | 회복 시 스타일 갱신 및 유지 | 🟡 | |
+| H1.5 | `SldHp` / `TxtHp` | (Unity 계층 구조) | UI 경로 | 체력바 프리팹 내 텍스트 컴포넌트 강제 스타일링 | 🔴 | |
+
+---
+
+## 📋 세이브 데이터 정화(오염 방지) 재타깃팅 지도
+
+**파일**: [SaveDataManagerPatch.cs](../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs)
+
+| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
+|---|---|---|---|---|---|---|
+| S1.1 | `SaveDataManager` 또는 `DataManager` | `Save()` | 후크(Prefix) | 세이브 직전 가상 키(`1999-`, `1998-`) 컬렉션 정화 | 🟡 | |

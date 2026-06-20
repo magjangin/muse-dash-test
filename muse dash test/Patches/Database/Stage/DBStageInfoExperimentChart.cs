@@ -1,6 +1,7 @@
 using MelonLoader;
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
+using muse_dash_test;
 
 // 실험 차트 핵심 파이프라인: 원본 노트 복제 → 스펙 적용 → 노트 삽입.
 // (보조 로직은 같은 partial 클래스의 .Bms / .Resolve / .Sorting / .Diagnostics 파일로 분리되어 있습니다.)
@@ -64,6 +65,55 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             SortBmsRuntimeMusicListByShowTick(musicList, 1);
         }
 
+        // Count note types for accurate in-game accuracy override
+        CustomPlaySession.Current.ResetCounts();
+        int totalStandard = 0;
+        int totalGears = 0;
+        int totalHearts = 0;
+        int totalBlueNotes = 0;
+
+        for (int i = 1; i < musicList.Count; i++)
+        {
+            var note = musicList[i];
+            if (note?.noteData == null) continue;
+
+            int type = (int)note.noteData.type;
+
+            if (type == 0 || type == 9 || IsSceneToggleNote(note))
+            {
+                continue;
+            }
+            else if (type == 2)
+            {
+                totalGears++;
+            }
+            else if (type == 6)
+            {
+                totalHearts++;
+            }
+            else if (type == 7)
+            {
+                totalBlueNotes++;
+            }
+            else if (type == 3)
+            {
+                if (!note.isLongPressing && !note.isLongPressEnd)
+                {
+                    totalStandard++;
+                }
+            }
+            else
+            {
+                totalStandard++;
+            }
+        }
+
+        CustomPlaySession.Current.TotalStandard = totalStandard;
+        CustomPlaySession.Current.TotalGears = totalGears;
+        CustomPlaySession.Current.TotalHearts = totalHearts;
+        CustomPlaySession.Current.TotalBlueNotes = totalBlueNotes;
+
+        MelonLogger.Msg($"[APMod.Accuracy] Custom chart note counts: Standard={totalStandard}, Gears={totalGears}, Hearts={totalHearts}, BlueNotes={totalBlueNotes}");
         MelonLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
     }
 
