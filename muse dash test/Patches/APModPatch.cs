@@ -86,7 +86,7 @@ namespace muse_dash_test.Patches
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "GetAccuracy")]
     public class TaskStageTarget_GetAccuracy_Patch
     {
-        public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, float __result)
+        public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
         {
             try
             {
@@ -95,10 +95,98 @@ namespace muse_dash_test.Patches
                     VictoryDataCache.ActiveTarget = __instance;
                     MelonLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
+
+                if (CustomPlaySession.Current.ShouldApplyExperimentChart)
+                {
+                    float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
+                    if (total > 0f)
+                    {
+                        float oldResult = __result;
+                        __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
+
+                        float numerator = __instance.m_PerfectResult + __instance.m_GreatResult * 0.5f;
+                        string originalDetails = "";
+                        if (oldResult > 0.00001f)
+                        {
+                            int oldDenominator = (int)Math.Round(numerator / oldResult);
+                            originalDetails = $" (Original DB Notes: {oldDenominator})";
+                        }
+
+                        MelonLogger.Msg($"[APMod.Accuracy] GetAccuracy overridden: {oldResult:F6}{originalDetails} -> {__result:F6} (Actual Notes: {total}, Perfect={__instance.m_PerfectResult}, Great={__instance.m_GreatResult}, Miss={__instance.m_MissResult})");
+                    }
+                }
             }
             catch (Exception ex)
             {
                 MelonLogger.Error($"[APMod] GetAccuracy Postfix 예외 발생: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "GetTrueAccuracy")]
+    public class TaskStageTarget_GetTrueAccuracy_Patch
+    {
+        public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
+        {
+            try
+            {
+                if (CustomPlaySession.Current.ShouldApplyExperimentChart)
+                {
+                    float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
+                    if (total > 0f)
+                    {
+                        float oldResult = __result;
+                        __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
+
+                        float numerator = __instance.m_PerfectResult + __instance.m_GreatResult * 0.5f;
+                        string originalDetails = "";
+                        if (oldResult > 0.00001f)
+                        {
+                            int oldDenominator = (int)Math.Round(numerator / oldResult);
+                            originalDetails = $" (Original DB Notes: {oldDenominator})";
+                        }
+
+                        MelonLogger.Msg($"[APMod.Accuracy] GetTrueAccuracy overridden: {oldResult:F6}{originalDetails} -> {__result:F6} (Actual Notes: {total})");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[APMod] GetTrueAccuracy Postfix 예외 발생: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "GetTrueAccuracyNew")]
+    public class TaskStageTarget_GetTrueAccuracyNew_Patch
+    {
+        public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
+        {
+            try
+            {
+                if (CustomPlaySession.Current.ShouldApplyExperimentChart)
+                {
+                    float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
+                    if (total > 0f)
+                    {
+                        float oldResult = __result;
+                        __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
+
+                        float numerator = __instance.m_PerfectResult + __instance.m_GreatResult * 0.5f;
+                        string originalDetails = "";
+                        if (oldResult > 0.00001f)
+                        {
+                            int oldDenominator = (int)Math.Round(numerator / oldResult);
+                            originalDetails = $" (Original DB Notes: {oldDenominator})";
+                        }
+
+                        MelonLogger.Msg($"[APMod.Accuracy] GetTrueAccuracyNew overridden: {oldResult:F6}{originalDetails} -> {__result:F6} (Actual Notes: {total})");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[APMod] GetTrueAccuracyNew Postfix 예외 발생: {ex}");
             }
         }
     }
