@@ -49,39 +49,46 @@ MelonLoader 모드 진입점 클래스입니다.
   * 노트 처리로 인해 스코어가 업데이트되는 런타임 이벤트(`TaskStageTarget.AddScore`)를 후킹합니다.
   * 실행 스레드 차단 없이 활성화된 `TaskStageTarget` 주소를 정적 캐시에 자동 등록합니다.
   * 동시에, 배틀 HUD 스코어 컴포넌트(`PnlBattle.instance.currentComps.scoreValue`)로부터 인게임용 메인 시그니처 폰트인 `LuckiestGuy-Regular_150_115`를 dynamic 스캔하여 결과 배너로 넘기기 위해 캐싱 처리합니다.
-* **`TaskStageTarget_GetAccuracy_Patch` & `IsFullCombo_Patch` (Postfix)**:
-  * 정확도 갱신이나 풀콤보 판단 등의 타이밍에 `TaskStageTarget` 주소를 다각도로 교차 검증하여 유실을 방지합니다.
+* **`TaskStageTarget_GetAccuracy_Patch`, `GetTrueAccuracy_Patch` & `GetTrueAccuracyNew_Patch` (Postfix)**:
+  * 커스텀 차트 플레이 시, 원본 곡의 고정 노드 개수 분모를 나누는 정확도 부정합을 해소하기 위해 실제 Perfect/Great/Miss 판수 누계를 바탕으로 동적 정확도 보정값을 계산하여 반환값을 재조정합니다.
+  * 정확도 갱신 시 분석 및 로깅을 위해 원본 스펙 변수 상태를 로그(`[APMod.Debug.Accuracy]`)로 기록합니다.
+* **`TaskStageTarget_IsFullCombo_Patch` (Postfix)**:
+  * 풀콤보 판단 타이밍에 `TaskStageTarget` 인스턴스를 확보하여 유실을 방지합니다.
 * **`PnlVictory2dManager_OnShowVictory_Patch` (Postfix)**:
   * 곡 플레이 종료 직후 화면에 풀콤보 텍스트 배너가 활성화되는 순간(`OnShowVictory`)에 개입합니다.
   * 캐싱해 둔 `TaskStageTarget` 포인터를 통해 **Great 0, Miss 0, Full Combo (정확도 100%)** 조건이 완벽히 만족되는지(`isAllPerfect`) 판정합니다.
-  * **올 퍼펙트 달성 시**: 기존 낱개 분할로 출력되던 `"F-U-L-L C-O-M-B-O"` 알파벳 이미지 리스트(ImgF, ImgU, ImgL 등)를 일괄 `SetActive(false)` 처리하여 보이지 않게 가립니다.
-  * 이후 가상의 `"CustomAPText"` GameObject를 결과 패널 내에 이식하고, 캐싱된 고음질 인게임 시그니처 서체(`LuckiestGuy-Regular`)를 주입한 뒤, 골드빛 그라데이션 컬러(`Color(1f, 0.85f, 0f)`)와 볼륨감 있는 `Shadow`(3D 입체감), 그리고 두꺼운 검은색 `Outline` 컴포넌트를 부착하여 네이티브하고 완성도 높은 **"ALL PERFECT !"** 텍스트를 아름답게 화면 중앙에 동적 렌더링합니다.
-  * 만약 올 퍼펙트 미달성(Great/Miss 존재)일 때는 오리지널 풀콤보 개별 글자 오브젝트들을 다시 활성화(`SetActive(true)`)하여 순정 레이아웃을 투명하게 보존합니다.
+  * **올 퍼펙트 달성 시**: 기존 낱개 분할로 출력되던 `"F-U-L-L C-O-M-B-O"` 알파벳 이미지 리스트를 일괄 비활성화하고, 가상의 `"CustomAPText"` GameObject를 이식하여 골드빛 그라데이션 컬러와 두꺼운 외곽선이 적용된 화려한 **"ALL PERFECT !"** 텍스트를 아름답게 동적 렌더링합니다.
 
 ### 📂 [Battle/Mechanics/AutoPlayPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs)
-* **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹합니다.
-  * **`Prefix`**: `enable=true` 신호가 들어올 때 선택적으로 오토플레이 제어가 작동 중인지 로깅하며 흐름을 모니터링합니다. (필요 시 `enable=false`로 꺾어 인게임 키보드 조작 권한을 유지하도록 강제 제어 가능)
-  * **`Postfix`**: 오토플레이 값이 최종 적용되었을 때 상태를 정확히 출력합니다.
+* **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹하여 흐름을 모니터링합니다.
 
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.
-* **`ChangeFeverValue_OnFever_Patch`**: 피버 UI 상태 전환을 감지하며, `__runOriginal` 매개변수를 통해 패치에 의한 실제 차단 여부를 로그로 왜곡 없이 식별합니다.
-* **`AbstractFeverManager_AddFever_Patch`**:
-  * 인게임의 모든 캐릭터 피버 클래스의 게이지 충전을 가로챕니다.
-  * `typeName.Contains("GeneralFeverManager")` 필터를 통해 일반 곡의 기본 피버 매니저만 선별해 피버 게이지 충전량(`value`)을 조작하거나 원천 차단합니다.
+* **`ChangeFeverValue_OnFever_Patch`**: 피버 UI 상태 전환을 감지합니다.
+* **`AbstractFeverManager_AddFever_Patch`**: 캐릭터 피버 충전을 가로채 게이지 충전량 조작 또는 원천 차단을 수행합니다.
 
 ### 📂 [Mechanics/BossPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/Mechanics/BossPatch.cs)
 * **`Boss_InitBossObject_Patch`**: 보스 렌더링용 캐릭터 프리팹 명칭 및 씬을 교체 적용하는 룰 시스템입니다.
-* **`Boss_Play_Patch`**: 인게임 도중 `swap:[보스명]:[씬번호]` 키워드가 삽입된 보스 액션을 만나면, 현재 보스 오브젝트와 상위 부모 트랜스폼을 감지해 안전하게 강제 활성화(`SetActive(true)`) 및 **실시간 보스 캐릭터 스왑(Dynamic Boss Swap)** 연출을 수행합니다.
+* **`Boss_Play_Patch`**: 인게임 도중 `swap:[보스명]:[씬번호]` 키워드가 삽입된 보스 액션을 만나면, 현재 보스 오브젝트와 상위 부모 트랜스폼을 감지해 실시간 보스 캐릭터 스왑을 연출합니다.
 
 ### 📂 [UI/PnlBattleGameStartPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/PnlBattleGameStartPatch.cs)
-배틀 진입 시점에 3D Quad 메쉬 및 메쉬 렌더러를 동적 생성하고, 유니티의 `VideoPlayer` 컴포넌트를 이식해 머티리얼 오버라이드 렌더링 방식으로 배경에 커스텀 MP4 영상을 강제 재생시키는 비디오 플레이어 삽입 모듈입니다.
+배틀 진입 시점에 3D Quad 메쉬 및 VideoPlayer 컴포넌트를 이식해 배경에 커스텀 MP4 영상을 강제 재생시키는 비디오 플레이어 삽입 모듈입니다.
 
 ### 📂 [UI/StageBattleComponentPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs)
-* **`StageBattleComponent.Pause` & `Resume`**: 인게임 정지/재개 이벤트 후킹 시, 부착된 비디오 플레이어(`VideoPlayer`)도 동반 일시정지 및 플레이 복귀가 가능하게 제어해 비디오 싱크를 정확히 보정합니다.
+* **`StageBattleComponent.Pause` & `Resume`**: 인게임 정지/재개 이벤트 후킹 시, 부착된 비디오 플레이어도 동반 일시정지 및 플레이 복귀가 가능하게 제어해 비디오 싱크를 정확히 보정합니다.
 
 ### 📂 [UI/ProgressBarPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/ProgressBarPatch.cs)
-* **`PnlBattle.MusicProgressInit` 후킹**: 배틀 스테이지 진행 상황을 시각화하는 상단 슬라이더 UI 컴포넌트(`sldProgress`)를 성공적으로 감지하고, 해당 게임 오브젝트를 화면에서 동적으로 비활성화하여 진행바를 숨기거나 제어하는 모듈입니다.
+* **`PnlBattle.MusicProgressInit` 후킹**: 배틀 스테이지 진행 상황을 시각화하는 상단 슬라이더 UI 컴포넌트를 화면에서 동적으로 비활성화하여 진행바를 숨기거나 제어하는 모듈입니다.
+
+### 📂 [Battle/UI/HwaBattleMediaController.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/HwaBattleMediaController.cs) & [Lifecycle.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/HwaBattleMediaController.Lifecycle.cs) [NEW]
+커스텀 BGM(오디오) 및 BGA(비디오)의 플레이어 재생 상태를 유기적으로 동기화 및 관리하는 오디오/비디오 컨트롤러입니다. 결과 화면(Victory) 전환 시 미디어를 강제 정지시킵니다.
+
+### 📂 [UI/Custom/InputOverlay.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/InputOverlay.cs) [NEW]
+(부속 파일: [Config.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/InputOverlay.Config.cs), [Patches.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/InputOverlay.Patches.cs), [Render.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/InputOverlay.Render.cs))
+인게임 화면 구석에 실시간 키 입력을 렌더링하여 모니터링하는 오버레이 기능입니다. 누락된 항목을 보존하는 자체 복구(Self-healing) 설정 로직을 내장하고 있습니다.
+
+### 📂 [UI/Custom/JudgmentBar.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/JudgmentBar.cs) [NEW]
+게임 타격 판정 시 발생한 오차 시간을 실시간으로 분석하여 판정바 UI 상에 인디케이터 눈금으로 그려주는 그래픽 시각화 패치입니다.
 
 ---
 
@@ -107,7 +114,7 @@ MelonLoader 모드 진입점 클래스입니다.
 ### 📂 [Custom/Tags/CustomTagRegistry.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)
 게임 데이터베이스 구조를 통해 **"실험용 가상 앨범(UID: 1998-0)"**을 동적으로 메모리에 등록하는 핵심 매니저입니다.
 * **`RegisterAll()`**: 가상 앨범 태그 설정 및 커스텀 곡들의 런타임 가상 레코드를 데이터베이스 정렬 맵(`dbMusicTag`)에 정밀 주입합니다.
-* **`CleanPurchaseProperties()`**: 얇은 복제본이 복제 원본의 DLC 상품 식별자(`needPurchase`, `pay_ids`, `dlc`)를 상속하지 않도록 가상 객체의 메타데이터를 격리하기 위한 함수입니다. 원본 콘텐츠의 구매 상태나 DLC 소유권을 변경하는 기능이 아닙니다. 단, `MemberwiseClone()`이 공유할 수 있는 하위 확장 정보에는 참조 분리 확인 후 적용해야 합니다.
+* **`CleanPurchaseProperties()`**: 얇은 복제본이 복제 원본의 DLC 상품 식별자(`needPurchase`, `pay_ids`, `dlc`)를 상속하지 않도록 가상 객체의 메타데이터를 격리하기 위한 함수입니다. 단, `MemberwiseClone()`이 공유할 수 있는 하위 확장 정보에는 참조 분리 확인 후 적용해야 합니다.
 
 ### 📂 [Custom/Tags/CustomTagPatch.AlbumPatches.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)
 * `GetAlbumInfoByMusicInfo` 등을 후킹하여, 가상 곡의 고유 레코드 포인터를 요청할 때 메모리에 생성해 둔 커스텀 앨범 메타데이터(`CustomAlbumInfo`) 주소를 우회 반환해 주어 가상 앨범 UI 스크롤을 무사 통과시킵니다.
@@ -118,14 +125,18 @@ MelonLoader 모드 진입점 클래스입니다.
   * 인게임의 태그 탭 셀이 초기화되는 `AlbumTagToggle.Init` 시점을 Harmony Postfix로 안정적으로 가로챕니다.
   * 해당 컴포넌트의 `tagInfo` 속성이 우리의 가상 태그 UID(`tag-muse-dash-test`)를 가리키는지 타입 안전(Type-Safe)하게 스캔 및 감지합니다.
   * 감지 완료 시, 모드 어셈블리 내부에 패킹된 **내장 리소스(`muse_dash_test.Resources.tag_icon.png`)**를 바이너리 스트림으로 직접 추출하고, `UnityEngine.ImageConversion.LoadImage`를 통해 `Texture2D`로 복원하여 캐싱합니다.
-  * 이후 해당 `AlbumTagToggle` 내부의 하위 아이콘 컴포넌트 속성인 `m_IconImg`(RawImage)에 해독 완료된 커스텀 텍스처를 직접 오버라이딩하여 네이티브 렌더러 교체 적용을 마칩니다.
-
-
+  * 이후 해당 `AlbumTagToggle` 내부의 하위 아이콘 컴포넌트 속성인 `m_IconImg`(RawImage)에 커스텀 텍스처를 직접 오버라이딩하여 교체 적용을 마칩니다.
 
 ### 📂 [Custom/HpMod/HywStageManager.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/HywStageManager.cs) & [HywTextStyler.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/HywTextStyler.cs)
 배틀 체력바 UI의 강제 개조를 관리하는 클래스들입니다.
 * **`CheckForStageAndModify()`**: 체력바 오브젝트(`SldHp` 등)를 찾아 존재하면 배틀 씬으로 진입한 것으로 감지하고 체력바 하위의 `Text` 컴포넌트를 추출합니다.
 * **`ApplyMadeByHywStyle()`**: 감지된 체력 텍스트를 "made in 화영왕" 문구로 강제 변경한 후 폰트 크기 및 색상을 동적 튜닝하여 강제로 리소팅(Resorting)합니다.
+
+### 📂 [Custom/HpMod/ChangeHealthValuePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) [NEW]
+체력바 수치가 변경될 때 작동하는 네이티브 이벤트들(`OnGameStart`, `OnHpRateChange`, `OnHpDeduct`, `OnHpAdd`)을 직접 후킹하여 즉시 텍스트와 서식을 강제 갱신하는 체력바 후크 패치입니다. 과도한 로그 스팸 방지를 위한 10초 쿨다운 제한이 구현되어 있습니다.
+
+### 📂 [Common/Pnl/SetSelectedMusicNameTxtPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Pnl/SetSelectedMusicNameTxtPatch.cs) [NEW]
+곡 선택 UI에서 가상 커스텀 곡을 감지하여 제목과 아티스트 텍스트 UI 컴포넌트(`SetSelectedMusicNameTxt`)의 출력 텍스트를 원본 곡 명이 아닌 가상 커스텀 곡 데이터로 알맞게 대치 적용하는 패치입니다.
 
 ### 📂 [Common/Reflection/ModReflection.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Reflection/ModReflection.cs)
 IL2CPP의 컴파일된 가짜 필드나 프라이빗 구조체의 한계를 유니티 메인 스레드 상에서 극복하기 위해, 리플렉션 및 캐스팅을 우회 실행하여 런타임 오브젝트를 추출해 주는 안전 래퍼 도구입니다.
