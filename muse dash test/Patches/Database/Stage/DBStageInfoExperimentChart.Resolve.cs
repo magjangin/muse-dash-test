@@ -81,10 +81,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static string ResolveKeyAudio(ExperimentNoteSpec spec, int noteType, string uid)
     {
         if (!string.IsNullOrEmpty(spec.KeyAudio)) return spec.KeyAudio;
-        if (!string.IsNullOrEmpty(spec.BossAction)) return "";
-        if (noteType == 1) return "sfx_mezzo_1";
+        
+        // 보스 동작 지시용 placeholder(type 0)는 키음이 없어야 합니다.
+        if (noteType == 0) return "";
+        
+        // 실제 타격이 필요한 노드들의 기본 키음 설정
+        if (noteType == 1 || noteType == 2 || noteType == 3 || noteType == 4 || noteType == 8) return "sfx_mezzo_1";
         if (noteType == 6 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002"))) return "sfx_hp";
         if (noteType == 7 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0003"))) return "sfx_score";
+        
+        if (!string.IsNullOrEmpty(spec.BossAction)) return "";
         return null; // keep cloned value
     }
 
