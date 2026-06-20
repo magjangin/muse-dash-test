@@ -70,6 +70,10 @@ namespace muse_dash_test
                 {
                     SaveDefaultConfig();
                 }
+                else
+                {
+                    EnsureMissingKeysAdded();
+                }
 
                 DateTime currentWriteTime = File.GetLastWriteTime(configPath);
                 if (currentWriteTime != lastWriteTime)
@@ -130,6 +134,46 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 MelonLogger.Error($"[InputOverlay] 기본 설정 저장 중 실패: {ex.Message}");
+            }
+        }
+
+        private static void EnsureMissingKeysAdded()
+        {
+            try
+            {
+                if (!File.Exists(configPath)) return;
+
+                string text = File.ReadAllText(configPath, Encoding.UTF8);
+                bool hasAutoPlay = text.Contains("오토플레이");
+                bool hasBlockFever = text.Contains("피버충전금지");
+                bool hasCinema = text.Contains("시네마");
+
+                if (!hasAutoPlay || !hasBlockFever || !hasCinema)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine();
+                    sb.AppendLine("# [자동 업데이트] 누락된 설정 항목 추가");
+                    
+                    if (!hasAutoPlay)
+                    {
+                        sb.AppendLine($"오토플레이={forceAutoPlay.ToString().ToLower()}");
+                    }
+                    if (!hasBlockFever)
+                    {
+                        sb.AppendLine($"피버충전금지={blockFever.ToString().ToLower()}");
+                    }
+                    if (!hasCinema)
+                    {
+                        sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
+                    }
+
+                    File.AppendAllText(configPath, sb.ToString(), Encoding.UTF8);
+                    MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목(오토플레이/피버/시네마)을 자동 추가했습니다.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[InputOverlay] 누락된 설정 추가 중 예외 발생: {ex.Message}");
             }
         }
 

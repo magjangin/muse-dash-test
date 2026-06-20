@@ -18,6 +18,7 @@ namespace muse_dash_test
 
         public void RememberMusicSelection(string uid)
         {
+            SelectedMusicUid = uid ?? string.Empty;
             ShouldApplyExperimentChart = CustomContentIds.IsVirtualSong(uid);
         }
     }
