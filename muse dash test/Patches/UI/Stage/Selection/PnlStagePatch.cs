@@ -78,9 +78,7 @@ public class PnlStage_ChangeFinalMusic_Patch
 {
     public static void Prefix(PnlStage __instance, int i)
     {
-        try
-        {
-        }
+        try { }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeFinalMusic Prefix 예외: {ex}"); }
     }
 
@@ -90,7 +88,6 @@ public class PnlStage_ChangeFinalMusic_Patch
         {
             PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.ChangeFinalMusic.Force", __instance);
             PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.ChangeFinalMusic", __instance);
-            PnlStagePatchHelper.LogMusicRootComponents("PnlStage.ChangeFinalMusic", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeFinalMusic Postfix 예외: {ex}"); }
     }
@@ -110,7 +107,6 @@ public class PnlStage_RefreshTagTitle_Patch
         {
             PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.RefreshTagTitle", __instance);
             PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.RefreshTagTitle.Force", __instance);
-            PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.RefreshTagTitle", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshTagTitle Postfix 예외: {ex}"); }
     }
