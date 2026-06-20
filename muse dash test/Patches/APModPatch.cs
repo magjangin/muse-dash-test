@@ -96,25 +96,34 @@ namespace muse_dash_test.Patches
                     MelonLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
 
+                // 버그 분석을 위해 TaskStageTarget의 원래 변수 값들을 캡처합니다.
+                float rawGetAccuracy = __result;
+                float rawGetTrueAccuracy = __instance.GetTrueAccuracy();
+                float rawGetTrueAccuracyNew = __instance.GetTrueAccuracyNew();
+
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
                     float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
                     if (total > 0f)
                     {
-                        float oldResult = __result;
                         __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
-
-                        float numerator = __instance.m_PerfectResult + __instance.m_GreatResult * 0.5f;
-                        string originalDetails = "";
-                        if (oldResult > 0.00001f)
-                        {
-                            int oldDenominator = (int)Math.Round(numerator / oldResult);
-                            originalDetails = $" (Original DB Notes: {oldDenominator})";
-                        }
-
-                        MelonLogger.Msg($"[APMod.Accuracy] GetAccuracy overridden: {oldResult:F6}{originalDetails} -> {__result:F6} (Actual Notes: {total}, Perfect={__instance.m_PerfectResult}, Great={__instance.m_GreatResult}, Miss={__instance.m_MissResult})");
                     }
                 }
+
+                // 원래의 로깅 형식 요구사항에 맞춰 그대로 한 줄 출력합니다.
+                MelonLogger.Msg($"[APMod.Debug.Accuracy] " +
+                                $"m_MusicCount={__instance.m_MusicCount}, " +
+                                $"m_PerfectResult={__instance.m_PerfectResult}, " +
+                                $"m_GreatResult={__instance.m_GreatResult}, " +
+                                $"m_MissResult={__instance.m_MissResult}, " +
+                                $"m_CoolResult={__instance.m_CoolResult}, " +
+                                $"m_HitCount={__instance.m_HitCount}, " +
+                                $"m_LongPressCount={__instance.m_LongPressCount}, " +
+                                $"m_LongPressHitCount={__instance.m_LongPressHitCount}, " +
+                                $"m_EnergyCount={__instance.m_EnergyCount}, " +
+                                $"GetAccuracy()={rawGetAccuracy:F6}, " +
+                                $"GetTrueAccuracy()={rawGetTrueAccuracy:F6}, " +
+                                $"GetTrueAccuracyNew()={rawGetTrueAccuracyNew:F6}");
             }
             catch (Exception ex)
             {
@@ -135,18 +144,7 @@ namespace muse_dash_test.Patches
                     float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
                     if (total > 0f)
                     {
-                        float oldResult = __result;
                         __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
-
-                        float numerator = __instance.m_PerfectResult + __instance.m_GreatResult * 0.5f;
-                        string originalDetails = "";
-                        if (oldResult > 0.00001f)
-                        {
-                            int oldDenominator = (int)Math.Round(numerator / oldResult);
-                            originalDetails = $" (Original DB Notes: {oldDenominator})";
-                        }
-
-                        MelonLogger.Msg($"[APMod.Accuracy] GetTrueAccuracy overridden: {oldResult:F6}{originalDetails} -> {__result:F6} (Actual Notes: {total})");
                     }
                 }
             }
@@ -169,18 +167,7 @@ namespace muse_dash_test.Patches
                     float total = __instance.m_PerfectResult + __instance.m_GreatResult + __instance.m_MissResult;
                     if (total > 0f)
                     {
-                        float oldResult = __result;
                         __result = (__instance.m_PerfectResult + __instance.m_GreatResult * 0.5f) / total;
-
-                        float numerator = __instance.m_PerfectResult + __instance.m_GreatResult * 0.5f;
-                        string originalDetails = "";
-                        if (oldResult > 0.00001f)
-                        {
-                            int oldDenominator = (int)Math.Round(numerator / oldResult);
-                            originalDetails = $" (Original DB Notes: {oldDenominator})";
-                        }
-
-                        MelonLogger.Msg($"[APMod.Accuracy] GetTrueAccuracyNew overridden: {oldResult:F6}{originalDetails} -> {__result:F6} (Actual Notes: {total})");
                     }
                 }
             }
