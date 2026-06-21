@@ -25,6 +25,12 @@ public static partial class PnlMusicUtils
     private static readonly string[] LevelDesignerLabelTextObjectNames = { "TxtStageDesigner", "TxtLevelDesigner", "TxtDesigner", "TxtLevelDesign", "TxtChartDesigner" };
     private static readonly string[] LevelDesignerNameTextObjectNames = { "ImgStageDesignerMask", "TxtStageDesignerName", "TxtDesignerName", "TxtLevelDesignName", "TxtChartDesignerName" };
 
+    // 패널 버전마다 멤버명이 달라 후보를 여러 개 두고 일괄 주입합니다.
+    private static readonly string[] TitleMemberNames = { "musicNameTitle", "songNameTitle", "titleText", "musicTitle" };
+    private static readonly string[] ArtistMemberNames = { "artistNameTitle", "artistText", "artistName" };
+    private static readonly string[] DesignerNameMemberNames = { "levelDesignerName", "designerName", "chartDesignerName", "stageDesignerName" };
+    private static readonly string[] DesignerLabelMemberNames = { "levelDesignerText", "designerText" };
+
     public static IEnumerator LogMusicInfoAfterDelay(string source, object pnlInstance, float delaySeconds)
     {
         yield return new WaitForSeconds(delaySeconds);
@@ -125,21 +131,10 @@ public static partial class PnlMusicUtils
             }
         }
 
-        SetMemberText(pnlInstance, "musicNameTitle", title);
-        SetMemberText(pnlInstance, "songNameTitle", title);
-        SetMemberText(pnlInstance, "titleText", title);
-        SetMemberText(pnlInstance, "musicTitle", title);
-
-        SetMemberText(pnlInstance, "artistNameTitle", artist);
-        SetMemberText(pnlInstance, "artistText", artist);
-        SetMemberText(pnlInstance, "artistName", artist);
-
-        SetMemberText(pnlInstance, "levelDesignerName", designer);
-        SetMemberText(pnlInstance, "levelDesignerText", ExperimentLevelDesignerLabel);
-        SetMemberText(pnlInstance, "designerName", designer);
-        SetMemberText(pnlInstance, "designerText", ExperimentLevelDesignerLabel);
-        SetMemberText(pnlInstance, "chartDesignerName", designer);
-        SetMemberText(pnlInstance, "stageDesignerName", designer);
+        SetMemberTexts(pnlInstance, TitleMemberNames, title);
+        SetMemberTexts(pnlInstance, ArtistMemberNames, artist);
+        SetMemberTexts(pnlInstance, DesignerNameMemberNames, designer);
+        SetMemberTexts(pnlInstance, DesignerLabelMemberNames, ExperimentLevelDesignerLabel);
 
         var root = GetRootGameObject(pnlInstance);
         if (root != null)
@@ -245,6 +240,15 @@ public static partial class PnlMusicUtils
         return CustomContentIds.IsVirtualSong(uid);
     }
 
+    private static void SetMemberTexts(object obj, string[] memberNames, string value)
+    {
+        if (obj == null || memberNames == null) return;
+        foreach (var memberName in memberNames)
+        {
+            SetMemberText(obj, memberName, value);
+        }
+    }
+
     private static int SetMemberText(object obj, string memberName, string value)
     {
         try
@@ -336,55 +340,6 @@ public static partial class PnlMusicUtils
         {
             MelonLogger.Error($"[PnlMusicUtils] SetChildTextsBatch 중 예외: {ex.Message}");
         }
-    }
-
-    private static int SetChildTextByNames(GameObject root, string[] objectNames, string value)
-    {
-        int writes = 0;
-        if (root == null || objectNames == null) return writes;
-
-        try
-        {
-            // 1. 하위의 모든 Transform(오브젝트 노드)을 수집하여 이름이 일치하는 타겟 오브젝트만 1차 초고속 선별
-            var transforms = root.GetComponentsInChildren<Transform>(true);
-            if (transforms != null)
-            {
-                foreach (var trans in transforms)
-                {
-                    try
-                    {
-                        if (trans == null || trans.gameObject == null) continue;
-
-                        // GameObject 이름이 찾고자 하는 텍스트 오브젝트 후보와 일치하는 경우에만 핀포인트 진입
-                        if (NameMatches(trans.gameObject.name, objectNames))
-                        {
-                            var go = trans.gameObject;
-
-                            // 해당 오브젝트에 존재하는 컴포넌트들만 조회 (전체 트리 스캔 배제)
-                            var components = go.GetComponents<Component>();
-                            if (components != null)
-                            {
-                                foreach (var comp in components)
-                                {
-                                    if (comp == null || comp is Transform || comp.GetType().Name == "CanvasRenderer") continue;
-                                    writes += SetTextValue(comp, value);
-                                }
-                            }
-
-                            // 하위 모든 텍스트 강제 동기화
-                            writes += SetAllTextUnder(go, value);
-                        }
-                    }
-                    catch { }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"[PnlMusicUtils] SetChildTextByNames 최적화 스캔 중 예외: {ex.Message}");
-        }
-
-        return writes;
     }
 
     private static int SetAllTextUnder(GameObject root, string value)

@@ -118,28 +118,6 @@ public class Boss_Play_Patch
         }
         return true;
     }
-
-    public static void Postfix(Il2Cpp.Boss __instance, string key, bool playAnimator)
-    {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"Boss.Play Postfix 예외: {ex}"); }
-    }
-}
-
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "SetBoss")]
-public class Boss_SetBoss_Patch
-{
-    public static void Prefix(Il2Cpp.Boss __instance)
-    {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"Boss.SetBoss Prefix 예외: {ex}"); }
-    }
-
-    public static void Postfix(Il2Cpp.Boss __instance)
-    {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"Boss.SetBoss Postfix 예외: {ex}"); }
-    }
 }
 
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "InitBossObject", new Type[] { typeof(string), typeof(int), typeof(bool) })]

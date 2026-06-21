@@ -245,10 +245,8 @@ namespace muse_dash_test.Patches
             {
                 MelonLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
 
-                // 결과 화면 진입 시 커스텀 BGM 및 BGA 미디어를 강제로 정지시킵니다.
+                // 결과 화면 진입 시 커스텀 BGM/BGA 미디어 및 OBS 녹화를 강제로 정지시킵니다.
                 HwaBattleMediaController.StopMedia();
-
-                // 곡 종료(결과 화면) 시 OBS 녹화 정지
                 muse_dash_test.ObsController.StopRecording();
 
                 if (__instance == null)
@@ -271,158 +269,158 @@ namespace muse_dash_test.Patches
                     return;
                 }
 
-                bool isFullCombo = false;
-                bool isAllPerfect = false;
-
-                if (VictoryDataCache.ActiveTarget != null)
-                {
-                    isFullCombo = VictoryDataCache.ActiveTarget.IsFullCombo();
-                    int greatCount = VictoryDataCache.ActiveTarget.m_GreatResult;
-                    int missCount = VictoryDataCache.ActiveTarget.m_MissResult;
-                    float accuracy = VictoryDataCache.ActiveTarget.GetAccuracy();
-                    
-                    MelonLogger.Msg($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
-                    
-                    // If it is a full combo, and there are zero Greats and zero Misses, it is an All Perfect!
-                    if (isFullCombo && greatCount == 0 && missCount == 0)
-                    {
-                        isAllPerfect = true;
-                    }
-                }
-                else
-                {
-                    MelonLogger.Msg("[APMod.Debug.Victory] [주의] VictoryDataCache.ActiveTarget가 null입니다! 콤보 판정을 가져올 수 없습니다.");
-                }
-
-                if (isAllPerfect)
+                if (IsAllPerfect())
                 {
                     MelonLogger.Msg("[APMod] ★ALL PERFECT 달성!★ 승리 배너 수정 프로세스 개시.");
-
-                    // 1. Hide the original "FULL COMBO!" individual letter child GameObjects
-                    int hiddenCount = 0;
-                    for (int i = 0; i < fcGo.transform.childCount; i++)
-                    {
-                        var child = fcGo.transform.GetChild(i);
-                        if (child != null)
-                        {
-                            MelonLogger.Msg($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
-                            if (child.name != "CustomAPText")
-                            {
-                                child.gameObject.SetActive(false);
-                                hiddenCount++;
-                            }
-                        }
-                    }
-                    MelonLogger.Msg($"[APMod.Debug.Victory] 기존 FULL COMBO 관련 오브젝트 총 {hiddenCount}개 숨김 처리 완료.");
-
-                    // 2. Create or activate our custom "ALL PERFECT!" text
-                    var customApTransform = fcGo.transform.Find("CustomAPText");
-                    Text customTextComp = null;
-                    if (customApTransform == null)
-                    {
-                        MelonLogger.Msg("[APMod] CustomAPText 게임 오브젝트 신규 생성 프로세스 시작...");
-                        var apGo = new GameObject("CustomAPText");
-                        apGo.transform.SetParent(fcGo.transform, false);
-
-                        customTextComp = apGo.AddComponent<Text>();
-
-                        // Borrow the premium stylized font cached during gameplay if available,
-                        // otherwise try to find one from the victory panel or active UI, and finally fall back to Arial
-                        Font targetFont = VictoryDataCache.PremiumFont;
-                        if (targetFont != null)
-                        {
-                            MelonLogger.Msg($"[APMod.Debug.Victory] 캐싱해 둔 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
-                        }
-                        else
-                        {
-                            MelonLogger.Msg("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
-                            var victoryPanel = GameObject.FindObjectOfType<Il2Cpp.PnlVictory>();
-                            if (victoryPanel != null && victoryPanel.m_CurControls != null && victoryPanel.m_CurControls.accuracyTxt != null)
-                            {
-                                targetFont = victoryPanel.m_CurControls.accuracyTxt.font;
-                                if (targetFont != null)
-                                {
-                                    VictoryDataCache.PremiumFont = targetFont; // Cache it to avoid FindObjectOfType next time
-                                    MelonLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 및 캐싱 성공: '{targetFont.name}'");
-                                }
-                            }
-                        }
-
-                        if (targetFont == null)
-                        {
-                            var anyText = GameObject.FindObjectOfType<Text>();
-                            if (anyText != null && anyText.font != null)
-                            {
-                                targetFont = anyText.font;
-                                VictoryDataCache.PremiumFont = targetFont; // Cache it to avoid FindObjectOfType next time
-                                MelonLogger.Msg("[APMod] 활성화된 씬 내 Text 컴포넌트에서 폰트 획득 및 캐싱 완료.");
-                            }
-                        }
-
-                        if (targetFont == null)
-                        {
-                            targetFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-                            MelonLogger.Msg("[APMod] 폴백 빌트인 Arial 폰트 적용.");
-                        }
-
-                        customTextComp.font = targetFont;
-
-                        // Set custom stylized text
-                        customTextComp.text = "ALL PERFECT !";
-                        customTextComp.fontSize = 110;
-                        customTextComp.alignment = TextAnchor.MiddleCenter;
-                        
-                        // Harmonious vibrant gold/yellow color
-                        customTextComp.color = new Color(1f, 0.85f, 0f, 1f);
-
-                        // Add Shadow for a clean 3D outline effect
-                        var shadow = apGo.AddComponent<Shadow>();
-                        shadow.effectColor = new Color(0f, 0f, 0f, 0.8f);
-                        shadow.effectDistance = new Vector2(6f, -6f);
-
-                        // Add Outline for a gorgeous thick outline matching Muse Dash style
-                        var outline = apGo.AddComponent<Outline>();
-                        outline.effectColor = new Color(0f, 0f, 0f, 1f); // Thick black outline
-                        outline.effectDistance = new Vector2(4f, -4f);
-
-                        // Align centered in RectTransform
-                        var rect = apGo.GetComponent<RectTransform>();
-                        if (rect != null)
-                        {
-                            rect.anchoredPosition = Vector2.zero;
-                            rect.sizeDelta = new Vector2(1000f, 200f);
-                        }
-
-                        MelonLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 생성 성공.");
-                    }
-                    else
-                    {
-                        customApTransform.gameObject.SetActive(true);
-                        MelonLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 활성화 완료.");
-                    }
+                    ShowAllPerfectBanner(fcGo.transform);
                 }
                 else
                 {
                     MelonLogger.Msg("[APMod] 일반 풀콤보 또는 퍼펙트 미달성. 기존 FULL COMBO 문자 복원 활성화.");
-                    for (int i = 0; i < fcGo.transform.childCount; i++)
-                    {
-                        var child = fcGo.transform.GetChild(i);
-                        if (child != null && child.name.StartsWith("Img"))
-                        {
-                            child.gameObject.SetActive(true);
-                        }
-                    }
-
-                    var customApTransform = fcGo.transform.Find("CustomAPText");
-                    if (customApTransform != null)
-                    {
-                        customApTransform.gameObject.SetActive(false);
-                    }
+                    RestoreFullComboBanner(fcGo.transform);
                 }
             }
             catch (Exception ex)
             {
                 MelonLogger.Error($"[APMod] OnShowVictory Postfix 예외 발생: {ex}");
+            }
+        }
+
+        // 풀콤보이면서 Great 0, Miss 0 이면 ALL PERFECT로 판정합니다.
+        private static bool IsAllPerfect()
+        {
+            if (VictoryDataCache.ActiveTarget == null)
+            {
+                MelonLogger.Msg("[APMod.Debug.Victory] [주의] VictoryDataCache.ActiveTarget가 null입니다! 콤보 판정을 가져올 수 없습니다.");
+                return false;
+            }
+
+            bool isFullCombo = VictoryDataCache.ActiveTarget.IsFullCombo();
+            int greatCount = VictoryDataCache.ActiveTarget.m_GreatResult;
+            int missCount = VictoryDataCache.ActiveTarget.m_MissResult;
+            float accuracy = VictoryDataCache.ActiveTarget.GetAccuracy();
+
+            MelonLogger.Msg($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
+
+            return isFullCombo && greatCount == 0 && missCount == 0;
+        }
+
+        // 기존 "FULL COMBO!" 문자들을 숨기고 커스텀 "ALL PERFECT!" 배너를 표시합니다.
+        private static void ShowAllPerfectBanner(Transform fcTransform)
+        {
+            int hiddenCount = 0;
+            for (int i = 0; i < fcTransform.childCount; i++)
+            {
+                var child = fcTransform.GetChild(i);
+                if (child == null) continue;
+
+                MelonLogger.Msg($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
+                if (child.name != "CustomAPText")
+                {
+                    child.gameObject.SetActive(false);
+                    hiddenCount++;
+                }
+            }
+            MelonLogger.Msg($"[APMod.Debug.Victory] 기존 FULL COMBO 관련 오브젝트 총 {hiddenCount}개 숨김 처리 완료.");
+
+            var customApTransform = fcTransform.Find("CustomAPText");
+            if (customApTransform != null)
+            {
+                customApTransform.gameObject.SetActive(true);
+                MelonLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 활성화 완료.");
+                return;
+            }
+
+            CreateAllPerfectBanner(fcTransform);
+        }
+
+        // 커스텀 "ALL PERFECT!" 텍스트 오브젝트를 신규 생성하고 스타일을 적용합니다.
+        private static void CreateAllPerfectBanner(Transform fcTransform)
+        {
+            MelonLogger.Msg("[APMod] CustomAPText 게임 오브젝트 신규 생성 프로세스 시작...");
+            var apGo = new GameObject("CustomAPText");
+            apGo.transform.SetParent(fcTransform, false);
+
+            var customTextComp = apGo.AddComponent<Text>();
+            customTextComp.font = ResolveBannerFont();
+            customTextComp.text = "ALL PERFECT !";
+            customTextComp.fontSize = 110;
+            customTextComp.alignment = TextAnchor.MiddleCenter;
+            // Harmonious vibrant gold/yellow color
+            customTextComp.color = new Color(1f, 0.85f, 0f, 1f);
+
+            // 3D 입체감을 위한 그림자
+            var shadow = apGo.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            shadow.effectDistance = new Vector2(6f, -6f);
+
+            // Muse Dash 스타일의 두꺼운 검정 외곽선
+            var outline = apGo.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 1f);
+            outline.effectDistance = new Vector2(4f, -4f);
+
+            var rect = apGo.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(1000f, 200f);
+            }
+
+            MelonLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 생성 성공.");
+        }
+
+        // 게임플레이 중 캐싱한 프리미엄 폰트 → PnlVictory accuracyTxt → 씬 내 임의 Text → Arial 순으로 폰트를 해석합니다.
+        private static Font ResolveBannerFont()
+        {
+            Font targetFont = VictoryDataCache.PremiumFont;
+            if (targetFont != null)
+            {
+                MelonLogger.Msg($"[APMod.Debug.Victory] 캐싱해 둔 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
+                return targetFont;
+            }
+
+            MelonLogger.Msg("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
+            var victoryPanel = GameObject.FindObjectOfType<Il2Cpp.PnlVictory>();
+            if (victoryPanel != null && victoryPanel.m_CurControls != null && victoryPanel.m_CurControls.accuracyTxt != null)
+            {
+                targetFont = victoryPanel.m_CurControls.accuracyTxt.font;
+                if (targetFont != null)
+                {
+                    VictoryDataCache.PremiumFont = targetFont; // 다음 호출 시 FindObjectOfType 회피용 캐싱
+                    MelonLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 및 캐싱 성공: '{targetFont.name}'");
+                    return targetFont;
+                }
+            }
+
+            var anyText = GameObject.FindObjectOfType<Text>();
+            if (anyText != null && anyText.font != null)
+            {
+                targetFont = anyText.font;
+                VictoryDataCache.PremiumFont = targetFont; // 다음 호출 시 FindObjectOfType 회피용 캐싱
+                MelonLogger.Msg("[APMod] 활성화된 씬 내 Text 컴포넌트에서 폰트 획득 및 캐싱 완료.");
+                return targetFont;
+            }
+
+            MelonLogger.Msg("[APMod] 폴백 빌트인 Arial 폰트 적용.");
+            return Resources.GetBuiltinResource<Font>("Arial.ttf");
+        }
+
+        // 일반 풀콤보/퍼펙트 미달성 시 기존 "FULL COMBO!" 문자를 복원하고 커스텀 배너를 숨깁니다.
+        private static void RestoreFullComboBanner(Transform fcTransform)
+        {
+            for (int i = 0; i < fcTransform.childCount; i++)
+            {
+                var child = fcTransform.GetChild(i);
+                if (child != null && child.name.StartsWith("Img"))
+                {
+                    child.gameObject.SetActive(true);
+                }
+            }
+
+            var customApTransform = fcTransform.Find("CustomAPText");
+            if (customApTransform != null)
+            {
+                customApTransform.gameObject.SetActive(false);
             }
         }
 

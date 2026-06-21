@@ -33,10 +33,4 @@ public class GameMusicScene_LoadScene_Patch
             MelonLogger.Error($"GameMusicScene.LoadScene Prefix 예외: {ex}");
         }
     }
-
-    public static void Postfix(Il2CppGameLogic.GameMusicScene __instance, string sceneName)
-    {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"GameMusicScene.LoadScene Postfix 예외: {ex}"); }
-    }
 }

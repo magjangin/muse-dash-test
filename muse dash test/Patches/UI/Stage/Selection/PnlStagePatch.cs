@@ -51,12 +51,6 @@ public class PnlStage_OnEnable_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), "ChangeMusic", new Type[] { typeof(int) })]
 public class PnlStage_ChangeMusic_Patch
 {
-    public static void Prefix(PnlStage __instance, int i)
-    {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Prefix 예외: {ex}"); }
-    }
-
     public static void Postfix(PnlStage __instance, int i)
     {
         try
@@ -76,12 +70,6 @@ public class PnlStage_ChangeMusic_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), "ChangeFinalMusic", new Type[] { typeof(int) })]
 public class PnlStage_ChangeFinalMusic_Patch
 {
-    public static void Prefix(PnlStage __instance, int i)
-    {
-        try { }
-        catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeFinalMusic Prefix 예외: {ex}"); }
-    }
-
     public static void Postfix(PnlStage __instance, int i)
     {
         try
@@ -97,10 +85,6 @@ public class PnlStage_ChangeFinalMusic_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshTagTitle")]
 public class PnlStage_RefreshTagTitle_Patch
 {
-    public static void Prefix(PnlStage __instance)
-    {
-    }
-
     public static void Postfix(PnlStage __instance)
     {
         try
@@ -109,24 +93,6 @@ public class PnlStage_RefreshTagTitle_Patch
             PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.RefreshTagTitle.Force", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshTagTitle Postfix 예외: {ex}"); }
-    }
-}
-
-// PnlStage.musicNameTitle getter 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.musicNameTitle), HarmonyLib.MethodType.Getter)]
-public class PnlStage_GetMusicNameTitle_Patch
-{
-    public static void Postfix(PnlStage __instance, ref Text __result)
-    {
-    }
-}
-
-// PnlStage.artistNameTitle getter 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.artistNameTitle), HarmonyLib.MethodType.Getter)]
-public class PnlStage_GetArtistNameTitle_Patch
-{
-    public static void Postfix(PnlStage __instance, ref Text __result)
-    {
     }
 }
 
