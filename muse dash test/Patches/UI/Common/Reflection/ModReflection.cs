@@ -41,39 +41,13 @@ namespace muse_dash_test
         {
             if (target == null) return null;
             Type type = target.GetType();
-            string cacheKey = $"{type.FullName}_{memberName}";
-
-            MemberInfo member;
-            bool hasCache;
-
-            lock (CacheLock)
-            {
-                hasCache = MemberCache.TryGetValue(cacheKey, out member);
-            }
-
-            if (!hasCache)
-            {
-                member = ResolveMember(type, memberName);
-                lock (CacheLock)
-                {
-                    // 조회에 실패했더라도 null 값 그대로 캐싱하여 매 틱마다 리플렉션이 재실행되는 것을 방지합니다.
-                    MemberCache[cacheKey] = member;
-                }
-            }
+            MemberInfo member = GetCachedMember(type, memberName, out string cacheKey);
 
             if (member == null)
             {
-                if (!silent)
+                if (!silent && ShouldLogFailure(cacheKey))
                 {
-                    bool isFirstLog = false;
-                    lock (CacheLock)
-                    {
-                        isFirstLog = LoggedFailures.Add(cacheKey);
-                    }
-                    if (isFirstLog)
-                    {
-                        MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없습니다. (이 경고는 1회만 표시됩니다)");
-                    }
+                    MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없습니다. (이 경고는 1회만 표시됩니다)");
                 }
                 return null;
             }
@@ -85,18 +59,9 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                if (!silent)
+                if (!silent && ShouldLogFailure($"{cacheKey}_read_err"))
                 {
-                    bool isFirstLog = false;
-                    string errKey = $"{cacheKey}_read_err";
-                    lock (CacheLock)
-                    {
-                        isFirstLog = LoggedFailures.Add(errKey);
-                    }
-                    if (isFirstLog)
-                    {
-                        MelonLogger.Error($"[ModReflection] '{memberName}' 값을 읽는 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
-                    }
+                    MelonLogger.Error($"[ModReflection] '{memberName}' 값을 읽는 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
                 }
             }
             return null;
@@ -115,38 +80,13 @@ namespace muse_dash_test
         {
             if (target == null) return false;
             Type type = target.GetType();
-            string cacheKey = $"{type.FullName}_{memberName}";
-
-            MemberInfo member;
-            bool hasCache;
-
-            lock (CacheLock)
-            {
-                hasCache = MemberCache.TryGetValue(cacheKey, out member);
-            }
-
-            if (!hasCache)
-            {
-                member = ResolveMember(type, memberName);
-                lock (CacheLock)
-                {
-                    MemberCache[cacheKey] = member;
-                }
-            }
+            MemberInfo member = GetCachedMember(type, memberName, out string cacheKey);
 
             if (member == null)
             {
-                if (!silent)
+                if (!silent && ShouldLogFailure(cacheKey))
                 {
-                    bool isFirstLog = false;
-                    lock (CacheLock)
-                    {
-                        isFirstLog = LoggedFailures.Add(cacheKey);
-                    }
-                    if (isFirstLog)
-                    {
-                        MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없어 값을 주입할 수 없습니다. (이 경고는 1회만 표시됩니다)");
-                    }
+                    MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없어 값을 주입할 수 없습니다. (이 경고는 1회만 표시됩니다)");
                 }
                 return false;
             }
@@ -169,21 +109,71 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                if (!silent)
+                if (!silent && ShouldLogFailure($"{cacheKey}_write_err"))
                 {
-                    bool isFirstLog = false;
-                    string errKey = $"{cacheKey}_write_err";
-                    lock (CacheLock)
-                    {
-                        isFirstLog = LoggedFailures.Add(errKey);
-                    }
-                    if (isFirstLog)
-                    {
-                        MelonLogger.Error($"[ModReflection] '{memberName}' 값 설정 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
-                    }
+                    MelonLogger.Error($"[ModReflection] '{memberName}' 값 설정 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// 타입+멤버명으로 멤버를 조회하되, 결과(실패 시 null 포함)를 캐싱하여 반복 리플렉션을 방지합니다.
+        /// 무거운 <see cref="ResolveMember"/> 호출은 락 바깥에서 수행합니다.
+        /// </summary>
+        private static MemberInfo GetCachedMember(Type type, string memberName, out string cacheKey)
+        {
+            cacheKey = $"{type.FullName}_{memberName}";
+
+            lock (CacheLock)
+            {
+                if (MemberCache.TryGetValue(cacheKey, out var cached))
+                {
+                    return cached;
+                }
+            }
+
+            MemberInfo member = ResolveMember(type, memberName);
+            lock (CacheLock)
+            {
+                // 조회에 실패했더라도 null 값 그대로 캐싱하여 매 틱마다 리플렉션이 재실행되는 것을 방지합니다.
+                MemberCache[cacheKey] = member;
+            }
+            return member;
+        }
+
+        /// <summary>
+        /// 해당 키의 실패가 처음 기록되는 경우에만 true를 반환합니다. (로그 스패밍 억제)
+        /// </summary>
+        private static bool ShouldLogFailure(string key)
+        {
+            lock (CacheLock)
+            {
+                return LoggedFailures.Add(key);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="GetValue"/> 결과를 int로 변환해 반환합니다. 멤버 부재 또는 변환 실패 시 fallback을 반환합니다.
+        /// 게임 업데이트로 필드명이 바뀌어도 예외 대신 fallback으로 안전하게 degrade됩니다.
+        /// </summary>
+        public static int GetInt(object target, string memberName, int fallback = 0, bool silent = false)
+        {
+            object value = GetValue(target, memberName, silent);
+            if (value == null) return fallback;
+            try { return Convert.ToInt32(value); }
+            catch { return fallback; }
+        }
+
+        /// <summary>
+        /// <see cref="GetValue"/> 결과를 float로 변환해 반환합니다. 멤버 부재 또는 변환 실패 시 fallback을 반환합니다.
+        /// </summary>
+        public static float GetFloat(object target, string memberName, float fallback = 0f, bool silent = false)
+        {
+            object value = GetValue(target, memberName, silent);
+            if (value == null) return fallback;
+            try { return Convert.ToSingle(value); }
+            catch { return fallback; }
         }
 
         /// <summary>
@@ -197,36 +187,50 @@ namespace muse_dash_test
         /// <param name="type">대상 클래스의 시스템 타입(Type)</param>
         /// <param name="memberName">스캔할 멤버의 영문 기준 명칭</param>
         /// <returns>검색에 성공한 PropertyInfo 또는 FieldInfo 인스턴스. 부재 시 null을 반환합니다.</returns>
+        /// <summary>
+        /// 'text' 멤버를 가질 수 없는 Unity 핵심 타입들의 FullName 접두사 목록.
+        /// 이 타입들에 대한 'text' 조회를 즉시 차단해 불필요한 리플렉션 스캔을 막습니다.
+        /// </summary>
+        private static readonly string[] TextlessUnityTypePrefixes =
+        {
+            "UnityEngine.Transform",
+            "UnityEngine.RectTransform",
+            "UnityEngine.CanvasRenderer",
+            "UnityEngine.MeshFilter",
+            "UnityEngine.MeshRenderer",
+            "UnityEngine.BoxCollider",
+            "UnityEngine.CircleCollider",
+            "UnityEngine.Rigidbody",
+            "UnityEngine.Canvas",
+            "UnityEngine.AudioSource",
+            "UnityEngine.ParticleSystem",
+            "UnityEngine.Animator",
+            "UnityEngine.Image",
+            "UnityEngine.Mask",
+            "UnityEngine.Sprite",
+            "UnityEngine.Camera",
+            "UnityEngine.Shader",
+            "UnityEngine.Material",
+        };
+
+        private static bool IsTextlessUnityType(string typeName)
+        {
+            if (typeName == null) return false;
+            foreach (var prefix in TextlessUnityTypePrefixes)
+            {
+                if (typeName.StartsWith(prefix, StringComparison.Ordinal)) return true;
+            }
+            return false;
+        }
+
         private static MemberInfo ResolveMember(Type type, string memberName)
         {
             const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
             // 텍스트 속성을 가질 리 없는 대표적인 Unity 핵심 타입들에 대한 'text' 조회 초고속 바이패스 필터
-            if (memberName == "text")
+            if (memberName == "text" && IsTextlessUnityType(type.FullName))
             {
-                string typeName = type.FullName;
-                if (typeName != null &&
-                    (typeName.StartsWith("UnityEngine.Transform") ||
-                     typeName.StartsWith("UnityEngine.RectTransform") ||
-                     typeName.StartsWith("UnityEngine.CanvasRenderer") ||
-                     typeName.StartsWith("UnityEngine.MeshFilter") ||
-                     typeName.StartsWith("UnityEngine.MeshRenderer") ||
-                     typeName.StartsWith("UnityEngine.BoxCollider") ||
-                     typeName.StartsWith("UnityEngine.CircleCollider") ||
-                     typeName.StartsWith("UnityEngine.Rigidbody") ||
-                     typeName.StartsWith("UnityEngine.Canvas") ||
-                     typeName.StartsWith("UnityEngine.AudioSource") ||
-                     typeName.StartsWith("UnityEngine.ParticleSystem") ||
-                     typeName.StartsWith("UnityEngine.Animator") ||
-                     typeName.StartsWith("UnityEngine.Image") ||
-                     typeName.StartsWith("UnityEngine.Mask") ||
-                     typeName.StartsWith("UnityEngine.Sprite") ||
-                     typeName.StartsWith("UnityEngine.Camera") ||
-                     typeName.StartsWith("UnityEngine.Shader") ||
-                     typeName.StartsWith("UnityEngine.Material")))
-                {
-                    return null;
-                }
+                return null;
             }
 
             // 패턴 1: 정확한 프로퍼티명

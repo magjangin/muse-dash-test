@@ -62,7 +62,18 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             SortBmsRuntimeMusicListByShowTick(musicList, 1);
         }
 
-        // Count note types for accurate in-game accuracy override
+        // 인게임 정확도 오버라이드를 위해 노트 타입별 개수를 집계해 세션에 저장합니다.
+        RecountNoteTypes(musicList);
+
+        MelonLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
+    }
+
+    /// <summary>
+    /// musicList의 노트 타입별 개수(Standard/Gear/Heart/Blue)를 집계해 <see cref="CustomPlaySession"/>에 기록합니다.
+    /// 보스/씬토글 노트는 정확도 분모에서 제외하며, 롱노트는 시작 노트 1개만 표준 노트로 셉니다.
+    /// </summary>
+    private static void RecountNoteTypes(Il2CppSystem.Collections.Generic.List<MusicData> musicList)
+    {
         CustomPlaySession.Current.ResetCounts();
         int totalStandard = 0;
         int totalGears = 0;
@@ -94,6 +105,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
             else if (type == NoteTypes.Long)
             {
+                // 롱노트는 시작 노트만 분모에 포함하고 중간/끝 마디는 제외합니다.
                 if (!note.isLongPressing && !note.isLongPressEnd)
                 {
                     totalStandard++;
@@ -111,7 +123,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         CustomPlaySession.Current.TotalBlueNotes = totalBlueNotes;
 
         MelonLogger.Msg($"[APMod.Accuracy] Custom chart note counts: Standard={totalStandard}, Gears={totalGears}, Hearts={totalHearts}, BlueNotes={totalBlueNotes}");
-        MelonLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
     }
 
     public static void AddExperimentNotes(Il2CppSystem.Collections.Generic.List<MusicData> outputList, MusicData sourceNote, ExperimentNoteSpec spec)

@@ -9,6 +9,7 @@
 # Build outputs
 [Bb]in/
 [Oo]bj/
+*.dll
 
 # Logs
 *.log

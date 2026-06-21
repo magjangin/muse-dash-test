@@ -271,6 +271,10 @@ public class PnlStage_RefreshDiffUI_Patch
             {
                 CustomPlaySession.Current.SelectedMusicUid = musicInfo.uid;
                 CustomPlaySession.Current.RememberMusicSelection(musicInfo.uid);
+                if (CustomContentIds.IsVirtualSong(musicInfo.uid))
+                {
+                    HwaMenuBgmController.TriggerMenuBgmChange(musicInfo.uid);
+                }
             }
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";

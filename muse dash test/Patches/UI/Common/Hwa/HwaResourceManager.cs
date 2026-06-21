@@ -15,110 +15,149 @@ namespace muse_dash_test
         private static readonly Dictionary<string, HwaManifest> cachedManifests = new Dictionary<string, HwaManifest>();
         private static readonly Dictionary<string, BmsChart> cachedBmsCharts = new Dictionary<string, BmsChart>();
         private static readonly List<string> virtualUids = new List<string>();
+        private static FileSystemWatcher bmsWatcher = null;
 
         public static void PreloadHwaManifest()
         {
             try
             {
                 MelonLogger.Msg("[HwaResourceManager] 모드 로드 시 manifest 선읽기 시작");
-                cachedManifests.Clear();
-                cachedBmsCharts.Clear();
-                virtualUids.Clear();
+                ClearCaches();
 
-                List<string> songDirs = new List<string>();
-
-                if (Directory.Exists(HwaFolderPath))
-                {
-                    string[] subDirs = Directory.GetDirectories(HwaFolderPath);
-                    if (subDirs != null && subDirs.Length > 0)
-                    {
-                        Array.Sort(subDirs, StringComparer.OrdinalIgnoreCase);
-                        songDirs.AddRange(subDirs);
-                    }
-
-                    if (songDirs.Count == 0)
-                    {
-                        string[] rootTxts = Directory.GetFiles(HwaFolderPath, "*.txt", SearchOption.TopDirectoryOnly);
-                        string[] rootBms = Directory.GetFiles(HwaFolderPath, "*.bms", SearchOption.TopDirectoryOnly);
-                        if ((rootTxts != null && rootTxts.Length > 0) || (rootBms != null && rootBms.Length > 0))
-                        {
-                            songDirs.Add(HwaFolderPath);
-                        }
-                    }
-                }
-
+                List<string> songDirs = DiscoverSongDirectories();
                 if (songDirs.Count > 0)
                 {
                     MelonLogger.Msg($"[HwaResourceManager] 총 {songDirs.Count}개의 하위 폴더/곡 폴더를 발견했습니다.");
                     for (int i = 0; i < songDirs.Count; i++)
                     {
-                        string dir = songDirs[i];
                         string uid = CustomContentIds.CreateVirtualSongUid(i);
-
-                        MelonLogger.Msg($"[HwaResourceManager] [{uid}] 매핑 시도: folder={dir}");
-                        HwaManifest manifest = LoadHwaManifest(dir);
-                        if (manifest == null)
-                        {
-                            string dirName = Path.GetFileName(dir);
-                            if (string.Equals(dir, HwaFolderPath, StringComparison.OrdinalIgnoreCase))
-                            {
-                                dirName = "HwaRoot";
-                            }
-                            manifest = new HwaManifest
-                            {
-                                SourcePath = Path.Combine(dir, "info.txt"),
-                                Title = dirName,
-                                Artist = "Unknown",
-                                LevelDesigner = "Hwa"
-                            };
-                            MelonLogger.Msg($"[HwaResourceManager] [{uid}] 설정 파일(info.txt)이 없어 폴백 설정을 생성했습니다.");
-                        }
-
-                        if (string.IsNullOrEmpty(manifest.SourcePath))
-                        {
-                            manifest.SourcePath = Path.Combine(dir, "info.txt");
-                        }
-
-                        BmsChart bmsChart = LoadHwaBmsChart(dir, manifest);
-
-                        cachedManifests[uid] = manifest;
-                        if (bmsChart != null)
-                        {
-                            cachedBmsCharts[uid] = bmsChart;
-                            MelonLogger.Msg($"[HwaResourceManager] [{uid}] BMS 로드 성공: {HwaChartDiagnostics.DescribeBmsChart(bmsChart)}");
-                        }
-                        else
-                        {
-                            MelonLogger.Warning($"[HwaResourceManager] [{uid}] BMS 로드 실패 또는 파일 없음");
-                        }
-
-                        virtualUids.Add(uid);
-                        MelonLogger.Msg($"[HwaResourceManager] [{uid}] 등록 완료: {HwaManifestLoader.DescribeManifest(manifest)}");
+                        RegisterSongDirectory(uid, songDirs[i]);
                     }
                 }
                 else
                 {
-                    MelonLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1999-0~2)을 기본 생성합니다.");
-                    for (int i = 0; i < 3; i++)
-                    {
-                        string uid = CustomContentIds.CreateVirtualSongUid(i);
-                        HwaManifest manifest = new HwaManifest
-                        {
-                            SourcePath = Path.Combine(HwaFolderPath, $"info.txt"),
-                            Title = $"화영왕 {i}",
-                            Artist = $"화영왕 {i}",
-                            LevelDesigner = $"화영왕 {i}",
-                            Difficulty1 = 2 + i,
-                            Difficulty2 = 5 + i
-                        };
-                        cachedManifests[uid] = manifest;
-                        virtualUids.Add(uid);
-                    }
+                    GenerateTestSlots();
                 }
+
+                InitializeBmsWatcher();
             }
             catch (Exception ex)
             {
                 MelonLogger.Error($"[HwaResourceManager] 모드 로드 시 manifest 선읽기 실패: {ex}");
+            }
+        }
+
+        private static void ClearCaches()
+        {
+            cachedManifests.Clear();
+            lock (cachedBmsCharts)
+            {
+                cachedBmsCharts.Clear();
+            }
+            virtualUids.Clear();
+        }
+
+        /// <summary>
+        /// hwa/ 아래 곡 폴더 목록을 찾습니다. 하위 폴더가 없고 루트에 직접 txt/bms가 있으면 hwa/ 자체를 단일 곡으로 취급합니다.
+        /// </summary>
+        private static List<string> DiscoverSongDirectories()
+        {
+            var songDirs = new List<string>();
+            if (!Directory.Exists(HwaFolderPath))
+            {
+                return songDirs;
+            }
+
+            string[] subDirs = Directory.GetDirectories(HwaFolderPath);
+            if (subDirs != null && subDirs.Length > 0)
+            {
+                Array.Sort(subDirs, StringComparer.OrdinalIgnoreCase);
+                songDirs.AddRange(subDirs);
+            }
+
+            if (songDirs.Count == 0)
+            {
+                string[] rootTxts = Directory.GetFiles(HwaFolderPath, "*.txt", SearchOption.TopDirectoryOnly);
+                string[] rootBms = Directory.GetFiles(HwaFolderPath, "*.bms", SearchOption.TopDirectoryOnly);
+                if ((rootTxts != null && rootTxts.Length > 0) || (rootBms != null && rootBms.Length > 0))
+                {
+                    songDirs.Add(HwaFolderPath);
+                }
+            }
+
+            return songDirs;
+        }
+
+        /// <summary>
+        /// 단일 곡 폴더의 manifest(없으면 폴백)와 BMS 차트를 로드해 캐시에 등록합니다.
+        /// </summary>
+        private static void RegisterSongDirectory(string uid, string dir)
+        {
+            MelonLogger.Msg($"[HwaResourceManager] [{uid}] 매핑 시도: folder={dir}");
+
+            HwaManifest manifest = LoadHwaManifest(dir) ?? CreateFallbackManifest(uid, dir);
+            if (string.IsNullOrEmpty(manifest.SourcePath))
+            {
+                manifest.SourcePath = Path.Combine(dir, "info.txt");
+            }
+
+            BmsChart bmsChart = LoadHwaBmsChart(dir, manifest);
+
+            cachedManifests[uid] = manifest;
+            if (bmsChart != null)
+            {
+                lock (cachedBmsCharts)
+                {
+                    cachedBmsCharts[uid] = bmsChart;
+                }
+                MelonLogger.Msg($"[HwaResourceManager] [{uid}] BMS 로드 성공: {HwaChartDiagnostics.DescribeBmsChart(bmsChart)}");
+            }
+            else
+            {
+                MelonLogger.Warning($"[HwaResourceManager] [{uid}] BMS 로드 실패 또는 파일 없음");
+            }
+
+            virtualUids.Add(uid);
+            MelonLogger.Msg($"[HwaResourceManager] [{uid}] 등록 완료: {HwaManifestLoader.DescribeManifest(manifest)}");
+        }
+
+        private static HwaManifest CreateFallbackManifest(string uid, string dir)
+        {
+            string dirName = Path.GetFileName(dir);
+            if (string.Equals(dir, HwaFolderPath, StringComparison.OrdinalIgnoreCase))
+            {
+                dirName = "HwaRoot";
+            }
+
+            MelonLogger.Msg($"[HwaResourceManager] [{uid}] 설정 파일(info.txt)이 없어 폴백 설정을 생성했습니다.");
+            return new HwaManifest
+            {
+                SourcePath = Path.Combine(dir, "info.txt"),
+                Title = dirName,
+                Artist = "Unknown",
+                LevelDesigner = "Hwa"
+            };
+        }
+
+        /// <summary>
+        /// hwa/ 폴더가 비어 있을 때 동작 확인용 가상 곡 3개(1999-0~2)를 생성합니다.
+        /// </summary>
+        private static void GenerateTestSlots()
+        {
+            MelonLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1999-0~2)을 기본 생성합니다.");
+            for (int i = 0; i < 3; i++)
+            {
+                string uid = CustomContentIds.CreateVirtualSongUid(i);
+                cachedManifests[uid] = new HwaManifest
+                {
+                    SourcePath = Path.Combine(HwaFolderPath, "info.txt"),
+                    Title = $"화영왕 {i}",
+                    Artist = $"화영왕 {i}",
+                    LevelDesigner = $"화영왕 {i}",
+                    Difficulty1 = 2 + i,
+                    Difficulty2 = 5 + i
+                };
+                virtualUids.Add(uid);
             }
         }
 
@@ -202,7 +241,16 @@ namespace muse_dash_test
             chart = null;
             description = string.Empty;
 
-            if (uid != null && cachedBmsCharts.TryGetValue(uid, out chart))
+            bool found = false;
+            lock (cachedBmsCharts)
+            {
+                if (uid != null)
+                {
+                    found = cachedBmsCharts.TryGetValue(uid, out chart);
+                }
+            }
+
+            if (found && chart != null)
             {
                 description = HwaChartDiagnostics.DescribeBmsChart(chart);
                 return true;
@@ -310,6 +358,119 @@ namespace muse_dash_test
             {
                 MelonLogger.Error($"[HwaResourceManager.Bms] BMS 읽기 실패: {ex}");
                 return null;
+            }
+        }
+
+        public static void InitializeBmsWatcher()
+        {
+            try
+            {
+                if (bmsWatcher != null)
+                {
+                    bmsWatcher.EnableRaisingEvents = false;
+                    bmsWatcher.Dispose();
+                    bmsWatcher = null;
+                }
+
+                if (!Directory.Exists(HwaFolderPath))
+                {
+                    return;
+                }
+
+                bmsWatcher = new FileSystemWatcher
+                {
+                    Path = HwaFolderPath,
+                    Filter = "*.bms",
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size
+                };
+
+                bmsWatcher.Changed += OnBmsFileChanged;
+                bmsWatcher.Created += OnBmsFileChanged;
+                bmsWatcher.Deleted += OnBmsFileChanged;
+                bmsWatcher.Renamed += OnBmsFileRenamed;
+
+                bmsWatcher.EnableRaisingEvents = true;
+                MelonLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 폴더 감시 시작: {HwaFolderPath}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[HwaResourceManager.BmsWatcher] BMS 폴더 감시 설정 실패: {ex.Message}");
+            }
+        }
+
+        private static void OnBmsFileChanged(object sender, FileSystemEventArgs e)
+        {
+            HandleBmsFileEvent(e.FullPath);
+        }
+
+        private static void OnBmsFileRenamed(object sender, RenamedEventArgs e)
+        {
+            HandleBmsFileEvent(e.FullPath);
+        }
+
+        private static void HandleBmsFileEvent(string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(filePath)) return;
+                string ext = Path.GetExtension(filePath);
+                if (!string.Equals(ext, ".bms", StringComparison.OrdinalIgnoreCase)) return;
+
+                string fullPath = Path.GetFullPath(filePath);
+                string matchedUid = null;
+
+                foreach (var uid in virtualUids)
+                {
+                    if (TryGetSongDirectory(uid, out string songDir) && !string.IsNullOrEmpty(songDir))
+                    {
+                        string fullSongDir = Path.GetFullPath(songDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                        if (fullPath.StartsWith(fullSongDir + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        {
+                            matchedUid = uid;
+                            break;
+                        }
+                    }
+                }
+
+                if (matchedUid != null)
+                {
+                    ReloadBmsChartForUid(matchedUid);
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[HwaResourceManager.BmsWatcher] 파일 변경 처리 중 오류: {ex.Message}");
+            }
+        }
+
+        public static bool ReloadBmsChartForUid(string uid)
+        {
+            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
+            {
+                return false;
+            }
+
+            if (!TryGetSongDirectory(uid, out string songDir) || string.IsNullOrEmpty(songDir))
+            {
+                return false;
+            }
+
+            MelonLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 감지 -> [{uid}] 다시 읽기 시도: {songDir}");
+            BmsChart newChart = LoadHwaBmsChart(songDir, manifest);
+            if (newChart != null)
+            {
+                lock (cachedBmsCharts)
+                {
+                    cachedBmsCharts[uid] = newChart;
+                }
+                MelonLogger.Msg($"[HwaResourceManager.BmsWatcher] ✅ [{uid}] BMS 실시간 재로드 성공!");
+                return true;
+            }
+            else
+            {
+                MelonLogger.Warning($"[HwaResourceManager.BmsWatcher] ❌ [{uid}] BMS 실시간 재로드 실패");
+                return false;
             }
         }
 

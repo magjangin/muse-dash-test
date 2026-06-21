@@ -38,6 +38,13 @@ public class PnlPreparation_OnEnable_Patch
             }
 
             PnlMusicUtils.LogPreparationMusicInfo(__instance, "PnlPreparation.OnEnable");
+            
+            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            if (CustomContentIds.IsVirtualSong(selectedUid))
+            {
+                HwaMenuBgmController.TriggerMenuBgmChange(selectedUid);
+            }
+
             MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.Delay", 0.25f));
             MelonCoroutines.Start(PnlMusicUtils.LogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.DelayLong", 1.0f));
         }

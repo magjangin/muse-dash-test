@@ -134,4 +134,23 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\tag_icon.png" />
   </ItemGroup>
+
+  <!-- 게임 설치 경로 (build.bat 등에서 /p:GamePath=... 로 덮어쓸 수 있음) -->
+  <PropertyGroup>
+    <GamePath Condition="'$(GamePath)' == ''">H:\steam\steamapps\common\Muse Dash</GamePath>
+  </PropertyGroup>
+
+  <!-- 빌드 후 산출 DLL을 게임 Mods 폴더로 항상 자동 배포.
+       게임이 실행 중이라 DLL이 잠겨 있어도 빌드가 실패하지 않도록 복사 실패는 경고로 처리. -->
+  <Target Name="DeployToMods" AfterTargets="Build" Condition="Exists('$(GamePath)')">
+    <PropertyGroup>
+      <ModsDir>$(GamePath)\Mods</ModsDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(ModsDir)" Condition="!Exists('$(ModsDir)')" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ModsDir)"
+          OverwriteReadOnlyFiles="true"
+          ContinueOnError="WarnAndContinue" />
+    <Message Importance="high" Text="[Deploy] $(TargetFileName) -> $(ModsDir)" />
+  </Target>
 </Project>

@@ -26,7 +26,11 @@ namespace muse_dash_test
                 throw new ArgumentException("filePath is null or empty.", nameof(filePath));
             }
 
-            return ParseText(File.ReadAllText(filePath), filePath);
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var sr = new StreamReader(fs, Encoding.UTF8))
+            {
+                return ParseText(sr.ReadToEnd(), filePath);
+            }
         }
 
         public static BmsChart ParseText(string text, string sourcePath = null)

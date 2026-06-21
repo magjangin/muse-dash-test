@@ -90,6 +90,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 CustomPlaySession.Current.RememberMusicSelection(uid);
             }
 
+            MelonLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: activeUid={uid ?? "(null)"}");
+
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
                 MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart})");

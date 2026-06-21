@@ -86,18 +86,23 @@ namespace muse_dash_test.Patches
     {
         public static float CalculateTrueAccuracy(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget instance)
         {
+            // 게임 업데이트로 필드명이 바뀌어도 예외 대신 0 fallback으로 안전하게 degrade되도록 리플렉션 경유로 읽습니다.
+            int perfect = ModReflection.GetInt(instance, "PerfectResult");
+            int great = ModReflection.GetInt(instance, "GreatResult");
+            int miss = ModReflection.GetInt(instance, "MissResult");
+
             int totalStandard = CustomPlaySession.Current.TotalStandard;
             if (totalStandard > 0)
             {
-                float numerator = instance.m_PerfectResult + instance.m_GreatResult * 0.5f;
+                float numerator = perfect + great * 0.5f;
                 return Math.Min(1.0f, numerator / totalStandard);
             }
             else
             {
-                float total = instance.m_PerfectResult + instance.m_GreatResult + instance.m_MissResult;
+                float total = perfect + great + miss;
                 if (total > 0f)
                 {
-                    return (instance.m_PerfectResult + instance.m_GreatResult * 0.5f) / total;
+                    return (perfect + great * 0.5f) / total;
                 }
                 return 1.0f;
             }
@@ -105,6 +110,13 @@ namespace muse_dash_test.Patches
 
         public static float CalculateTrueAccuracyNew(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget instance)
         {
+            int perfect = ModReflection.GetInt(instance, "PerfectResult");
+            int great = ModReflection.GetInt(instance, "GreatResult");
+            int miss = ModReflection.GetInt(instance, "MissResult");
+            int jumpOver = ModReflection.GetInt(instance, "JumpOverResult");
+            int energy = ModReflection.GetInt(instance, "EnergyCount");
+            int bluePoint = ModReflection.GetInt(instance, "BluePoint");
+
             int totalStandard = CustomPlaySession.Current.TotalStandard;
             int totalGears = CustomPlaySession.Current.TotalGears;
             int totalHearts = CustomPlaySession.Current.TotalHearts;
@@ -113,16 +125,15 @@ namespace muse_dash_test.Patches
             int denominator = totalStandard + totalGears + totalHearts + totalBlueNotes;
             if (denominator > 0)
             {
-                float numerator = instance.m_PerfectResult + (instance.m_GreatResult * 0.5f)
-                    + instance.m_JumpOverResult + instance.m_EnergyCount + instance.m_BluePoint;
+                float numerator = perfect + (great * 0.5f) + jumpOver + energy + bluePoint;
                 return Math.Min(1.0f, numerator / denominator);
             }
             else
             {
-                float total = instance.m_PerfectResult + instance.m_GreatResult + instance.m_MissResult;
+                float total = perfect + great + miss;
                 if (total > 0f)
                 {
-                    return (instance.m_PerfectResult + instance.m_GreatResult * 0.5f) / total;
+                    return (perfect + great * 0.5f) / total;
                 }
                 return 1.0f;
             }
@@ -381,9 +392,12 @@ namespace muse_dash_test.Patches
 
             MelonLogger.Msg("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
             var victoryPanel = GameObject.FindObjectOfType<Il2Cpp.PnlVictory>();
-            if (victoryPanel != null && victoryPanel.m_CurControls != null && victoryPanel.m_CurControls.accuracyTxt != null)
+            if (victoryPanel != null)
             {
-                targetFont = victoryPanel.m_CurControls.accuracyTxt.font;
+                // m_CurControls.accuracyTxt.font 체인을 리플렉션으로 안전하게 탐색 (필드명 변경 시 예외 없이 폴백)
+                var curControls = ModReflection.GetValue(victoryPanel, "CurControls", silent: true);
+                var accuracyTxt = curControls != null ? ModReflection.GetValue(curControls, "accuracyTxt", silent: true) : null;
+                targetFont = accuracyTxt != null ? ModReflection.GetValue(accuracyTxt, "font", silent: true) as Font : null;
                 if (targetFont != null)
                 {
                     VictoryDataCache.PremiumFont = targetFont; // 다음 호출 시 FindObjectOfType 회피용 캐싱

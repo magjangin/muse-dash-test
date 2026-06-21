@@ -19,7 +19,26 @@
       "mcp__mcp-registry__search_mcp_registry",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:hwa.moe)"
+      "WebFetch(domain:hwa.moe)",
+      "Bash(awk -F: '{s+=$2} END {print s\" 회\"}')",
+      "Bash(xargs cat)",
+      "Bash(echo \"=== Mods 폴더 ===\" && ls -la \"/h/steam/steamapps/common/Muse Dash/Mods/\" 2>/dev/null | grep -i \"chart\\\\|dash\\\\|hyw\\\\|hwa\" ; echo \"\" && echo \"=== 기존 빌드 출력 \\(bin/Debug\\) ===\" && ls -la \"/h/source/repos/muse dash test/muse dash test/bin/Debug/\" 2>/dev/null | grep -i \"\\\\.dll\" ; echo \"\" && echo \"=== repo 루트 DLL ===\" && ls -la \"/h/source/repos/muse dash test/\"*.dll 2>/dev/null)",
+      "Bash(tasklist)",
+      "Bash(grep -v \"^.*//\")",
+      "Bash(grep -vE \"//|MelonLogger\")",
+      "Bash(grep -vE \"NoteTypes\\\\.|//|type 4\")",
+      "PowerShell(dotnet build \"muse dash test\\\\muse dash test.csproj\" --configuration Debug -nologo -clp:ErrorsOnly 2>&1)",
+      "PowerShell(dotnet build \"muse dash test\\\\muse dash test.csproj\" --configuration Debug)",
+      "PowerShell(dotnet build \"H:\\\\source\\\\repos\\\\muse dash test\\\\muse dash test\\\\muse dash test.csproj\" -c Release --nologo 2>&1)",
+      "Read(//h/source/repos//**)",
+      "Read(//c/Program Files \\(x86\\)/Steam/steamapps/common/Muse Dash/**)",
+      "Read(//d/Steam/steamapps/common/Muse Dash/**)",
+      "Bash(grep -rilE \"Mods 폴더|Mods\\\\\\\\\\\\\\\\|/Mods|배포|deploy\" \"H:/source/repos/muse dash test/docs/\")",
+      "Bash(awk '$1 > 500')",
+      "Bash(git mv *)",
+      "Bash(rmdir \"Patches/UI/Common/Diagnostics\" \"Patches/UI/Common/Search\")",
+      "Bash(grep -rnE 'HarmonyPatch\\\\\\(typeof\\\\\\([^\\)]*\\\\\\),\\\\s*\"\\(DoSomething[0-9]|[A-Za-z]*[0-9]{2,}\\)\"' --include=\"*.cs\" .)",
+      "Bash(grep -oE '\"[^\"]+\"$')"
     ]
   }
 }
