@@ -242,7 +242,11 @@ namespace muse_dash_test
                 string text = ReadConfigTextRobust();
                 if (string.IsNullOrEmpty(text)) return;
 
+                MelonLogger.Msg($"[InputOverlay][DEBUG] ParseConfigFile 시작. 총 문자 수={text.Length}, configPath={configPath}");
+
                 string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                MelonLogger.Msg($"[InputOverlay][DEBUG] 분리된 줄 수={lines.Length}");
+
                 foreach (string line in lines)
                 {
                     string trimmed = line.Trim();
@@ -254,6 +258,8 @@ namespace muse_dash_test
 
                     string key = trimmed.Substring(0, idx).Trim();
                     string val = trimmed.Substring(idx + 1).Trim();
+
+
 
                     switch (key.ToLower())
                     {
@@ -270,7 +276,7 @@ namespace muse_dash_test
                             float.TryParse(val, out offsetFromBottom);
                             break;
                         case "오버레이표시":
-                            bool.TryParse(val, out showOverlay);
+                            showOverlay = ParseBool(val, key, showOverlay);
                             break;
                         case "글자크기":
                             float.TryParse(val, out fontSize);
@@ -294,7 +300,7 @@ namespace muse_dash_test
                             float.TryParse(val, out inactiveAlpha);
                             break;
                         case "판정바표시":
-                            bool.TryParse(val, out showBar);
+                            showBar = ParseBool(val, key, showBar);
                             break;
                         case "판정바가로크기":
                             float.TryParse(val, out barWidth);
@@ -312,16 +318,16 @@ namespace muse_dash_test
                             float.TryParse(val, out tickDuration);
                             break;
                         case "판정바반응형":
-                            bool.TryParse(val, out barResponsive);
+                            barResponsive = ParseBool(val, key, barResponsive);
                             break;
                         case "오토플레이":
-                            bool.TryParse(val, out forceAutoPlay);
+                            forceAutoPlay = ParseBool(val, key, forceAutoPlay);
                             break;
                         case "피버충전금지":
-                            bool.TryParse(val, out blockFever);
+                            blockFever = ParseBool(val, key, blockFever);
                             break;
                         case "시네마":
-                            bool.TryParse(val, out enableCinema);
+                            enableCinema = ParseBool(val, key, enableCinema);
                             break;
                     }
                 }
@@ -331,6 +337,31 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 MelonLogger.Error($"[InputOverlay] 설정 파일 파싱 중 에러 발생: {ex.Message}");
+            }
+        }
+        /// <summary>
+        /// true/false, on/off, 켜짐/끔, 1/0 형식을 모두 인식하는 bool 파싱 헬퍼.
+        /// 파싱 실패 시 경고 로그를 남기고 기존 값(fallback)을 유지합니다.
+        /// </summary>
+        private static bool ParseBool(string val, string key, bool fallback)
+        {
+            switch (val.ToLower().Trim())
+            {
+                case "true":
+                case "on":
+                case "켜짐":
+                case "1":
+                    MelonLogger.Msg($"[InputOverlay] '{key}' → true (입력값: '{val}')");
+                    return true;
+                case "false":
+                case "off":
+                case "끔":
+                case "0":
+                    MelonLogger.Msg($"[InputOverlay] '{key}' → false (입력값: '{val}')");
+                    return false;
+                default:
+                    MelonLogger.Warning($"[InputOverlay] '{key}' 파싱 실패: '{val}'은 인식할 수 없는 값입니다. (true/false/on/off/켜짐/끔/1/0 중 하나를 사용하세요) 기존 값({fallback}) 유지.");
+                    return fallback;
             }
         }
 

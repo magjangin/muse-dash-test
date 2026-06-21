@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.4.1", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.4.2", "화영왕")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace muse_dash_test
