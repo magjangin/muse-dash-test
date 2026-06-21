@@ -6,6 +6,36 @@ namespace muse_dash_test
     // 화면 하단 키 입력 오버레이의 좌표 계산 및 GUI 렌더링.
     public static partial class InputOverlay
     {
+        private static GUIStyle airActiveStyle;
+        private static GUIStyle groundActiveStyle;
+        private static GUIStyle inactiveStyle;
+
+        /// <summary>
+        /// 설정값이나 텍스처 변경 시 GUI 스타일을 미리 캐싱하여 온가이드 가비지 생성을 차단합니다.
+        /// </summary>
+        public static void UpdateStyles()
+        {
+            if (airActiveStyle == null) airActiveStyle = new GUIStyle(GUI.skin.box);
+            airActiveStyle.normal.background = airActiveTex;
+            airActiveStyle.normal.textColor = Color.white;
+            airActiveStyle.alignment = TextAnchor.MiddleCenter;
+            airActiveStyle.fontSize = (int)fontSize;
+            airActiveStyle.fontStyle = FontStyle.Bold;
+
+            if (groundActiveStyle == null) groundActiveStyle = new GUIStyle(GUI.skin.box);
+            groundActiveStyle.normal.background = groundActiveTex;
+            groundActiveStyle.normal.textColor = Color.white;
+            groundActiveStyle.alignment = TextAnchor.MiddleCenter;
+            groundActiveStyle.fontSize = (int)fontSize;
+            groundActiveStyle.fontStyle = FontStyle.Bold;
+
+            if (inactiveStyle == null) inactiveStyle = new GUIStyle(GUI.skin.box);
+            inactiveStyle.normal.background = inactiveTex;
+            inactiveStyle.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
+            inactiveStyle.alignment = TextAnchor.MiddleCenter;
+            inactiveStyle.fontSize = Math.Max(12, (int)fontSize - 2);
+        }
+
         /// <summary>
         /// 키뷰어가 활성화되어 있을 때, 키뷰어 오버레이의 최상단 Y좌표를 계산하여 반환합니다.
         /// 꺼져 있거나 표시되지 않는 경우 -1f를 반환합니다.
@@ -56,14 +86,14 @@ namespace muse_dash_test
                 return;
             }
 
-            // None이 아닌 실제 유효한 키들만 수집하여 오버레이를 그립니다.
-            var activeAirKeys = new System.Collections.Generic.List<KeyCode>();
+            // None이 아닌 실제 유효한 키들만 수집하여 오버레이를 그립니다. (캐시 리스트 클리어 후 사용)
+            activeAirKeys.Clear();
             for (int i = 0; i < airKeys.Count; i++)
             {
                 if (airKeys[i] != KeyCode.None) activeAirKeys.Add(airKeys[i]);
             }
 
-            var activeGroundKeys = new System.Collections.Generic.List<KeyCode>();
+            activeGroundKeys.Clear();
             for (int i = 0; i < groundKeys.Count; i++)
             {
                 if (groundKeys[i] != KeyCode.None) activeGroundKeys.Add(groundKeys[i]);
@@ -82,32 +112,12 @@ namespace muse_dash_test
             // 피버 바 위쪽이자 판정 텍스트 방해하지 않는 하단 중앙 구역
             float startY = screenHeight - (keyHeight * 2f) - spacing - offsetFromBottom;
 
-            // 텍스처 초기화 (기본 설정 로드 시 파싱되므로 폴백으로만 처리)
-            if (airActiveTex == null || groundActiveTex == null || inactiveTex == null)
+            // 텍스처 및 스타일 캐시 초기화 (null일 때만 재생성)
+            if (airActiveStyle == null || groundActiveStyle == null || inactiveStyle == null || airActiveTex == null || groundActiveTex == null || inactiveTex == null)
             {
                 UpdateTextures();
+                UpdateStyles();
             }
-
-            // GUI 스타일 설정
-            GUIStyle airActiveStyle = new GUIStyle(GUI.skin.box);
-            airActiveStyle.normal.background = airActiveTex;
-            airActiveStyle.normal.textColor = Color.white;
-            airActiveStyle.alignment = TextAnchor.MiddleCenter;
-            airActiveStyle.fontSize = (int)fontSize;
-            airActiveStyle.fontStyle = FontStyle.Bold;
-
-            GUIStyle groundActiveStyle = new GUIStyle(GUI.skin.box);
-            groundActiveStyle.normal.background = groundActiveTex;
-            groundActiveStyle.normal.textColor = Color.white;
-            groundActiveStyle.alignment = TextAnchor.MiddleCenter;
-            groundActiveStyle.fontSize = (int)fontSize;
-            groundActiveStyle.fontStyle = FontStyle.Bold;
-
-            GUIStyle inactiveStyle = new GUIStyle(GUI.skin.box);
-            inactiveStyle.normal.background = inactiveTex;
-            inactiveStyle.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
-            inactiveStyle.alignment = TextAnchor.MiddleCenter;
-            inactiveStyle.fontSize = Math.Max(12, (int)fontSize - 2);
 
             // 1. 공중(위쪽 행) 그리기 - 파란색
             for (int i = 0; i < activeAirKeys.Count; i++)

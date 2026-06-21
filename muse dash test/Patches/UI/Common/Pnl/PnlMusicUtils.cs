@@ -148,10 +148,7 @@ public static partial class PnlMusicUtils
 
         if (ApplySongTitleExperimentGlobally)
         {
-            SetSceneTextByNameOrCurrentValue(TitleTextObjectNames, title, true);
-            SetSceneTextByNameOrCurrentValue(ArtistTextObjectNames, artist, false);
-            SetSceneTextByNameOrCurrentValue(LevelDesignerLabelTextObjectNames, ExperimentLevelDesignerLabel, false);
-            SetSceneTextByNameOrCurrentValue(LevelDesignerNameTextObjectNames, designer, false);
+            SetSceneTextsGlobally(title, artist, designer);
         }
     }
 

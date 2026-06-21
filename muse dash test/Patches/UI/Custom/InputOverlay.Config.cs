@@ -451,6 +451,9 @@ namespace muse_dash_test
                 if (inactiveTex != null) UnityEngine.Object.Destroy(inactiveTex);
                 inactiveTex = CreateColorTexture(c);
             }
+
+            // 스타일 캐시도 동시에 갱신
+            UpdateStyles();
         }
 
         private static Texture2D CreateColorTexture(Color color)

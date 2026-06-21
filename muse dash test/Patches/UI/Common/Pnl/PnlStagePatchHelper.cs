@@ -2,12 +2,9 @@ using MelonLoader;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI.Panels;
-using UnityEngine;
 using muse_dash_test;
-using UnityEngine.UI;
 
 public static partial class PnlStagePatchHelper
 {
@@ -84,18 +81,7 @@ public static partial class PnlStagePatchHelper
                 return;
             }
 
-            var musicText = stage.musicNameTitle;
-            var artistText = stage.artistNameTitle;
-
-            if (musicText != null)
-            {
-                musicText.text = musicInfo.name;
-            }
-
-            if (artistText != null)
-            {
-                artistText.text = musicInfo.author;
-            }
+            ApplyTitleTexts(stage, musicInfo);
         }
         catch (Exception ex)
         {
@@ -133,18 +119,7 @@ public static partial class PnlStagePatchHelper
                 return;
             }
 
-            var musicText = stage.musicNameTitle;
-            var artistText = stage.artistNameTitle;
-
-            if (musicText != null)
-            {
-                musicText.text = musicInfo.name;
-            }
-
-            if (artistText != null)
-            {
-                artistText.text = musicInfo.author;
-            }
+            ApplyTitleTexts(stage, musicInfo);
         }
         catch (Exception ex)
         {
@@ -166,19 +141,10 @@ public static partial class PnlStagePatchHelper
                 return false;
             }
 
+            ApplyTitleTexts(stage, musicInfo);
+
             var musicText = stage.musicNameTitle;
             var artistText = stage.artistNameTitle;
-
-            if (musicText != null)
-            {
-                musicText.text = musicInfo.name;
-            }
-
-            if (artistText != null)
-            {
-                artistText.text = musicInfo.author;
-            }
-
             MelonLogger.Msg($"{source}: musicInfo.uid={musicInfo.uid} direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
             return true;
         }
@@ -189,184 +155,19 @@ public static partial class PnlStagePatchHelper
         }
     }
 
-    public static void LogStageTitleSnapshot(string source, PnlStage stage)
+    private static void ApplyTitleTexts(PnlStage stage, MusicInfo musicInfo)
     {
-    }
+        var musicText = stage.musicNameTitle;
+        var artistText = stage.artistNameTitle;
 
-    public static void LogPnlStageRefresh(string source, PnlStage stage)
-    {
-    }
-
-    public static void LogTextAccessor(string source, PnlStage stage, Text text)
-    {
-    }
-
-    public static string DescribeTextAccessorSource(PnlStage stage, Text text)
-    {
-        try
+        if (musicText != null)
         {
-            if (stage == null || text == null)
-            {
-                return "(unresolved)";
-            }
-
-            string direct = FindTextReferenceSource(stage, text, "stage", 0, 4);
-            if (!string.IsNullOrEmpty(direct))
-            {
-                return direct;
-            }
-
-            return "(unresolved)";
+            musicText.text = musicInfo.name;
         }
-        catch (Exception ex)
+
+        if (artistText != null)
         {
-            return $"(source error: {ex.Message})";
-        }
-    }
-
-    private static string FindTextReferenceSource(object target, Text text, string path, int depth, int maxDepth)
-    {
-        try
-        {
-            if (target == null || text == null)
-            {
-                return null;
-            }
-
-            if (ReferenceEquals(target, text))
-            {
-                return path;
-            }
-
-            if (depth >= maxDepth)
-            {
-                return null;
-            }
-
-            foreach (var field in target.GetType().GetFields(InstanceMembers))
-            {
-                object value = field.GetValue(target);
-                if (value == null)
-                {
-                    continue;
-                }
-
-                if (ReferenceEquals(value, text))
-                {
-                    return $"{path}.{field.Name}";
-                }
-
-                if (value is string || value is Text || value is UnityEngine.Object)
-                {
-                    continue;
-                }
-
-                string nestedPath = FindTextReferenceSource(value, text, $"{path}.{field.Name}", depth + 1, maxDepth);
-                if (!string.IsNullOrEmpty(nestedPath))
-                {
-                    return nestedPath;
-                }
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    public static void LogPnlStageProperties(string source, PnlStage stage)
-    {
-    }
-
-    public static void LogMusicRootComponents(string source, PnlStage stage)
-    {
-    }
-
-    private static bool LooksLikeCoverImage(string objectName, string assetName)
-    {
-        return ContainsCoverToken(objectName) || ContainsCoverToken(assetName);
-    }
-
-    private static bool ContainsCoverToken(string value)
-    {
-        return !string.IsNullOrEmpty(value) &&
-            (value.IndexOf("ImgCover", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             value.IndexOf("cover", StringComparison.OrdinalIgnoreCase) >= 0);
-    }
-
-    private static string GetTransformPath(Transform transform, Transform stopAt)
-    {
-        try
-        {
-            if (transform == null)
-            {
-                return "(null)";
-            }
-
-            var sb = new StringBuilder(transform.name);
-            var current = transform.parent;
-            while (current != null && current != stopAt)
-            {
-                sb.Insert(0, current.name + "/");
-                current = current.parent;
-            }
-
-            if (stopAt != null)
-            {
-                sb.Insert(0, stopAt.name + "/");
-            }
-
-            return sb.ToString();
-        }
-        catch
-        {
-            return transform != null ? transform.name : "(null)";
-        }
-    }
-
-    private static string SafePropertyValue(object target, PropertyInfo prop)
-    {
-        try
-        {
-            object value = prop.GetValue(target);
-            if (value == null)
-            {
-                return "(null)";
-            }
-
-            if (value is string s)
-            {
-                return CleanLogText(s);
-            }
-
-            Type type = value.GetType();
-            if (type.IsPrimitive || value is decimal)
-            {
-                return value.ToString();
-            }
-
-            if (value is Text text)
-            {
-                return $"Text(name={text.name ?? "(null)"}, text={CleanLogText(text.text)})";
-            }
-
-            if (value is Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
-            {
-                return $"MusicInfo(uid={musicInfo.uid ?? "(null)"}, name={musicInfo.name ?? "(null)"}, cover={musicInfo.cover ?? "(null)"})";
-            }
-
-            if (value is UnityEngine.Object unityObject)
-            {
-                return $"{type.Name}(name={unityObject.name ?? "(null)"})";
-            }
-
-            return type.FullName;
-        }
-        catch (Exception ex)
-        {
-            return "(error: " + ex.Message + ")";
+            artistText.text = musicInfo.author;
         }
     }
 

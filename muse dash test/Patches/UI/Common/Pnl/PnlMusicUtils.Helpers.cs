@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 public static partial class PnlMusicUtils
 {
-    private static int SetSceneTextByNameOrCurrentValue(string[] objectNames, string value, bool titleMode)
+    private static int SetSceneTextsGlobally(string title, string artist, string designer)
     {
         int writes = 0;
         try
@@ -21,9 +21,27 @@ public static partial class PnlMusicUtils
                 try
                 {
                     if (text == null || text.gameObject == null) continue;
-                    if (!ShouldRewriteSceneText(text, objectNames, titleMode)) continue;
-                    text.text = value;
-                    writes++;
+
+                    if (ShouldRewriteSceneText(text, TitleTextObjectNames, true))
+                    {
+                        text.text = title;
+                        writes++;
+                    }
+                    else if (ShouldRewriteSceneText(text, ArtistTextObjectNames, false))
+                    {
+                        text.text = artist;
+                        writes++;
+                    }
+                    else if (ShouldRewriteSceneText(text, LevelDesignerLabelTextObjectNames, false))
+                    {
+                        text.text = ExperimentLevelDesignerLabel;
+                        writes++;
+                    }
+                    else if (ShouldRewriteSceneText(text, LevelDesignerNameTextObjectNames, false))
+                    {
+                        text.text = designer;
+                        writes++;
+                    }
                 }
                 catch { }
             }

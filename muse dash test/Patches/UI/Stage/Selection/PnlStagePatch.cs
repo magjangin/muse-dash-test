@@ -39,9 +39,6 @@ public class PnlStage_OnEnable_Patch
         {
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
             PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.OnEnable", __instance);
-            PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.OnEnable", __instance);
-            PnlStagePatchHelper.LogPnlStageProperties("PnlStage.OnEnable", __instance);
-            PnlStagePatchHelper.LogMusicRootComponents("PnlStage.OnEnable", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnEnable Postfix 예외: {ex}"); }
     }
@@ -58,8 +55,6 @@ public class PnlStage_ChangeMusic_Patch
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
             PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.ChangeMusic", __instance);
             PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.ChangeMusic.Force", __instance);
-            PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.ChangeMusic", __instance);
-            PnlStagePatchHelper.LogMusicRootComponents("PnlStage.ChangeMusic", __instance);
             PnlStagePatchHelper.LogButtons("PnlStage.ChangeMusic", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }
@@ -75,7 +70,6 @@ public class PnlStage_ChangeFinalMusic_Patch
         try
         {
             PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.ChangeFinalMusic.Force", __instance);
-            PnlStagePatchHelper.LogPnlStageRefresh("PnlStage.ChangeFinalMusic", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeFinalMusic Postfix 예외: {ex}"); }
     }

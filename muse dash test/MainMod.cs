@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.4.2", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.4.3", "화영왕")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace muse_dash_test
@@ -44,49 +44,15 @@ namespace muse_dash_test
                 string hwaPath = HwaResourceManager.HwaFolderPath;
                 Directory.CreateDirectory(hwaPath);
                 MelonLogger.Msg($"hwa 폴더를 확인/생성했습니다: {hwaPath}");
-                
-                string albumDumpPath = Path.Combine(hwaPath, "album_tag_dump.txt");
-                if (File.Exists(albumDumpPath)) File.Delete(albumDumpPath);
-                
-                string albumDumpMdPath = Path.Combine(hwaPath, "album_tag_dump.md");
-                if (File.Exists(albumDumpMdPath)) File.Delete(albumDumpMdPath);
-                
-                string musicDumpPath = Path.Combine(hwaPath, "music_info_dump.txt");
-                if (File.Exists(musicDumpPath)) File.Delete(musicDumpPath);
+
+                CleanupStaleDumpFiles(hwaPath);
 
                 // hwa tag image 폴더 생성
                 string hwaTagImageFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa tag image");
                 Directory.CreateDirectory(hwaTagImageFolderPath);
                 MelonLogger.Msg($"hwa tag image 폴더를 확인/생성했습니다: {hwaTagImageFolderPath}");
 
-                // tag_icon.png 추출
-                string pngPath = Path.Combine(hwaTagImageFolderPath, "tag_icon.png");
-                if (!File.Exists(pngPath))
-                {
-                    try
-                    {
-                        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                        string resourceName = "muse_dash_test.Resources.tag_icon.png";
-                        using (var stream = assembly.GetManifestResourceStream(resourceName))
-                        {
-                            if (stream != null)
-                            {
-                                byte[] fileData = new byte[stream.Length];
-                                stream.Read(fileData, 0, fileData.Length);
-                                File.WriteAllBytes(pngPath, fileData);
-                                MelonLogger.Msg($"[APMod.TagIcon] OnInitializeMelon: 내장 리소스 '{resourceName}'를 '{pngPath}'에 복사 및 추출 완료!");
-                            }
-                            else
-                            {
-                                MelonLogger.Error($"[APMod.TagIcon] OnInitializeMelon: 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MelonLogger.Error($"[APMod.TagIcon] OnInitializeMelon: 내장 리소스 추출 중 예외 발생: {ex}");
-                    }
-                }
+                EnsureTagIconExtracted(hwaTagImageFolderPath);
 
                 PreloadHwaManifest();
             }
@@ -95,6 +61,58 @@ namespace muse_dash_test
                 MelonLogger.Error($"hwa 폴더 생성 및 초기화 중 예외: {ex}");
             }
 
+        }
+
+        // 이전 실행에서 생성된 진단 덤프 파일 목록. 매 실행 시작 시 삭제하여 새로 기록되게 합니다.
+        private static readonly string[] StaleDumpFileNames =
+        {
+            "album_tag_dump.txt",
+            "album_tag_dump.md",
+            "music_info_dump.txt",
+        };
+
+        /// <summary>
+        /// 이전 실행에서 남은 진단 덤프 파일들을 삭제합니다.
+        /// </summary>
+        private static void CleanupStaleDumpFiles(string hwaPath)
+        {
+            foreach (var name in StaleDumpFileNames)
+            {
+                string path = Path.Combine(hwaPath, name);
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// 내장 리소스 tag_icon.png를 대상 폴더에 추출합니다(이미 존재하면 건너뜀).
+        /// </summary>
+        private static void EnsureTagIconExtracted(string targetFolder)
+        {
+            string pngPath = Path.Combine(targetFolder, "tag_icon.png");
+            if (File.Exists(pngPath)) return;
+
+            const string resourceName = "muse_dash_test.Resources.tag_icon.png";
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using (var stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream == null)
+                    {
+                        MelonLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
+                        return;
+                    }
+
+                    byte[] fileData = new byte[stream.Length];
+                    stream.Read(fileData, 0, fileData.Length);
+                    File.WriteAllBytes(pngPath, fileData);
+                    MelonLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 추출 완료!");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 중 예외 발생: {ex}");
+            }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)

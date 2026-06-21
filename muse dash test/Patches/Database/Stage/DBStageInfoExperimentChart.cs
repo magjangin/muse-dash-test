@@ -28,13 +28,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         var anchor = CloneMusicData(sourceNotes[0]);
         var sourceNote = CloneMusicData(sourceNotes[SourceNoteIndex]);
 
-        if (DebugExperimentNotes)
-        {
-            MelonLogger.Msg($"[ExperimentDebug] source count={sourceNotes.Length}, SourceNoteIndex={SourceNoteIndex}");
-            LogNoteState("[ExperimentDebug] anchor original [0]", anchor);
-            LogNoteState($"[ExperimentDebug] source original [{SourceNoteIndex}]", sourceNote);
-            LogOriginalUidMatches(sourceNotes, "05", "05");
-        }
+        DebugMsg($"[ExperimentDebug] source count={sourceNotes.Length}, SourceNoteIndex={SourceNoteIndex}");
+        DebugNote("[ExperimentDebug] anchor original [0]", anchor);
+        DebugNote($"[ExperimentDebug] source original [{SourceNoteIndex}]", sourceNote);
+        if (DebugExperimentNotes) LogOriginalUidMatches(sourceNotes, "05", "05");
 
         musicList.Clear();
         musicList.Add(anchor);
@@ -122,11 +119,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         int count = System.Math.Max(1, spec.Count);
         var template = CloneMusicData(sourceNote);
 
-        if (DebugExperimentNotes)
-        {
-            LogSpec("[ExperimentDebug] spec", spec);
-            LogNoteState("[ExperimentDebug] template before spec", template);
-        }
+        DebugSpec("[ExperimentDebug] spec", spec);
+        DebugNote("[ExperimentDebug] template before spec", template);
 
         for (int i = 0; i < count; i++)
         {
@@ -149,9 +143,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         var note = CloneMusicData(template);
         MoveNote(ref note, musicList.Count, tick, length, spec);
-        if (DebugExperimentNotes) LogNoteState($"[ExperimentDebug] {label} after MoveNote", note);
+        DebugNote($"[ExperimentDebug] {label} after MoveNote", note);
         ApplyNoteSpec(ref note, spec);
-        if (DebugExperimentNotes) LogNoteState($"[ExperimentDebug] {label} after ApplyNoteSpec", note);
+        DebugNote($"[ExperimentDebug] {label} after ApplyNoteSpec", note);
         ResetRuntimeFlags(ref note);
         musicList.Add(note);
         LogInsertedNote(label, note);
@@ -166,15 +160,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         var start = CloneMusicData(template);
         MoveNote(ref start, startIndex, startTick, length, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} start after MoveNote", start);
-        }
+        DebugNote($"[ExperimentDebug] {label} start after MoveNote", start);
         ApplyNoteSpec(ref start, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} start after ApplyNoteSpec", start);
-        }
+        DebugNote($"[ExperimentDebug] {label} start after ApplyNoteSpec", start);
         ResetRuntimeFlags(ref start);
         start.longPressPTick = (Il2CppSystem.Decimal)startTick;
         start.endIndex = endIndex;
@@ -198,15 +186,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         var end = CloneMusicData(template);
         MoveNote(ref end, musicList.Count, startTick + length, 0.0, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} end after MoveNote", end);
-        }
+        DebugNote($"[ExperimentDebug] {label} end after MoveNote", end);
         ApplyNoteSpec(ref end, spec);
-        if (DebugExperimentNotes)
-        {
-            LogNoteState($"[ExperimentDebug] {label} end after ApplyNoteSpec", end);
-        }
+        DebugNote($"[ExperimentDebug] {label} end after ApplyNoteSpec", end);
         ResetRuntimeFlags(ref end);
         end.isLongPressEnd = true;
         end.longPressPTick = (Il2CppSystem.Decimal)startTick;
@@ -218,11 +200,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void ApplyNoteSpec(ref MusicData note, ExperimentNoteSpec spec)
     {
-        if (DebugExperimentNotes)
-        {
-            MelonLogger.Msg($"[ExperimentDebug] ApplyNoteSpec begin label={spec.Label}");
-            LogNoteState("[ExperimentDebug] ApplyNoteSpec input", note);
-        }
+        DebugMsg($"[ExperimentDebug] ApplyNoteSpec begin label={spec.Label}");
+        DebugNote("[ExperimentDebug] ApplyNoteSpec input", note);
 
         var noteData = CloneNoteConfigData(note.noteData) ?? new NoteConfigData();
         var configData = CloneMusicConfigData(note.configData);
@@ -288,11 +267,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         note.noteData = noteData;
         note.configData = configData;
 
-        if (DebugExperimentNotes)
-        {
-            MelonLogger.Msg($"[ExperimentDebug] ApplyNoteSpec resolved uid={uid}, noteType={noteType}, pathway={pathway}, scene={noteData.scene}, prefab={noteData.prefab_name}, keyAudio={noteData.key_audio}");
-            LogNoteState("[ExperimentDebug] ApplyNoteSpec output", note);
-        }
+        DebugMsg($"[ExperimentDebug] ApplyNoteSpec resolved uid={uid}, noteType={noteType}, pathway={pathway}, scene={noteData.scene}, prefab={noteData.prefab_name}, keyAudio={noteData.key_audio}");
+        DebugNote("[ExperimentDebug] ApplyNoteSpec output", note);
     }
 
     public static void MoveNote(ref MusicData note, int objId, double tick, double length, ExperimentNoteSpec spec)

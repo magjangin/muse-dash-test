@@ -23,6 +23,7 @@ namespace muse_dash_test
 
         // 단일 화이트 텍스처를 캐싱하여 GUI.color와 조합해 모든 단색 도형을 렌더링 (GC 및 메모리 최적화)
         private static Texture2D whiteTex;
+        private static GUIStyle labelStyle;
 
         public static void RegisterHit(float gapInSeconds, byte result)
         {
@@ -174,10 +175,13 @@ namespace muse_dash_test
                     // 페이드아웃 효과 적용
                     float alpha = Mathf.Clamp01(1f - (textElapsed / duration));
                     
-                    GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+                    if (labelStyle == null)
+                    {
+                        labelStyle = new GUIStyle(GUI.skin.label);
+                        labelStyle.fontStyle = FontStyle.Bold;
+                        labelStyle.alignment = TextAnchor.MiddleCenter;
+                    }
                     labelStyle.fontSize = (int)InputOverlay.barFontSize;
-                    labelStyle.fontStyle = FontStyle.Bold;
-                    labelStyle.alignment = TextAnchor.MiddleCenter;
                     
                     // 섀도우 텍스트 효과 (가독성을 위한 검은 외곽선 역할)
                     labelStyle.normal.textColor = new Color(0f, 0f, 0f, alpha * 0.8f);

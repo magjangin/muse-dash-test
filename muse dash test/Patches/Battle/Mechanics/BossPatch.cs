@@ -1,6 +1,5 @@
 using MelonLoader;
 using System;
-using System.Reflection;
 using System.Linq;
 using muse_dash_test;
 
@@ -8,45 +7,6 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "Play", new Type[] { typeof(string), typeof(bool) })]
 public class Boss_Play_Patch
 {
-    private static void DumpBossFields(Il2Cpp.Boss boss)
-    {
-        try
-        {
-            MelonLogger.Msg($"=== Boss Fields & Properties Dump ===");
-            var fields = typeof(Il2Cpp.Boss).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var f in fields)
-            {
-                try
-                {
-                    object val = f.GetValue(boss);
-                    MelonLogger.Msg($"  [Field] {f.Name} = {val}");
-                }
-                catch (Exception ex)
-                {
-                    MelonLogger.Msg($"  [Field] {f.Name} = (Error: {ex.Message})");
-                }
-            }
-            var properties = typeof(Il2Cpp.Boss).GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var p in properties)
-            {
-                try
-                {
-                    object val = p.GetValue(boss);
-                    MelonLogger.Msg($"  [Property] {p.Name} = {val}");
-                }
-                catch (Exception ex)
-                {
-                    MelonLogger.Msg($"  [Property] {p.Name} = (Error: {ex.Message})");
-                }
-            }
-            MelonLogger.Msg($"=====================================");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"DumpBossFields 예외: {ex}");
-        }
-    }
-
     public static bool Prefix(Il2Cpp.Boss __instance, string key, bool playAnimator)
     {
         try
@@ -255,39 +215,16 @@ public class Boss_InitBossObject_Patch
     }
 }
 
+// 진단용 로깅 패치: SceneBossChange 호출 흐름만 추적합니다.
+// (idx 재작성 기믹은 사용되지 않아 제거했으며, 필요 시 Prefix에서 ref idx를 조정해 복원할 수 있습니다.)
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "SceneBossChange", new Type[] { typeof(int) })]
 public class Boss_SceneBossChange_Patch
 {
-    private static readonly bool EnableSceneBossChangeRewrite = false;
-
-    public class SceneBossChangeRule
-    {
-        public int? OrigIdx;
-        public int NewIdx;
-    }
-
-    private static readonly SceneBossChangeRule[] SceneBossChangeRules = new[]
-    {
-        new SceneBossChangeRule { OrigIdx = null, NewIdx = 7 },
-    };
-
-    public static void Prefix(Il2Cpp.Boss __instance, ref int idx)
+    public static void Prefix(Il2Cpp.Boss __instance, int idx)
     {
         try
         {
             MelonLogger.Msg($"Il2Cpp.Boss.SceneBossChange 호출: idx={idx}, instance={__instance}");
-
-            if (!EnableSceneBossChangeRewrite) return;
-
-            foreach (var rule in SceneBossChangeRules)
-            {
-                bool idxMatch = !rule.OrigIdx.HasValue || idx == rule.OrigIdx.Value;
-                if (!idxMatch) continue;
-
-                MelonLogger.Msg($"Il2Cpp.Boss.SceneBossChange: idx 변경 적용 -> {rule.NewIdx} (원본={idx})");
-                idx = rule.NewIdx;
-                break;
-            }    
         }
         catch (Exception ex)
         {

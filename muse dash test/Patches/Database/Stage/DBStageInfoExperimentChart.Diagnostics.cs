@@ -5,6 +5,23 @@ using Il2CppGameLogic;
 // 실험 차트 디버깅용 덤프/로깅 헬퍼. 게임 로직에는 영향을 주지 않습니다.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
+    // DebugExperimentNotes 플래그를 내부에서 검사하는 게이트 래퍼들.
+    // 호출부에서 매번 'if (DebugExperimentNotes)'를 반복하지 않도록 해 파이프라인 가독성을 높입니다.
+    private static void DebugMsg(string message)
+    {
+        if (DebugExperimentNotes) MelonLogger.Msg(message);
+    }
+
+    private static void DebugNote(string label, MusicData note)
+    {
+        if (DebugExperimentNotes) LogNoteState(label, note);
+    }
+
+    private static void DebugSpec(string label, ExperimentNoteSpec spec)
+    {
+        if (DebugExperimentNotes) LogSpec(label, spec);
+    }
+
     public static void DumpMusicList(DBStageInfo __instance)
     {
         var musicList = __instance._musicList_k__BackingField;

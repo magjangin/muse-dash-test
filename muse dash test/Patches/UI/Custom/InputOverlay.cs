@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using MelonLoader;
 using UnityEngine;
 
@@ -11,8 +12,10 @@ namespace muse_dash_test
     /// </summary>
     public static partial class InputOverlay
     {
-        private static readonly System.Collections.Generic.List<UnityEngine.KeyCode> airKeys = new System.Collections.Generic.List<UnityEngine.KeyCode>();
-        private static readonly System.Collections.Generic.List<UnityEngine.KeyCode> groundKeys = new System.Collections.Generic.List<UnityEngine.KeyCode>();
+        private static readonly List<UnityEngine.KeyCode> airKeys = new List<UnityEngine.KeyCode>();
+        private static readonly List<UnityEngine.KeyCode> groundKeys = new List<UnityEngine.KeyCode>();
+        private static readonly List<UnityEngine.KeyCode> activeAirKeys = new List<UnityEngine.KeyCode>();
+        private static readonly List<UnityEngine.KeyCode> activeGroundKeys = new List<UnityEngine.KeyCode>();
         private static bool keysLoaded = false;
         private static float checkTimer = 0f;
         private const float CheckInterval = 2.0f; // 키 세팅 재스캔 간격 (설정 변경 연동)
@@ -70,6 +73,7 @@ namespace muse_dash_test
 
         /// <summary>
         /// StandloneCtrlConfig 로부터 유저가 커스텀 설정한 키 매핑 목록을 리플렉션으로 안전하게 읽어옵니다.
+        /// 게임 데이터 구조: m_ButtonKeyEnties = Dictionary&lt;proposal, Dictionary&lt;keyName, List&lt;KeyCode&gt;&gt;&gt;.
         /// </summary>
         public static void LoadPlayerKeybinds()
         {
@@ -91,171 +95,40 @@ namespace muse_dash_test
                     return;
                 }
 
-                var get_ItemMethod = buttonKeyEnties.GetType().GetMethod("get_Item");
-                if (get_ItemMethod == null) return;
-
-                // ContainsKey 체크를 통해 딕셔너리에 해당 proposal 키가 있는지 우선 점검
-                var containsKeyMethod = buttonKeyEnties.GetType().GetMethod("ContainsKey");
-                bool hasProposalKey = false;
-                if (containsKeyMethod != null)
+                // 1. 현재 proposal에 해당하는 키 매핑 딕셔너리를 조회. 없으면 첫 proposal로 폴백.
+                if (!TryGetDictItem(buttonKeyEnties, proposal, out var proposalDict))
                 {
-                    hasProposalKey = (bool)containsKeyMethod.Invoke(buttonKeyEnties, new object[] { proposal });
-                }
-
-                // 딕셔너리에 proposal 키가 없는 경우의 안전 조치
-                if (!hasProposalKey)
-                {
-                    MelonLogger.Warning($"[InputOverlay] '{proposal}' proposal이 buttonKeyEnties 딕셔너리에 없습니다. 폴백을 시도합니다...");
-
-                    var keysProp = buttonKeyEnties.GetType().GetProperty("Keys");
-                    if (keysProp != null)
+                    MelonLogger.Warning($"[InputOverlay] '{proposal}' proposal이 없습니다. 첫 proposal로 폴백을 시도합니다...");
+                    var proposals = GetDictKeys(buttonKeyEnties);
+                    if (proposals.Count == 0 || !TryGetDictItem(buttonKeyEnties, proposals[0], out proposalDict))
                     {
-                        var keysObj = keysProp.GetValue(buttonKeyEnties);
-                        if (keysObj != null)
-                        {
-                            var getEnumeratorMethod = keysObj.GetType().GetMethod("GetEnumerator");
-                            if (getEnumeratorMethod != null)
-                            {
-                                var enumerator = getEnumeratorMethod.Invoke(keysObj, null);
-                                var moveNextMethod = enumerator.GetType().GetMethod("MoveNext");
-                                var currentProp = enumerator.GetType().GetProperty("Current");
-
-                                if (moveNextMethod != null && currentProp != null)
-                                {
-                                    while ((bool)moveNextMethod.Invoke(enumerator, null))
-                                    {
-                                        var k = currentProp.GetValue(enumerator)?.ToString();
-                                        MelonLogger.Msg($"  [InputOverlay.Debug] 발견된 제안 Key: '{k}'");
-                                        if (string.IsNullOrEmpty(proposal) || !hasProposalKey)
-                                        {
-                                            proposal = k; // 일단 첫 번째로 발견된 키를 사용
-                                            hasProposalKey = true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        MelonLogger.Error("[InputOverlay] 사용 가능한 proposal 키가 존재하지 않습니다.");
+                        return;
                     }
+                    proposal = proposals[0];
+                    MelonLogger.Msg($"[InputOverlay] 폴백 proposal로 '{proposal}'을 사용합니다.");
                 }
 
-                if (!hasProposalKey || string.IsNullOrEmpty(proposal))
-                {
-                    MelonLogger.Error("[InputOverlay] 딕셔너리 내에 사용 가능한 proposal 키가 아예 존재하지 않습니다.");
-                    return;
-                }
+                // 2. 공중/지상 공격 키 이름 확정 (정확 매칭 → 키워드 포함 폴백).
+                string airKeyName = ResolveProposalKeyName(proposalDict, "KeyBattleAir", "Air");
+                string groundKeyName = ResolveProposalKeyName(proposalDict, "KeyBattleGround", "Ground");
 
-                var proposalDict = get_ItemMethod.Invoke(buttonKeyEnties, new object[] { proposal });
-                if (proposalDict == null) return;
-
-                var get_ItemMethod2 = proposalDict.GetType().GetMethod("get_Item");
-                var containsKeyMethod2 = proposalDict.GetType().GetMethod("ContainsKey");
-                if (get_ItemMethod2 == null) return;
-
-                // 1. 공중/지상 키 코드 리스트 추출 키 조사 및 폴백
-                bool hasAirKey = false;
-                bool hasGroundKey = false;
-                if (containsKeyMethod2 != null)
-                {
-                    hasAirKey = (bool)containsKeyMethod2.Invoke(proposalDict, new object[] { "KeyBattleAir" });
-                    hasGroundKey = (bool)containsKeyMethod2.Invoke(proposalDict, new object[] { "KeyBattleGround" });
-                }
-
-                string realAirKeyName = hasAirKey ? "KeyBattleAir" : null;
-                string realGroundKeyName = hasGroundKey ? "KeyBattleGround" : null;
-
-                // 키를 직접 찾지 못한 경우에만 딕셔너리를 뒤져서 매칭
-                if (!hasAirKey || !hasGroundKey)
-                {
-                    var keysProp2 = proposalDict.GetType().GetProperty("Keys");
-                    if (keysProp2 != null)
-                    {
-                        var keysObj2 = keysProp2.GetValue(proposalDict);
-                        if (keysObj2 != null)
-                        {
-                            var getEnumeratorMethod2 = keysObj2.GetType().GetMethod("GetEnumerator");
-                            if (getEnumeratorMethod2 != null)
-                            {
-                                var enumerator2 = getEnumeratorMethod2.Invoke(keysObj2, null);
-                                var moveNextMethod2 = enumerator2.GetType().GetMethod("MoveNext");
-                                var currentProp2 = enumerator2.GetType().GetProperty("Current");
-                                if (moveNextMethod2 != null && currentProp2 != null)
-                                {
-                                    while ((bool)moveNextMethod2.Invoke(enumerator2, null))
-                                    {
-                                        string k = currentProp2.GetValue(enumerator2)?.ToString();
-                                        if (k != null)
-                                        {
-                                            // 대소문자 무관 및 키워드 매칭 폴백
-                                            if (k.IndexOf("Air", StringComparison.OrdinalIgnoreCase) >= 0 && !hasAirKey)
-                                            {
-                                                realAirKeyName = k;
-                                                hasAirKey = true;
-                                            }
-                                            else if (k.IndexOf("Ground", StringComparison.OrdinalIgnoreCase) >= 0 && !hasGroundKey)
-                                            {
-                                                realGroundKeyName = k;
-                                                hasGroundKey = true;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 2. 공중 키 바인딩 목록 추출
+                // 3. 각 키 이름에 바인딩된 KeyCode 리스트를 추출.
                 airKeys.Clear();
-                if (hasAirKey && !string.IsNullOrEmpty(realAirKeyName))
+                if (airKeyName != null && TryGetDictItem(proposalDict, airKeyName, out var airList))
                 {
-                    var airKeysObj = get_ItemMethod2.Invoke(proposalDict, new object[] { realAirKeyName });
-                    if (airKeysObj != null)
-                    {
-                        var countProp = airKeysObj.GetType().GetProperty("Count");
-                        var get_ItemMethod3 = airKeysObj.GetType().GetMethod("get_Item");
-                        if (countProp != null && get_ItemMethod3 != null)
-                        {
-                            int count = (int)countProp.GetValue(airKeysObj);
-                            for (int i = 0; i < count; i++)
-                            {
-                                var key = (UnityEngine.KeyCode)get_ItemMethod3.Invoke(airKeysObj, new object[] { i });
-                                airKeys.Add(key);
-                            }
-                        }
-                    }
+                    ReadKeyCodeList(airList, airKeys);
                 }
 
-                // 3. 지상 키 바인딩 목록 추출
                 groundKeys.Clear();
-                if (hasGroundKey && !string.IsNullOrEmpty(realGroundKeyName))
+                if (groundKeyName != null && TryGetDictItem(proposalDict, groundKeyName, out var groundList))
                 {
-                    var groundKeysObj = get_ItemMethod2.Invoke(proposalDict, new object[] { realGroundKeyName });
-                    if (groundKeysObj != null)
-                    {
-                        var countProp = groundKeysObj.GetType().GetProperty("Count");
-                        var get_ItemMethod3 = groundKeysObj.GetType().GetMethod("get_Item");
-                        if (countProp != null && get_ItemMethod3 != null)
-                        {
-                            int count = (int)countProp.GetValue(groundKeysObj);
-                            for (int i = 0; i < count; i++)
-                            {
-                                var key = (UnityEngine.KeyCode)get_ItemMethod3.Invoke(groundKeysObj, new object[] { i });
-                                groundKeys.Add(key);
-                            }
-                        }
-                    }
+                    ReadKeyCodeList(groundList, groundKeys);
                 }
 
                 keysLoaded = true;
 
-                // 유효한 키들만 추려서 간소화된 메시지로 로그 출력
-                var cleanAir = new System.Collections.Generic.List<string>();
-                foreach (var k in airKeys) { if (k != KeyCode.None) cleanAir.Add(k.ToString()); }
-
-                var cleanGround = new System.Collections.Generic.List<string>();
-                foreach (var k in groundKeys) { if (k != KeyCode.None) cleanGround.Add(k.ToString()); }
-
-                MelonLogger.Msg($"[InputOverlay] 키 바인딩 데이터 로드 완료! 공중 키: [{string.Join(", ", cleanAir)}], 지상 키: [{string.Join(", ", cleanGround)}]");
+                MelonLogger.Msg($"[InputOverlay] 키 바인딩 데이터 로드 완료! 공중 키: [{FormatKeys(airKeys)}], 지상 키: [{FormatKeys(groundKeys)}]");
             }
             catch (Exception ex)
             {
@@ -265,6 +138,141 @@ namespace muse_dash_test
                     MelonLogger.Error($"[InputOverlay] 상세 원인(InnerException): {ex.InnerException}");
                 }
             }
+        }
+
+        // ==========================================
+        // Il2Cpp 컬렉션 리플렉션 헬퍼
+        // (제네릭 Il2Cpp Dictionary/List는 컴파일 타임 타입을 알 수 없어 메서드 기반 리플렉션으로 접근)
+        // ==========================================
+
+        /// <summary>
+        /// Il2Cpp 딕셔너리에서 key에 해당하는 값을 ContainsKey + get_Item으로 안전하게 조회합니다.
+        /// </summary>
+        private static bool TryGetDictItem(object dict, string key, out object value)
+        {
+            value = null;
+            if (dict == null || key == null) return false;
+
+            try
+            {
+                var type = dict.GetType();
+                var containsKey = type.GetMethod("ContainsKey");
+                if (containsKey != null && !(bool)containsKey.Invoke(dict, new object[] { key }))
+                {
+                    return false;
+                }
+
+                var getItem = type.GetMethod("get_Item");
+                if (getItem == null) return false;
+
+                value = getItem.Invoke(dict, new object[] { key });
+                return value != null;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[InputOverlay] 딕셔너리 조회 실패 (key={key}): {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Il2Cpp 딕셔너리의 Keys를 열거하여 문자열 리스트로 반환합니다.
+        /// </summary>
+        private static List<string> GetDictKeys(object dict)
+        {
+            var result = new List<string>();
+            if (dict == null) return result;
+
+            try
+            {
+                var keysObj = dict.GetType().GetProperty("Keys")?.GetValue(dict);
+                if (keysObj == null) return result;
+
+                var enumerator = keysObj.GetType().GetMethod("GetEnumerator")?.Invoke(keysObj, null);
+                if (enumerator == null) return result;
+
+                var moveNext = enumerator.GetType().GetMethod("MoveNext");
+                var current = enumerator.GetType().GetProperty("Current");
+                if (moveNext == null || current == null) return result;
+
+                while ((bool)moveNext.Invoke(enumerator, null))
+                {
+                    var k = current.GetValue(enumerator)?.ToString();
+                    if (k != null) result.Add(k);
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[InputOverlay] 딕셔너리 키 열거 실패: {ex.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// proposalDict에서 정확한 키명(exactKey)을 우선 찾고, 없으면 keyword를 포함하는 첫 키로 폴백합니다.
+        /// </summary>
+        private static string ResolveProposalKeyName(object proposalDict, string exactKey, string keyword)
+        {
+            try
+            {
+                var containsKey = proposalDict.GetType().GetMethod("ContainsKey");
+                if (containsKey != null && (bool)containsKey.Invoke(proposalDict, new object[] { exactKey }))
+                {
+                    return exactKey;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[InputOverlay] '{exactKey}' 존재 확인 실패: {ex.Message}");
+            }
+
+            foreach (var k in GetDictKeys(proposalDict))
+            {
+                if (k.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return k;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Il2Cpp List&lt;KeyCode&gt;를 Count + get_Item으로 순회하여 dest에 채웁니다(기존 내용 위에 추가).
+        /// </summary>
+        private static void ReadKeyCodeList(object listObj, List<UnityEngine.KeyCode> dest)
+        {
+            if (listObj == null) return;
+
+            try
+            {
+                var type = listObj.GetType();
+                var countProp = type.GetProperty("Count");
+                var getItem = type.GetMethod("get_Item");
+                if (countProp == null || getItem == null) return;
+
+                int count = (int)countProp.GetValue(listObj);
+                for (int i = 0; i < count; i++)
+                {
+                    dest.Add((UnityEngine.KeyCode)getItem.Invoke(listObj, new object[] { i }));
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[InputOverlay] 키코드 리스트 읽기 실패: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// KeyCode.None을 제외한 유효한 키들만 추려 로그용 문자열로 결합합니다.
+        /// </summary>
+        private static string FormatKeys(List<UnityEngine.KeyCode> keys)
+        {
+            var clean = new List<string>();
+            foreach (var k in keys)
+            {
+                if (k != KeyCode.None) clean.Add(k.ToString());
+            }
+            return string.Join(", ", clean);
         }
     }
 }
