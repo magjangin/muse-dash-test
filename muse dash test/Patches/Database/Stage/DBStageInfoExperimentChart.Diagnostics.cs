@@ -20,7 +20,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             var note = musicList[i];
             string bossAction = note.noteData?.boss_action ?? string.Empty;
-            if (note.noteData?.type != 0
+            if (note.noteData?.type != NoteTypes.Boss
                 || string.IsNullOrWhiteSpace(bossAction)
                 || string.Equals(bossAction, "0", System.StringComparison.OrdinalIgnoreCase))
             {
@@ -67,7 +67,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            if (note.noteData?.type != 0 || string.IsNullOrWhiteSpace(note.noteData.boss_action))
+            if (note.noteData?.type != NoteTypes.Boss || string.IsNullOrWhiteSpace(note.noteData.boss_action))
             {
                 continue;
             }
@@ -118,8 +118,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                     continue;
                 }
 
-                string scene = uid.Substring(0, 2);
-                string xxyy = uid.Substring(2, 2);
+                string scene = UidCode.Scene(uid);
+                string xxyy = UidCode.Xx(uid);
                 if (!string.Equals(scene, targetScene, System.StringComparison.OrdinalIgnoreCase) || !string.Equals(xxyy, targetXx, System.StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -252,6 +252,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return string.Empty;
         }
 
-        return uid.Substring(2, 4);
+        return UidCode.Xx(uid) + UidCode.Yy(uid);
     }
 }

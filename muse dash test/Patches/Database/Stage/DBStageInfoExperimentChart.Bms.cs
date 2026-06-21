@@ -51,7 +51,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 continue;
             }
 
-            if (wavInfo.NoteType == 3 || wavInfo.NoteType == 8)
+            if (wavInfo.NoteType == NoteTypes.Long || wavInfo.NoteType == NoteTypes.Sandbag)
             {
                 MelonLogger.Warning($"[ExperimentChart.Bms] 특수 노트가 짝 없이 남아 단일 주입을 건너뜁니다: raw={note.RawValue}, tick={note.Tick}, time={note.Time:0.###}, wav={wavInfo.RawWavName}");
                 continue;
@@ -84,7 +84,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             BossScene = wavInfo.BossScene,
             NoteType = wavInfo.NoteType,
             Pathway = ResolveBmsPathway(note, wavInfo),
-            StartTick = wavInfo.NoteType == 0 && !string.IsNullOrWhiteSpace(wavInfo.BossAction)
+            StartTick = wavInfo.NoteType == NoteTypes.Boss && !string.IsNullOrWhiteSpace(wavInfo.BossAction)
                 ? note.Time
                 : NormalizeChartValue(note.Time),
             Dt = wavInfo.Dt >= 0.0 ? NormalizeTimingValue(wavInfo.Dt) : wavInfo.Dt
@@ -92,7 +92,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (!string.IsNullOrEmpty(spec.BossAction) && !string.IsNullOrEmpty(spec.Uid) && spec.Uid.Length >= 2)
         {
-            spec.Scene = "scene_" + spec.Uid.Substring(0, 2);
+            spec.Scene = "scene_" + UidCode.Scene(spec.Uid);
         }
 
         if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.MainMod.TryGetCachedHwaScene(activeUid, out int manifestScene))
@@ -115,7 +115,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(wavInfo.BossAction) && wavInfo.NoteType == 0)
+        if (!string.IsNullOrWhiteSpace(wavInfo.BossAction) && wavInfo.NoteType == NoteTypes.Boss)
         {
             return true;
         }
@@ -137,7 +137,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (!string.IsNullOrWhiteSpace(wavInfo?.Uid) && wavInfo.Uid.Length >= 6)
         {
-            string yy = wavInfo.Uid.Substring(4, 2);
+            string yy = UidCode.Yy(wavInfo.Uid);
             if (yy == "04" || yy == "10" || yy == "16")
             {
                 return 1;
@@ -181,7 +181,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 {
                     MelonLogger.Msg($"[BossAutoSwap] out 이후 in 감지: label={spec.Label}, tick={spec.StartTick}, action={swapAction}");
                     spec.BossAction = swapAction;
-                    spec.NoteType = 0;
+                    spec.NoteType = NoteTypes.Boss;
                     spec.PrefabName = "empty_000";
                     spec.KeyAudio = "";
                 }
@@ -262,7 +262,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return string.Empty;
         }
 
-        if (!int.TryParse(uid.Substring(0, 2), out int scene))
+        if (!int.TryParse(UidCode.Scene(uid), out int scene))
         {
             return string.Empty;
         }
@@ -277,7 +277,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return -1;
         }
 
-        if (int.TryParse(uid.Substring(0, 2), out int scene))
+        if (int.TryParse(UidCode.Scene(uid), out int scene))
         {
             return scene;
         }

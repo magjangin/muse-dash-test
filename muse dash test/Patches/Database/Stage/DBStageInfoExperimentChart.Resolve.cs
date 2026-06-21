@@ -11,7 +11,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return false;
         }
 
-        return string.Equals(uid.Substring(2, 2), middlePair, System.StringComparison.OrdinalIgnoreCase);
+        return string.Equals(UidCode.Xx(uid), middlePair, System.StringComparison.OrdinalIgnoreCase);
     }
 
     public static string BuildPrefabName(string uid, int noteType, int pathway)
@@ -19,8 +19,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (string.IsNullOrEmpty(uid) || uid.Length < 6)
             return uid;
 
-        string xx = uid.Substring(2, 2);
-        string yy = uid.Substring(4, 2);
+        string xx = UidCode.Xx(uid);
+        string yy = UidCode.Yy(uid);
         string lane = pathway == 1 ? "air" : "road";
         string motion = "nor";
         string variant = GetPrefabVariant(uid, noteType);
@@ -41,7 +41,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return "1";
         }
 
-        if (noteType == 7)
+        if (noteType == NoteTypes.Blue)
         {
             return "2";
         }
@@ -56,15 +56,15 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static bool ShouldUseEmptyBossActionPrefab(int noteType, string uid, string bossAction)
     {
-        return !string.IsNullOrEmpty(bossAction) && noteType == 0 && !IsBossProjectileUid(uid);
+        return !string.IsNullOrEmpty(bossAction) && noteType == NoteTypes.Boss && !IsBossProjectileUid(uid);
     }
 
     public static bool IsBossProjectileUid(string uid)
     {
         if (string.IsNullOrEmpty(uid) || uid.Length < 6) return false;
 
-        string xx = uid.Substring(2, 2);
-        string yy = uid.Substring(4, 2);
+        string xx = UidCode.Xx(uid);
+        string yy = UidCode.Yy(uid);
         bool projectileSeries = xx == "06" || xx == "07" || xx == "08";
         bool normalLane = yy == "01" || yy == "04";
         return projectileSeries && normalLane;
@@ -83,12 +83,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (!string.IsNullOrEmpty(spec.KeyAudio)) return spec.KeyAudio;
         
         // 보스 동작 지시용 placeholder(type 0)는 키음이 없어야 합니다.
-        if (noteType == 0) return "";
-        
-        // 실제 타격이 필요한 노드들의 기본 키음 설정
-        if (noteType == 1 || noteType == 2 || noteType == 3 || noteType == 4 || noteType == 8) return "sfx_mezzo_1";
-        if (noteType == 6 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002"))) return "sfx_hp";
-        if (noteType == 7 || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0003"))) return "sfx_score";
+        if (noteType == NoteTypes.Boss) return "";
+
+        // 실제 타격이 필요한 노드들의 기본 키음 설정 (type 4는 의미 미상이라 리터럴 유지)
+        if (noteType == NoteTypes.Normal || noteType == NoteTypes.Gear || noteType == NoteTypes.Long || noteType == 4 || noteType == NoteTypes.Sandbag) return "sfx_mezzo_1";
+        if (noteType == NoteTypes.Heart || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002"))) return "sfx_hp";
+        if (noteType == NoteTypes.Blue || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0003"))) return "sfx_score";
         
         if (!string.IsNullOrEmpty(spec.BossAction)) return "";
         return null; // keep cloned value
@@ -172,7 +172,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (note?.noteData == null) return false;
 
         string uid = note.noteData.uid ?? "";
-        return note.noteData.type == 9 || uid.StartsWith("0004");
+        return note.noteData.type == NoteTypes.SceneToggle || uid.StartsWith("0004");
     }
 
     public static double NormalizeTimingValue(double value)
@@ -209,8 +209,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return 0.0;
         }
 
-        string xx = uid.Substring(2, 2);
-        string yy = uid.Substring(4, 2);
+        string xx = UidCode.Xx(uid);
+        string yy = UidCode.Yy(uid);
         if (xx == "15") return 0.8;
         if (xx == "16") return 1.25;
         if (yy == "07" || yy == "10" || yy == "13" || yy == "16") return 1.0;

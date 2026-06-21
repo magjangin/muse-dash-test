@@ -79,23 +79,23 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             int type = (int)note.noteData.type;
 
-            if (type == 0 || type == 9 || IsSceneToggleNote(note))
+            if (type == NoteTypes.Boss || type == NoteTypes.SceneToggle || IsSceneToggleNote(note))
             {
                 continue;
             }
-            else if (type == 2)
+            else if (type == NoteTypes.Gear)
             {
                 totalGears++;
             }
-            else if (type == 6)
+            else if (type == NoteTypes.Heart)
             {
                 totalHearts++;
             }
-            else if (type == 7)
+            else if (type == NoteTypes.Blue)
             {
                 totalBlueNotes++;
             }
-            else if (type == 3)
+            else if (type == NoteTypes.Long)
             {
                 if (!note.isLongPressing && !note.isLongPressEnd)
                 {
@@ -231,8 +231,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         int noteType = spec.NoteType >= 0 ? spec.NoteType : (int)noteData.type;
         int pathway = spec.Pathway >= 0 ? spec.Pathway : noteData.pathway;
 
-        if (spec.IsLong) noteType = 3;
-        if (spec.IsMul) noteType = 8;
+        if (spec.IsLong) noteType = NoteTypes.Long;
+        if (spec.IsMul) noteType = NoteTypes.Sandbag;
 
         noteData.uid = uid;
         // mirror_uid를 uid와 동일하게 설정
@@ -252,7 +252,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
             if (!string.IsNullOrEmpty(spec.BossAction) && uid.Length >= 2)
             {
-                noteData.scene = "scene_" + uid.Substring(0, 2);
+                noteData.scene = "scene_" + UidCode.Scene(uid);
             }
         }
 
@@ -297,7 +297,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void MoveNote(ref MusicData note, int objId, double tick, double length, ExperimentNoteSpec spec)
     {
-        bool isBossEvent = spec?.NoteType == 0 && !string.IsNullOrWhiteSpace(spec.BossAction);
+        bool isBossEvent = spec?.NoteType == NoteTypes.Boss && !string.IsNullOrWhiteSpace(spec.BossAction);
         double normalizedConfigTime = isBossEvent ? tick : NormalizeChartValue(tick);
         double normalizedTick = NormalizeTimingValue(isBossEvent ? tick + BossEventTickOffset : tick);
         double normalizedDt = NormalizeTimingValue(GetEffectiveDt(note, spec));
@@ -338,7 +338,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             note.doubleIdx = -1;
         }
 
-        if (note.noteData?.type == 0 && !string.IsNullOrWhiteSpace(note.noteData.boss_action))
+        if (note.noteData?.type == NoteTypes.Boss && !string.IsNullOrWhiteSpace(note.noteData.boss_action))
         {
             note.doubleIdx = -1;
         }

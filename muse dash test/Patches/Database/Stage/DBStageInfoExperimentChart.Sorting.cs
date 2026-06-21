@@ -55,7 +55,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             note.objId = (short)newIndex;
             note.isDouble = oldDoubleStates.TryGetValue(oldObjId, out bool wasDouble) && wasDouble;
-            note.doubleIdx = note.noteData?.type == 0 ? -1 : 0;
+            note.doubleIdx = note.noteData?.type == NoteTypes.Boss ? -1 : 0;
 
             if (note.isDouble
                 && oldDoubleIndices.TryGetValue(oldObjId, out int oldDoubleIndex)
@@ -197,7 +197,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static string GetDoubleExclusionReason(MusicData note)
     {
         if (note?.noteData == null) return "missing-note-data";
-        if (note.noteData.type != 1) return $"type-{note.noteData.type}";
+        if (note.noteData.type != NoteTypes.Normal) return $"type-{note.noteData.type}";
         if (note.isLongPressing) return "long-press-middle";
         if (note.isLongPressEnd) return "long-press-end";
         return null;
