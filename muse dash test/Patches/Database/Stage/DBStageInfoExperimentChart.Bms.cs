@@ -147,6 +147,15 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return 0;
     }
 
+    /// <summary>
+    /// 보스 등장/퇴장 자동 스왑 패스. 스펙 목록을 순서대로 훑으며 "out 이후 처음 나오는 in"을
+    /// 한 쌍으로 보고, 그 in 노트를 실제 보스 교체 이벤트(swap 액션 + empty_000 placeholder)로 변형합니다.
+    /// <para>상태기계: <c>waitingForSwapIn</c>(out을 만나 in을 기다리는 중) + <c>lastOutTick</c>(짝이 될 in은
+    /// 반드시 이 tick 이후여야 함). out을 만나면 대기 ON, 유효한 in을 처리하면 대기 OFF로 1:1 소비됩니다.</para>
+    /// <para><b>실행 순서 계약</b>: 이 패스는 입력 스펙이 tick 순으로 정렬된 상태에서, 노트가 게임 리스트에
+    /// 삽입(AddExperimentNotes)되기 <i>전에</i> 돌아야 합니다. out→in 판정이 순서에 의존하기 때문입니다.</para>
+    /// 입력은 변경하지 않고 복제본(CloneExperimentNoteSpec) 위에서만 작업합니다.
+    /// </summary>
     public static System.Collections.Generic.List<ExperimentNoteSpec> BuildRuntimeExperimentNotes(System.Collections.Generic.IReadOnlyList<ExperimentNoteSpec> specs)
     {
         var runtimeSpecs = new System.Collections.Generic.List<ExperimentNoteSpec>();
@@ -155,6 +164,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return runtimeSpecs;
         }
 
+        // out을 만나 그 짝이 될 in을 기다리는 중인가, 그리고 그 out의 tick은 언제였나.
         bool waitingForSwapIn = false;
         double lastOutTick = 0.0;
 
@@ -166,6 +176,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 continue;
             }
 
+            // 보스 퇴장(out): 대기 상태 ON, 이후 등장(in)의 하한 tick 기록.
             if (IsBossOutAction(spec))
             {
                 waitingForSwapIn = true;
@@ -174,6 +185,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 continue;
             }
 
+            // out 이후 처음 나오는, out보다 뒤(tick)인 in을 실제 보스 교체로 변형.
             if (waitingForSwapIn && IsBossInAction(spec) && spec.StartTick > lastOutTick)
             {
                 string swapAction = BuildBossSwapAction(spec);
