@@ -106,6 +106,9 @@ namespace muse_dash_test
 
         public override void OnUpdate()
         {
+            // 실시간 설정 파일 변경 감지 (오토플레이 등 인게임 진입 전 설정 로드 보장)
+            InputOverlay.LoadConfigIfNeeded();
+
             HwaSyncManager.HandleBattleSynchronization();
             
             // 1. 순정/실험 맵에 구애받지 않고 스테이지 상태를 지속적으로 모니터링합니다.

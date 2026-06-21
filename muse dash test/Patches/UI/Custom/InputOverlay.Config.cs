@@ -36,7 +36,7 @@ namespace muse_dash_test
 
         // 추가 설정 필드 (오토플레이 & 피버 차단 & 시네마)
         public static bool blockFever = false;
-        public static bool forceAutoPlay = false;
+        public static bool forceAutoPlay = true;
         public static bool enableCinema = true;
 
         private static string airColorName = "파랑";
@@ -62,7 +62,7 @@ namespace muse_dash_test
         /// </summary>
         public static void LoadConfigIfNeeded()
         {
-            float currentTime = Time.time;
+            float currentTime = Time.unscaledTime;
             if (currentTime - lastConfigCheckTime < ConfigCheckInterval)
             {
                 return;
@@ -144,7 +144,7 @@ namespace muse_dash_test
                 sb.AppendLine("# 시네마(BGA 동영상) 재생 설정");
                 sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
 
-                File.WriteAllText(configPath, sb.ToString(), Encoding.UTF8);
+                File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 MelonLogger.Msg($"[InputOverlay] 기본 설정 파일(config.txt)을 새로 생성했습니다: {configPath}");
             }
             catch (Exception ex)
@@ -154,13 +154,51 @@ namespace muse_dash_test
             }
         }
 
+        private static string ReadConfigTextRobust()
+        {
+            if (!File.Exists(configPath)) return "";
+
+            try
+            {
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            }
+            catch {}
+
+            byte[] bytes = File.ReadAllBytes(configPath);
+            
+            // 1. UTF-8 디코딩 시도
+            string utf8Text = Encoding.UTF8.GetString(bytes);
+            if (utf8Text.Contains("오토플레이") || utf8Text.Contains("키가로크기") || utf8Text.Contains("판정바"))
+            {
+                return utf8Text;
+            }
+
+            // 2. CP949 (EUC-KR) 디코딩 시도 (윈도우 메모장 ANSI 저장 폴백)
+            try
+            {
+                var cp949 = Encoding.GetEncoding(949);
+                string cp949Text = cp949.GetString(bytes);
+                if (cp949Text.Contains("오토플레이") || cp949Text.Contains("키가로크기") || cp949Text.Contains("판정바"))
+                {
+                    MelonLogger.Msg("[InputOverlay] config.txt를 CP949(EUC-KR) 인코딩으로 인식하여 로드했습니다.");
+                    return cp949Text;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[InputOverlay] CP949 디코딩 중 예외: {ex.Message}");
+            }
+
+            return utf8Text;
+        }
+
         private static void EnsureMissingKeysAdded()
         {
             try
             {
                 if (!File.Exists(configPath)) return;
 
-                string text = File.ReadAllText(configPath, Encoding.UTF8);
+                string text = ReadConfigTextRobust();
                 bool hasAutoPlay = text.Contains("오토플레이");
                 bool hasBlockFever = text.Contains("피버충전금지");
                 bool hasCinema = text.Contains("시네마");
@@ -184,7 +222,7 @@ namespace muse_dash_test
                         sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
                     }
 
-                    File.AppendAllText(configPath, sb.ToString(), Encoding.UTF8);
+                    File.AppendAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                     MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목(오토플레이/피버/시네마)을 자동 추가했습니다.");
                 }
             }
@@ -201,7 +239,10 @@ namespace muse_dash_test
             {
                 if (!File.Exists(configPath)) return;
 
-                string[] lines = File.ReadAllLines(configPath);
+                string text = ReadConfigTextRobust();
+                if (string.IsNullOrEmpty(text)) return;
+
+                string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
                 foreach (string line in lines)
                 {
                     string trimmed = line.Trim();
@@ -284,7 +325,7 @@ namespace muse_dash_test
                             break;
                     }
                 }
-                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom})");
+                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema})");
                 UpdateTextures();
             }
             catch (Exception ex)
