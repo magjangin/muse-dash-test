@@ -452,8 +452,10 @@ namespace muse_dash_test
                 inactiveTex = CreateColorTexture(c);
             }
 
-            // 스타일 캐시도 동시에 갱신
-            UpdateStyles();
+            // 스타일 캐시 갱신은 OnGUI 컨텍스트에서만 가능(GUI.skin 접근)하므로 즉시 호출하지 않고
+            // 더티 플래그만 세워 다음 OnGUI 프레임(DrawInputOverlay)에서 반영합니다.
+            // (OnUpdate/초기화 등 OnGUI 바깥에서 ParseConfigFile이 호출될 때의 "You can only call GUI functions from inside OnGUI" 예외 방지)
+            stylesDirty = true;
         }
 
         private static Texture2D CreateColorTexture(Color color)

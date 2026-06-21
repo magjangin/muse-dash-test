@@ -10,6 +10,10 @@ namespace muse_dash_test
         private static GUIStyle groundActiveStyle;
         private static GUIStyle inactiveStyle;
 
+        // UpdateTextures가 OnGUI 바깥(OnUpdate/초기화)에서 호출될 때 스타일 재생성을 미루기 위한 더티 플래그.
+        // 실제 UpdateStyles()는 GUI.skin 접근이 가능한 OnGUI(DrawInputOverlay)에서만 수행합니다.
+        private static bool stylesDirty = true;
+
         /// <summary>
         /// 설정값이나 텍스처 변경 시 GUI 스타일을 미리 캐싱하여 온가이드 가비지 생성을 차단합니다.
         /// </summary>
@@ -34,6 +38,8 @@ namespace muse_dash_test
             inactiveStyle.normal.textColor = new Color(0.75f, 0.75f, 0.75f, 1.0f);
             inactiveStyle.alignment = TextAnchor.MiddleCenter;
             inactiveStyle.fontSize = Math.Max(12, (int)fontSize - 2);
+
+            stylesDirty = false;
         }
 
         /// <summary>
@@ -116,6 +122,11 @@ namespace muse_dash_test
             if (airActiveStyle == null || groundActiveStyle == null || inactiveStyle == null || airActiveTex == null || groundActiveTex == null || inactiveTex == null)
             {
                 UpdateTextures();
+                UpdateStyles();
+            }
+            // OnGUI 바깥에서 설정이 갱신되어 스타일이 더티 상태라면, GUI 컨텍스트인 지금 반영합니다.
+            else if (stylesDirty)
+            {
                 UpdateStyles();
             }
 
