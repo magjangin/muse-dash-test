@@ -175,19 +175,26 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return note.noteData.type == NoteTypes.SceneToggle || uid.StartsWith("0004");
     }
 
+    // 게임 노트 수치의 두 가지 반올림 정밀도 도메인:
+    //  - TimingDecimals(3자리): 판정 타이밍 계열(tick, dt). 판정 일관성을 위해 더 촘촘하게.
+    //  - ChartDecimals (2자리): 차트 배치 계열(config time, length, showTick).
+    // showTick = tick - dt 로 3자리 값에서 파생되지만, 배치값이므로 2자리로 맞춥니다.
+    private const int TimingDecimals = 3;
+    private const int ChartDecimals = 2;
+
     public static double NormalizeTimingValue(double value)
     {
-        return System.Math.Round(value, 3, System.MidpointRounding.AwayFromZero);
+        return System.Math.Round(value, TimingDecimals, System.MidpointRounding.AwayFromZero);
     }
 
     public static double NormalizeChartValue(double value)
     {
-        return System.Math.Round(value, 2, System.MidpointRounding.AwayFromZero);
+        return System.Math.Round(value, ChartDecimals, System.MidpointRounding.AwayFromZero);
     }
 
     public static double NormalizeShowTickValue(double value)
     {
-        return System.Math.Round(value, 2, System.MidpointRounding.AwayFromZero);
+        return System.Math.Round(value, ChartDecimals, System.MidpointRounding.AwayFromZero);
     }
 
     public static double GetEffectiveDt(MusicData note)

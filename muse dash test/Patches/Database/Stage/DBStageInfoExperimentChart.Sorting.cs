@@ -11,18 +11,17 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return;
         }
 
+        // 정렬은 노트들의 배열 위치를 바꾸는데, MusicData는 서로를 "정수 인덱스"로 가리킨다
+        // (endIndex=롱노트 끝, doubleIdx=더블 짝). 따라서 정렬 전 상호참조를 objId 기준으로
+        // 스냅샷해 두고, 정렬 후 새 위치로 재연결(Relink)해야 채보가 깨지지 않는다.
         var runtimeNotes = new System.Collections.Generic.List<MusicData>();
-        var oldEndIndices = new System.Collections.Generic.Dictionary<short, int>();
-        var oldDoubleIndices = new System.Collections.Generic.Dictionary<short, int>();
-        var oldDoubleStates = new System.Collections.Generic.Dictionary<short, bool>();
+        var references = new NoteReferenceSnapshot();
 
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
             runtimeNotes.Add(note);
-            oldEndIndices[note.objId] = note.endIndex;
-            oldDoubleIndices[note.objId] = note.doubleIdx;
-            oldDoubleStates[note.objId] = note.isDouble;
+            references.Capture(note);
         }
 
         runtimeNotes.Sort((left, right) =>
@@ -36,10 +35,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return left.objId.CompareTo(right.objId);
         });
 
-        var newIndexByOldObjId = new System.Collections.Generic.Dictionary<short, int>();
+        // 정렬 후 확정된 새 위치를 (옛 objId → 새 인덱스)로 등록.
         for (int i = 0; i < runtimeNotes.Count; i++)
         {
-            newIndexByOldObjId[runtimeNotes[i].objId] = startIndex + i;
+            references.MapNewIndex(runtimeNotes[i].objId, startIndex + i);
         }
 
         while (musicList.Count > startIndex)
@@ -54,27 +53,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             int newIndex = startIndex + i;
 
             note.objId = (short)newIndex;
-            note.isDouble = oldDoubleStates.TryGetValue(oldObjId, out bool wasDouble) && wasDouble;
-            note.doubleIdx = note.noteData?.type == NoteTypes.Boss ? -1 : 0;
-
-            if (note.isDouble
-                && oldDoubleIndices.TryGetValue(oldObjId, out int oldDoubleIndex)
-                && newIndexByOldObjId.TryGetValue((short)oldDoubleIndex, out int newDoubleIndex))
-            {
-                note.doubleIdx = newDoubleIndex;
-            }
-
-            if (IsSceneToggleNote(note))
-            {
-                note.doubleIdx = -1;
-            }
-
-            if (oldEndIndices.TryGetValue(oldObjId, out int oldEndIndex)
-                && oldEndIndex > 0
-                && newIndexByOldObjId.TryGetValue((short)oldEndIndex, out int newEndIndex))
-            {
-                note.endIndex = newEndIndex;
-            }
+            references.Relink(note, oldObjId);
 
             if (note.noteData != null)
             {
@@ -91,6 +70,60 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         MelonLogger.Msg($"[ExperimentChart.Bms] 공식 방식 showTick 정렬 완료: notes={runtimeNotes.Count}, bossOffset={BossEventTickOffset}");
         DumpSortedBmsBossContext(musicList, startIndex);
+    }
+
+    /// <summary>
+    /// 정렬 전 노트 간 상호참조(endIndex=롱노트 끝, doubleIdx=더블 짝, isDouble)를 objId 기준으로
+    /// 스냅샷해 두었다가, 정렬로 인덱스가 바뀐 뒤 각 노트를 새 위치로 재연결합니다.
+    /// MusicData가 서로를 정수 인덱스로 가리키기 때문에, 이 재연결이 없으면 정렬 후 채보가 깨집니다.
+    /// 동작은 기존 인라인 로직과 동일하며, 단지 "스냅샷→재연결" 책임을 한곳에 모은 것입니다.
+    /// </summary>
+    private sealed class NoteReferenceSnapshot
+    {
+        private readonly System.Collections.Generic.Dictionary<short, int> _oldEndIndices = new System.Collections.Generic.Dictionary<short, int>();
+        private readonly System.Collections.Generic.Dictionary<short, int> _oldDoubleIndices = new System.Collections.Generic.Dictionary<short, int>();
+        private readonly System.Collections.Generic.Dictionary<short, bool> _oldDoubleStates = new System.Collections.Generic.Dictionary<short, bool>();
+        private readonly System.Collections.Generic.Dictionary<short, int> _newIndexByOldObjId = new System.Collections.Generic.Dictionary<short, int>();
+
+        /// <summary>정렬 전 노트의 상호참조 상태를 옛 objId 기준으로 저장합니다.</summary>
+        public void Capture(MusicData note)
+        {
+            _oldEndIndices[note.objId] = note.endIndex;
+            _oldDoubleIndices[note.objId] = note.doubleIdx;
+            _oldDoubleStates[note.objId] = note.isDouble;
+        }
+
+        /// <summary>정렬 후 확정된 (옛 objId → 새 인덱스) 매핑을 등록합니다.</summary>
+        public void MapNewIndex(short oldObjId, int newIndex)
+        {
+            _newIndexByOldObjId[oldObjId] = newIndex;
+        }
+
+        /// <summary>옛 objId로 보관한 참조를 새 인덱스로 변환해 note에 다시 채워 넣습니다.</summary>
+        public void Relink(MusicData note, short oldObjId)
+        {
+            note.isDouble = _oldDoubleStates.TryGetValue(oldObjId, out bool wasDouble) && wasDouble;
+            note.doubleIdx = note.noteData?.type == NoteTypes.Boss ? -1 : 0;
+
+            if (note.isDouble
+                && _oldDoubleIndices.TryGetValue(oldObjId, out int oldDoubleIndex)
+                && _newIndexByOldObjId.TryGetValue((short)oldDoubleIndex, out int newDoubleIndex))
+            {
+                note.doubleIdx = newDoubleIndex;
+            }
+
+            if (IsSceneToggleNote(note))
+            {
+                note.doubleIdx = -1;
+            }
+
+            if (_oldEndIndices.TryGetValue(oldObjId, out int oldEndIndex)
+                && oldEndIndex > 0
+                && _newIndexByOldObjId.TryGetValue((short)oldEndIndex, out int newEndIndex))
+            {
+                note.endIndex = newEndIndex;
+            }
+        }
     }
 
     public static double ParseMusicDecimal(Il2CppSystem.Decimal value)
