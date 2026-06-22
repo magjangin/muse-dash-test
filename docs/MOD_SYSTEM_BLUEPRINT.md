@@ -10,7 +10,8 @@
 
 ```mermaid
 graph TD
-    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.3.9 로드]
+    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.4.4 로드]
+    MainMod --> Diagnostics[PatchHealthCheck: 모드 로드 시 패치 무결성 검사]
     MainMod --> Preload[HwaResourceManager: hwa 폴더 & info.txt 메타 선읽기]
     
     subgraph 1. 데이터베이스 및 앨범 주입
@@ -22,6 +23,7 @@ graph TD
         SelectSong[곡 선택 & 시작] --> DBStageExp[DBStageInfoExperimentChart: BMS 차트 주입]
         DBStageExp --> ParseTiming["BMS timing 공식 적용 및 가상 노트 생성"]
         DBStageExp --> ScanCount["노트 유형 카운트 저장 (CustomPlaySession)"]
+        SelectSong --> BgmSwap[HwaMenuBgmController: 곡 선택/준비 화면 BGM 실시간 핫스왑]
     end
     
     subgraph 3. 인게임 배틀 및 결과 렌더링
@@ -54,6 +56,8 @@ graph TD
 | `TaskStageTarget.GetTrueAccuracyNew` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/APModPatch.cs) | 기어, 하트, 음표를 합산한 종합 오브젝트 정확도 공식 오버라이드 |
 | `PnlVictory2dManager.OnShowVictory` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/APModPatch.cs) | ALL PERFECT 달성 시 기존 배너 숨김 및 골드 3D 텍스트 배너 주입 |
 | `StageBattleComponent.Dead` | **Postfix** | [ChangeHealthValuePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 인게임 사망 이벤트 및 체력 강제 오버라이드(체력 무한 모드 등) |
+| `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [PnlStagePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/Selection/PnlStagePatch.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
+| `PnlPreparation.OnEnable` | **Prefix/Postfix** | [PnlPreparationPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/Preparation/PnlPreparationPatch.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
 
 ---
 
