@@ -265,15 +265,21 @@ namespace muse_dash_test
                     return (GirlID.MARIJA_BLACK, GirlID.MARIJA_DEVIL, GirlID.RIN_BASS);
                 }
                 
-                var content = File.ReadAllText(skinPath);
-                var parts = content.Split(',');
-                if (parts.Length >= 3)
+                var lines = File.ReadAllLines(skinPath);
+                foreach (var rawLine in lines)
                 {
-                    var skillCharacter = ParseCharacterName(parts[0].Trim());
-                    var appearanceCharacter = ParseCharacterName(parts[1].Trim());
-                    var testCharacter = ParseCharacterName(parts[2].Trim());
+                    var line = rawLine.Trim();
+                    if (string.IsNullOrEmpty(line) || line.StartsWith("#")) continue;
                     
-                    return (skillCharacter, appearanceCharacter, testCharacter);
+                    var parts = line.Split(',');
+                    if (parts.Length >= 3)
+                    {
+                        var skillCharacter = ParseCharacterName(parts[0].Trim());
+                        var appearanceCharacter = ParseCharacterName(parts[1].Trim());
+                        var testCharacter = ParseCharacterName(parts[2].Trim());
+                        
+                        return (skillCharacter, appearanceCharacter, testCharacter);
+                    }
                 }
                 
                 return (GirlID.MARIJA_BLACK, GirlID.MARIJA_DEVIL, GirlID.RIN_BASS);
