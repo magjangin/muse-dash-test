@@ -132,6 +132,29 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Il2CppPeroTools2">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppPeroTools2.Account">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Account.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppPeroTools2.GeneralLocalization">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.GeneralLocalization.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppPeroTools2.Pool">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Pool.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppPeroTools2.Resources">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Resources.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppPeroTools2.UI">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppPeroTools2.Watermark">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Watermark.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Resources\tag_icon.png" />
   </ItemGroup>
 

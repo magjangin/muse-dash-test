@@ -56,6 +56,13 @@ namespace muse_dash_test
 
             // hwa 매니페스트 사전 로드
             FeatureGuard.Run("Init.PreloadManifest", PreloadHwaManifest, maxConsecutiveFailures: 0);
+
+            // FavGirl 즐겨찾기 설정 및 핫키 정보 초기화
+            FavSave.Load();
+            MelonLogger.Msg("=== FavGirl 실시간 교체 기능 활성화 ===");
+            MelonLogger.Msg("P키: 실시간 교체 모드 켜기/끄기");
+            MelonLogger.Msg("O키: 실시간 교체 실행 (모드 활성화 후)");
+            MelonLogger.Msg("======================================");
         }
 
         // 이전 실행에서 생성된 진단 덤프 파일 목록. 매 실행 시작 시 삭제하여 새로 기록되게 합니다.
@@ -127,6 +134,16 @@ namespace muse_dash_test
             // 매 프레임 호출되므로 각 기능을 FeatureGuard로 격리합니다.
             // 한 기능의 예외가 다른 기능을 막거나 로그를 폭발시키지 않으며,
             // 연속 실패가 누적되면 해당 기능만 자동 비활성화됩니다.
+
+            // FavGirl 실시간 교체 입력 감지
+            FeatureGuard.Run("Input.RealTimeSwap", () =>
+            {
+                RealTimeSwapper.CheckForOKeyPress();
+                if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.P))
+                {
+                    RealTimeSwapManager.ToggleRealTimeMode();
+                }
+            });
 
             // 실시간 설정 파일 변경 감지 (오토플레이 등 인게임 진입 전 설정 로드 보장)
             FeatureGuard.Run("InputOverlay.Config", InputOverlay.LoadConfigIfNeeded);
