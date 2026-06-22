@@ -85,7 +85,7 @@ namespace muse_dash_test
         {
             try
             {
-                var method = RawObject.GetType().GetMethod("AddMaskValue", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var method = RawObject.GetType().GetMethod(GameBindings.Il2CppCollection.AddMaskValue, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
                 if (method != null)
                 {
                     method.Invoke(RawObject, new object[] { key, value });

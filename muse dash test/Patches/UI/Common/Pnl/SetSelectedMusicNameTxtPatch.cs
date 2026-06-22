@@ -74,7 +74,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "Awake")]
+    [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), GameBindings.SetSelectedMusicNameTxt.Awake)]
     internal static class SetSelectedMusicNameTxt_Awake_Patch
     {
         private static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance)
@@ -83,7 +83,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), "OnEnable")]
+    [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), GameBindings.SetSelectedMusicNameTxt.OnEnable)]
     internal static class SetSelectedMusicNameTxt_OnEnable_Patch
     {
         private static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance)

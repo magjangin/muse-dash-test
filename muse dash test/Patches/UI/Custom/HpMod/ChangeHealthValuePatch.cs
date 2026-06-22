@@ -29,7 +29,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), "OnGameStart", new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
+    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), GameBindings.ChangeHealthValue.OnGameStart, new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class ChangeHealthValue_OnGameStart_Patch
     {
         public static void Postfix(Il2Cpp.ChangeHealthValue __instance)
@@ -52,7 +52,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), "OnHpRateChange", new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
+    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), GameBindings.ChangeHealthValue.OnHpRateChange, new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class ChangeHealthValue_OnHpRateChange_Patch
     {
         public static void Postfix(Il2Cpp.ChangeHealthValue __instance)
@@ -75,7 +75,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), "OnHpDeduct", new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
+    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), GameBindings.ChangeHealthValue.OnHpDeduct, new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class ChangeHealthValue_OnHpDeduct_Patch
     {
         public static void Postfix(Il2Cpp.ChangeHealthValue __instance)
@@ -98,7 +98,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), "OnHpAdd", new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
+    [HarmonyPatch(typeof(Il2Cpp.ChangeHealthValue), GameBindings.ChangeHealthValue.OnHpAdd, new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class ChangeHealthValue_OnHpAdd_Patch
     {
         public static void Postfix(Il2Cpp.ChangeHealthValue __instance)

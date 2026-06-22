@@ -15,7 +15,7 @@ namespace muse_dash_test.Patches
     }
 
     // Cache the TaskStageTarget instance during gameplay when score is updated
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "AddScore")]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.AddScore)]
     public class TaskStageTarget_AddScore_Patch
     {
         public static void Prefix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance)
@@ -141,7 +141,7 @@ namespace muse_dash_test.Patches
     }
 
     // Cache the TaskStageTarget instance when accuracy is requested
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "GetAccuracy")]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.GetAccuracy)]
     public class TaskStageTarget_GetAccuracy_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
@@ -187,7 +187,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "GetTrueAccuracy")]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.GetTrueAccuracy)]
     public class TaskStageTarget_GetTrueAccuracy_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
@@ -206,7 +206,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "GetTrueAccuracyNew")]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.GetTrueAccuracyNew)]
     public class TaskStageTarget_GetTrueAccuracyNew_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
@@ -226,7 +226,7 @@ namespace muse_dash_test.Patches
     }
 
     // Cache the TaskStageTarget instance when full combo is checked
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), "IsFullCombo")]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.IsFullCombo)]
     public class TaskStageTarget_IsFullCombo_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, bool __result)
@@ -247,7 +247,7 @@ namespace muse_dash_test.Patches
     }
 
     // Intercept the transient Full Combo banner display and change it to ALL PERFECT if appropriate
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager), "OnShowVictory", new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager), GameBindings.PnlVictory2dManager.OnShowVictory, new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class PnlVictory2dManager_OnShowVictory_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager __instance, Il2CppSystem.Object sender, Il2CppSystem.Object rev, Il2CppReferenceArray<Il2CppSystem.Object> pars)

@@ -28,7 +28,7 @@ namespace muse_dash_test
     /// <summary>
     /// 커스텀 태그 인덱스가 큰 값(1998)일 때 게임 내부의 RefreshStageDisplayMusics에서 발생하는 NullReferenceException을 우회합니다.
     /// </summary>
-    [HarmonyPatch(typeof(MusicTagManager), "RefreshStageDisplayMusics", new Type[] { typeof(int) })]
+    [HarmonyPatch(typeof(MusicTagManager), GameBindings.MusicTagManager.RefreshStageDisplayMusics, new Type[] { typeof(int) })]
     public class MusicTagManager_RefreshStageDisplayMusics_Patch
     {
         public static bool Prefix(MusicTagManager __instance, int tagIndex)

@@ -12,7 +12,7 @@ namespace muse_dash_test
     /// AlbumTagToggle의 수명 주기를 제어하여, 우리의 가상 태그가 표시될 때 
     /// 모드 어셈블리에 내장된 리소스 이미지(tag_icon.png)를 실시간 로드 및 주입하는 패치 클래스입니다.
     /// </summary>
-    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), "Init")]
+    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), GameBindings.AlbumTagToggle.Init)]
     public class AlbumTagToggle_Init_Patch
     {
         private static Texture2D cachedCustomTexture;
@@ -171,7 +171,7 @@ namespace muse_dash_test
     /// <summary>
     /// 비동기적으로 아이콘 텍스처가 로드되어 지정될 때, 커스텀 텍스처로 대체해 주는 패치입니다.
     /// </summary>
-    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), "SetIconAsync")]
+    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), GameBindings.AlbumTagToggle.SetIconAsync)]
     public class AlbumTagToggle_SetIconAsync_Patch
     {
         public static bool Prefix(Il2Cpp.AlbumTagToggle __instance, ref Texture2D tex)
@@ -201,7 +201,7 @@ namespace muse_dash_test
     /// <summary>
     /// 토글 상태 변경(선택/비선택) 시 아이콘 텍스처 및 연출이 덮어쓰이는 문제를 방지하기 위한 패치입니다.
     /// </summary>
-    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), "SetStateIcon")]
+    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), GameBindings.AlbumTagToggle.SetStateIcon)]
     public class AlbumTagToggle_SetStateIcon_Patch
     {
         public static void Postfix(Il2Cpp.AlbumTagToggle __instance, bool weekFree, bool newAlbum)

@@ -16,7 +16,7 @@ public class PnlBattle_GameStart_Patch
             return null;
         }
 
-        return battleType.GetMethod("GameStart", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        return battleType.GetMethod(muse_dash_test.GameBindings.PnlBattle.GameStart, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
     }
 
     public static void Postfix(object __instance)
@@ -57,9 +57,10 @@ public class PnlBattle_GameStart_Patch
                         continue;
                     }
 
-                    if (string.Equals(type.Name, "PnlBattle", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(type.FullName, "Il2Cpp.PnlBattle", StringComparison.OrdinalIgnoreCase) ||
-                        (type.FullName != null && type.FullName.EndsWith(".PnlBattle", StringComparison.OrdinalIgnoreCase)))
+                    string typeName = muse_dash_test.GameBindings.PnlBattle.TypeName;
+                    if (string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(type.FullName, "Il2Cpp." + typeName, StringComparison.OrdinalIgnoreCase) ||
+                        (type.FullName != null && type.FullName.EndsWith("." + typeName, StringComparison.OrdinalIgnoreCase)))
                     {
                         return type;
                     }

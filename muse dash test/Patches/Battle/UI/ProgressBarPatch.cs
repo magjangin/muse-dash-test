@@ -8,7 +8,7 @@ namespace muse_dash_test
 {
     // === 배틀 스테이지 진행바(sldProgress) 제어 패치 ===
 
-    [HarmonyPatch(typeof(PnlBattle), "MusicProgressInit")]
+    [HarmonyPatch(typeof(PnlBattle), GameBindings.PnlBattle.MusicProgressInit)]
     public class PnlBattle_MusicProgressInit_Patch
     {
         public static void Postfix(PnlBattle __instance)
