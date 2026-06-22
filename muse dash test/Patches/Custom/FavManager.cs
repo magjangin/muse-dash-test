@@ -240,43 +240,7 @@ namespace muse_dash_test
 
         private static void Postfix(PnlVictory __instance)
         {
-            FavManager.PostfixRestoreGirlDoThing(true, () =>
-            {
-                var shouldHideDetails = FavSave.conditionalHideScoreDetails.Value && (FavSave.FavGirl == GirlID.NONE ||
-                    (int)FavSave.FavGirl == DataHelper.selectedRoleIndex ||
-                    !FavManager.ValidGirl(DataHelper.selectedRoleIndex));
-                if (FavManager.girlTxt == null && !shouldHideDetails)
-                {
-                    var scoreText = __instance.m_CurControls.scoreTxt.transform.parent.gameObject;
-                    var tittleText = __instance.m_CurControls.accuracyTxt.transform.parent.parent.gameObject;
-                    var accText = __instance.m_CurControls.accuracyTxt.transform.parent;
-
-                    var girlText = Object.Instantiate(accText, tittleText.transform);
-                    var buildText = Object.Instantiate(accText, tittleText.transform);
-
-                    girlText.name = "TxtGirl";
-                    FavManager.girlTxt = girlText.gameObject;
-
-                    buildText.name = "TxtBuild";
-                    buildText.gameObject.GetComponent<Text>().text = "/";
-                    Object.Instantiate(girlText.GetChild(0), buildText.transform);
-                    girlText.gameObject.SetActive(false);
-                    buildText.gameObject.GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
-                    
-                    buildText.GetChild(0).gameObject.GetComponent<Text>().alignment = TextAnchor.MiddleRight;
-                    buildText.GetChild(0).localPosition = new Vector3(-120, buildText.GetChild(0).localPosition.y,
-                        buildText.GetChild(0).localPosition.z);
-                    buildText.GetChild(0).gameObject.GetComponent<Text>().text =
-                        $"{Singleton<ConfigManager>.instance.GetConfigStringValue("character", DataHelper.selectedRoleIndex, "cosName")}";
-                    
-                    buildText.GetChild(1).gameObject.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
-                    buildText.GetChild(1).gameObject.GetComponent<Text>().text = "None";
-                    buildText.GetChild(1).localPosition = new Vector3(115, buildText.GetChild(1).localPosition.y,
-                        buildText.GetChild(1).localPosition.z);
-                    buildText.localPosition =
-                        new Vector3(-20 + buildText.GetChild(0).GetComponent<Text>().preferredWidth, 80f, -2f);
-                }
-            });
+            FavManager.PostfixRestoreGirlDoThing(true);
         }
     }
 
