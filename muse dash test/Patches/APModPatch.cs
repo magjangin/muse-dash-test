@@ -256,9 +256,8 @@ namespace muse_dash_test.Patches
             {
                 MelonLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
 
-                // 결과 화면 진입 시 커스텀 BGM/BGA 미디어 및 OBS 녹화를 강제로 정지시킵니다.
+                // 결과 화면 진입 시 커스텀 BGM/BGA 미디어를 강제로 정지시킵니다.
                 HwaBattleMediaController.StopMedia();
-                muse_dash_test.ObsController.StopRecording();
 
                 if (__instance == null)
                 {

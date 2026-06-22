@@ -36,9 +36,6 @@ namespace muse_dash_test
             // 게임이 켜질 때 즉시 설정 폴더/파일을 감지 및 생성/로드합니다.
             FeatureGuard.Run("Init.InputOverlayConfig", InputOverlay.LoadConfigIfNeeded, maxConsecutiveFailures: 0);
 
-            // OBS 자동 녹화 연동 설정 로드 (설정 파일 없으면 기본값 생성)
-            FeatureGuard.Run("Init.ObsConfig", ObsController.LoadConfig, maxConsecutiveFailures: 0);
-
             // hwa 작업 폴더 생성 및 이전 실행의 진단 덤프 정리
             FeatureGuard.Run("Init.HwaFolder", () =>
             {
