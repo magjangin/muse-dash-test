@@ -242,10 +242,10 @@ namespace muse_dash_test
                 string text = ReadConfigTextRobust();
                 if (string.IsNullOrEmpty(text)) return;
 
-                MelonLogger.Msg($"[InputOverlay][DEBUG] ParseConfigFile 시작. 총 문자 수={text.Length}, configPath={configPath}");
+                MelonLogger.Msg($"[InputOverlay] ParseConfigFile 시작. 총 문자 수={text.Length}, configPath={configPath}");
 
                 string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                MelonLogger.Msg($"[InputOverlay][DEBUG] 분리된 줄 수={lines.Length}");
+                MelonLogger.Msg($"[InputOverlay] 분리된 줄 수={lines.Length}");
 
                 foreach (string line in lines)
                 {
