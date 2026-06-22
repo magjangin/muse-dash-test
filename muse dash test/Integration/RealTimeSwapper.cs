@@ -315,6 +315,7 @@ namespace muse_dash_test
             if (text.Contains("MARIJA_DEVIL")) return GirlID.MARIJA_DEVIL;
             if (text.Contains("MARIJA_BLACK")) return GirlID.MARIJA_BLACK;
             if (text.Contains("MARIJA_SISTER")) return GirlID.MARIJA_SISTER;
+            if (text.Contains("MARIJA_MADE_BY_ORA_2") || text.Contains("ORA_2") || text.Contains("MADE_BY_ORA_2") || text.Contains("MADE_BY_ORA")) return GirlID.MARIJA_MADE_BY_ORA_2;
             
             // 기타 캐릭터들
             if (text.Contains("OLA_BOXER")) return GirlID.OLA_BOXER;

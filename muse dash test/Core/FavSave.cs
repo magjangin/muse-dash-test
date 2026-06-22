@@ -84,6 +84,7 @@ namespace muse_dash_test
         DIVINE_GEAR = 30,
         BURO_VAMPIRE = 31,
         RIN_PIRATE = 32,
-        BURO_DIVER = 33  // DAVE THE DIVER 콜라보 (다이버 부로)
+        BURO_DIVER = 33, // DAVE THE DIVER 콜라보 (다이버 부로)
+        MARIJA_MADE_BY_ORA_2 = 34 // 만우절 기념 마리쟈 made by ora 2
     }
 }
