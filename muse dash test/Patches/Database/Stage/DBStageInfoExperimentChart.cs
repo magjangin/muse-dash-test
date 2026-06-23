@@ -237,6 +237,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 홀드 노트는 isShowPlayEffect=false, 나머지는 true로 명시 설정
         noteData.isShowPlayEffect = noteType != NoteTypes.Long;
 
+        // effect가 비어있거나 "0"이면 "1"로 보정 (파티클 이펙트 재생 보장)
+        if (string.IsNullOrEmpty(noteData.effect) || noteData.effect == "0")
+        {
+            noteData.effect = "1";
+        }
+
         if (!string.IsNullOrEmpty(uid))
         {
             if (int.TryParse(uid, out int parsedNoteUid))
