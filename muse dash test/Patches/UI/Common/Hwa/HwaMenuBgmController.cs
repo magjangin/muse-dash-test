@@ -15,18 +15,28 @@ namespace muse_dash_test
     public static class HwaMenuBgmController
     {
         private static string currentLoadingUid = null;
+        private static int monitorGeneration;
 
         public static void TriggerMenuBgmChange(string uid)
         {
             if (string.IsNullOrEmpty(uid) || !CustomContentIds.IsVirtualSong(uid))
             {
                 currentLoadingUid = null;
+                monitorGeneration++;
                 return;
             }
 
             currentLoadingUid = uid;
+            monitorGeneration++;
             MelonLogger.Msg($"[MenuBGM] BGM 변경 트리거: uid={uid}");
             MelonCoroutines.Start(LoadAndPlayCustomMenuBgm(uid));
+        }
+
+        public static void StopMenuMonitoring(string reason)
+        {
+            currentLoadingUid = null;
+            monitorGeneration++;
+            MelonLogger.Msg($"[MenuBGM.Monitor] 메뉴 BGM 모니터링 중지 요청: {reason}");
         }
 
         private static IEnumerator LoadAndPlayCustomMenuBgm(string uid)
@@ -105,7 +115,7 @@ namespace muse_dash_test
                 MelonLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
 
                 // 후속 볼륨 페이드아웃이나 변경 현상 감시를 위해 실시간 모니터러 작동
-                MelonCoroutines.Start(MonitorAudioSource(menuSource, uid, customClip.name));
+                MelonCoroutines.Start(MonitorAudioSource(menuSource, uid, customClip.name, monitorGeneration));
             }
         }
 
@@ -204,13 +214,19 @@ namespace muse_dash_test
             }
         }
 
-        private static IEnumerator MonitorAudioSource(AudioSource source, string uid, string clipName)
+        private static IEnumerator MonitorAudioSource(AudioSource source, string uid, string clipName, int generation)
         {
             MelonLogger.Msg($"[MenuBGM.Monitor] 모니터링 시작: GO={source.gameObject.name}, targetClip={clipName}");
             int i = 0;
             while (true)
             {
                 yield return new WaitForSeconds(5.0f);
+                if (generation != monitorGeneration)
+                {
+                    MelonLogger.Msg("[MenuBGM.Monitor] 모니터링 세대가 변경되어 종료합니다.");
+                    yield break;
+                }
+
                 if (source == null)
                 {
                     MelonLogger.Warning("[MenuBGM.Monitor] AudioSource가 파괴되었습니다.");

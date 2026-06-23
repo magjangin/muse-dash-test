@@ -20,11 +20,13 @@ public class GameMusicScene_LoadScene_Patch
 
             if (!muse_dash_test.MainMod.TryGetCachedHwaScene(uid, out int scene))
             {
+                ExperimentHitPointInstaller.RememberLoadSceneRedirect(sceneName, sceneName);
                 MelonLogger.Msg($"[GameMusicScene.LoadScene] manifest scene이 없어 리다이렉션을 건너뜁니다: current={sceneName}");
                 return;
             }
 
             string redirectedSceneName = $"scene_{scene:00}";
+            ExperimentHitPointInstaller.RememberLoadSceneRedirect(sceneName, redirectedSceneName);
             MelonLogger.Msg($"[GameMusicScene.LoadScene] scene 리다이렉션: {sceneName} -> {redirectedSceneName}");
             sceneName = redirectedSceneName;
         }

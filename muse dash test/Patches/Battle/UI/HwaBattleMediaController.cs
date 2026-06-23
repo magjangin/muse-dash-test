@@ -37,6 +37,7 @@ namespace muse_dash_test
                     return;
                 }
 
+                HwaMenuBgmController.StopMenuMonitoring("battle media injection started");
                 battleMediaInjectionStarted = true;
                 InjectBattleMedia();
             }
@@ -153,6 +154,7 @@ namespace muse_dash_test
                 yield break;
             }
 
+            clip.name = Path.GetFileName(oggPath);
             MelonLogger.Msg($"[HwaBattleMediaController] 로드한 클립 정보: {DescribeAudioClip(clip)}");
 
             string beforeState = DescribeAudioSource(targetSource);
