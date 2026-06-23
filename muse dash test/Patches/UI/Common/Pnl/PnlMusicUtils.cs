@@ -31,19 +31,23 @@ public static partial class PnlMusicUtils
     private static readonly string[] DesignerNameMemberNames = { "levelDesignerName", "designerName", "chartDesignerName", "stageDesignerName" };
     private static readonly string[] DesignerLabelMemberNames = { "levelDesignerText", "designerText" };
 
-    public static IEnumerator LogMusicInfoAfterDelay(string source, object pnlInstance, float delaySeconds)
+    public static IEnumerator ApplyAndLogMusicInfoAfterDelay(string source, object pnlInstance, float delaySeconds)
     {
         yield return new WaitForSeconds(delaySeconds);
-        LogMusicInfo(source, pnlInstance);
+        ApplyAndLogMusicInfo(source, pnlInstance);
     }
 
-    public static IEnumerator LogPreparationMusicInfoAfterDelay(object pnlInstance, string source, float delaySeconds)
+    public static IEnumerator ApplyAndLogPreparationMusicInfoAfterDelay(object pnlInstance, string source, float delaySeconds)
     {
         yield return new WaitForSeconds(delaySeconds);
-        LogPreparationMusicInfo(pnlInstance, source);
+        ApplyAndLogPreparationMusicInfo(pnlInstance, source);
     }
 
-    public static void LogMusicInfo(string source, object pnlInstance)
+    /// <summary>
+    /// 곡 정보를 로그로 남기는 동시에, 커스텀곡일 때는 화면 텍스트(제목/아티스트/디자이너)를
+    /// 커스텀 값으로 "덮어씁니다". 읽기 전용이 아님에 주의(ApplySongTitleExperiment 호출).
+    /// </summary>
+    public static void ApplyAndLogMusicInfo(string source, object pnlInstance)
     {
         try
         {
@@ -52,10 +56,16 @@ public static partial class PnlMusicUtils
             var info = ExtractMusicInfo(pnlInstance, resolvedUid);
             LogCompact(source, info);
         }
-        catch (Exception ex) { MelonLogger.Error($"LogMusicInfo 예외: {ex}"); }
+        catch (Exception ex) { MelonLogger.Error($"ApplyAndLogMusicInfo 예외: {ex}"); }
     }
 
-    public static void LogPreparationMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
+    /// <summary>
+    /// 준비화면의 곡 정보를 로그로 남기는 동시에, 커스텀곡일 때는 화면의 제목/아티스트/디자이너
+    /// 텍스트를 커스텀 값으로 "덮어씁니다"(ApplySongTitleExperiment 호출). 이름만 보고 읽기 전용
+    /// 진단으로 오해하기 쉬우니 주의. 현재 선택이 순정곡이면 ResolveCustomMusicUid가 null을 반환해
+    /// 아무것도 쓰지 않습니다.
+    /// </summary>
+    public static void ApplyAndLogPreparationMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
     {
         try
         {
@@ -79,14 +89,14 @@ public static partial class PnlMusicUtils
             }
             LogCompact(source, info);
         }
-        catch (Exception ex) { MelonLogger.Error($"LogPreparationMusicInfo 예외: {ex}"); }
+        catch (Exception ex) { MelonLogger.Error($"ApplyAndLogPreparationMusicInfo 예외: {ex}"); }
     }
 
     public static void DumpMusicInfo(object pnlInstance)
     {
         try
         {
-            LogMusicInfo("MusicInfo", pnlInstance);
+            ApplyAndLogMusicInfo("MusicInfo", pnlInstance);
         }
         catch (Exception ex) { MelonLogger.Error($"DumpMusicInfo 예외: {ex}"); }
     }
@@ -130,6 +140,11 @@ public static partial class PnlMusicUtils
                 designer = musicInfo.levelDesigner;
             }
         }
+
+        // ★주의: 이 함수는 진단 "로그"만 남기는 게 아니라 실제로 화면 텍스트를 덮어씁니다(쓰기).
+        // 다음에 같은 잔상 버그를 빨리 잡을 수 있도록, 무엇을 어떤 uid 기준으로 쓰는지 명시적으로 남깁니다.
+        // (resolvedUid가 순정곡이면 위에서 이미 early-return 되므로, 이 줄이 찍혔다 = 커스텀 오버라이드를 실제로 적용했다는 뜻)
+        MelonLogger.Msg($"[SongTitleOverride] 화면 텍스트 적용(WRITE): source={source}, uid={resolvedUid}, title='{title}', artist='{artist}', designer='{designer}'");
 
         SetMemberTexts(pnlInstance, TitleMemberNames, title);
         SetMemberTexts(pnlInstance, ArtistMemberNames, artist);
