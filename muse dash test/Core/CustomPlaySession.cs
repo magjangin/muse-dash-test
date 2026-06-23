@@ -24,7 +24,9 @@ namespace muse_dash_test
         public void RememberMusicSelection(string uid)
         {
             SelectedMusicUid = uid ?? string.Empty;
-            ShouldApplyExperimentChart = CustomContentIds.IsVirtualSong(uid);
+            // 곡 단위 커스텀 판정은 uid 접두사("1999-") 추측이 아니라 매니페스트 레지스트리를 근거로 합니다.
+            // 이렇게 하면 순정 슬롯(예: 66-0)을 숙주로 빌린 커스텀 곡도 확실하게 잡힙니다.
+            ShouldApplyExperimentChart = HwaResourceManager.IsCustomSong(uid);
         }
 
         public void ResetCounts()

@@ -15,6 +15,10 @@ namespace muse_dash_test
         private static readonly Dictionary<string, HwaManifest> cachedManifests = new Dictionary<string, HwaManifest>();
         private static readonly Dictionary<string, BmsChart> cachedBmsCharts = new Dictionary<string, BmsChart>();
         private static readonly List<string> virtualUids = new List<string>();
+
+        // 커스텀으로 "주장된" 모든 uid 집합. 가상 uid(1999-N)와, 매니페스트가 숙주로 지정한
+        // 순정 uid(info.txt의 uid: 값, 예: 66-0)를 함께 담아 곡 단위 커스텀 판정의 단일 출처로 씁니다.
+        private static readonly HashSet<string> customClaimedUids = new HashSet<string>(StringComparer.Ordinal);
         private static FileSystemWatcher bmsWatcher = null;
 
         public static void PreloadHwaManifest()
@@ -55,6 +59,7 @@ namespace muse_dash_test
                 cachedBmsCharts.Clear();
             }
             virtualUids.Clear();
+            customClaimedUids.Clear();
         }
 
         /// <summary>
@@ -118,6 +123,15 @@ namespace muse_dash_test
             }
 
             virtualUids.Add(uid);
+            customClaimedUids.Add(uid);
+
+            // 매니페스트가 순정 슬롯을 숙주로 지정했다면(uid: 66-0 등) 그 uid도 커스텀으로 인식되게 등록.
+            if (!string.IsNullOrWhiteSpace(manifest.Uid))
+            {
+                customClaimedUids.Add(manifest.Uid.Trim());
+                MelonLogger.Msg($"[HwaResourceManager] [{uid}] 숙주 uid '{manifest.Uid.Trim()}'를 커스텀 곡으로 등록했습니다.");
+            }
+
             MelonLogger.Msg($"[HwaResourceManager] [{uid}] 등록 완료: {HwaManifestLoader.DescribeManifest(manifest)}");
         }
 
@@ -158,7 +172,20 @@ namespace muse_dash_test
                     Difficulty2 = 5 + i
                 };
                 virtualUids.Add(uid);
+                customClaimedUids.Add(uid);
             }
+        }
+
+        /// <summary>
+        /// 곡 단위 커스텀 판정의 단일 출처. 가상 uid(1999-N) 또는 매니페스트가 숙주로 지정한
+        /// 순정 uid(예: 66-0)면 true를 반환합니다. uid 접두사 추측이 아니라 실제 등록된
+        /// 매니페스트 레지스트리를 근거로 하므로, 순정 슬롯에 얹힌 커스텀 곡도 확실히 잡힙니다.
+        /// </summary>
+        public static bool IsCustomSong(string uid)
+        {
+            if (string.IsNullOrEmpty(uid)) return false;
+            // 매니페스트가 아직 로드되기 전이라도 1999- 가상곡은 항상 커스텀으로 간주(하위 호환).
+            return CustomContentIds.IsVirtualSong(uid) || customClaimedUids.Contains(uid);
         }
 
         public static HwaManifest GetManifest(string uid)
