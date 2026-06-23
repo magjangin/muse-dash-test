@@ -186,7 +186,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string scene = note.noteData?.scene ?? "(null)";
         string bossAction = note.noteData?.boss_action ?? "(null)";
         string configTime = note.configData != null ? note.configData.time.ToString() : "(null)";
-        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, prefab={prefab}, boss_action={bossAction}");
+        string effect = note.noteData != null ? note.noteData.effect.ToString() : "(null)";
+        string isShowPlayEffect = note.noteData != null ? note.noteData.isShowPlayEffect.ToString() : "(null)";
+        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, prefab={prefab}, boss_action={bossAction}, effect={effect}, isShowPlayEffect={isShowPlayEffect}");
     }
 
     public static void LogSpec(string label, ExperimentNoteSpec spec)
