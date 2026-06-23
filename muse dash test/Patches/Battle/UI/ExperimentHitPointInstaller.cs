@@ -88,6 +88,19 @@ namespace muse_dash_test
                         MelonLogger.Msg($"[ExperimentHitPoint] 기존 인스턴스 확인: {GetPath(existingInstance.transform)}, source={candidate.Source}");
                         return;
                     }
+
+                    existingInstance = FindActiveHitPointInstance(prefabName);
+                    if (existingInstance != null)
+                    {
+                        if (existingInstance.transform.parent != sceneObjectController.transform)
+                        {
+                            existingInstance.transform.SetParent(sceneObjectController.transform, false);
+                        }
+
+                        installed = true;
+                        MelonLogger.Msg($"[ExperimentHitPoint] 기존 전역 인스턴스 확인/연결: {GetPath(existingInstance.transform)}, source={candidate.Source}");
+                        return;
+                    }
                 }
 
                 for (int i = 0; i < candidates.Count; i++)
@@ -113,7 +126,7 @@ namespace muse_dash_test
                     return;
                 }
 
-                LogStatusOnce($"[ExperimentHitPoint] 프리팹 대기 중: candidates={DescribeCandidates(candidates)}");
+                LogStatusOnce($"[ExperimentHitPoint] 프리팹 대기 중: candidates={DescribeCandidates(candidates)}, loaded={DescribeLoadedHitPoints()}");
             }
             catch (Exception ex)
             {
@@ -133,26 +146,23 @@ namespace muse_dash_test
                 AddSceneCandidate(candidates, manifestScene, "manifest");
             }
 
-            if (TryInferSceneFromBms(uid, out int bmsScene))
-            {
-                AddSceneCandidate(candidates, bmsScene, "bms-wav");
-            }
+            AddBmsSceneCandidates(candidates, uid);
 
             if (!CustomContentIds.IsVirtualSong(uid) && TryParseScenePrefix(uid, out int uidScene))
             {
                 AddSceneCandidate(candidates, uidScene, "uid");
             }
 
+            AddLoadedHitPointCandidates(candidates);
+
             return candidates;
         }
 
-        private static bool TryInferSceneFromBms(string uid, out int scene)
+        private static void AddBmsSceneCandidates(List<SceneCandidate> candidates, string uid)
         {
-            scene = default;
-
             if (!MainMod.TryGetCachedHwaBmsChart(uid, out BmsChart chart, out _) || chart?.Notes == null)
             {
-                return false;
+                return;
             }
 
             var sceneCounts = new Dictionary<int, int>();
@@ -173,24 +183,42 @@ namespace muse_dash_test
                 sceneCounts[wavScene] = count + 1;
             }
 
-            int bestScene = 0;
-            int bestCount = 0;
-            foreach (var pair in sceneCounts)
+            while (sceneCounts.Count > 0)
             {
-                if (pair.Value > bestCount)
+                int bestScene = 0;
+                int bestCount = 0;
+                foreach (var pair in sceneCounts)
                 {
-                    bestScene = pair.Key;
-                    bestCount = pair.Value;
+                    if (pair.Value > bestCount)
+                    {
+                        bestScene = pair.Key;
+                        bestCount = pair.Value;
+                    }
                 }
-            }
 
-            if (bestCount <= 0)
+                if (bestCount <= 0)
+                {
+                    return;
+                }
+
+                AddSceneCandidate(candidates, bestScene, $"bms-wav:{bestCount}");
+                sceneCounts.Remove(bestScene);
+            }
+        }
+
+        private static void AddLoadedHitPointCandidates(List<SceneCandidate> candidates)
+        {
+            var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+            for (int i = 0; i < gameObjects.Count; i++)
             {
-                return false;
-            }
+                GameObject gameObject = gameObjects[i];
+                if (gameObject == null || !TryParseHitPointScene(gameObject.name, out int scene))
+                {
+                    continue;
+                }
 
-            scene = bestScene;
-            return true;
+                AddSceneCandidate(candidates, scene, gameObject.scene.IsValid() ? "loaded-instance" : "loaded-prefab");
+            }
         }
 
         private static bool TryParseScenePrefix(string uid, out int scene)
@@ -219,6 +247,30 @@ namespace muse_dash_test
             }
 
             string value = sceneName.Substring(prefix.Length);
+            return int.TryParse(value, out scene);
+        }
+
+        private static bool TryParseHitPointScene(string name, out int scene)
+        {
+            scene = default;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return false;
+            }
+
+            const string prefix = "HitPoints_";
+            if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            string value = name.Substring(prefix.Length);
+            int cloneIndex = value.IndexOf("(Clone)", StringComparison.OrdinalIgnoreCase);
+            if (cloneIndex >= 0)
+            {
+                value = value.Substring(0, cloneIndex);
+            }
+
             return int.TryParse(value, out scene);
         }
 
@@ -254,6 +306,27 @@ namespace muse_dash_test
             }
 
             return string.Join(", ", parts);
+        }
+
+        private static string DescribeLoadedHitPoints()
+        {
+            var names = new List<string>();
+            var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                GameObject gameObject = gameObjects[i];
+                if (gameObject == null || !TryParseHitPointScene(gameObject.name, out _))
+                {
+                    continue;
+                }
+
+                string scope = gameObject.scene.IsValid()
+                    ? $"scene:{gameObject.scene.name},active:{gameObject.activeInHierarchy}"
+                    : "prefab";
+                names.Add($"{gameObject.name}({scope})");
+            }
+
+            return names.Count > 0 ? string.Join(", ", names) : "(none)";
         }
 
         private static void LogStatusOnce(string message)
@@ -294,6 +367,29 @@ namespace muse_dash_test
                 if (gameObject != null
                     && !gameObject.scene.IsValid()
                     && string.Equals(gameObject.name, prefabName, StringComparison.Ordinal))
+                {
+                    return gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        private static GameObject FindActiveHitPointInstance(string prefabName)
+        {
+            var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                GameObject gameObject = gameObjects[i];
+                if (gameObject == null
+                    || !gameObject.scene.IsValid()
+                    || !gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                if (string.Equals(gameObject.name, prefabName, StringComparison.Ordinal)
+                    || string.Equals(gameObject.name, prefabName + "(Clone)", StringComparison.Ordinal))
                 {
                     return gameObject;
                 }
