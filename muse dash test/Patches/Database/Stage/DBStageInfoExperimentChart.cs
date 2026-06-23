@@ -127,31 +127,28 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     }
 
     /// <summary>
-    /// spec의 uid에서 씬 번호(앞 2자리)를 추출하고, 홀드노트이면 xx=10(예: zz1001), 일반 노트이면 xx=11(예: zz1101)에
-    /// 해당하는 원본 노트를 sourceNotes에서 탐색합니다. 매칭되는 노트가 없으면 fallback을 반환합니다.
+    /// spec이 홀드노트이면 xx=10(예: zz1001), 일반 노트이면 xx=11(예: zz1101)에
+    /// 해당하는 원본 노트를 sourceNotes에서 탐색합니다.
+    /// sourceNotes는 현재 선택된 곡의 원본 노트이므로 씬 번호가 spec과 다를 수 있어
+    /// 씬은 필터 조건에서 제외하고 xx 코드만 비교합니다.
+    /// 매칭되는 노트가 없으면 fallback을 반환합니다.
     /// </summary>
     private static MusicData PickSourceNote(MusicData[] sourceNotes, ExperimentNoteSpec spec, MusicData fallback)
     {
-        if (string.IsNullOrEmpty(spec?.Uid) || spec.Uid.Length < 2)
-        {
-            return fallback;
-        }
-
-        string scenePrefix = UidCode.Scene(spec.Uid);
         string targetXx = spec.IsLong ? "10" : "11";
 
         for (int i = 0; i < sourceNotes.Length; i++)
         {
             string uid = sourceNotes[i]?.noteData?.uid;
             if (string.IsNullOrEmpty(uid) || uid.Length < 6) continue;
-            if (UidCode.Scene(uid) == scenePrefix && UidCode.Xx(uid) == targetXx)
+            if (UidCode.Xx(uid) == targetXx)
             {
-                MelonLogger.Msg($"[ExperimentChart] sourceNote 선택: uid={uid} (spec={spec.Label}, isLong={spec.IsLong}, scene={scenePrefix}, xx={targetXx})");
+                MelonLogger.Msg($"[ExperimentChart] sourceNote 선택: uid={uid} (spec={spec.Label}, isLong={spec.IsLong}, xx={targetXx})");
                 return sourceNotes[i];
             }
         }
 
-        MelonLogger.Msg($"[ExperimentChart] sourceNote 폴백: spec={spec.Label}, isLong={spec.IsLong}, scene={scenePrefix}, targetXx={targetXx} → sourceNotes[{SourceNoteIndex}] 사용");
+        MelonLogger.Msg($"[ExperimentChart] sourceNote 폴백: spec={spec.Label}, isLong={spec.IsLong}, targetXx={targetXx} → sourceNotes[{SourceNoteIndex}] 사용");
         return fallback;
     }
 
