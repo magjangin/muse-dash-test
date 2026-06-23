@@ -62,10 +62,79 @@ namespace muse_dash_test
                         MelonLogger.Warning($"[PatchHealth]   - {m}");
                     }
                 }
+
+                // 추가: MusicTagManager.InitAlbumTagInfo 패치가 깨졌는지 여부 감지 및 Init 메서드 덤프 로직
+                CheckMusicTagManagerPatchHealth();
             }
             catch (Exception ex)
             {
                 MelonLogger.Error($"[PatchHealth] 패치 점검 중 예외: {ex}");
+            }
+        }
+
+        private static void CheckMusicTagManagerPatchHealth()
+        {
+            try
+            {
+                var targetMethod = AccessTools.Method(typeof(Il2Cpp.MusicTagManager), "InitAlbumTagInfo");
+                if (targetMethod == null)
+                {
+                    MelonLogger.Warning("[PatchHealth] MusicTagManager.InitAlbumTagInfo 메서드를 찾을 수 없습니다! Harmony 패치가 동작하지 않을 가능성이 높습니다. Init으로 시작하는 메서드를 찾아 덤프 파일을 생성합니다.");
+                    DumpInitMethods();
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[PatchHealth] MusicTagManager 패치 타겟 검사 중 오류: {ex}");
+            }
+        }
+
+        private static void DumpInitMethods()
+        {
+            try
+            {
+                string hwaPath = HwaResourceManager.HwaFolderPath;
+                string dumpPath = System.IO.Path.Combine(hwaPath, "tag_manager_dump.txt");
+
+                var methods = typeof(Il2Cpp.MusicTagManager).GetMethods(
+                    System.Reflection.BindingFlags.Public | 
+                    System.Reflection.BindingFlags.NonPublic | 
+                    System.Reflection.BindingFlags.Instance | 
+                    System.Reflection.BindingFlags.Static
+                );
+
+                int count = 0;
+                using (var writer = new System.IO.StreamWriter(dumpPath, false, System.Text.Encoding.UTF8))
+                {
+                    writer.WriteLine($"=== MusicTagManager Methods starting with 'Init' ===");
+                    writer.WriteLine($"Generated at: {DateTime.Now}");
+                    writer.WriteLine();
+
+                    foreach (var m in methods)
+                    {
+                        if (m.Name.StartsWith("Init", StringComparison.OrdinalIgnoreCase))
+                        {
+                            count++;
+                            var parameters = m.GetParameters();
+                            var paramStrings = new List<string>();
+                            foreach (var p in parameters)
+                            {
+                                paramStrings.Add($"{p.ParameterType.FullName} {p.Name}");
+                            }
+                            string paramList = string.Join(", ", paramStrings);
+                            writer.WriteLine($"- {m.ReturnType.FullName} {m.Name}({paramList})");
+                        }
+                    }
+
+                    writer.WriteLine();
+                    writer.WriteLine($"Total methods found: {count}");
+                }
+
+                MelonLogger.Msg($"[PatchHealth] MusicTagManager의 'Init'로 시작하는 메서드 {count}개를 덤프했습니다: {dumpPath}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[PatchHealth] MusicTagManager 메서드 덤프 중 오류 발생: {ex}");
             }
         }
 

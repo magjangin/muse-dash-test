@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.4.7", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.4.8", "화영왕")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace muse_dash_test
@@ -71,6 +71,7 @@ namespace muse_dash_test
             "album_tag_dump.txt",
             "album_tag_dump.md",
             "music_info_dump.txt",
+            "tag_manager_dump.txt",
         };
 
         /// <summary>

@@ -10,7 +10,7 @@
 
 ```mermaid
 graph TD
-    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.4.7 로드]
+    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.4.8 로드]
     MainMod --> Diagnostics[PatchHealthCheck: 모드 로드 시 패치 무결성 검사]
     MainMod --> Preload[HwaResourceManager: hwa 폴더 & info.txt 메타 선읽기]
     
