@@ -154,14 +154,20 @@ public static partial class PnlMusicUtils
 
     private static string ResolveCustomMusicUid(object pnlInstance)
     {
+        // 현재 실제 선택된 곡을 먼저 확정합니다. 선택이 잡히면 그 곡이 커스텀(1999-)일 때만
+        // 커스텀 uid로 인정하고, 순정곡이면 즉시 null을 반환합니다.
+        // (객체 그래프 스캔을 먼저 하면 현재 선택과 무관한 다른 커스텀곡 uid를 집어와,
+        //  순정곡 준비화면에 직전 커스텀 제목이 잔상으로 박히는 버그가 발생했습니다.)
+        string selected = CustomPlaySession.Current.SelectedMusicUid;
+        if (string.IsNullOrEmpty(selected)) selected = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+        if (!string.IsNullOrEmpty(selected))
+        {
+            return IsCustomMusicUid(selected) ? selected : null;
+        }
+
+        // 현재 선택을 전혀 알 수 없을 때만 객체 그래프/마지막 클릭으로 폴백합니다.
         string uid = TryFindCustomMusicUidInObject(pnlInstance, 0, new HashSet<object>());
         if (!string.IsNullOrEmpty(uid)) return uid;
-
-        uid = CustomPlaySession.Current.SelectedMusicUid;
-        if (IsCustomMusicUid(uid)) return uid;
-
-        uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-        if (IsCustomMusicUid(uid)) return uid;
 
         uid = CustomPlaySession.Current.LastClickedMusicUid;
         if (IsCustomMusicUid(uid)) return uid;
