@@ -75,9 +75,9 @@ namespace muse_dash_test
 
                     if (originalInfo != null)
                     {
-                        string primaryName = $"화영왕 {uid.Substring(4)}";
-                        string primaryAuthor = $"화영왕 {uid.Substring(4)}";
-                        string primaryLevelDesigner = $"화영왕 {uid.Substring(4)}";
+                        string primaryName = $"화영왕 {uid.Substring(CustomContentIds.VirtualSongPrefix.Length)}";
+                        string primaryAuthor = $"화영왕 {uid.Substring(CustomContentIds.VirtualSongPrefix.Length)}";
+                        string primaryLevelDesigner = $"화영왕 {uid.Substring(CustomContentIds.VirtualSongPrefix.Length)}";
                         int primaryDiff1 = 2;
                         int primaryDiff2 = 5;
                         int primaryDiff3 = 0;

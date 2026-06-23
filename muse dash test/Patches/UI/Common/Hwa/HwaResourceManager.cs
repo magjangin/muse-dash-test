@@ -140,20 +140,20 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// hwa/ 폴더가 비어 있을 때 동작 확인용 가상 곡 3개(1999-0~2)를 생성합니다.
+        /// hwa/ 폴더가 비어 있을 때 동작 확인용 가상 곡 3개(1999-1~3)를 생성합니다.
         /// </summary>
         private static void GenerateTestSlots()
         {
-            MelonLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1999-0~2)을 기본 생성합니다.");
+            MelonLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1999-1~3)을 기본 생성합니다.");
             for (int i = 0; i < 3; i++)
             {
                 string uid = CustomContentIds.CreateVirtualSongUid(i);
                 cachedManifests[uid] = new HwaManifest
                 {
                     SourcePath = Path.Combine(HwaFolderPath, "info.txt"),
-                    Title = $"화영왕 {i}",
-                    Artist = $"화영왕 {i}",
-                    LevelDesigner = $"화영왕 {i}",
+                    Title = $"화영왕 {i + 1}",
+                    Artist = $"화영왕 {i + 1}",
+                    LevelDesigner = $"화영왕 {i + 1}",
                     Difficulty1 = 2 + i,
                     Difficulty2 = 5 + i
                 };
@@ -223,11 +223,28 @@ namespace muse_dash_test
             title = !string.IsNullOrWhiteSpace(manifest.CustomTitle) ? manifest.CustomTitle : manifest.Title;
             artist = !string.IsNullOrWhiteSpace(manifest.CustomArtist) ? manifest.CustomArtist : manifest.Artist;
             levelDesigner = manifest.LevelDesigner;
-            diff1 = manifest.Difficulty1 ?? diff1;
-            diff2 = manifest.Difficulty2 ?? diff2;
-            diff3 = manifest.Difficulty3 ?? diff3;
-            diff4 = manifest.Difficulty4 ?? diff4;
-            diff5 = manifest.Difficulty5 ?? diff5;
+            bool anyDiffSpecified = manifest.Difficulty1.HasValue ||
+                                    manifest.Difficulty2.HasValue ||
+                                    manifest.Difficulty3.HasValue ||
+                                    manifest.Difficulty4.HasValue ||
+                                    manifest.Difficulty5.HasValue;
+
+            if (anyDiffSpecified)
+            {
+                diff1 = manifest.Difficulty1 ?? 0;
+                diff2 = manifest.Difficulty2 ?? 0;
+                diff3 = manifest.Difficulty3 ?? 0;
+                diff4 = manifest.Difficulty4 ?? 0;
+                diff5 = manifest.Difficulty5 ?? 0;
+            }
+            else
+            {
+                diff1 = 2;
+                diff2 = 5;
+                diff3 = 0;
+                diff4 = 0;
+                diff5 = 0;
+            }
             description = HwaManifestLoader.DescribeManifest(manifest);
             return true;
         }

@@ -123,7 +123,10 @@ namespace muse_dash_test
                 yield break;
             }
 
-            UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(uri, AudioType.OGGVORBIS);
+            UnityWebRequest request = new UnityWebRequest(uri, "GET");
+            DownloadHandlerAudioClip handler = new DownloadHandlerAudioClip(uri, AudioType.OGGVORBIS);
+            handler.streamAudio = true;
+            request.downloadHandler = handler;
             yield return request.SendWebRequest();
 
             if (!string.IsNullOrWhiteSpace(request.error))
