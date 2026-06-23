@@ -1,4 +1,4 @@
-# 🗺️ 커스텀 차트 제작 및 설정 해답지 (Custom Chart Guide)
+# 🗺️ 커스텀 차트 제작 및 설정 가이드 (Custom Chart Guide)
 
 이 문서는 모드 내부의 커스텀 곡 시스템(`HwaResourceManager`, `HwaBattleMediaController`, `BmsParser`)을 사용하여 플레이어가 자신만의 곡, 차트(BMS), 음원(.ogg), 비디오(BGA)를 주입하고 인게임에서 플레이하는 전체 절차와 설정 사양을 정리한 가이드(해답지)입니다.
 
@@ -11,7 +11,7 @@
 ```text
 Muse Dash/
 ├── Mods/
-│   └── muse_dash_test.dll          # 빌드 완료된 모드 DLL
+│   └── muse.dash.custom.chart.dll  # 빌드 완료된 모드 DLL
 └── hwa/                            # 커스텀 리소스 루트 디렉터리
     ├── 01_MyCustomSong/            # 첫 번째 곡 폴더 (알파벳/숫자 순서대로 1999-0에 매핑)
     │   ├── info.txt                # 곡 설정 텍스트 (곡 제목, 난이도 등)
@@ -53,6 +53,10 @@ Muse Dash/
 난이도1: 4
 난이도2: 7
 난이도3: 11
+
+// 🌟 싱크 미세 조정 (0.4.7+ 추가)
+delay: -0.575123             // 지연 시간 (초 단위, 최대 소수점 28자리 지원)
+offset: -0.05123             // 판정 오프셋 (초 단위, 최대 소수점 7자리 지원)
 ```
 
 ### 🔍 매개변수 상세 설명
@@ -66,6 +70,8 @@ Muse Dash/
 | **커스텀아티스트** | `customartist` | 문자열 | 인게임 UI에 표시할 아티스트 이름 |
 | **레벨디자이너** | `leveldesigner` | 문자열 | 인게임 UI에 표시할 채보 디자이너 명칭 |
 | **난이도1 ~ 난이도5** | `difficulty1 ~ 5` | 정수 | 곡 선택 화면에 표시될 난이도 레벨 수치 값 |
+| **지연, 지연시간, delay** | `delay` | 실수 | 곡의 음악적 연출 지연 속성 (`DBStageInfo.delay`). **최대 소수점 28자리**까지 무손실 반영됩니다. |
+| **싱크, 오프셋, offset** | `offset` | 실수 | 노트의 판정선 및 연출 기준 오프셋 (`StageBattleComponent.offset`). **최대 소수점 7자리**까지 무손실 반영됩니다. |
 
 ---
 

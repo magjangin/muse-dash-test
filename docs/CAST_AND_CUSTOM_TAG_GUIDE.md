@@ -1,12 +1,12 @@
 # 🎵 캐스트 추상화 및 커스텀 태그 동적 주입 가이드 (Cast & Custom Tag Guide)
 
-본 가이드는 뮤즈대시 모드 내에서 타입 결합도(Coupling)를 차단하기 위한 **유니버설 래퍼 패턴(Universal Wrapper Pattern)** 프레임워크와, 이를 기반으로 구현된 **커스텀 태그(실험 모드) 및 가상 곡/앨범 동적 주입** 시스템의 아키텍처 및 소스 코드 연동 원리를 상세히 설명합니다.
+이 문서는 뮤즈대시 모드 내에서 타입 결합도(Coupling)를 낮추기 위한 **유니버설 래퍼 패턴(Universal Wrapper Pattern)** 프레임워크와, 이를 기반으로 구현된 **커스텀 태그(실험 모드) 및 가상 곡/앨범 동적 주입** 시스템의 구조를 모더들의 눈높이에 맞춰 직관적인 비유로 설명합니다.
 
 ---
 
-## 1. 🏗️ 아키텍처 개요 (Architecture Overview)
+## 🏗️ 1. 한눈에 보는 데이터 흐름 (Master Architecture)
 
-전체 시스템은 비즈니스 로직과 Harmony 패치 레이어가 철저히 격리(Decoupling)되어 작동합니다.
+패치 레이어와 비즈니스 로직을 완벽히 격격분리하여 게임 업데이트 시 코드 수정을 최소화합니다.
 
 ```mermaid
 graph TD
@@ -21,93 +21,65 @@ graph TD
 
 ---
 
-## 2. 💎 유니버설 래퍼 패턴 및 동적 캐스트 (Universal Wrapper & Dynamic Cast)
+## 💎 2. 만능 번역가와 얇은 복제 (Wrapper & Clone Analogies)
 
-IL2CPP 게임 런타임 객체(`MusicInfo`, `AlbumsInfo` 등)를 조작할 때 발생할 수 있는 런타임 예외와 패치/업데이트 시의 변수명 변경 폭사를 방지하기 위해 추상화 계층을 탑재했습니다.
+### 2.1 유니버설 래퍼 (Universal Wrapper) ➡️ "만능 번역가" 🗣️
+> **비유**: 외국어로 작성된 난해한 매뉴얼(IL2CPP 네이티브 메모리 객체)을 모더가 직접 해독하려면 게임이 업데이트될 때마다 번역법이 바뀌어 뇌가 폭사하기 십상입니다.
+> 그래서 중간에 유능한 **'만능 번역가(`Il2CppWrapperBase`)'**를 고용했습니다. 모더는 깔끔하게 한글/영어(C# 강타입 프로퍼티)로 번역가에게 요청하고, 번역가는 은밀히 네이티브 값을 가져다줍니다.
 
-### 2.1 [Il2CppWrapperBase.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/Il2CppWrapperBase.cs) (공용 추상 베이스)
-모든 IL2CPP 래퍼의 부모 클래스로, 공통 리플렉션 호출을 캡슐화합니다.
-* **`RawObject`**: 실제 IL2CPP가 메모리에 생성한 네이티브 객체 참조를 보존합니다.
-* **`Get<T>(string memberName, bool silent)`**: `ModReflection.GetValue`를 통해 대상의 멤버 값을 안전하게 읽어온 뒤 C# 제네릭 타입으로 캐스팅하여 반환합니다.
-* **`Set<T>(string memberName, T value, bool silent)`**: `ModReflection.SetValue`와 연동되어 고속 캐싱 리플렉션을 통해 대상 속성에 값을 안전하게 주입합니다.
-* **`AddMaskValue(string key, object value)`**: 딕셔너리 기반의 IL2CPP 마스크 메타데이터에 안전하게 값을 주입합니다.
-
-### 2.2 [ModReflection.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Reflection/ModReflection.cs) (고성능 리플렉션 캐싱 엔진)
-게임 라이브러리가 업데이트되거나 난독화가 바뀌더라도 코드가 부러지지 않게 해주는 핵심 지능형 리플렉션 엔진입니다.
-* **`ResolveMember` 최적화**: 
-  1. 정확한 프로퍼티명 매칭
-  2. 정확한 필드명 매칭
-  3. 컴파일러 백킹 필드 자동 스캔 (`_[name]_k__BackingField`)
-  4. Unity/PeroTools 접두사 스캔 (`m_[name]`, `m_[Name]`)
-  5. 대소문자 무시(Case-Insensitive) 전체 매칭 폴백
-* **초고속 바이패스 필터 가드**: 
-  * 텍스트 속성이 존재할 리 없는 대표적인 Unity 내장 컴포넌트(`Transform`, `CanvasRenderer`, `Image`, `Mask`, `Shader` 등)에 대해 `text` 멤버 조회를 시도하면 즉시 `null`을 반환하여 CPU 연산 낭비를 차단합니다.
-
-### 2.3 구체화된 래퍼 자식 클래스들
-* **[MusicInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/MusicInfoWrapper.cs)**: 곡 정보를 담는 `MusicInfo` 전용 래퍼로 `uid`, `name`, `author`, `levelDesigner`, `difficulty` 등의 속성을 강타입 속성(Property)으로 변환해 제공합니다.
-* **[AlbumsInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/AlbumsInfoWrapper.cs)**: 가상 앨범 데이터를 다루기 위한 `DBConfigAlbums.AlbumsInfo` 전용 래퍼로 `uid`, `title`, `tag`, `free` 등을 노출합니다.
+* **[Il2CppWrapperBase.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/Il2CppWrapperBase.cs)**: 모든 번역가의 조상 클래스로, 리플렉션 조회를 담당합니다.
+* **[ModReflection.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Reflection/ModReflection.cs)**: 번역가의 눈과 귀 역할을 하는 검색 엔진입니다. 개발사(PeroPeroGames)가 변수명 앞에 `m_`을 붙이거나 컴파일 과정에서 뒷배경 필드(`_k__BackingField`)로 이름을 비틀어도, 대소문자를 무시하고 유연하게 찾아내어 코드가 터지는 것을 원천 방지합니다.
+* **[MusicInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/MusicInfoWrapper.cs) & [AlbumsInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/AlbumsInfoWrapper.cs)**: 각각 곡 정보(`MusicInfo`)와 앨범 정보(`AlbumsInfo`) 전용 번역가입니다.
 
 ---
 
-## 3. 🏷️ 커스텀 태그 및 가상 곡/앨범 동적 주입 (Custom Tag & Registry)
+### 2.2 얇은 복제 (Thin Clone) ➡️ "주방 통째 복사" 🍳
+> **비유**: 새로운 요리(커스텀 곡)를 서비스하기 위해 건물 구조와 주방 도구, 인테리어(`new`로 생성한 빈 오브젝트)를 맨땅에 처음부터 세우다간 사소한 규격 오류로 건물이 통째로 붕괴(게임 크래시)할 수 있습니다.
+> 가장 안전한 방법은 이미 완벽하게 작동 중인 이웃 맛집 주방(`Memory of Beach` 등 원본 곡 객체)을 통째로 카피(`MemberwiseClone()`)한 뒤, 칠판의 메뉴판 글씨(곡 제목, 난이도 등)만 슥슥 지우고 새 요리 이름으로 바꿔치기하는 것입니다.
+
+* **`InjectVirtualSong`**: 원본 곡을 얇게 복사하여 기초 구조를 100% 보존한 뒤, `MusicInfoWrapper`(번역가)를 이용해 식별자(`1999-0`)와 실제 제목을 덮어씁니다.
+* **폴백 가드 (Fallback)**: 만약 얇은 복제가 어떠한 이유로 실패한다면 맛이 살짝 덜하더라도 임시 가설 부스(`new AlbumsInfo()`)를 세우는 최소한의 구호 조치를 작동시켜 크래시를 방지합니다.
+
+---
+
+### 2.3 상품 식별자 정리 (CleanPurchase) ➡️ "탯줄 자르기" ✂️
+> **비유**: 맛집 주방을 똑같이 복사하다 보니, 원본 맛집이 유료 프랜차이즈 회원권(DLC 구매 필요 상태)을 요구한다는 라이선스 스티커까지 함께 복사되었습니다.
+> 이 라이선스 스티커를 떼어내지 않으면 유저에게 구매하라는 팝업이 뜰 수 있습니다. 따라서 복제 완료 후 새 매장의 소유권 탯줄(`CleanPurchaseProperties`)을 똑 잘라서 무료로 온전히 즐길 수 있도록 독립시킵니다.
+
+* **독립성 유지**: `CleanPurchaseProperties`는 새로 탄생한 복제본에만 상속된 dlc, 필요 요금(`needPurchase`) 등의 속성을 정리하므로, 기존 정식 상점이나 원본 구매 기록에는 눈곱만큼의 영향도 주지 않습니다.
+
+---
+
+## 🏷️ 3. 커스텀 태그 및 가상 곡/앨범 동적 주입 (Custom Tag & Registry)
 
 [CustomTagRegistry.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 클래스는 커스텀 카테고리(실험 모드)를 동적으로 이식하는 일련의 시퀀스를 지휘합니다.
 
-### 3.1 태그 탭 생성 및 다국어 지원
-`RegisterAll` 메소드 진입 시 영어, 한국어, 일본어, 중국어 등 태그 탭의 명칭을 `Il2CppSystem.Collections.Generic.Dictionary`로 래핑하여 주입합니다.
-```csharp
-var info = new AlbumTagInfo
-{
-    name = "Experiment Mod",
-    tagUid = "tag-muse-dash-test",
-    iconName = "IconCustomAlbums" // 커스텀 앨범 전용 기본 아이콘
-};
-```
-
-### 3.2 가상 곡 동적 생성 및 얇은 복제 (Thin Clone)
-`InjectVirtualSong`을 통해 선선택된 원본 곡(`Memory of Beach` 등)을 `MemberwiseClone()`으로 복제합니다.
-* **왜 얇은 복제를 수행하나요?**
-  * PeroTools 내부적으로 사용하는 클래스 인메모리 포인터와 기본값 데이터 구조를 100% 안전하게 유지하기 위해서입니다. 무에서 새로운 객체를 `new`로 생성하면 메모리가 어긋나 강제 종료를 유발할 수 있습니다.
-* 복제된 `MusicInfo`에 `MusicInfoWrapper`를 씌워 가상 곡의 메타데이터(`1999-0`, `1999-1`, `1999-2`)와 곡 이름 및 작곡가를 재기입합니다.
-* 완성된 가상 곡들은 글로벌 데이터베이스의 `m_AllMusicInfo` 맵에 최종적으로 신규 주입하여 바인딩을 형성합니다.
-
-### 3.3 가상 앨범 생성 및 제한적 폴백 (Fallback)
-* `DBConfigAlbums` 설정 데이터 내의 `m_Items` 리스트에 우리의 가상 앨범(`1998-0`, 타이틀: `실험 앨범`, 소속 태그: `tag-muse-dash-test`)을 복제 주입합니다.
-* **복제 실패 대비 폴백 가드**:
-  * 얇은 복제가 실패하면 `new DBConfigAlbums.AlbumsInfo()` 인스턴스를 생성하는 폴백이 있습니다. 이 경로는 최소 메타데이터만 제공하는 복구 수단이며, 순정 객체가 가진 네이티브 참조나 에셋 구성을 보장하지 않습니다. 로그에 폴백 경고가 나타나면 정상 완료로 간주하지 말고 UI와 런타임 안정성을 별도로 검증해야 합니다.
-
-### 3.4 복제본의 DLC 식별자 격리
-얇은 복제는 원본 객체의 상품 관련 메타데이터도 함께 복사합니다. 이 상태를 그대로 두면 가상 곡이나 가상 앨범이 복제 원본의 DLC 상품으로 잘못 분류될 수 있습니다.
-
-`CleanPurchaseProperties`는 **새로 생성한 가상 복제본과 그 하위 확장 정보에만** 적용되어 `needPurchase`, `pay_ids`, `dlc` 등 상속된 식별자를 제거합니다. 목적은 커스텀 객체와 원본 DLC 상품의 연결을 끊는 것이며, 원본 객체, 사용자의 DLC 소유권, 구매 기록 또는 정식 콘텐츠 잠금을 변경하지 않습니다.
-
-> [!CAUTION]
-> `MemberwiseClone()`은 얕은 복사입니다. 최상위 복제본이 별도 객체여도 `m_MusicExInfo`, `m_AlbumExInfo` 같은 하위 확장 정보는 원본과 같은 참조를 유지할 수 있습니다. 하위 객체의 상품 식별자를 정리하기 전 참조가 분리되었는지 검증하고, 공유 중이라면 하위 객체도 복제해야 합니다.
+1. **태그 탭 생성**:
+   태그 버튼이 인스턴스화되는 시점에 모드가 개입하여 아래 사양의 가상 태그를 등록합니다.
+   ```csharp
+   var info = new AlbumTagInfo
+   {
+       name = "Experiment Mod",
+       tagUid = "tag-muse-dash-test",
+       iconName = "IconCustomAlbums" // 커스텀 앨범 전용 기본 아이콘
+   };
+   ```
+2. **UI 아이콘 강제 변조 (`AlbumTagToggle_Init_Patch`)**:
+   인게임 태그 탭 목록이 그려질 때, 모드는 탭 버튼이 가상 태그 UID(`tag-muse-dash-test`)를 참조하고 있는지 확인합니다. 일치하는 경우, DLL 파일 내부에 박혀 있는 커스텀 이미지(`tag_icon.png`)를 런타임에 바이너리 텍스처(`Texture2D`)로 고속 해독하여 탭의 아이콘 이미지 필드에 덮어씌웁니다.
 
 ---
 
-## 4. 🎛️ 패치 분리 및 인터셉트 레이어 (Decoupled Patches)
+## 🚨 4. 패치 헬스체크와 자동 덤프 ➡️ "현관 도어락 센서" 🚪
 
-실제 Harmony 패치들은 비즈니스 코드를 가지지 않고 훅 매개체 역할만 수행합니다.
+> **비유**: 게임이 대규모 패치나 엔진 교체를 겪으면서 원래 있던 방의 문고리(`InitAlbumTagInfo` 메서드)를 다른 형태나 새로운 위치로 바꿔버릴 수 있습니다.
+> 모드가 무작정 문을 열려다간 문고리가 부서져(패치 에러) 모드 자체가 멈춰버립니다. 이에 대비해 모드가 켜지는 순간 문고리가 멀쩡한지 살피는 **'도어락 센서(`PatchHealthCheck`)'**를 달았습니다.
 
-* **[CustomTagPatch.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs)**:
-  ```csharp
-  [HarmonyPatch(typeof(MusicTagManager), nameof(MusicTagManager.InitAlbumTagInfo))]
-  internal partial class MusicTagPatch
-  {
-      private static void Postfix(MusicTagManager __instance)
-      {
-          // 비즈니스 로직을 모듈러 레지스트리로 이송하여 단 1줄로 초슬림 위임
-          CustomTagRegistry.RegisterAll(__instance);
-      }
-  }
-  ```
-* **[CustomTagPatch.AlbumPatches.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)**:
-  * 곡 선택이나 상세 화면 로드 시 게임 엔진이 해당 가상 앨범(`1998-0`)에 소속된 것임을 알아챌 수 있도록 `GetAlbumInfoByMusicInfo`, `GetAlbumsInfoByUid`, `GetAlbumIndexByUid` 메서드가 호출될 때 중간에서 가로채(Prefix) 우리의 `CustomTagRegistry.CustomAlbumInfo` 참조로 우회시켜 반환해 주는 인터셉트 컨트롤러 역할을 수행합니다.
+* **감지 및 자동 덤프**: `InitAlbumTagInfo` 메서드가 실종되었음을 센서가 감지하면, 즉시 `MusicTagManager` 클래스 내부를 샅샅이 뒤져 **`Init`으로 시작하는 모든 방 이름(메서드 정보)을 스케치북에 상세히 그려 `hwa/tag_manager_dump.txt` 파일로 출력**해 둡니다.
+* **복구 힌트**: 모더는 이 덤프 파일을 열어보는 것만으로 새로 바뀐 문고리의 정확한 이름을 찾아내어 즉시 수리(코드 업데이트)할 수 있게 됩니다.
 
 ---
 
-## 5. 🛠️ 확장 및 변형 개발자 가이드 (Developer Extension)
+## 🛠️ 5. 확장 및 변형 개발자 가이드 (Developer Extension)
 
 ### 5.1 새로운 가상 곡을 추가하고 싶을 때
 [CustomTagRegistry.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 파일 내의 `RegisterAll` 메소드 중간 지점(가상 곡 주입부)에 다음과 같이 신규 가상 곡 호출을 한 줄 적어넣으시면 즉시 적용됩니다.
@@ -128,4 +100,4 @@ InjectVirtualSong(
 );
 ```
 
-이후 MSBuild/build.bat 빌드 시 즉시 동적으로 생성되어 게임의 "실험 모드" 태그 탭 아래에 노출됩니다!
+이후 `build.bat`를 통해 빌드하면 게임의 "실험 모드" 태그 탭 아래에 새 곡이 동적으로 주입됩니다!
