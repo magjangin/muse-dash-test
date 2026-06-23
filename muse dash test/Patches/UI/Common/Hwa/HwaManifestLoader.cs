@@ -220,6 +220,18 @@ namespace muse_dash_test
             if (normalizedKey.Contains("난이도5") || normalizedKey.Contains("difficulty5"))
             {
                 manifest.Difficulty5 = TryParseNullableInt(value);
+                return;
+            }
+
+            if (normalizedKey.Contains("delay") || normalizedKey.Contains("지연"))
+            {
+                manifest.Delay = TryParseNullableDouble(value);
+                return;
+            }
+
+            if (normalizedKey.Contains("offset") || normalizedKey.Contains("오프셋") || normalizedKey.Contains("싱크"))
+            {
+                manifest.Offset = TryParseNullableDouble(value);
             }
         }
 
@@ -259,6 +271,21 @@ namespace muse_dash_test
             return null;
         }
 
+        internal static double? TryParseNullableDouble(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Trim().Equals("null", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            if (double.TryParse(value.Trim(), out double parsed))
+            {
+                return parsed;
+            }
+
+            return null;
+        }
+
         internal static string DescribeManifest(HwaManifest manifest)
         {
             if (manifest == null)
@@ -279,7 +306,9 @@ namespace muse_dash_test
                 + ", diff2=" + (manifest.Difficulty2.HasValue ? manifest.Difficulty2.Value.ToString() : "(null)")
                 + ", diff3=" + (manifest.Difficulty3.HasValue ? manifest.Difficulty3.Value.ToString() : "(null)")
                 + ", diff4=" + (manifest.Difficulty4.HasValue ? manifest.Difficulty4.Value.ToString() : "(null)")
-                + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString() : "(null)");
+                + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString() : "(null)")
+                + ", delay=" + (manifest.Delay.HasValue ? manifest.Delay.Value.ToString("F7") : "(null)")
+                + ", offset=" + (manifest.Offset.HasValue ? manifest.Offset.Value.ToString("F7") : "(null)");
         }
     }
 }

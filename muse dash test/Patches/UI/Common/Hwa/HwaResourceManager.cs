@@ -161,6 +161,15 @@ namespace muse_dash_test
             }
         }
 
+        public static HwaManifest GetManifest(string uid)
+        {
+            if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))
+            {
+                return manifest;
+            }
+            return null;
+        }
+
         public static bool TryGetCachedHwaManifest(string uid, out string description)
         {
             if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))

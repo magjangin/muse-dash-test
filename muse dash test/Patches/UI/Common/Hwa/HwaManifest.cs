@@ -16,5 +16,7 @@ namespace muse_dash_test
         public int? Difficulty3;
         public int? Difficulty4;
         public int? Difficulty5;
+        public double? Delay;
+        public double? Offset;
     }
 }
