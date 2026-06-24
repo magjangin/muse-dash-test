@@ -4,7 +4,7 @@ using Il2CppGameLogic;
 // 삽입된 BMS 노트의 더블 상태(지상+공중 동시) 판정과 showTick 기준 재정렬 로직.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
-    public static void SortBmsRuntimeMusicListByShowTick(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
+    public static void SortBmsNotesByShowTick(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
     {
         if (musicList == null || musicList.Count <= startIndex)
         {

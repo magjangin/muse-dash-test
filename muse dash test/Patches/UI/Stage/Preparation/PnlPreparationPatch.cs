@@ -37,7 +37,7 @@ public class PnlPreparation_OnEnable_Patch
 
             }
 
-            PnlMusicUtils.ApplyAndLogPreparationMusicInfo(__instance, "PnlPreparation.OnEnable");
+            PnlMusicUtils.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnEnable");
             
             string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
             if (CustomContentIds.IsVirtualSong(selectedUid))
@@ -45,8 +45,8 @@ public class PnlPreparation_OnEnable_Patch
                 HwaMenuBgmController.TriggerMenuBgmChange(selectedUid);
             }
 
-            MelonCoroutines.Start(PnlMusicUtils.ApplyAndLogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.Delay", 0.25f));
-            MelonCoroutines.Start(PnlMusicUtils.ApplyAndLogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnEnable.DelayLong", 1.0f));
+            MelonCoroutines.Start(PnlMusicUtils.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.OnEnable.Delay", 0.25f));
+            MelonCoroutines.Start(PnlMusicUtils.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.OnEnable.DelayLong", 1.0f));
         }
         catch (Exception ex)
         {
@@ -78,8 +78,8 @@ public class PnlPreparation_OnDownloadBestReport_Patch
         {
             MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
             DumpRecordContext(__instance, "Postfix");
-            PnlMusicUtils.ApplyAndLogPreparationMusicInfo(__instance, "PnlPreparation.OnDownloadBestReport");
-            MelonCoroutines.Start(PnlMusicUtils.ApplyAndLogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.OnDownloadBestReport.Delay", 0.25f));
+            PnlMusicUtils.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnDownloadBestReport");
+            MelonCoroutines.Start(PnlMusicUtils.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.OnDownloadBestReport.Delay", 0.25f));
         }
         catch (Exception ex)
         {
@@ -207,8 +207,8 @@ public class PnlPreparation_RefreshUi_Patch
 
             }
 
-            PnlMusicUtils.ApplyAndLogPreparationMusicInfo(__instance, "PnlPreparation.RefreshUi");
-            MelonCoroutines.Start(PnlMusicUtils.ApplyAndLogPreparationMusicInfoAfterDelay(__instance, "PnlPreparation.RefreshUi.Delay", 0.25f));
+            PnlMusicUtils.ApplyPrepMusicInfo(__instance, "PnlPreparation.RefreshUi");
+            MelonCoroutines.Start(PnlMusicUtils.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.RefreshUi.Delay", 0.25f));
         }
         catch (Exception ex)
         {
@@ -233,7 +233,7 @@ public class PnlPreparation_GameStart_Patch
 
             }
 
-            PnlMusicUtils.ApplyAndLogPreparationMusicInfo(__instance, "PnlPreparation.GameStart");
+            PnlMusicUtils.ApplyPrepMusicInfo(__instance, "PnlPreparation.GameStart");
         }
         catch (Exception ex)
         {
@@ -258,7 +258,7 @@ public class PnlPreparation_OnBattleStart_Patch
 
             }
 
-            PnlMusicUtils.ApplyAndLogPreparationMusicInfo(__instance, "PnlPreparation.OnBattleStart");
+            PnlMusicUtils.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnBattleStart");
         }
         catch (Exception ex)
         {

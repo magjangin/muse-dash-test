@@ -84,7 +84,7 @@ namespace muse_dash_test
                         int primaryDiff4 = 0;
                         int primaryDiff5 = 0;
 
-                        if (MainMod.TryGetCachedHwaPrimaryVirtualSong(uid, out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out _))
+                        if (MainMod.TryGetHwaPrimarySong(uid, out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out _))
                         {
                             if (!string.IsNullOrWhiteSpace(manifestTitle)) primaryName = manifestTitle;
                             if (!string.IsNullOrWhiteSpace(manifestArtist)) primaryAuthor = manifestArtist;

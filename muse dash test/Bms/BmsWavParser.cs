@@ -31,6 +31,7 @@ namespace muse_dash_test
         {
             { "0002", (6, "sfx_hp") },    // HP / Heart
             { "0003", (7, "sfx_score") }, // Score Note
+            { "0004", (9, null) },        // 씬 전환 토글: xx=04가 샌드백과 충돌하므로 prefix로 우선 분류
         };
 
         // UID xx(2~3번째 자리) → NoteType
@@ -121,32 +122,53 @@ namespace muse_dash_test
                 ApplyBossTransitionFromXxyy(info, xxyy);
 
                 // 4. 보스 발사체 (xx=06/07/08, Type 1) 및 보스 톱니 (xx=09, Type 2) 처리
-                bool isBossProjectile = xx == "06" || xx == "07" || xx == "08";
-                bool isBossGear = xx == "09";
-
-                if (isBossProjectile || isBossGear)
-                {
-                    if (lowerName.Contains("_boss") || lowerName.Contains("_atk"))
-                    {
-                        if (lowerName.Contains("boss_far_atk_1_r"))
-                            info.BossAction = "boss_far_atk_1_R";
-                        else if (lowerName.Contains("boss_far_atk_1_l"))
-                            info.BossAction = "boss_far_atk_1_L";
-                        else if (lowerName.Contains("boss_far_atk_2"))
-                            info.BossAction = "boss_far_atk_2";
-                        else if (XxyyProjectileAction.TryGetValue(xxyy, out string mappedAction))
-                            info.BossAction = mappedAction;
-
-                        info.Dt = 0.7;
-                    }
-                    else
-                    {
-                        info.BossAction = "";
-                    }
-                }
+                ApplyBossProjectileAction(info, lowerName, xx, xxyy);
             }
 
             // String-based pattern matching and overrides for fallbacks
+            ApplyFallbackNoteType(info, lowerName, nameWithoutExt);
+
+            return info;
+        }
+
+        private static void ApplyBossProjectileAction(BmsWavInfo info, string lowerName, string xx, string xxyy)
+        {
+            bool isBossProjectile = xx == "06" || xx == "07" || xx == "08";
+            bool isBossGear = xx == "09";
+            if (!isBossProjectile && !isBossGear)
+            {
+                return;
+            }
+
+            if (lowerName.Contains("_boss") || lowerName.Contains("_atk"))
+            {
+                if (lowerName.Contains("boss_far_atk_1_r"))
+                    info.BossAction = "boss_far_atk_1_R";
+                else if (lowerName.Contains("boss_far_atk_1_l"))
+                    info.BossAction = "boss_far_atk_1_L";
+                else if (lowerName.Contains("boss_far_atk_2"))
+                    info.BossAction = "boss_far_atk_2";
+                else if (XxyyProjectileAction.TryGetValue(xxyy, out string mappedAction))
+                    info.BossAction = mappedAction;
+
+                info.Dt = 0.7;
+            }
+            else
+            {
+                info.BossAction = "";
+            }
+        }
+
+        private static void ApplyFallbackNoteType(BmsWavInfo info, string lowerName, string nameWithoutExt)
+        {
+            // 씬 전환 노트(0004xx)는 UID 중간 2자리가 "04"라 아래 샌드백 규칙(Substring(2,2)=="04")과
+            // 충돌합니다. prefix "0004"를 가장 먼저 가로채 SceneToggle(type 9)로 고정하고 조기 반환합니다.
+            if (info.Uid != null && info.Uid.StartsWith("0004"))
+            {
+                info.NoteType = 9; // SceneToggle (= NoteTypes.SceneToggle)
+                return;
+            }
+
             if (lowerName.Contains("heart") || lowerName.Contains("hp") || (info.Uid != null && info.Uid.StartsWith("0002")))
             {
                 info.NoteType = 6;
@@ -190,8 +212,6 @@ namespace muse_dash_test
             {
                 info.NoteType = 4; // Ghost
             }
-
-            return info;
         }
 
         private static void ApplyBossTargetFromName(BmsWavInfo info, string nameWithoutExt)

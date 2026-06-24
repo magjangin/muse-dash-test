@@ -138,7 +138,7 @@ public static partial class PnlMusicUtils
         {
             string selectedUid = resolvedUid ?? ResolveCustomMusicUid(pnlInstance);
             if (!string.IsNullOrEmpty(selectedUid)
-                && MainMod.TryGetCachedHwaPrimaryVirtualSong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _, out _)
+                && MainMod.TryGetHwaPrimarySong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _, out _)
                 && !string.IsNullOrWhiteSpace(manifestLevelDesigner))
             {
                 info.LevelDesigner = manifestLevelDesigner;

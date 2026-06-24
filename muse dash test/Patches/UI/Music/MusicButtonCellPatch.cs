@@ -68,7 +68,7 @@ namespace muse_dash_test
                 string author = initMusicInfo.author;
 
                 // 캐시된 manifest 정보 조회 시도
-                if (MainMod.TryGetCachedHwaPrimaryVirtualSong(initMusicInfo.uid,
+                if (MainMod.TryGetHwaPrimarySong(initMusicInfo.uid,
                     out string manifestTitle, out string manifestArtist, out _, out _, out _, out _, out _, out _, out _))
                 {
                     if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;

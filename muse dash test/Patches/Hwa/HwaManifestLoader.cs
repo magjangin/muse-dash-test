@@ -145,94 +145,52 @@ namespace muse_dash_test
             }
 
             string normalizedKey = NormalizeManifestKey(key);
-            if (normalizedKey.Contains("가져올앨범") || normalizedKey.Contains("앨범") || normalizedKey.Contains("album"))
+            if (TryApplyString(normalizedKey, value, v => manifest.Album = v, "가져올앨범", "앨범", "album")) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.Uid = v, "uid")) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.CustomArtist = v, "커스텀아티스트", "customartist", "customauthor")) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.LevelDesigner = v, "레벨디자이너", "leveldesigner")) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.Artist = v, "artist", "아티스트", "author")) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.CustomTitle = v, "커스텀곡제목", "customsongtitle", "customtitle")) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.Title = v, "곡이름", "곡명", "곡제목", "가져올곡", "song", "title", "music")) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Scene = v, "씬번호", "scene")) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty1 = v, "난이도1", "difficulty1")) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty2 = v, "난이도2", "difficulty2")) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty3 = v, "난이도3", "difficulty3")) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty4 = v, "난이도4", "difficulty4")) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty5 = v, "난이도5", "difficulty5")) return;
+            if (TryApplyDouble(normalizedKey, value, v => manifest.Delay = v, "delay", "지연")) return;
+            TryApplyDouble(normalizedKey, value, v => manifest.Offset = v, "offset", "오프셋", "싱크");
+        }
+
+        private static bool TryApplyString(string normalizedKey, string value, Action<string> apply, params string[] tokens)
+        {
+            if (!ContainsAny(normalizedKey, tokens)) return false;
+            apply(value);
+            return true;
+        }
+
+        private static bool TryApplyInt(string normalizedKey, string value, Action<int?> apply, params string[] tokens)
+        {
+            if (!ContainsAny(normalizedKey, tokens)) return false;
+            apply(TryParseNullableInt(value));
+            return true;
+        }
+
+        private static bool TryApplyDouble(string normalizedKey, string value, Action<double?> apply, params string[] tokens)
+        {
+            if (!ContainsAny(normalizedKey, tokens)) return false;
+            apply(TryParseNullableDouble(value));
+            return true;
+        }
+
+        private static bool ContainsAny(string normalizedKey, params string[] tokens)
+        {
+            foreach (string token in tokens)
             {
-                manifest.Album = value;
-                return;
+                if (normalizedKey.Contains(token)) return true;
             }
 
-            if (normalizedKey.Contains("uid"))
-            {
-                manifest.Uid = value;
-                return;
-            }
-
-            if (normalizedKey.Contains("커스텀아티스트") || normalizedKey.Contains("customartist") || normalizedKey.Contains("customauthor"))
-            {
-                manifest.CustomArtist = value;
-                return;
-            }
-
-            if (normalizedKey.Contains("레벨디자이너") || normalizedKey.Contains("leveldesigner"))
-            {
-                manifest.LevelDesigner = value;
-                return;
-            }
-
-            if (normalizedKey.Contains("artist") || normalizedKey.Contains("아티스트") || normalizedKey.Contains("author"))
-            {
-                manifest.Artist = value;
-                return;
-            }
-
-            if (normalizedKey.Contains("커스텀곡제목") || normalizedKey.Contains("customsongtitle") || normalizedKey.Contains("customtitle"))
-            {
-                manifest.CustomTitle = value;
-                return;
-            }
-
-            if (normalizedKey.Contains("곡이름") || normalizedKey.Contains("곡명") || normalizedKey.Contains("곡제목") || normalizedKey.Contains("가져올곡") || normalizedKey.Contains("song") || normalizedKey.Contains("title") || normalizedKey.Contains("music"))
-            {
-                manifest.Title = value;
-                return;
-            }
-
-            if (normalizedKey.Contains("씬번호") || normalizedKey.Contains("scene"))
-            {
-                manifest.Scene = TryParseNullableInt(value);
-                return;
-            }
-
-            if (normalizedKey.Contains("난이도1") || normalizedKey.Contains("difficulty1"))
-            {
-                manifest.Difficulty1 = TryParseNullableInt(value);
-                return;
-            }
-
-            if (normalizedKey.Contains("난이도2") || normalizedKey.Contains("difficulty2"))
-            {
-                manifest.Difficulty2 = TryParseNullableInt(value);
-                return;
-            }
-
-            if (normalizedKey.Contains("난이도3") || normalizedKey.Contains("difficulty3"))
-            {
-                manifest.Difficulty3 = TryParseNullableInt(value);
-                return;
-            }
-
-            if (normalizedKey.Contains("난이도4") || normalizedKey.Contains("difficulty4"))
-            {
-                manifest.Difficulty4 = TryParseNullableInt(value);
-                return;
-            }
-
-            if (normalizedKey.Contains("난이도5") || normalizedKey.Contains("difficulty5"))
-            {
-                manifest.Difficulty5 = TryParseNullableInt(value);
-                return;
-            }
-
-            if (normalizedKey.Contains("delay") || normalizedKey.Contains("지연"))
-            {
-                manifest.Delay = TryParseNullableDouble(value);
-                return;
-            }
-
-            if (normalizedKey.Contains("offset") || normalizedKey.Contains("오프셋") || normalizedKey.Contains("싱크"))
-            {
-                manifest.Offset = TryParseNullableDouble(value);
-            }
+            return false;
         }
 
         internal static string NormalizeManifestKey(string text)

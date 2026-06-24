@@ -230,7 +230,7 @@ namespace muse_dash_test
             return true;
         }
 
-        public static bool TryGetCachedHwaPrimaryVirtualSong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
+        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
         {
             title = null;
             artist = null;

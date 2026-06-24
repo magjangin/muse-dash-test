@@ -45,7 +45,7 @@ public static partial class PnlStagePatchHelper
         return CustomContentIds.IsVirtualSong(uid);
     }
 
-    public static void ApplyCustomTagTitleAccessors(string source, PnlStage stage)
+    public static void ApplyTagTitle(string source, PnlStage stage)
     {
         try
         {
@@ -89,7 +89,7 @@ public static partial class PnlStagePatchHelper
         }
     }
 
-    public static void ForceApplyCustomTagTitleAccessors(string source, PnlStage stage)
+    public static void ForceApplyTagTitle(string source, PnlStage stage)
     {
         try
         {
@@ -127,7 +127,7 @@ public static partial class PnlStagePatchHelper
         }
     }
 
-    public static bool ApplyCustomTagTitleAccessorsForMusicInfo(string source, PnlStage stage, MusicInfo musicInfo)
+    public static bool ApplyTagTitleForMusicInfo(string source, PnlStage stage, MusicInfo musicInfo)
     {
         try
         {

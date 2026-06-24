@@ -38,7 +38,7 @@ public class PnlStage_OnEnable_Patch
         try
         {
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
-            PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.OnEnable", __instance);
+            PnlStagePatchHelper.ApplyTagTitle("PnlStage.OnEnable", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnEnable Postfix 예외: {ex}"); }
     }
@@ -53,8 +53,8 @@ public class PnlStage_ChangeMusic_Patch
         try
         {
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
-            PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.ChangeMusic", __instance);
-            PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.ChangeMusic.Force", __instance);
+            PnlStagePatchHelper.ApplyTagTitle("PnlStage.ChangeMusic", __instance);
+            PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.ChangeMusic.Force", __instance);
             PnlStagePatchHelper.LogButtons("PnlStage.ChangeMusic", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }
@@ -69,7 +69,7 @@ public class PnlStage_ChangeFinalMusic_Patch
     {
         try
         {
-            PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.ChangeFinalMusic.Force", __instance);
+            PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.ChangeFinalMusic.Force", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeFinalMusic Postfix 예외: {ex}"); }
     }
@@ -83,8 +83,8 @@ public class PnlStage_RefreshTagTitle_Patch
     {
         try
         {
-            PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.RefreshTagTitle", __instance);
-            PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.RefreshTagTitle.Force", __instance);
+            PnlStagePatchHelper.ApplyTagTitle("PnlStage.RefreshTagTitle", __instance);
+            PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.RefreshTagTitle.Force", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshTagTitle Postfix 예외: {ex}"); }
     }
@@ -287,7 +287,7 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
-            if (PnlStagePatchHelper.ApplyCustomTagTitleAccessorsForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
+            if (PnlStagePatchHelper.ApplyTagTitleForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
             {
                 // 다이내믹 주입에 성공했으면 다른 정적 주입은 실행하지 않고 리턴합니다.
                 string mText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
@@ -295,8 +295,8 @@ public class PnlStage_RefreshDiffUI_Patch
                 MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle={mText}, artistNameTitle={aText}");
                 return;
             }
-            PnlStagePatchHelper.ApplyCustomTagTitleAccessors("PnlStage.RefreshDiffUI", __instance);
-            PnlStagePatchHelper.ForceApplyCustomTagTitleAccessors("PnlStage.RefreshDiffUI.Force", __instance);
+            PnlStagePatchHelper.ApplyTagTitle("PnlStage.RefreshDiffUI", __instance);
+            PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.RefreshDiffUI.Force", __instance);
 
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";

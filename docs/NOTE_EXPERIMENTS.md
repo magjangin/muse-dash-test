@@ -344,15 +344,41 @@ new ExperimentNoteSpec { Label = "보스 단타 노트 1개", Uid = "070701", No
 
 ## 씬 전환 노트
 
-`0004xx` 계열은 씬 전환 노트입니다. 일반 노트처럼 UID와 프리팹만 맞추는 것으로는 부족하고, `ibms_id`가 `sceneInfo` 딕셔너리 키와 맞아야 `SceneChangeController.ChangeScene/ChangeNote`까지 호출됩니다.
+`0004xx` 계열은 씬 전환 노트(`NoteType=9`)입니다. UID 끝 2자리(`yy`)가 **전환할 씬 번호(`sceneInfo`)**이고, 이 노트가 지정 tick에 도달하면 게임의 `SceneChangeController.ChangeScene/ChangeNote`가 호출되어 인게임 배경이 바뀝니다. 일반 노트처럼 UID/프리팹만 맞춰선 부족하고, **`ibms_id`가 `sceneInfo` 딕셔너리 키와 일치해야** 전환이 실제로 호출됩니다.
 
-성공한 예:
+### 방법 1 — BMS 파일로 만들기 (권장)
 
-```csharp
-new ExperimentNoteSpec { Label = "씬 변환 노트", Uid = "000401", NoteType = 9, Pathway = 0, StartTick = 20.0, PrefabName = "000401", BossAction = "0", Scene = "0", KeyAudio = "0", IbmsId = "1O" },
+WAV 파일명을 `0004{씬번호 2자리}_..._dt0.wav`로 짓고 차트의 원하는 tick에 노트로 배치하면 끝입니다. 채널은 상관없습니다(씬 전환 노트는 쌍 매칭 대상이 아니라 단일로 주입됩니다).
+
+```text
+000401_1번 씬으로 전환_dt0.wav    → 씬 1로 전환
+000407_7번 씬으로 전환_dt0.wav    → 씬 7로 전환
 ```
 
-관찰된 매핑:
+모드가 자동으로 처리하는 것:
+
+- `0004` 접두사 → `NoteType=9` 분류 (UID 중간 `xx=04`가 샌드백과 겹치지만 `0004` 접두사가 우선)
+- `ibms_id`를 UID 끝 2자리로 자동 매핑 (`000407` → `1U`, 아래 표)
+- `prefab_name`은 원시 UID, `key_audio`는 무음(`"0"`) 처리
+- **`scene` 태그는 건드리지 않고 원본 곡의 실제 씬을 상속** → 보라색 화면 방지
+
+확인 로그:
+
+```text
+[ExperimentChart.Bms.SceneToggle] uid=000407, ibms_id=1U, prefab=000407, ...
+SceneChangeController.ChangeNote Prefix: sceneInfo=7   ← 게임이 실제로 전환 실행
+```
+
+### 방법 2 — ExperimentNotes 배열로 만들기
+
+```csharp
+new ExperimentNoteSpec { Label = "씬 변환 노트", Uid = "000401", NoteType = 9, Pathway = 0, StartTick = 20.0, PrefabName = "000401", KeyAudio = "0", IbmsId = "1O" },
+```
+
+> [!WARNING]
+> 예전 예제처럼 `Scene = "0"`을 직접 넣으면 **보라색 화면**이 뜹니다. `"0"`/`scene_00`은 실존하지 않는 씬이라 게임이 그 배경의 셰이더를 못 찾아 마젠타(보라색) 에러 머티리얼로 렌더하기 때문입니다. **`Scene`은 비워두세요** — 복제 원본 노트의 실제 씬을 상속합니다.
+
+### UID 끝 2자리(`yy`) → `ibms_id` 매핑
 
 | UID | `IbmsId` | `sceneInfo` |
 | --- | --- | --- |
@@ -367,6 +393,17 @@ new ExperimentNoteSpec { Label = "씬 변환 노트", Uid = "000401", NoteType =
 | `000409` | `1W` | `9` |
 | `000410` | `1X` | `10` |
 | `000412` | `1Y` | `12` |
+
+> 씬 `11`은 매핑이 확인되지 않아 빠져 있습니다. 미지원 번호를 쓰면 `[ExperimentChart.Bms] 씬 전환 ibms_id 매핑을 찾지 못했습니다` 경고가 뜹니다.
+
+### 보라색(마젠타) 화면이 뜬다면
+
+보라색 = **Unity가 셰이더를 못 찾은 배경**입니다. 씬 전환 노트의 `noteData.scene`이 실존하지 않는 씬(`scene_00`, `"0"` 등)으로 박히면, 게임이 그 가짜 씬을 배경으로 띄우면서 셰이더가 없어 보라색이 됩니다. 핵심은 두 씬 개념을 분리하는 것입니다:
+
+- **전환 목적지 씬**(어디로 갈지) = `ibms_id`가 결정
+- **노트가 속한 씬**(`noteData.scene`) = 반드시 실제 로드된 씬이어야 함 → 그래서 `Scene`을 비워 복제 원본의 씬을 상속시킴
+
+### 보스 동반 주의
 
 씬 전환 시 `Boss.SceneBossChange`도 같이 호출됩니다. 보스가 씬 전환 후 사라진다면 `Boss.SceneBossChange`의 인덱스를 강제로 바꾸고 있지 않은지 먼저 확인하세요. 현재는 안정성을 위해 `EnableSceneBossChangeRewrite = false`가 맞습니다.
 

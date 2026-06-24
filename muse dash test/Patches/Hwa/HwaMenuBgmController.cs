@@ -139,46 +139,36 @@ namespace muse_dash_test
                     MelonLogger.Msg($"[MenuBGM] 후보 - GO: {goName}, Clip: {clipName}, Playing: {source.isPlaying}, Vol: {source.volume}, Mute: {source.mute}, SpatialBlend: {source.spatialBlend}, Enabled: {source.enabled}, Active: {source.gameObject?.activeInHierarchy}");
                 }
 
-                // 0단계: GameObject 이름이 "BGM"인 AudioSource 탐색 (재생 여부, 클립 여부 무관)
-                foreach (AudioSource source in sources)
+                AudioSource selectedSource = FindActiveSource(s => s.gameObject.name.Equals("BGM", StringComparison.OrdinalIgnoreCase));
+                if (selectedSource != null)
                 {
-                    if (source == null || source.gameObject == null || !source.gameObject.activeInHierarchy) continue;
-                    if (source.gameObject.name.Equals("BGM", StringComparison.OrdinalIgnoreCase))
-                    {
-                        MelonLogger.Msg($"[MenuBGM] 0단계(이름 매칭) 성공: GO={source.gameObject.name}");
-                        return source;
-                    }
+                    MelonLogger.Msg($"[MenuBGM] 0단계(이름 매칭) 성공: GO={selectedSource.gameObject.name}");
+                    return selectedSource;
                 }
 
-                // 1단계: 재생 중이며 이름이 music, bgm, demo 등 사운드 트랙 계열의 클립이나 오브젝트명을 갖는 AudioSource 탐색
-                foreach (AudioSource source in sources)
+                selectedSource = FindActiveSource(IsLikelySoundtrackSource);
+                if (selectedSource != null)
                 {
-                    if (source == null || source.gameObject == null || !source.gameObject.activeInHierarchy) continue;
-                    if (source.clip == null) continue;
-
-                    string clipName = source.clip.name.ToLower();
-                    string goName = source.gameObject.name.ToLower();
-
-                    if (source.isPlaying && (clipName.Contains("demo") || clipName.Contains("music") || clipName.Contains("bgm") || goName.Contains("music") || goName.Contains("bgm")))
-                    {
-                        MelonLogger.Msg($"[MenuBGM] 1단계 매칭 성공: GO={goName}, Clip={source.clip.name}");
-                        return source;
-                    }
+                    MelonLogger.Msg($"[MenuBGM] 1단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
+                    return selectedSource;
                 }
 
-                // 2단계: 효과음(click, SFX) 등을 제외한 나머지 재생 중인 BGM AudioSource 탐색
-                foreach (AudioSource source in sources)
+                selectedSource = FindActiveSource(IsPlayingNonEffectSource);
+                if (selectedSource != null)
                 {
-                    if (source == null || source.gameObject == null || !source.gameObject.activeInHierarchy) continue;
-                    if (source.clip == null) continue;
+                    MelonLogger.Msg($"[MenuBGM] 2단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
+                    return selectedSource;
+                }
 
-                    string clipName = source.clip.name.ToLower();
-                    string goName = source.gameObject.name.ToLower();
-                    if (source.isPlaying && !clipName.Contains("click") && !clipName.Contains("sfx") && !clipName.Contains("button"))
+                AudioSource FindActiveSource(Func<AudioSource, bool> predicate)
+                {
+                    foreach (AudioSource candidate in sources)
                     {
-                        MelonLogger.Msg($"[MenuBGM] 2단계 매칭 성공: GO={goName}, Clip={source.clip.name}");
-                        return source;
+                        if (candidate == null || candidate.gameObject == null || !candidate.gameObject.activeInHierarchy) continue;
+                        if (predicate(candidate)) return candidate;
                     }
+
+                    return null;
                 }
             }
             catch (Exception ex)
@@ -186,6 +176,23 @@ namespace muse_dash_test
                 MelonLogger.Error($"[MenuBGM] FindMenuAudioSource 예외: {ex}");
             }
             return null;
+        }
+
+        private static bool IsLikelySoundtrackSource(AudioSource source)
+        {
+            if (source.clip == null || !source.isPlaying) return false;
+
+            string clipName = source.clip.name.ToLower();
+            string goName = source.gameObject.name.ToLower();
+            return clipName.Contains("demo") || clipName.Contains("music") || clipName.Contains("bgm") || goName.Contains("music") || goName.Contains("bgm");
+        }
+
+        private static bool IsPlayingNonEffectSource(AudioSource source)
+        {
+            if (source.clip == null || !source.isPlaying) return false;
+
+            string clipName = source.clip.name.ToLower();
+            return !clipName.Contains("click") && !clipName.Contains("sfx") && !clipName.Contains("button");
         }
 
         private static string ResolveHwaOggPath(string folderPath)

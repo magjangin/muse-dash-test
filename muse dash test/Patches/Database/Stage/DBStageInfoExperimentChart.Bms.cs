@@ -105,7 +105,42 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             MelonLogger.Msg($"[ExperimentChart.Bms.BossFields] raw={note.RawValue}, uid={spec.Uid}, action={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}");
         }
 
+        // 씬 전환 노트(type 9): SceneChangeController.ChangeScene가 호출되려면 ibms_id가 게임의
+        // sceneInfo 키와 맞아야 합니다(BMS 경로는 기존에 ibms_id를 채우지 않아 전환이 안 됐습니다).
+        if (spec.NoteType == NoteTypes.SceneToggle)
+        {
+            spec.PrefabName = spec.Uid;   // 보이지 않는 트리거 → 자동 프리팹명 생성 방지(원시 UID 사용)
+            spec.KeyAudio = "0";          // 복제 원본의 타격음 상속 방지
+            spec.IbmsId = ResolveSceneToggleIbmsId(spec.Uid); // 000401 → "1O"
+            // Scene/BossAction은 의도적으로 미설정 → 복제된 원본 노트의 실재 scene을 상속하여
+            // 존재하지 않는 scene_00 배경 등록(보라색 화면)을 원천 차단합니다.
+            MelonLogger.Msg($"[ExperimentChart.Bms.SceneToggle] uid={spec.Uid}, ibms_id={spec.IbmsId ?? "(none)"}, prefab={spec.PrefabName}, tick={note.Tick}, time={note.Time:0.###}");
+        }
+
         return spec;
+    }
+
+    // UID 끝 2자리(yy) = 전환할 sceneInfo 번호 → 게임 내부 ibms_id 매핑.
+    // (docs/NOTE_EXPERIMENTS.md의 검증된 표. scene 11은 표에 없어 제외.)
+    private static readonly System.Collections.Generic.Dictionary<int, string> SceneToggleIbmsIdByScene =
+        new System.Collections.Generic.Dictionary<int, string>
+    {
+        { 1, "1O" }, { 2, "1P" }, { 3, "1Q" }, { 4, "1R" }, { 5, "1S" }, { 6, "1T" },
+        { 7, "1U" }, { 8, "1V" }, { 9, "1W" }, { 10, "1X" }, { 12, "1Y" },
+    };
+
+    // 씬 전환 노트 UID(000401 등) → ibms_id("1O" 등) 해석. 미지원 번호면 경고 후 null.
+    public static string ResolveSceneToggleIbmsId(string uid)
+    {
+        string yy = UidCode.Yy(uid);
+        if (yy != null && int.TryParse(yy, out int sceneInfo)
+            && SceneToggleIbmsIdByScene.TryGetValue(sceneInfo, out string ibmsId))
+        {
+            return ibmsId;
+        }
+
+        MelonLogger.Warning($"[ExperimentChart.Bms] 씬 전환 ibms_id 매핑을 찾지 못했습니다: uid={uid}, yy={yy}. 씬 전환이 동작하지 않을 수 있습니다.");
+        return null;
     }
 
     public static bool ShouldKeepBmsPrefabName(muse_dash_test.BmsWavInfo wavInfo)

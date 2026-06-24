@@ -58,6 +58,54 @@ namespace muse_dash_test
         private static bool _isRealTimeMode = false;
         private static bool _isInitialized = false;
         private static int _originalSkillRole = -1; // 원래 스킬 캐릭터 저장
+        private static readonly (string token, GirlID girl)[] CharacterNameMap =
+        {
+            // RIN 시리즈
+            ("RIN_BASS", GirlID.RIN_BASS),
+            ("RIN_BAD", GirlID.RIN_BAD),
+            ("RIN_SLEEP", GirlID.RIN_SLEEP),
+            ("RIN_BUNNY", GirlID.RIN_BUNNY),
+            ("RIN_XMAS", GirlID.RIN_XMAS),
+            ("RIN_FOOL", GirlID.RIN_FOOL),
+            ("RIN_PIRATE", GirlID.RIN_PIRATE),
+            ("RIN_LEN", GirlID.RIN_LEN),
+            ("RACER", GirlID.RACER),
+
+            // BURO 시리즈
+            ("BURO_PILOT", GirlID.BURO_PILOT),
+            ("BURO_IDOL", GirlID.BURO_IDOL),
+            ("BURO_ZOMBIE", GirlID.BURO_ZOMBIE),
+            ("BURO_JOKER", GirlID.BURO_JOKER),
+            ("BURO_SAILOR", GirlID.BURO_SAILOR),
+            ("BURO_BIKER", GirlID.BURO_BIKER),
+            ("BURO_VAMPIRE", GirlID.BURO_VAMPIRE),
+            ("BURO_DIVER", GirlID.BURO_DIVER),
+
+            // MARIJA 시리즈
+            ("MARIJA_VIOLIN", GirlID.MARIJA_VIOLIN),
+            ("MARIJA_MAID", GirlID.MARIJA_MAID),
+            ("MARIJA_MAGIC", GirlID.MARIJA_MAGIC),
+            ("MARIJA_DEVIL", GirlID.MARIJA_DEVIL),
+            ("MARIJA_BLACK", GirlID.MARIJA_BLACK),
+            ("MARIJA_SISTER", GirlID.MARIJA_SISTER),
+            ("MARIJA_MADE_BY_ORA_2", GirlID.MARIJA_MADE_BY_ORA_2),
+            ("ORA_2", GirlID.MARIJA_MADE_BY_ORA_2),
+            ("MADE_BY_ORA_2", GirlID.MARIJA_MADE_BY_ORA_2),
+            ("MADE_BY_ORA", GirlID.MARIJA_MADE_BY_ORA_2),
+
+            // 기타 캐릭터들
+            ("OLA_BOXER", GirlID.OLA_BOXER),
+            ("YUME", GirlID.YUME),
+            ("NEKO", GirlID.NEKO),
+            ("REIMU", GirlID.REIMU),
+            ("EL_CLEAR", GirlID.EL_CLEAR),
+            ("MARISA", GirlID.MARISA),
+            ("AMIYA", GirlID.AMIYA),
+            ("MIKU_HATSUNE", GirlID.MIKU_HATSUNE),
+            ("BALLERINA", GirlID.BALLERINA),
+            ("WISADEL", GirlID.WISADEL),
+            ("DIVINE_GEAR", GirlID.DIVINE_GEAR),
+        };
         
         public static void Initialize()
         {
@@ -293,49 +341,11 @@ namespace muse_dash_test
         
         private static GirlID ParseCharacterName(string text)
         {
-            // RIN 시리즈
-            if (text.Contains("RIN_BASS")) return GirlID.RIN_BASS;
-            if (text.Contains("RIN_BAD")) return GirlID.RIN_BAD;
-            if (text.Contains("RIN_SLEEP")) return GirlID.RIN_SLEEP;
-            if (text.Contains("RIN_BUNNY")) return GirlID.RIN_BUNNY;
-            if (text.Contains("RIN_XMAS")) return GirlID.RIN_XMAS;
-            if (text.Contains("RIN_FOOL")) return GirlID.RIN_FOOL;
-            if (text.Contains("RIN_PIRATE")) return GirlID.RIN_PIRATE;
-            if (text.Contains("RIN_LEN")) return GirlID.RIN_LEN;
-            if (text.Contains("RACER")) return GirlID.RACER;
-            
-            // BURO 시리즈
-            if (text.Contains("BURO_PILOT")) return GirlID.BURO_PILOT;
-            if (text.Contains("BURO_IDOL")) return GirlID.BURO_IDOL;
-            if (text.Contains("BURO_ZOMBIE")) return GirlID.BURO_ZOMBIE;
-            if (text.Contains("BURO_JOKER")) return GirlID.BURO_JOKER;
-            if (text.Contains("BURO_SAILOR")) return GirlID.BURO_SAILOR;
-            if (text.Contains("BURO_BIKER")) return GirlID.BURO_BIKER;
-            if (text.Contains("BURO_VAMPIRE")) return GirlID.BURO_VAMPIRE;
-            if (text.Contains("BURO_DIVER")) return GirlID.BURO_DIVER;
-            
-            // MARIJA 시리즈
-            if (text.Contains("MARIJA_VIOLIN")) return GirlID.MARIJA_VIOLIN;
-            if (text.Contains("MARIJA_MAID")) return GirlID.MARIJA_MAID;
-            if (text.Contains("MARIJA_MAGIC")) return GirlID.MARIJA_MAGIC;
-            if (text.Contains("MARIJA_DEVIL")) return GirlID.MARIJA_DEVIL;
-            if (text.Contains("MARIJA_BLACK")) return GirlID.MARIJA_BLACK;
-            if (text.Contains("MARIJA_SISTER")) return GirlID.MARIJA_SISTER;
-            if (text.Contains("MARIJA_MADE_BY_ORA_2") || text.Contains("ORA_2") || text.Contains("MADE_BY_ORA_2") || text.Contains("MADE_BY_ORA")) return GirlID.MARIJA_MADE_BY_ORA_2;
-            
-            // 기타 캐릭터들
-            if (text.Contains("OLA_BOXER")) return GirlID.OLA_BOXER;
-            if (text.Contains("YUME")) return GirlID.YUME;
-            if (text.Contains("NEKO")) return GirlID.NEKO;
-            if (text.Contains("REIMU")) return GirlID.REIMU;
-            if (text.Contains("EL_CLEAR")) return GirlID.EL_CLEAR;
-            if (text.Contains("MARISA")) return GirlID.MARISA;
-            if (text.Contains("AMIYA")) return GirlID.AMIYA;
-            if (text.Contains("MIKU_HATSUNE")) return GirlID.MIKU_HATSUNE;
-            if (text.Contains("BALLERINA")) return GirlID.BALLERINA;
-            if (text.Contains("WISADEL")) return GirlID.WISADEL;
-            if (text.Contains("DIVINE_GEAR")) return GirlID.DIVINE_GEAR;
-            
+            foreach (var (token, girl) in CharacterNameMap)
+            {
+                if (text.Contains(token)) return girl;
+            }
+
             return GirlID.MARIJA_BLACK;
         }
     }

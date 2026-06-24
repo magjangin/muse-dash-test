@@ -37,10 +37,10 @@ public static partial class PnlMusicUtils
         ApplyAndLogMusicInfo(source, pnlInstance);
     }
 
-    public static IEnumerator ApplyAndLogPreparationMusicInfoAfterDelay(object pnlInstance, string source, float delaySeconds)
+    public static IEnumerator DelayedApplyPrepMusicInfo(object pnlInstance, string source, float delaySeconds)
     {
         yield return new WaitForSeconds(delaySeconds);
-        ApplyAndLogPreparationMusicInfo(pnlInstance, source);
+        ApplyPrepMusicInfo(pnlInstance, source);
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public static partial class PnlMusicUtils
     /// 진단으로 오해하기 쉬우니 주의. 현재 선택이 순정곡이면 ResolveCustomMusicUid가 null을 반환해
     /// 아무것도 쓰지 않습니다.
     /// </summary>
-    public static void ApplyAndLogPreparationMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
+    public static void ApplyPrepMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
     {
         try
         {
@@ -89,7 +89,7 @@ public static partial class PnlMusicUtils
             }
             LogCompact(source, info);
         }
-        catch (Exception ex) { MelonLogger.Error($"ApplyAndLogPreparationMusicInfo 예외: {ex}"); }
+        catch (Exception ex) { MelonLogger.Error($"ApplyPrepMusicInfo 예외: {ex}"); }
     }
 
     public static void DumpMusicInfo(object pnlInstance)
@@ -119,7 +119,7 @@ public static partial class PnlMusicUtils
         string artist = ExperimentArtist;
         string designer = ExperimentLevelDesignerName;
 
-        if (MainMod.TryGetCachedHwaPrimaryVirtualSong(
+        if (MainMod.TryGetHwaPrimarySong(
                 resolvedUid,
                 out string manifestTitle,
                 out string manifestArtist,

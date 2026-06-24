@@ -24,7 +24,7 @@ namespace muse_dash_test
                 if (string.IsNullOrEmpty(uid)) uid = CustomPlaySession.Current.LastClickedMusicUid;
 
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
-                if (!MainMod.TryGetCachedHwaPrimaryVirtualSong(
+                if (!MainMod.TryGetHwaPrimarySong(
                         uid,
                         out string title,
                         out string artist,
