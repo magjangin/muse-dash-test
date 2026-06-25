@@ -62,6 +62,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         public int BossScene = -1;
         public string Scene = "";
         public string IbmsId = "";
+        public System.Collections.Generic.List<string> SceneChangeNames = null;
         public int NoteType = -1;
         public int Pathway = -1;
         public bool IsLong = false;
@@ -92,6 +93,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             MelonLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: activeUid={uid ?? "(null)"}");
 
+            // [진단] 주입 후 호출 스택 확인 — 이 데이터가 어디로 흘러가는지 역추적.
+            MelonLogger.Msg("[SetRuntimeMusicData.StackTrace] ↓ 호출 스택");
+            MelonLogger.Msg(new System.Diagnostics.StackTrace(true).ToString());
+
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
                 MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: 실험 모드 선택이 아님 (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart})");
@@ -105,9 +110,5 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             MelonLogger.Error($"실험 차트 적용 중 예외 발생: {ex}");
         }
-
-        // 삽입 후 덤프 헬퍼 메서드 호출
-        //MelonLogger.Msg("노트 삽입 후 덤프:");
-        //DumpMusicList(__instance);
     }
 }

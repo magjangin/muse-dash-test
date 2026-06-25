@@ -260,6 +260,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             noteData.scene = spec.Scene;
         }
 
+        noteData.sceneChangeNames = null;
+
         string resolvedPrefab = ResolvePrefabName(spec, noteType, uid, pathway);
         if (resolvedPrefab != null) noteData.prefab_name = resolvedPrefab;
 

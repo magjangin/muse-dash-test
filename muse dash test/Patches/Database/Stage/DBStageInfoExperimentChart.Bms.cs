@@ -71,6 +71,44 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return specs;
     }
 
+    public static void ApplySceneChangeNamesToBmsSpecs(System.Collections.Generic.List<ExperimentNoteSpec> specs)
+    {
+        if (specs == null || specs.Count == 0)
+        {
+            return;
+        }
+
+        string activeSceneChangeName = null;
+        int applied = 0;
+        for (int i = 0; i < specs.Count; i++)
+        {
+            var spec = specs[i];
+            if (spec == null)
+            {
+                continue;
+            }
+
+            if (spec.NoteType == NoteTypes.SceneToggle)
+            {
+                spec.SceneChangeNames = null;
+                if (!string.IsNullOrWhiteSpace(spec.IbmsId))
+                {
+                    activeSceneChangeName = spec.IbmsId;
+                    MelonLogger.Msg($"[ExperimentChart.Bms.SceneChangeNames] 활성 씬 체인지 키 갱신: uid={spec.Uid}, ibms_id={activeSceneChangeName}, tick={spec.StartTick}");
+                }
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(activeSceneChangeName))
+            {
+                spec.SceneChangeNames = new System.Collections.Generic.List<string> { activeSceneChangeName };
+                applied++;
+            }
+        }
+
+        MelonLogger.Msg($"[ExperimentChart.Bms.SceneChangeNames] 적용 완료: applied={applied}, active={activeSceneChangeName ?? "(none)"}");
+    }
+
     public static ExperimentNoteSpec CreateExperimentNoteSpecFromBms(muse_dash_test.BmsNote note, muse_dash_test.BmsWavInfo wavInfo, string activeUid)
     {
         var spec = new ExperimentNoteSpec
@@ -262,6 +300,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             BossScene = source.BossScene,
             Scene = source.Scene,
             IbmsId = source.IbmsId,
+            SceneChangeNames = source.SceneChangeNames != null
+                ? new System.Collections.Generic.List<string>(source.SceneChangeNames)
+                : null,
             NoteType = source.NoteType,
             Pathway = source.Pathway,
             IsLong = source.IsLong,

@@ -250,7 +250,6 @@ namespace muse_dash_test
                 MelonLogger.Msg($"[MenuBGM.Monitor] T+{i*5.0f:F1}s - Playing: {source.isPlaying}, Vol: {source.volume:F4}, Mute: {source.mute}, Clip: {currentClip}, Time: {source.time:F2}");
                 i++;
             }
-            MelonLogger.Msg("[MenuBGM.Monitor] 모니터링 종료");
         }
     }
 

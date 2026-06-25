@@ -30,53 +30,61 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return;
         }
 
-        int bossEventCount = 0;
-        MelonLogger.Msg($"[OfficialBossContext] 원본 차트 보스 이벤트 주변 덤프 시작: total={musicList.Count}, neighbors=2");
+        int sceneEventCount = 0;
+        MelonLogger.Msg($"[OfficialSceneContext] 원본 차트 씬 전환(0004XX) 이벤트 주변 덤프 시작: total={musicList.Count}, neighbors=2");
 
         for (int i = 0; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            string bossAction = note.noteData?.boss_action ?? string.Empty;
-            if (note.noteData?.type != NoteTypes.Boss
-                || string.IsNullOrWhiteSpace(bossAction)
-                || string.Equals(bossAction, "0", System.StringComparison.OrdinalIgnoreCase))
+            string uid = note.noteData?.uid ?? string.Empty;
+            bool isSceneToggle = uid.StartsWith("0004", System.StringComparison.OrdinalIgnoreCase)
+                || note.noteData?.type == NoteTypes.SceneToggle;
+            if (!isSceneToggle)
             {
                 continue;
             }
 
-            bossEventCount++;
-            MelonLogger.Msg($"[OfficialBossContext] === event#{bossEventCount}, index={i}, action={bossAction} ===");
+            sceneEventCount++;
+            string ibmsId = note.noteData?.ibms_id ?? "(null)";
+            MelonLogger.Msg($"[OfficialSceneContext] === event#{sceneEventCount}, index={i}, uid={uid}, ibms_id={ibmsId} ===");
 
             int firstIndex = System.Math.Max(0, i - 2);
             int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
             for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
             {
-                LogOfficialBossContextNote(contextIndex, i, musicList[contextIndex]);
+                LogOfficialSceneContextNote(contextIndex, i, musicList[contextIndex]);
             }
         }
 
-        MelonLogger.Msg($"[OfficialBossContext] 원본 차트 보스 이벤트 주변 덤프 완료: events={bossEventCount}");
+        MelonLogger.Msg($"[OfficialSceneContext] 원본 차트 씬 전환(0004XX) 이벤트 주변 덤프 완료: events={sceneEventCount}");
     }
 
-    public static void LogOfficialBossContextNote(int index, int eventIndex, MusicData note)
+    public static void LogOfficialSceneContextNote(int index, int eventIndex, MusicData note)
     {
         if (note == null)
         {
-            MelonLogger.Msg($"[OfficialBossContext] {(index == eventIndex ? "EVENT" : "NEIGHBOR")} index={index}, note=(null)");
+            MelonLogger.Msg($"[OfficialSceneContext] {(index == eventIndex ? "EVENT" : "NEIGHBOR")} index={index}, note=(null)");
             return;
         }
 
         string role = index == eventIndex ? "EVENT" : index < eventIndex ? "PREV" : "NEXT";
         MelonLogger.Msg(
-            $"[OfficialBossContext] {role} index={index}, objId={SafeLogValue(() => note.objId)}, " +
+            $"[OfficialSceneContext] {role} index={index}, objId={SafeLogValue(() => note.objId)}, " +
             $"tick={SafeLogValue(() => note.tick)}, dt={SafeLogValue(() => note.dt)}, showTick={SafeLogValue(() => note.showTick)}, " +
-            $"uid={SafeLogValue(() => note.noteData?.uid)}, type={SafeLogValue(() => note.noteData?.type)}, " +
+            $"uid={SafeLogValue(() => note.noteData?.uid)}, ibms_id={SafeLogValue(() => note.noteData?.ibms_id)}, type={SafeLogValue(() => note.noteData?.type)}, " +
+            $"scene={SafeLogValue(() => note.noteData?.scene)}, sceneChangeNames={FormatSceneChangeNames(SafeGetSceneChangeNames(note))}, " +
             $"pathway={SafeLogValue(() => note.noteData?.pathway)}, boss_action={SafeLogValue(() => note.noteData?.boss_action)}, " +
             $"prefab={SafeLogValue(() => note.noteData?.prefab_name)}, key_audio={SafeLogValue(() => note.noteData?.key_audio)}, " +
             $"isDouble={SafeLogValue(() => note.isDouble)}, doubleIdx={SafeLogValue(() => note.doubleIdx)}, sameTickNoteIdx={SafeLogValue(() => note.sameTickNoteIdx)}, " +
             $"isLongPressing={SafeLogValue(() => note.isLongPressing)}, isLongPressEnd={SafeLogValue(() => note.isLongPressEnd)}, endIndex={SafeLogValue(() => note.endIndex)}, " +
             $"config.id={SafeLogValue(() => note.configData?.id)}, config.time={SafeLogValue(() => note.configData?.time)}, " +
             $"config.length={SafeLogValue(() => note.configData?.length)}, config.pathway={SafeLogValue(() => note.configData?.pathway)}");
+    }
+
+    private static Il2CppSystem.Collections.Generic.List<string> SafeGetSceneChangeNames(MusicData note)
+    {
+        try { return note.noteData?.sceneChangeNames; }
+        catch { return null; }
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
@@ -188,12 +196,34 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string configTime = note.configData != null ? note.configData.time.ToString() : "(null)";
         string effect = note.noteData != null ? note.noteData.effect.ToString() : "(null)";
         string isShowPlayEffect = note.noteData != null ? note.noteData.isShowPlayEffect.ToString() : "(null)";
-        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, prefab={prefab}, boss_action={bossAction}, effect={effect}, isShowPlayEffect={isShowPlayEffect}");
+        string sceneChangeNames = note.noteData != null ? FormatSceneChangeNames(note.noteData.sceneChangeNames) : "(null)";
+        string ibmsId = note.noteData?.ibms_id ?? "(null)";
+        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, ibms_id={ibmsId}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, sceneChangeNames={sceneChangeNames}, prefab={prefab}, boss_action={bossAction}, effect={effect}, isShowPlayEffect={isShowPlayEffect}");
+    }
+
+    // note.noteData.sceneChangeNames(Il2Cpp List<string>)를 사람이 읽기 좋은 형태로 변환합니다.
+    private static string FormatSceneChangeNames(Il2CppSystem.Collections.Generic.List<string> names)
+    {
+        if (names == null) return "(null)";
+        try
+        {
+            var values = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < names.Count; i++)
+            {
+                values.Add(names[i] ?? "(null)");
+            }
+            return "[" + string.Join(",", values) + "]";
+        }
+        catch
+        {
+            return "(error)";
+        }
     }
 
     public static void LogSpec(string label, ExperimentNoteSpec spec)
     {
-        MelonLogger.Msg($"{label}: Label={spec.Label}, Uid={spec.Uid}, NoteType={spec.NoteType}, Pathway={spec.Pathway}, PrefabName={spec.PrefabName}, KeyAudio={spec.KeyAudio}, BossAction={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}, IbmsId={spec.IbmsId}, IsLong={spec.IsLong}, IsMul={spec.IsMul}, StartTick={spec.StartTick}, Count={spec.Count}, Interval={spec.Interval}, Length={spec.Length}, Speed={spec.Speed}, Dt={spec.Dt}");
+        string sceneChangeNames = spec.SceneChangeNames != null ? string.Join(",", spec.SceneChangeNames) : "(null)";
+        MelonLogger.Msg($"{label}: Label={spec.Label}, Uid={spec.Uid}, NoteType={spec.NoteType}, Pathway={spec.Pathway}, PrefabName={spec.PrefabName}, KeyAudio={spec.KeyAudio}, BossAction={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}, IbmsId={spec.IbmsId}, SceneChangeNames={sceneChangeNames}, IsLong={spec.IsLong}, IsMul={spec.IsMul}, StartTick={spec.StartTick}, Count={spec.Count}, Interval={spec.Interval}, Length={spec.Length}, Speed={spec.Speed}, Dt={spec.Dt}");
     }
 
     public static void LogNoteState(string label, MusicData note)
