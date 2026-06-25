@@ -403,6 +403,44 @@ new ExperimentNoteSpec { Label = "씬 변환 노트", Uid = "000401", NoteType =
 - **전환 목적지 씬**(어디로 갈지) = `ibms_id`가 결정
 - **노트가 속한 씬**(`noteData.scene`) = 반드시 실제 로드된 씬이어야 함 → 그래서 `Scene`을 비워 복제 원본의 씬을 상속시킴
 
+### BMS 원본 `zzxxyy`와 프리로드 처리
+
+BMS UID는 `zzxxyy` 구조로 봅니다. 여기서 앞 두 자리 `zz`는 단순한 장식이 아니라, 실제 노트 프리팹/스파인 리소스 선택에 관여합니다. 씬 전환 노트가 있는 차트에서는 게임이 중간에 후속 노트의 UID를 현재 씬 기준으로 다시 만질 수 있으므로, **BMS 원본 `zz`를 따로 보존한 뒤 프리로드 직전에 다시 반영해야** 합니다.
+
+처리 흐름:
+
+1. `DBStageInfo.SetRuntimeMusicData`에서 BMS 노트 주입 및 showTick 정렬을 끝낸 뒤, `objId -> 원본 BMS UID`를 등록합니다.
+2. `GameMusicScene.InitTimer` 시점에 게임이 일부 후속 노트를 `01xxxx` 등으로 바꿔 놓을 수 있습니다.
+3. 프리로드 전에 각 노트의 렌더용 `zz`를 결정합니다.
+   - BMS 원본 UID가 있으면 원본 BMS `zz`를 우선 사용합니다.
+   - BMS 원본 UID가 없을 때만 manifest scene `zz`를 fallback으로 사용합니다.
+4. `PreLoadEnemy`가 이 렌더용 UID/프리팹명으로 풀을 굽습니다.
+5. 풀 생성 후 `musicList`, `BaseSpineObjectController`, GameObject 이름 등 런타임 객체에 남은 임시 렌더 UID를 BMS 원본 정체성으로 복구합니다.
+
+중요한 결론:
+
+- **원본 BMS `zz`가 있으면 처음부터 그 `zz`로 굽는 것이 맞습니다.**
+- 예: 원본이 `121304`라면 프리로드 전에 `121304_air_nor_1`로 만들어져야 합니다. 한 번 `071304_air_nor_1`로 구운 뒤 이름만 `121304`로 바꿔도 내부 스파인/프리팹 리소스는 07 상태로 남을 수 있습니다.
+- 원본 BMS `zz`가 `01`이어도 예외 처리하지 않습니다. 원본이 `010204`면 `01`로 굽고, 원본이 `121304`면 `12`로 굽습니다.
+- `0004yy` 씬 전환 노트는 `yy`를 관찰 로그로 남기지만, 현재 안정 로직에서는 이 값으로 후속 노트를 강제로 덮지 않습니다. 후속 노트의 최종 렌더 `zz`는 BMS 원본 UID가 우선입니다.
+
+대표 로그:
+
+```text
+[SceneZzTransformTracker] BMS 원본 UID 등록: count=66, zz분포={00:9, 07:56, 12:1}
+[GameMusicScene.InitTimer] 씬 전환 구간 관찰: index=38, uid=000401, sceneInfo=01, activeRenderZz=07
+[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {01:28}
+[PreLoadEnemy] PRE ... musicList ... zz분포={00:9, 07:56, 12:1}
+[SceneZzTransformTracker] non-07 original tracked: objId=58, originalUid=121304, renderUid=121304, scene=scene_05, prefab=121304_air_nor_1
+```
+
+로그 해석:
+
+- `BMS 원본 UID 등록`에 `12:1`이 보이면 BMS 파싱/주입 단계에서는 `121304`가 살아 있습니다.
+- `PreLoadEnemy PRE`에도 `12:1`이 보여야 `121304`가 실제 프리팹 풀 빌드 전에 12 리소스로 구워집니다.
+- `non-07 original tracked`에서 `originalUid=121304, renderUid=121304`이면 12 노트는 07 우회를 타지 않고 원본 BMS `zz`로 유지된 것입니다.
+- `renderUid=071304`처럼 보이면 12 노트를 07로 구운 것이므로 실패 방향입니다.
+
 ### 보스 동반 주의
 
 씬 전환 시 `Boss.SceneBossChange`도 같이 호출됩니다. 보스가 씬 전환 후 사라진다면 `Boss.SceneBossChange`의 인덱스를 강제로 바꾸고 있지 않은지 먼저 확인하세요. 현재는 안정성을 위해 `EnableSceneBossChangeRewrite = false`가 맞습니다.
