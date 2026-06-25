@@ -42,6 +42,13 @@ public class GameMusicScene_PreLoadEnemy_Patch
             try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch { }
             try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch { }
             MelonLogger.Msg($"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}");
+
+            var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
+            int restored = SceneZzTransformTracker.RestoreIdentities(db != null ? db.musicList : null);
+            MelonLogger.Msg($"[PreLoadEnemy] POST BMS 정체 복구: restored={restored}, tracked={SceneZzTransformTracker.Count}, bmsOriginals={SceneZzTransformTracker.BmsOriginalCount}");
+            int runtimeRestored = SceneZzTransformTracker.RestoreRuntimeObjects(__instance);
+            MelonLogger.Msg($"[PreLoadEnemy] POST 런타임 객체 BMS 정체 복구: restored={runtimeRestored}");
+            MelonLogger.Msg($"[PreLoadEnemy] POST 복구 후 musicList {Describe(db != null ? db.musicList : null)}");
         }
         catch (Exception ex) { MelonLogger.Error($"[PreLoadEnemy] Postfix 예외: {ex}"); }
     }

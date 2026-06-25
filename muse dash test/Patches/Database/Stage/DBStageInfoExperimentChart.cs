@@ -56,10 +56,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             AddExperimentNotes(musicList, sourceNote, spec);
         }
 
+        SceneZzTransformTracker.ClearBmsOriginalIdentities();
         if (UseBmsInjection && muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
         {
             ApplyBmsDoubleState(musicList, 1);
             SortBmsNotesByShowTick(musicList, 1);
+            SceneZzTransformTracker.RegisterBmsOriginalIdentities(musicList, 1);
         }
 
         // 인게임 정확도 오버라이드를 위해 노트 타입별 개수를 집계해 세션에 저장합니다.
