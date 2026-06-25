@@ -56,8 +56,7 @@ public class GameMusicScene_InitTimer_Patch
 
                 string renderZz = activeRenderZz;
                 if (SceneZzTransformTracker.TryGetBmsOriginalUid(note.objId, out string bmsOriginalUid)
-                    && IsSixDigitUid(bmsOriginalUid)
-                    && !bmsOriginalUid.StartsWith("01"))
+                    && IsSixDigitUid(bmsOriginalUid))
                 {
                     renderZz = bmsOriginalUid.Substring(0, 2);
                 }
