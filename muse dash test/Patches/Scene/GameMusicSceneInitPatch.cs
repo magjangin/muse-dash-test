@@ -11,6 +11,11 @@ public class GameMusicScene_InitTimer_Patch
     {
         try
         {
+            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart)
+            {
+                return;
+            }
+
             int frame = 0;
             try { frame = UnityEngine.Time.frameCount; } catch { }
             MelonLogger.Msg($"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}");
@@ -908,6 +913,8 @@ public class GameMusicScene_InitSceneEvents_Patch
     {
         try
         {
+            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+
             int frame = 0;
             try { frame = UnityEngine.Time.frameCount; } catch { }
             MelonLogger.Msg($"[GameMusicScene.InitSceneEvents] PRE frame={frame}, curSceneName={SafeCurSceneName(__instance)}");
@@ -919,6 +926,8 @@ public class GameMusicScene_InitSceneEvents_Patch
     {
         try
         {
+            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+
             int sceneCount = -1;
             try { sceneCount = __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1; } catch { }
             MelonLogger.Msg($"[GameMusicScene.InitSceneEvents] POST scenes.Count={sceneCount}, curSceneName={SafeCurSceneName(__instance)}");

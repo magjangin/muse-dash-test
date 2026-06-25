@@ -123,7 +123,20 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("[MenuBGM] === 씬 내 모든 AudioSource 스캔 ===");
+                // 0단계: 핀포인트로 "BGM" 오브젝트 검색 시도
+                GameObject bgmGo = GameObject.Find("BGM");
+                if (bgmGo != null)
+                {
+                    AudioSource source = bgmGo.GetComponent<AudioSource>();
+                    if (source != null && source.gameObject.activeInHierarchy)
+                    {
+                        MelonLogger.Msg($"[MenuBGM] 핀포인트 매칭 성공: GO={bgmGo.name}");
+                        return source;
+                    }
+                }
+
+                // 핀포인트 검색 실패 시에만 예외적으로 씬 내 전체 스캔 진행 (폴백)
+                MelonLogger.Msg("[MenuBGM] 핀포인트 검색 실패, 씬 내 모든 AudioSource 스캔 폴백 진행");
                 AudioSource[] sources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
                 if (sources == null || sources.Length == 0)
                 {

@@ -16,6 +16,7 @@ namespace muse_dash_test
         private static string lastStatusLog;
         private static int lastLoadSceneOriginal = -1;
         private static int lastLoadSceneRedirected = -1;
+        private static readonly Dictionary<string, GameObject> prefabCache = new Dictionary<string, GameObject>(StringComparer.Ordinal);
 
         private struct SceneCandidate
         {
@@ -28,6 +29,7 @@ namespace muse_dash_test
             installed = false;
             nextAttemptTime = 0f;
             lastStatusLog = null;
+            prefabCache.Clear();
         }
 
         public static void RememberLoadSceneRedirect(string originalSceneName, string redirectedSceneName)
@@ -126,7 +128,12 @@ namespace muse_dash_test
                     return;
                 }
 
-                LogStatusOnce($"[ExperimentHitPoint] 프리팹 대기 중: candidates={DescribeCandidates(candidates)}, loaded={DescribeLoadedHitPoints()}");
+                string statusMsg = $"[ExperimentHitPoint] 프리팹 대기 중: candidates={DescribeCandidates(candidates)}";
+                if (!string.Equals(lastStatusLog, statusMsg, StringComparison.Ordinal))
+                {
+                    statusMsg += $", loaded={DescribeLoadedHitPoints()}";
+                    LogStatusOnce(statusMsg);
+                }
             }
             catch (Exception ex)
             {
@@ -208,6 +215,8 @@ namespace muse_dash_test
 
         private static void AddLoadedHitPointCandidates(List<SceneCandidate> candidates)
         {
+            if (candidates.Count > 0) return;
+
             var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
             for (int i = 0; i < gameObjects.Count; i++)
             {
@@ -342,24 +351,16 @@ namespace muse_dash_test
 
         private static GameObject FindActiveGameObject(string name)
         {
-            var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-            for (int i = 0; i < gameObjects.Count; i++)
-            {
-                GameObject gameObject = gameObjects[i];
-                if (gameObject != null
-                    && gameObject.activeInHierarchy
-                    && gameObject.scene.IsValid()
-                    && string.Equals(gameObject.name, name, StringComparison.Ordinal))
-                {
-                    return gameObject;
-                }
-            }
-
-            return null;
+            return GameObject.Find(name);
         }
 
         private static GameObject FindInactivePrefab(string prefabName)
         {
+            if (prefabCache.TryGetValue(prefabName, out GameObject cached) && cached != null)
+            {
+                return cached;
+            }
+
             var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
             for (int i = 0; i < gameObjects.Count; i++)
             {
@@ -368,6 +369,7 @@ namespace muse_dash_test
                     && !gameObject.scene.IsValid()
                     && string.Equals(gameObject.name, prefabName, StringComparison.Ordinal))
                 {
+                    prefabCache[prefabName] = gameObject;
                     return gameObject;
                 }
             }
@@ -377,25 +379,9 @@ namespace muse_dash_test
 
         private static GameObject FindActiveHitPointInstance(string prefabName)
         {
-            var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-            for (int i = 0; i < gameObjects.Count; i++)
-            {
-                GameObject gameObject = gameObjects[i];
-                if (gameObject == null
-                    || !gameObject.scene.IsValid()
-                    || !gameObject.activeInHierarchy)
-                {
-                    continue;
-                }
-
-                if (string.Equals(gameObject.name, prefabName, StringComparison.Ordinal)
-                    || string.Equals(gameObject.name, prefabName + "(Clone)", StringComparison.Ordinal))
-                {
-                    return gameObject;
-                }
-            }
-
-            return null;
+            GameObject clone = GameObject.Find(prefabName + "(Clone)");
+            if (clone != null) return clone;
+            return GameObject.Find(prefabName);
         }
 
         private static GameObject FindChildByName(Transform parent, string name)

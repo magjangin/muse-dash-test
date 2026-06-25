@@ -50,15 +50,19 @@ public class SceneChangeController_ChangeScene_Patch
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), "ChangeNote", new Type[] { typeof(int) })]
 public class SceneChangeController_ChangeNote_Patch
 {
-    // [실험] false 반환 → 원본 ChangeNote 미실행. 노트 세트 교체를 막아본다.
     public static bool Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
+        if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart)
+        {
+            return true; // 순정곡이면 원본 ChangeNote 실행 허용
+        }
+
         try
         {
             MelonLogger.Msg($"[SceneFlow.ChangeNote]  PRE(SKIP) {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
         }
         catch (Exception ex) { MelonLogger.Error($"[SceneFlow.ChangeNote] Prefix 예외: {ex}"); }
-        return false; // 원본 실행 안 함
+        return false; // 커스텀곡일때만 원본 실행 차단
     }
 
     public static void Postfix(Il2Cpp.SceneChangeController __instance, int sceneInfo)

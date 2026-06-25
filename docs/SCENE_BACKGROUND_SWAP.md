@@ -168,3 +168,21 @@ SceneZzTransformTracker.RestoreRuntimeObjects(__instance);      // 이미 생성
   해석(`ResolveInitialRenderZz`)을 확인.
 - 보라색(존재하지 않는 `scene_00`) 화면이 뜨면 → 씬 전환 노트가 `scene_00`을 등록하지 않도록
   처리한 부분(`DBStageInfoExperimentChart.Bms.cs`의 SceneToggle 분기)을 확인.
+
+---
+
+## 8. 지향해야 할 결합도 분리 (Decoupled Design Guideline)
+
+현재 구현은 배경(Scene)을 갈아끼우기 위해 게임 데이터(`musicList`)를 직접 변형한 뒤 오브젝트 풀 로드 후 원복하는 **변형→복구(Modify -> Restore)** 차선책을 사용하고 있습니다. 이는 원본 데이터 상태를 인플레이스로 오염시킬 수 있어 잠재적인 상태 오작동 위험을 내포합니다.
+
+가장 이상적인 결합도 분리(Decoupling) 방향은 **데이터를 절대 변형하지 않는 구조**로 설계하는 것입니다.
+
+### 1. 배경 결정 로직 후킹 분리
+- 게임 엔진이 현재 실행 중인 스테이지의 씬 배경 리소스를 결정할 때 참조하는 멤버(예: `StageInfo` 혹은 `ActiveScene` 필드)를 파악합니다.
+- 배경 전환 지점(예: `SceneChangeController.ChangeScene` 호출 시점 또는 리소스를 매핑하여 실제 로딩하는 메소드)을 타깃팅하여, 게임 데이터 `musicList`를 건드리지 않고 **우리가 주입할 커스텀 배경 번호만 가로채서 주입**합니다.
+
+### 2. 프리팹 맵핑 분리
+- 씬 코드(zz)에 따라 노트를 인스턴스화할 때, 노트 생성자가 참조하는 프리팹 매핑(UID -> Prefab 이름) 지점을 하모니 패치로 우회합니다.
+- `musicList`의 노트 UID가 원본 BMS 그대로 유지된 상태에서, 게임이 프리팹을 찾으려 할 때만 후킹하여 임시 렌더링용 zz가 포함된 프리팹 이름을 반환하도록 구현합니다.
+
+이러한 분리가 적용된다면 데이터 원본의 순수성이 유지되므로 더 이상 `RestoreIdentities`나 리플렉션을 사용한 복잡한 `RestoreRuntimeObjects` 재귀 탐색 로직이 필요하지 않게 되며, 모드의 견고함과 안정성이 크게 향상될 것입니다.

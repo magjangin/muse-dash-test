@@ -10,6 +10,8 @@ public class GameMusicScene_PreLoadEnemy_Patch
     {
         try
         {
+            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+
             int frame = 0;
             try { frame = UnityEngine.Time.frameCount; } catch { }
 
@@ -37,6 +39,8 @@ public class GameMusicScene_PreLoadEnemy_Patch
     {
         try
         {
+            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+
             int preloadCount = -1, objCtrlCount = -1, preloads1Count = -1;
             try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch { }
             try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch { }
