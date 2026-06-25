@@ -42,7 +42,27 @@
       "Bash(ls -la \"/c/Users/화평/.claude/projects/H--source-repos-muse-dash-test/memory/\" 2>&1)",
       "Bash(git log *)",
       "PowerShell(dotnet build \"muse dash test\\\\muse dash test.csproj\" --configuration Debug --nologo 2>&1)",
-      "Bash(grep -vE \"//\")"
+      "Bash(grep -vE \"//\")",
+      "PowerShell(dotnet build \"muse dash test/muse dash test.csproj\" -c Release -nologo)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --param MusicInfo)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --callers SetRuntimeMusicData)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --param MusicData)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --param list:MusicData)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --method sceneInfo)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- StageBattleComponent)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --method ChangeScene)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- SceneChangeController)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- GameMusicScene)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --method InitSceneEvents)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --method InitTimer)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- DBStageInfo)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- SceneEvent)",
+      "PowerShell(dotnet run --project \"scratch/read_il/read_il.csproj\" -- --method s_DbStageInfo)",
+      "Bash(grep -E \"\\\\.txt$\")",
+      "Bash(git commit -m 'feat: per-scene background change without note prefab swap *)",
+      "Bash(git commit -m ' *)",
+      "PowerShell(foreach \\($f in 'callers_search.txt','method_search.txt','param_search.txt','scene_il.txt'\\) { Write-Output \"=== $f ===\"; Get-Content $f -TotalCount 3 })",
+      "PowerShell(git add \".claude/settings.local.json\" \"muse dash test/Patches/Scene/GameMusicSceneInitPatch.cs\" \"muse dash test/Patches/Scene/GameMusicScenePreLoadEnemyPatch.cs\" \"muse dash test/Patches/UI/Pnl/PnlMusicDiagnostics.cs\" \"muse dash test/Patches/Scene/SceneZzTransformTracker.cs\" \"muse dash test/Patches/UI/Pnl/PnlMusicDumper.cs\")"
     ]
   }
 }

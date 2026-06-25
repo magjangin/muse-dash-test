@@ -1,5 +1,7 @@
 using MelonLoader;
 using System;
+using muse_dash_test;
+
 
 // Il2CppGameLogic.GameMusicScene.PreLoadEnemy() 후킹 — 노트 오브젝트 풀(preloads/objCtrls)을 빌드하는 지점.
 // 이 풀이 어느 소스 리스트에서 만들어지는지 판별: musicList(우리가 비운 것, 68) vs oriMusicList(원본, 501?).
