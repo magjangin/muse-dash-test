@@ -283,13 +283,31 @@ namespace muse_dash_test
                 if (__instance != null && __instance.gameObject != null && __instance.gameObject.name == "BGM")
                 {
                     string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                    string clipNameForLog = value != null ? value.name : "(null)";
+
+                    // MD는 단일 씬(UISystem_PC) 구조라 씬 이름으로는 "곡 선택/준비 화면을 벗어났는지"를 구분할 수 없다.
+                    // 대신 곡 선택(PnlStage)/준비(PnlPreparation) 패널이 실제로 활성 상태인지를 직접 확인한다.
+                    bool inStageSelectionContext = IsStageSelectionContextActive();
+                    MelonLogger.Msg($"[MenuBGM.Patch.Debug] set_clip 호출: selectedUid={selectedUid ?? "(null)"}, requestedClip={clipNameForLog}, inStageSelectionContext={inStageSelectionContext}");
+
+                    if (!inStageSelectionContext)
+                    {
+                        // 곡 선택/준비 화면을 벗어나면 메뉴 BGM 감시만 종료한다.
+                        // SelectedMusicUid는 전투 진입 직후 배틀 미디어/채보 패치가 계속 사용하므로 여기서 지우면 안 된다.
+                        if (!string.IsNullOrEmpty(CustomPlaySession.Current.SelectedMusicUid))
+                        {
+                            MelonLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 메뉴 BGM 감시만 중지: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
+                            HwaMenuBgmController.StopMenuMonitoring("곡 선택/준비 화면 이탈 감지");
+                        }
+                    }
+
                     if (CustomContentIds.IsVirtualSong(selectedUid))
                     {
-                        bool isCustomClip = value != null && (value.name.EndsWith(".ogg") || value.name.Equals("music.ogg"));
+                        bool isCustomClip = IsCustomOggClip(value);
                         if (!isCustomClip)
                         {
-                            string clipName = value != null ? value.name : "(null)";
-                            MelonLogger.Msg($"[MenuBGM.Patch] 가상 곡 활성화 중 허용되지 않은 클립 대입 차단! (요청 클립: {clipName})");
+                            __instance.Stop();
+                            MelonLogger.Msg($"[MenuBGM.Patch] 가상 곡 활성화 중 허용되지 않은 클립 대입 차단! (selectedUid={selectedUid}, 요청 클립: {clipNameForLog})");
                             return false;
                         }
                     }
@@ -300,6 +318,43 @@ namespace muse_dash_test
                 MelonLogger.Error($"[MenuBGM.Patch] set_clip 패치 에러: {ex}");
             }
             return true;
+        }
+
+        private static bool IsCustomOggClip(AudioClip clip)
+        {
+            if (clip == null || string.IsNullOrEmpty(clip.name))
+            {
+                return false;
+            }
+
+            return clip.name.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 곡 선택(PnlStage) 또는 곡 준비(PnlPreparation) 패널이 현재 실제로 활성 상태인지 확인합니다.
+        /// MD가 단일 씬 안에서 패널만 켜고 끄는 구조이므로, 이게 "곡 선택 컨텍스트에 있는지"의 유일하게 신뢰 가능한 신호입니다.
+        /// </summary>
+        private static bool IsStageSelectionContextActive()
+        {
+            try
+            {
+                var pnlStage = UnityEngine.Object.FindObjectOfType<Il2CppAssets.Scripts.UI.Panels.PnlStage>();
+                if (pnlStage != null && pnlStage.gameObject != null && pnlStage.gameObject.activeInHierarchy)
+                {
+                    return true;
+                }
+
+                var pnlPreparation = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlPreparation>();
+                if (pnlPreparation != null && pnlPreparation.gameObject != null && pnlPreparation.gameObject.activeInHierarchy)
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[MenuBGM.Patch] IsStageSelectionContextActive 예외: {ex}");
+            }
+            return false;
         }
     }
 }

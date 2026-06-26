@@ -178,15 +178,31 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 곡 단위 커스텀 판정의 단일 출처. 가상 uid(1999-N) 또는 매니페스트가 숙주로 지정한
-        /// 순정 uid(예: 66-0)면 true를 반환합니다. uid 접두사 추측이 아니라 실제 등록된
-        /// 매니페스트 레지스트리를 근거로 하므로, 순정 슬롯에 얹힌 커스텀 곡도 확실히 잡힙니다.
+        /// 가상 uid(1999-N) 또는 매니페스트가 숙주로 지정한 순정 uid(예: 66-0)면 true를 반환합니다.
+        /// 이 값은 "등록 여부"만 뜻합니다. 실제 플레이에 커스텀 차트를 적용할지는 선택 문맥까지
+        /// 포함해서 <see cref="ShouldApplyCustomChartForSelection"/>로 판단해야 합니다.
         /// </summary>
         public static bool IsCustomSong(string uid)
         {
             if (string.IsNullOrEmpty(uid)) return false;
             // 매니페스트가 아직 로드되기 전이라도 1999- 가상곡은 항상 커스텀으로 간주(하위 호환).
             return CustomContentIds.IsVirtualSong(uid) || customClaimedUids.Contains(uid);
+        }
+
+        public static bool IsRegisteredCustomHostUid(string uid)
+        {
+            if (string.IsNullOrEmpty(uid)) return false;
+            return !CustomContentIds.IsVirtualSong(uid) && customClaimedUids.Contains(uid);
+        }
+
+        public static bool ShouldApplyCustomChartForSelection(string uid, bool isExperimentModeActive)
+        {
+            if (string.IsNullOrEmpty(uid)) return false;
+            if (CustomContentIds.IsVirtualSong(uid)) return true;
+
+            // 순정 uid를 숙주로 쓰는 경우에도 공식 앨범에서 같은 uid를 고르면 원본 채보가 살아야 합니다.
+            // 그래서 숙주 uid는 실험 모드/커스텀 태그 문맥일 때만 커스텀 차트 적용 대상으로 봅니다.
+            return isExperimentModeActive && IsRegisteredCustomHostUid(uid);
         }
 
         public static HwaManifest GetManifest(string uid)

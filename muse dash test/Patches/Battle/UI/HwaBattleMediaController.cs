@@ -27,13 +27,22 @@ namespace muse_dash_test
         {
             try
             {
+                string debugUid = CustomPlaySession.Current.SelectedMusicUid;
+                if (string.IsNullOrEmpty(debugUid))
+                {
+                    debugUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
+                }
+                MelonLogger.Msg($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, ShouldApplyExperimentChart={CustomPlaySession.Current.ShouldApplyExperimentChart}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
+
                 if (battleMediaInjectionStarted)
                 {
+                    MelonLogger.Msg("[HwaBattleMediaController.Debug] 스킵: 이미 이번 배틀에서 주입을 시작함 (battleMediaInjectionStarted=true)");
                     return;
                 }
 
                 if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
+                    MelonLogger.Msg("[HwaBattleMediaController.Debug] 스킵: ShouldApplyExperimentChart=false (커스텀 곡이 아님)");
                     return;
                 }
 

@@ -85,6 +85,8 @@ namespace muse_dash_test
         BURO_VAMPIRE = 31,
         RIN_PIRATE = 32,
         BURO_DIVER = 33, // DAVE THE DIVER 콜라보 (다이버 부로)
-        MARIJA_MADE_BY_ORA_2 = 34 // 만우절 기념 마리쟈 made by ora 2
+        MARIJA_MADE_BY_ORA_2 = 34, // 만우절 기념 마리쟈 made by ora 2 (구 한정 슬롯, 아래 MARIJA_HORSE와 인덱스 충돌 - 게임이 재사용함)
+        MARIJA_HORSE = 34, // 2026-06-26 업데이트로 추가된 말 마리쟈 (CharacterDefine.marija_horse)
+        MARIJA_SPECTRE = 35 // 2026-06-26 업데이트로 추가된 유령 마리쟈 (CharacterDefine.marija_spectre)
     }
 }

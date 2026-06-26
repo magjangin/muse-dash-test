@@ -61,7 +61,12 @@ namespace muse_dash_test
                 if (item["type"].Cast<IVariable>().GetResult<string>() != "character")
                     continue;
                 else if (item["index"].Cast<IVariable>().GetResult<int>() == (int)girl)
-                    return item["isUnlock"].Cast<IVariable>().GetResult<bool>();
+                {
+                    bool isUnlock = item["isUnlock"].Cast<IVariable>().GetResult<bool>();
+                    MelonLogger.Msg($"[FavGirl.Debug] ValidGirl({girl}={(int)girl}): DataHelper.items에서 발견됨, isUnlock={isUnlock}");
+                    return isUnlock;
+                }
+            MelonLogger.Msg($"[FavGirl.Debug] ValidGirl({girl}={(int)girl}): DataHelper.items에 type=character, index={(int)girl}인 항목이 없음");
             return false;
         }
 
@@ -72,7 +77,10 @@ namespace muse_dash_test
                 var dataID = targetGlobal
                     ? GlobalDataBase.s_DbBattleStage.m_SelectedRole
                     : DataHelper.selectedRoleIndex;
-                if (ValidGirl(FavSave.FavGirl) && ValidGirl(dataID))
+                bool favValid = ValidGirl(FavSave.FavGirl);
+                bool dataValid = ValidGirl(dataID);
+                MelonLogger.Msg($"[FavGirl.Debug] PrefixStoreGirlDoThing: favGirl={FavSave.FavGirl}({(int)FavSave.FavGirl}), favValid={favValid}, currentRole={dataID}, currentRoleValid={dataValid}, targetGlobal={targetGlobal}");
+                if (favValid && dataValid)
                 {
                     _oldGirl.Add(dataID);
                     if (targetGlobal)
@@ -81,6 +89,11 @@ namespace muse_dash_test
                     {
                         DataHelper.selectedRoleIndex = (int)FavSave.FavGirl;
                     }
+                    MelonLogger.Msg($"[FavGirl.Debug] 교체 적용됨: role -> {(int)FavSave.FavGirl}");
+                }
+                else
+                {
+                    MelonLogger.Msg($"[FavGirl.Debug] 교체 스킵됨 (favValid={favValid}, dataValid={dataValid})");
                 }
 
                 act?.Invoke();

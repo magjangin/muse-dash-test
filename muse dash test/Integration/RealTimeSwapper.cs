@@ -92,6 +92,11 @@ namespace muse_dash_test
             ("ORA_2", GirlID.MARIJA_MADE_BY_ORA_2),
             ("MADE_BY_ORA_2", GirlID.MARIJA_MADE_BY_ORA_2),
             ("MADE_BY_ORA", GirlID.MARIJA_MADE_BY_ORA_2),
+            ("MARIJA_HORSE", GirlID.MARIJA_HORSE),
+            ("HORSE", GirlID.MARIJA_HORSE),
+            ("MARIJA_SPECTRE", GirlID.MARIJA_SPECTRE),
+            ("SPECTRE", GirlID.MARIJA_SPECTRE),
+            ("GHOST", GirlID.MARIJA_SPECTRE),
 
             // 기타 캐릭터들
             ("OLA_BOXER", GirlID.OLA_BOXER),
