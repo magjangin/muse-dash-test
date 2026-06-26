@@ -74,48 +74,55 @@ namespace muse_dash_test
 
             string uri = new Uri(oggPath).AbsoluteUri;
             UnityWebRequest request = new UnityWebRequest(uri, "GET");
-            DownloadHandlerAudioClip handler = new DownloadHandlerAudioClip(uri, AudioType.OGGVORBIS);
-            handler.streamAudio = true;
-            request.downloadHandler = handler;
-            yield return request.SendWebRequest();
-
-            if (!string.IsNullOrWhiteSpace(request.error))
-            {
-                MelonLogger.Error($"[MenuBGM] OGG 로드 실패: {oggPath}, error={request.error}");
-                yield break;
-            }
-
-            // 로드가 완료되었을 시점에도 유효성 검사 (사용자가 곡을 다시 변경했는지 여부)
-            if (currentLoadingUid != uid || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
-            {
-                yield break;
-            }
-
-            AudioClip customClip = null;
             try
             {
-                customClip = DownloadHandlerAudioClip.GetContent(request);
+                DownloadHandlerAudioClip handler = new DownloadHandlerAudioClip(uri, AudioType.OGGVORBIS);
+                handler.streamAudio = true;
+                request.downloadHandler = handler;
+                yield return request.SendWebRequest();
+
+                if (!string.IsNullOrWhiteSpace(request.error))
+                {
+                    MelonLogger.Error($"[MenuBGM] OGG 로드 실패: {oggPath}, error={request.error}");
+                    yield break;
+                }
+
+                // 로드가 완료되었을 시점에도 유효성 검사 (사용자가 곡을 다시 변경했는지 여부)
+                if (currentLoadingUid != uid || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
+                {
+                    yield break;
+                }
+
+                AudioClip customClip = null;
+                try
+                {
+                    customClip = DownloadHandlerAudioClip.GetContent(request);
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error($"[MenuBGM] AudioClip 변환 실패: {ex.Message}");
+                }
+
+                if (customClip != null)
+                {
+                    customClip.name = Path.GetFileName(oggPath);
+                    float prevVolume = menuSource.volume;
+                    bool prevMute = menuSource.mute;
+
+                    menuSource.Stop();
+                    menuSource.clip = customClip;
+                    menuSource.loop = true;
+                    menuSource.Play();
+                    MelonLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
+                    MelonLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
+
+                    // 후속 볼륨 페이드아웃이나 변경 현상 감시를 위해 실시간 모니터러 작동
+                    MelonCoroutines.Start(MonitorAudioSource(menuSource, uid, customClip.name, monitorGeneration));
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                MelonLogger.Error($"[MenuBGM] AudioClip 변환 실패: {ex.Message}");
-            }
-
-            if (customClip != null)
-            {
-                customClip.name = Path.GetFileName(oggPath);
-                float prevVolume = menuSource.volume;
-                bool prevMute = menuSource.mute;
-
-                menuSource.Stop();
-                menuSource.clip = customClip;
-                menuSource.loop = true;
-                menuSource.Play();
-                MelonLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
-                MelonLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
-
-                // 후속 볼륨 페이드아웃이나 변경 현상 감시를 위해 실시간 모니터러 작동
-                MelonCoroutines.Start(MonitorAudioSource(menuSource, uid, customClip.name, monitorGeneration));
+                request.Dispose();
             }
         }
 

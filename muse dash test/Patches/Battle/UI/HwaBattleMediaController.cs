@@ -125,48 +125,55 @@ namespace muse_dash_test
             }
 
             UnityWebRequest request = new UnityWebRequest(uri, "GET");
-            DownloadHandlerAudioClip handler = new DownloadHandlerAudioClip(uri, AudioType.OGGVORBIS);
-            handler.streamAudio = true;
-            request.downloadHandler = handler;
-            yield return request.SendWebRequest();
-
-            if (!string.IsNullOrWhiteSpace(request.error))
-            {
-                MelonLogger.Error($"[HwaBattleMediaController] ogg 로드 실패: path={oggPath}, error={request.error}");
-                yield break;
-            }
-
-            AudioClip clip = null;
-            bool clipReady = false;
             try
             {
-                clip = DownloadHandlerAudioClip.GetContent(request);
-                clipReady = true;
+                DownloadHandlerAudioClip handler = new DownloadHandlerAudioClip(uri, AudioType.OGGVORBIS);
+                handler.streamAudio = true;
+                request.downloadHandler = handler;
+                yield return request.SendWebRequest();
+
+                if (!string.IsNullOrWhiteSpace(request.error))
+                {
+                    MelonLogger.Error($"[HwaBattleMediaController] ogg 로드 실패: path={oggPath}, error={request.error}");
+                    yield break;
+                }
+
+                AudioClip clip = null;
+                bool clipReady = false;
+                try
+                {
+                    clip = DownloadHandlerAudioClip.GetContent(request);
+                    clipReady = true;
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error($"[HwaBattleMediaController] 오디오 클립 변환 실패: {oggPath}, error={ex}");
+                }
+
+                if (!clipReady || clip == null)
+                {
+                    MelonLogger.Error($"[HwaBattleMediaController] 오디오 클립이 비어 있습니다: {oggPath}");
+                    yield break;
+                }
+
+                clip.name = Path.GetFileName(oggPath);
+                MelonLogger.Msg($"[HwaBattleMediaController] 로드한 클립 정보: {DescribeAudioClip(clip)}");
+
+                string beforeState = DescribeAudioSource(targetSource);
+
+                targetSource.clip = clip;
+                targetSource.loop = true;
+                targetSource.playOnAwake = false;
+                targetSource.Stop();
+                targetSource.Play();
+                injectedAudioSource = targetSource;
+
+                MelonLogger.Msg($"[HwaBattleMediaController] 배틀 BGM 주입 완료: before={beforeState}, after={DescribeAudioSource(targetSource)}, loadedClip={DescribeAudioClip(clip)}");
             }
-            catch (Exception ex)
+            finally
             {
-                MelonLogger.Error($"[HwaBattleMediaController] 오디오 클립 변환 실패: {oggPath}, error={ex}");
+                request.Dispose();
             }
-
-            if (!clipReady || clip == null)
-            {
-                MelonLogger.Error($"[HwaBattleMediaController] 오디오 클립이 비어 있습니다: {oggPath}");
-                yield break;
-            }
-
-            clip.name = Path.GetFileName(oggPath);
-            MelonLogger.Msg($"[HwaBattleMediaController] 로드한 클립 정보: {DescribeAudioClip(clip)}");
-
-            string beforeState = DescribeAudioSource(targetSource);
-
-            targetSource.clip = clip;
-            targetSource.loop = true;
-            targetSource.playOnAwake = false;
-            targetSource.Stop();
-            targetSource.Play();
-            injectedAudioSource = targetSource;
-
-            MelonLogger.Msg($"[HwaBattleMediaController] 배틀 BGM 주입 완료: before={beforeState}, after={DescribeAudioSource(targetSource)}, loadedClip={DescribeAudioClip(clip)}");
         }
 
         private static string ResolveHwaOggPath(string folderPath)

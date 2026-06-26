@@ -233,6 +233,14 @@ namespace muse_dash_test
             }
         }
 
+        private static void TryParseFloat(string val, ref float target)
+        {
+            if (float.TryParse(val, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float parsed))
+            {
+                target = parsed;
+            }
+        }
+
         private static void ParseConfigFile()
         {
             try
@@ -264,58 +272,58 @@ namespace muse_dash_test
                     switch (key.ToLower())
                     {
                         case "키가로크기":
-                            float.TryParse(val, out keyWidth);
+                            TryParseFloat(val, ref keyWidth);
                             break;
                         case "키세로크기":
-                            float.TryParse(val, out keyHeight);
+                            TryParseFloat(val, ref keyHeight);
                             break;
                         case "키간격":
-                            float.TryParse(val, out spacing);
+                            TryParseFloat(val, ref spacing);
                             break;
                         case "하단여백":
-                            float.TryParse(val, out offsetFromBottom);
+                            TryParseFloat(val, ref offsetFromBottom);
                             break;
                         case "오버레이표시":
                             showOverlay = ParseBool(val, key, showOverlay);
                             break;
                         case "글자크기":
-                            float.TryParse(val, out fontSize);
+                            TryParseFloat(val, ref fontSize);
                             break;
                         case "공중색상":
                             airColorName = val;
                             break;
                         case "공중투명도":
-                            float.TryParse(val, out airAlpha);
+                            TryParseFloat(val, ref airAlpha);
                             break;
                         case "지상색상":
                             groundColorName = val;
                             break;
                         case "지상투명도":
-                            float.TryParse(val, out groundAlpha);
+                            TryParseFloat(val, ref groundAlpha);
                             break;
                         case "대기색상":
                             inactiveColorName = val;
                             break;
                         case "대기투명도":
-                            float.TryParse(val, out inactiveAlpha);
+                            TryParseFloat(val, ref inactiveAlpha);
                             break;
                         case "판정바표시":
                             showBar = ParseBool(val, key, showBar);
                             break;
                         case "판정바가로크기":
-                            float.TryParse(val, out barWidth);
+                            TryParseFloat(val, ref barWidth);
                             break;
                         case "판정바세로크기":
-                            float.TryParse(val, out barHeight);
+                            TryParseFloat(val, ref barHeight);
                             break;
                         case "판정바하단여백":
-                            float.TryParse(val, out barOffsetFromBottom);
+                            TryParseFloat(val, ref barOffsetFromBottom);
                             break;
                         case "판정바글자크기":
-                            float.TryParse(val, out barFontSize);
+                            TryParseFloat(val, ref barFontSize);
                             break;
                         case "판정바틱유지시간":
-                            float.TryParse(val, out tickDuration);
+                            TryParseFloat(val, ref tickDuration);
                             break;
                         case "판정바반응형":
                             barResponsive = ParseBool(val, key, barResponsive);

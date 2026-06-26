@@ -236,10 +236,8 @@ namespace muse_dash_test
                         var oldCharacter = GlobalManagers.girlManager.girl;
                         MelonLogger.Msg($"기존 캐릭터 제거: {oldCharacter.name}");
                         
-                        UnityEngine.Object.Destroy(oldCharacter);
+                        UnityEngine.Object.DestroyImmediate(oldCharacter);
                         GlobalManagers.girlManager.girl = null;
-                        
-                        System.Threading.Thread.Sleep(50);
                     }
                     
                     MelonLogger.Msg("새로운 캐릭터 생성 중...");

@@ -17,6 +17,7 @@ namespace muse_dash_test
         private static int lastLoadSceneOriginal = -1;
         private static int lastLoadSceneRedirected = -1;
         private static readonly Dictionary<string, GameObject> prefabCache = new Dictionary<string, GameObject>(StringComparer.Ordinal);
+        private static List<SceneCandidate> cachedCandidates;
 
         private struct SceneCandidate
         {
@@ -30,6 +31,7 @@ namespace muse_dash_test
             nextAttemptTime = 0f;
             lastStatusLog = null;
             prefabCache.Clear();
+            cachedCandidates = null;
         }
 
         public static void RememberLoadSceneRedirect(string originalSceneName, string redirectedSceneName)
@@ -63,7 +65,11 @@ namespace muse_dash_test
                         ?? CustomPlaySession.Current.LastClickedMusicUid;
                 }
 
-                List<SceneCandidate> candidates = ResolveHitPointScenes(uid);
+                if (cachedCandidates == null)
+                {
+                    cachedCandidates = ResolveHitPointScenes(uid);
+                }
+                List<SceneCandidate> candidates = cachedCandidates;
                 if (candidates.Count == 0)
                 {
                     LogStatusOnce($"[ExperimentHitPoint] HitPoints 씬 번호를 아직 결정하지 못했습니다. uid={uid ?? "(null)"}");
@@ -356,7 +362,7 @@ namespace muse_dash_test
 
         private static GameObject FindInactivePrefab(string prefabName)
         {
-            if (prefabCache.TryGetValue(prefabName, out GameObject cached) && cached != null)
+            if (prefabCache.TryGetValue(prefabName, out GameObject cached))
             {
                 return cached;
             }
@@ -374,6 +380,8 @@ namespace muse_dash_test
                 }
             }
 
+            // Cache null so we do not run the expensive scan again for this missing prefab
+            prefabCache[prefabName] = null;
             return null;
         }
 

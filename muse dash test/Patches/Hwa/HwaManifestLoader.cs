@@ -234,7 +234,7 @@ namespace muse_dash_test
                 return null;
             }
 
-            if (double.TryParse(value.Trim(), out double parsed))
+            if (double.TryParse(value.Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double parsed))
             {
                 return parsed;
             }
