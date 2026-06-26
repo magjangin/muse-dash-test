@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace made_by_hyw.GameObjects
+namespace muse_dash_test
 {
     public static class HealthBarFinder
     {

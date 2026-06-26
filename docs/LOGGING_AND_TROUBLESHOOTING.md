@@ -306,3 +306,25 @@ Access to the path 'C:\Users\...\AppData\Roaming\NuGet\NuGet.Config' is denied.
 5. 게임 시작 후 `DBStageInfo.SetRuntimeMusicData`와 `실험 차트 적용 완료`를 확인합니다.
 6. 노트 실험이면 `실험 노트 추가` 로그의 UID/type/pathway/prefab을 확인합니다.
 7. 보스 실험이면 `Boss.InitBossObject: 변경 적용` 로그를 확인합니다.
+
+## 세이브 데이터 위치와 진행도 초기화
+
+Muse Dash의 실제 계정 진행도는 두 곳에 나뉘어 저장됩니다.
+
+| 위치 | 내용 | 비고 |
+| --- | --- | --- |
+| `HKCU\Software\PeroPeroGames\Muse Dash` (및 `MuseDash` 키) | 해상도, 언어, 그래픽 옵션 등 Unity `PlayerPrefs` 설정값 | `Account_h362646116` 등의 값도 있지만 실제 클리어 진행도의 최종 소스는 아님 |
+| `%LOCALAPPDATA%\Steam\MuseDash\<steamID>MuseDashSaves.sav` | 실제 계정 진행도(클리어 기록, 최고점수, 언락 상태 등) | **Steam Cloud로 동기화됨** |
+
+`SaveDataManagerPatch.cs`의 `DataManager.Save()` 패치에서 `Application.persistentDataPath`를 로그로 찍어보면 `C:\Users\...\AppData\LocalLow\PeroPeroGames\MuseDash`가 나오지만, 여긴 로그/캐시만 있고 실제 세이브 파일은 없다 — 진짜 세이브는 위 표의 `.sav` 경로에 있다.
+
+### 진행도를 완전히 초기화하려면
+
+1. **Steam 클라이언트에서 먼저 클라우드 동기화를 끈다.** 라이브러리 → Muse Dash 우클릭 → 속성 → 업데이트 탭 → "이 게임에 대해 Steam Cloud 동기화 사용" 체크 해제.
+   - 이 단계를 빼고 로컬 `.sav`나 레지스트리만 지우면, 게임을 켜는 순간 Steam Cloud가 즉시 다시 내려받아 복원시켜버린다.
+2. `%LOCALAPPDATA%\Steam\MuseDash\<steamID>MuseDashSaves.sav` 파일을 삭제(또는 백업 후 삭제)한다.
+3. (선택) `HKCU\Software\PeroPeroGames\Muse Dash`, `MuseDash` 레지스트리 키도 삭제한다.
+4. 게임을 실행해 신규 계정처럼 시작되는지 확인한다.
+5. 확인 후 다시 클라우드 동기화를 켜면, 새로 생성된 빈 세이브가 클라우드에 업로드되어 덮어써진다.
+
+복구할 일이 생길 수 있으니 삭제 전에는 항상 `.sav`와 레지스트리 키를 백업(`reg export`, 파일 복사)해두는 것을 권장한다.

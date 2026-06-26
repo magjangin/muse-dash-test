@@ -3,6 +3,7 @@ using MelonLoader;
 using Il2CppAssets.Scripts.PeroTools.Nice.Datas;
 using Il2CppAssets.Scripts.PeroTools.Nice.Interface;
 using Il2CppSystem.Collections.Generic;
+using UnityEngine;
 
 namespace muse_dash_test
 {
@@ -21,7 +22,7 @@ namespace muse_dash_test
             {
                 if (__instance == null) return;
 
-                MelonLogger.Msg("[SaveDataManagerPatch] DataManager.Save() 호출 감지 - 오염 방지를 위한 정밀 클렌징을 개시합니다.");
+                MelonLogger.Msg($"[SaveDataManagerPatch] DataManager.Save() 호출 감지 - 오염 방지를 위한 정밀 클렌징을 개시합니다. (persistentDataPath={Application.persistentDataPath})");
 
                 var datas = __instance.datas;
                 if (datas == null)
