@@ -152,7 +152,10 @@ namespace muse_dash_test
                     BmsOriginalsByObjId[note.objId] = CaptureIdentity(note);
                     CountZz(counts, note.noteData.uid);
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // IL2CPP 리스트 요소 획득 또는 데이터 접근 시 예외 무시 (네이티브 객체 해제 등 대비)
+                }
             }
 
             MelonLogger.Msg($"[SceneZzTransformTracker] BMS 원본 UID 등록: count={BmsOriginalsByObjId.Count}, zz분포={FormatZzCounts(counts)}");
@@ -174,14 +177,10 @@ namespace muse_dash_test
                 : note.configData?.note_uid;
             
             int renderNoteUid = note.noteData.noteUid;
-            try
+            if (int.TryParse(renderUid, out int parsed))
             {
-                if (int.TryParse(renderUid, out int parsed))
-                {
-                    renderNoteUid = parsed;
-                }
+                renderNoteUid = parsed;
             }
-            catch { }
 
             OriginalIdentity captured;
             if (BmsOriginalsByObjId.TryGetValue(note.objId, out var bmsOriginal))
@@ -254,11 +253,30 @@ namespace muse_dash_test
                         note.configData = configData;
                     }
 
-                    try { note.noteData = noteData; } catch { }
-                    try { list[i] = note; } catch { }
+                    try 
+                    { 
+                        note.noteData = noteData; 
+                    } 
+                    catch (Exception) 
+                    { 
+                        // Ignored: IL2CPP 내부 C++ 객체 메모리 해제 등 대비
+                    }
+
+                    try 
+                    { 
+                        list[i] = note; 
+                    } 
+                    catch (Exception) 
+                    { 
+                        // Ignored: 리스트 요소 변경 예외 무시
+                    }
+
                     restored++;
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // Ignored: 개별 노트 정체 복구 실패 시 무시
+                }
             }
 
             MelonLogger.Msg($"[SceneZzTransformTracker] 복구 UID zz분포: {FormatZzCounts(counts)}");
@@ -410,7 +428,10 @@ namespace muse_dash_test
                         return true;
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // Ignored: 필드 값 획득 실패 시 건너뜀
+                }
             }
 
             // 3. 클래스 내부의 프로퍼티들을 리플렉션으로 검사
@@ -430,7 +451,10 @@ namespace muse_dash_test
                         return true;
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // Ignored: 프로퍼티 값 획득 실패 시 건너뜀
+                }
             }
 
             return false;
@@ -466,7 +490,10 @@ namespace muse_dash_test
                         DumpObjectScalars(value, depth + 1, inspectedObjects, sb);
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // Ignored: 진단 필드 조회 실패 시 건너뜀
+                }
             }
 
             foreach (var prop in GetPropertiesCached(type))
@@ -487,7 +514,10 @@ namespace muse_dash_test
                         DumpObjectScalars(value, depth + 1, inspectedObjects, sb);
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // Ignored: 진단 프로퍼티 조회 실패 시 건너뜀
+                }
             }
         }
 
@@ -589,7 +619,10 @@ namespace muse_dash_test
                         restored += RestoreObjectMusicData(value, depth + 1, inspectedObjects);
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // Ignored: 런타임 객체 필드 탐색 중 예외 무시
+                }
             }
 
             // 2. 프로퍼티 탐색 및 복구
@@ -622,7 +655,10 @@ namespace muse_dash_test
                         restored += RestoreObjectMusicData(value, depth + 1, inspectedObjects);
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                    // Ignored: 런타임 객체 프로퍼티 탐색 중 예외 무시
+                }
             }
 
             return restored;
@@ -639,7 +675,10 @@ namespace muse_dash_test
                     field.SetValue(obj, restored);
                     return true;
                 }
-                catch { return false; }
+                catch (Exception)
+                {
+                    return false;
+                }
             }
             return false;
         }
@@ -655,7 +694,10 @@ namespace muse_dash_test
                     prop.SetValue(obj, restored);
                     return true;
                 }
-                catch { return false; }
+                catch (Exception)
+                {
+                    return false;
+                }
             }
             return false;
         }
@@ -802,7 +844,7 @@ namespace muse_dash_test
         private static object SafeGet(Func<object> getter)
         {
             try { return getter(); }
-            catch { return null; }
+            catch (Exception) { return null; }
         }
 
         private static int GetListCount(object listObj)
@@ -814,7 +856,7 @@ namespace muse_dash_test
                 object value = prop.GetValue(listObj);
                 return value is int count ? count : -1;
             }
-            catch { return -1; }
+            catch (Exception) { return -1; }
         }
 
         private static object GetListItem(object listObj, int index)
@@ -824,7 +866,7 @@ namespace muse_dash_test
                 var prop = listObj.GetType().GetProperty("Item");
                 return prop != null ? prop.GetValue(listObj, new object[] { index }) : null;
             }
-            catch { return null; }
+            catch (Exception) { return null; }
         }
 
         private static void CountZz(SortedDictionary<string, int> counts, string uid)
