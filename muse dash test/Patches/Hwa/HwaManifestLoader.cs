@@ -89,9 +89,7 @@ namespace muse_dash_test
                     return full.Substring(root.Length);
                 }
             }
-            catch
-            {
-            }
+            catch (Exception) { }
 
             return Path.GetFileName(filePath);
         }

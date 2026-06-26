@@ -31,7 +31,7 @@ namespace muse_dash_test
                         if (!string.IsNullOrEmpty(txt)) return $"{ty.Name}: title={txt}";
                     }
                 }
-                catch { }
+                catch (Exception) { }
 
                 string title = SafeGetProp(o, "title") ?? SafeGetProp(o, "name") ?? SafeGetProp(o, "musicName") ?? SafeGetProp(o, "songName");
                 string album = SafeGetProp(o, "album") ?? SafeGetProp(o, "albumName");
@@ -123,10 +123,10 @@ namespace muse_dash_test
                                 var pv = p.GetValue(v);
                                 if (pv is string) MelonLogger.Msg($"   {p.Name} = {pv}");
                             }
-                            catch { }
+                            catch (Exception) { }
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
                 MelonLogger.Msg($"--- End DumpMusicInfoVerbose ---");
             }
@@ -152,7 +152,7 @@ namespace muse_dash_test
                         if (v == null) continue;
                         MatchNowPlayingMember(f.Name, v, ref title, ref artist, ref album);
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
                 
                 foreach (var p in t.GetProperties(DefaultFlags))
@@ -164,7 +164,7 @@ namespace muse_dash_test
                         if (v == null) continue;
                         MatchNowPlayingMember(p.Name, v, ref title, ref artist, ref album);
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
 
                 if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(artist) && string.IsNullOrEmpty(album))
@@ -204,7 +204,7 @@ namespace muse_dash_test
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
                 foreach (var f in t.GetFields(DefaultFlags))
                 {
@@ -215,10 +215,10 @@ namespace muse_dash_test
                         if (val is string s) outList.Add(s);
                         else if (!(val is ValueType) && !(val is IEnumerable)) CollectStringValues(val, outList, depth + 1, maxDepth);
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
             }
-            catch { }
+            catch (Exception) { }
         }
 
         private static void LogStringProps(object v, string indent)
@@ -234,7 +234,7 @@ namespace muse_dash_test
                         var tv = textProp.GetValue(v) as string;
                         if (!string.IsNullOrEmpty(tv)) MelonLogger.Msg($"{indent}text: {tv}");
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
 
                 try
@@ -246,7 +246,7 @@ namespace muse_dash_test
                         if (!string.IsNullOrEmpty(nv)) MelonLogger.Msg($"{indent}name: {nv}");
                     }
                 }
-                catch { }
+                catch (Exception) { }
 
                 var tname = vt.Name.ToLowerInvariant();
                 if (tname.Contains("textmeshpro") || tname.Contains("textmesh") || tname.Contains("textui") || tname.Contains("text"))
@@ -262,7 +262,7 @@ namespace muse_dash_test
                                 if (!string.IsNullOrEmpty(sval)) MelonLogger.Msg($"{indent}{p.Name}: {sval}");
                             }
                         }
-                        catch { }
+                        catch (Exception) { }
                     }
                 }
 
@@ -279,7 +279,7 @@ namespace muse_dash_test
                             if (++found > 6) break;
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
             }
             catch (Exception ex) { MelonLogger.Msg($"LogStringProps exception: {ex.Message}"); }
@@ -319,7 +319,7 @@ namespace muse_dash_test
                 var p = obj.GetType().GetProperty(propName, DefaultFlags);
                 if (p != null && p.CanRead) return p.GetValue(obj)?.ToString();
             }
-            catch { }
+            catch (Exception) { }
             return null;
         }
     }

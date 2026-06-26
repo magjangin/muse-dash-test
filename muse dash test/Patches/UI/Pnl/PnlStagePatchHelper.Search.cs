@@ -30,7 +30,7 @@ public static partial class PnlStagePatchHelper
                 {
                     albumsConfig = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Managers.ConfigManager>.instance.GetConfigObject<DBConfigAlbums>();
                 }
-                catch {}
+                catch (Exception) { }
             }
 
             MusicInfo firstMusicInfo = null;
@@ -112,7 +112,7 @@ public static partial class PnlStagePatchHelper
                         albumTitle = albumInfo.title;
                     }
                 }
-                catch {}
+                catch (Exception) { }
             }
 
             string normalizedAlbumUid = NormalizeMusicSearchText(musicInfo.albumUidName);

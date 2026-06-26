@@ -64,7 +64,7 @@ public class Boss_Play_Patch
                                 component.gameObject.SetActive(true);
                             }
                         }
-                        catch {}
+                        catch (Exception) { }
                         
                         __instance.Play("in", playAnimator);
                     }

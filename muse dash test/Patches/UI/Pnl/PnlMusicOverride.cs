@@ -91,7 +91,7 @@ namespace muse_dash_test
                 var memberGameObject = ModReflection.GetValue(obj, "gameObject", silent: true) as GameObject;
                 if (memberGameObject != null) return memberGameObject;
             }
-            catch { }
+            catch (Exception) { }
             return null;
         }
 
@@ -108,7 +108,7 @@ namespace muse_dash_test
                         SetTextValue(target, value);
                     }
                 }
-                catch { }
+                catch (Exception) { }
             }
         }
 
@@ -129,7 +129,7 @@ namespace muse_dash_test
                     return 1;
                 }
             }
-            catch { }
+            catch (Exception) { }
             return 0;
         }
 
@@ -161,7 +161,7 @@ namespace muse_dash_test
                             SetAllTextUnder(go, value);
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
             }
             catch (Exception ex)
@@ -188,7 +188,7 @@ namespace muse_dash_test
                     }
                 }
             }
-            catch { }
+            catch (Exception) { }
 
             try
             {
@@ -212,7 +212,7 @@ namespace muse_dash_test
                     }
                 }
             }
-            catch { }
+            catch (Exception) { }
 
             return writes;
         }

@@ -602,7 +602,7 @@ namespace muse_dash_test
                     {
                         if (RestoreMusicData(ref musicData))
                         {
-                            try { field.SetValue(obj, musicData); } catch { }
+                            try { field.SetValue(obj, musicData); } catch (Exception) { }
                             restored++;
                         }
                         continue;
@@ -637,7 +637,7 @@ namespace muse_dash_test
                         {
                             if (prop.CanWrite)
                             {
-                                try { prop.SetValue(obj, musicData); } catch { }
+                                try { prop.SetValue(obj, musicData); } catch (Exception) { }
                             }
                             restored++;
                         }

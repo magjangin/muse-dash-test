@@ -16,7 +16,7 @@ public class GameMusicScene_Run_Patch
             _dumpCount++;
 
             int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch { }
+            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
             MelonLogger.Msg($"[GameMusicScene.Run] === dump #{_dumpCount}, frame={frame} ===");
 
             // 핵심 컬렉션 내용 덤프 ─ 현재 로드된 씬 슬롯의 실체를 본다.
@@ -50,7 +50,7 @@ public class GameMusicScene_Run_Patch
             for (int i = 0; i < list.Count; i++)
             {
                 string uid = null;
-                try { uid = list[i]?.noteData?.uid; } catch { }
+                try { uid = list[i]?.noteData?.uid; } catch (Exception) { }
                 if (string.IsNullOrEmpty(uid)) { nullCount++; continue; }
                 string zz = uid.Length >= 2 ? uid.Substring(0, 2) : uid;
                 hist[zz] = hist.TryGetValue(zz, out int c) ? c + 1 : 1;

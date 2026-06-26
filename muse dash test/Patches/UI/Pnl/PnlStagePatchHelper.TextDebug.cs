@@ -154,7 +154,7 @@ public static partial class PnlStagePatchHelper
                     var v = prop.GetValue(area) as string;
                     if (!string.IsNullOrEmpty(v)) return v;
                 }
-                catch { }
+                catch (Exception) { }
             }
 
             var goProp = type.GetProperty("gameObject", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);

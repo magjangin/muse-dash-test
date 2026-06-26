@@ -15,15 +15,15 @@ public class GameMusicScene_PreLoadEnemy_Patch
             if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch { }
+            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
 
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
             int musicCount = -1, oriCount = -1;
             string musicHead = "?", oriHead = "?";
             if (db != null)
             {
-                try { musicCount = db.musicList != null ? db.musicList.Count : -1; } catch { }
-                try { oriCount = db.oriMusicList != null ? db.oriMusicList.Count : -1; } catch { }
+                try { musicCount = db.musicList != null ? db.musicList.Count : -1; } catch (Exception) { }
+                try { oriCount = db.oriMusicList != null ? db.oriMusicList.Count : -1; } catch (Exception) { }
                 musicHead = Describe(db.musicList);
                 oriHead = Describe(db.oriMusicList);
             }
@@ -44,9 +44,9 @@ public class GameMusicScene_PreLoadEnemy_Patch
             if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             int preloadCount = -1, objCtrlCount = -1, preloads1Count = -1;
-            try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch { }
-            try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch { }
-            try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch { }
+            try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch (Exception) { }
+            try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch (Exception) { }
+            try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch (Exception) { }
             MelonLogger.Msg($"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}");
 
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
@@ -71,7 +71,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
             for (int i = 0; i < list.Count; i++)
             {
                 string uid = null;
-                try { uid = list[i]?.noteData?.uid; } catch { }
+                try { uid = list[i]?.noteData?.uid; } catch (Exception) { }
                 if (string.IsNullOrEmpty(uid)) { nullCount++; continue; }
                 string zz = uid.Length >= 2 ? uid.Substring(0, 2) : uid;
                 hist[zz] = hist.TryGetValue(zz, out int c) ? c + 1 : 1;

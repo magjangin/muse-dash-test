@@ -139,7 +139,7 @@ namespace muse_dash_test
                     if (!string.IsNullOrEmpty(uid)) return uid;
                 }
             }
-            catch { }
+            catch (Exception) { }
 
             return null;
         }
@@ -280,7 +280,7 @@ namespace muse_dash_test
                 object val = ModReflection.GetValue(obj, memberName, silent: true);
                 return ValueToUsefulText(val);
             }
-            catch { }
+            catch (Exception) { }
             return null;
         }
 
@@ -305,7 +305,7 @@ namespace muse_dash_test
                 var p = obj.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (p != null && p.CanRead) return p.GetValue(obj)?.ToString();
             }
-            catch { }
+            catch (Exception) { }
             return null;
         }
 
@@ -417,7 +417,7 @@ namespace muse_dash_test
                         if (firstPausedMusicClip == null)
                             firstPausedMusicClip = clipName;
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
 
                 if (!string.IsNullOrWhiteSpace(firstMusicClip)) return firstMusicClip;
@@ -475,13 +475,13 @@ namespace muse_dash_test
                     if (p.GetIndexParameters().Length > 0) continue;
                     ApplyNamedValue(p.Name, p.GetValue(obj), info);
                 }
-                catch { }
+                catch (Exception) { }
             }
 
             foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 try { ApplyNamedValue(f.Name, f.GetValue(obj), info); }
-                catch { }
+                catch (Exception) { }
             }
         }
 

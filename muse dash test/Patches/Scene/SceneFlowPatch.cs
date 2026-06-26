@@ -13,7 +13,7 @@ internal static class SceneFlowLog
     {
         int frame = 0;
         float time = 0f;
-        try { frame = UnityEngine.Time.frameCount; time = UnityEngine.Time.time; } catch { }
+        try { frame = UnityEngine.Time.frameCount; time = UnityEngine.Time.time; } catch (Exception) { }
         return $"#{++_seq} frame={frame} t={time:F3}";
     }
 

@@ -266,10 +266,10 @@ namespace muse_dash_test
                 object isMusicNameValue = null;
                 object isMusicAuthorValue = null;
 
-                try { txtValue = instance.GetType().GetProperty("txt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
-                try { longCtrlValue = instance.GetType().GetProperty("m_LongCtrl", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
-                try { isMusicNameValue = instance.GetType().GetProperty("isMusicName", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
-                try { isMusicAuthorValue = instance.GetType().GetProperty("isMusicAuthor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch { }
+                try { txtValue = instance.GetType().GetProperty("txt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch (Exception) { }
+                try { longCtrlValue = instance.GetType().GetProperty("m_LongCtrl", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch (Exception) { }
+                try { isMusicNameValue = instance.GetType().GetProperty("isMusicName", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch (Exception) { }
+                try { isMusicAuthorValue = instance.GetType().GetProperty("isMusicAuthor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(instance); } catch (Exception) { }
 
                 string txtText = "(null)";
                 if (txtValue != null)

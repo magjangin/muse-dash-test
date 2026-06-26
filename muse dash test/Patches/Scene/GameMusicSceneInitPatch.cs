@@ -17,7 +17,7 @@ public class GameMusicScene_InitTimer_Patch
             }
 
             int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch { }
+            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
             MelonLogger.Msg($"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}");
 
             string initialZz = ResolveInitialRenderZz();
@@ -77,21 +77,21 @@ public class GameMusicScene_InitTimer_Patch
                         renderPrefabName = renderZz + nd.prefab_name.Substring(2);
                     }
                 }
-                catch { }
+                catch (Exception) { }
 
                 muse_dash_test.SceneZzTransformTracker.Record(note, newUid, renderPrefabName);
                 CountZz(changedByOriginalZz, fromZz);
                 nd.uid = newUid;
-                try { if (IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch { }
-                try { nd.scene = "scene_" + renderZz; } catch { }
-                try { nd.prefab_name = renderPrefabName; } catch { }
-                try { if (int.TryParse(newUid, out int parsedNoteUid)) nd.noteUid = parsedNoteUid; } catch { }
-                try { if (note.configData != null && IsSixDigitUid(note.configData.note_uid) && note.configData.note_uid.StartsWith(fromZz)) note.configData.note_uid = renderZz + note.configData.note_uid.Substring(2); } catch { }
-                try { note.noteData = nd; } catch { }
-                try { list[i] = note; } catch { }
+                try { if (IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch (Exception) { }
+                try { nd.scene = "scene_" + renderZz; } catch (Exception) { }
+                try { nd.prefab_name = renderPrefabName; } catch (Exception) { }
+                try { if (int.TryParse(newUid, out int parsedNoteUid)) nd.noteUid = parsedNoteUid; } catch (Exception) { }
+                try { if (note.configData != null && IsSixDigitUid(note.configData.note_uid) && note.configData.note_uid.StartsWith(fromZz)) note.configData.note_uid = renderZz + note.configData.note_uid.Substring(2); } catch (Exception) { }
+                try { note.noteData = nd; } catch (Exception) { }
+                try { list[i] = note; } catch (Exception) { }
                 changed++;
             }
-            catch { }
+            catch (Exception) { }
         }
 
         MelonLogger.Msg($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {FormatZzCounts(changedByOriginalZz)}");
@@ -164,7 +164,7 @@ public class GameMusicScene_InitSceneEvents_Patch
             if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch { }
+            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
             MelonLogger.Msg($"[GameMusicScene.InitSceneEvents] PRE frame={frame}, curSceneName={SafeCurSceneName(__instance)}");
         }
         catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.InitSceneEvents] Prefix 예외: {ex}"); }
@@ -177,7 +177,7 @@ public class GameMusicScene_InitSceneEvents_Patch
             if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             int sceneCount = -1;
-            try { sceneCount = __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1; } catch { }
+            try { sceneCount = __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1; } catch (Exception) { }
             MelonLogger.Msg($"[GameMusicScene.InitSceneEvents] POST scenes.Count={sceneCount}, curSceneName={SafeCurSceneName(__instance)}");
         }
         catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.InitSceneEvents] Postfix 예외: {ex}"); }
