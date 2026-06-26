@@ -39,6 +39,67 @@ namespace muse_dash_test
         private static readonly Dictionary<short, OriginalIdentity> OriginalsByObjId = new Dictionary<short, OriginalIdentity>();
         private static readonly Dictionary<short, OriginalIdentity> BmsOriginalsByObjId = new Dictionary<short, OriginalIdentity>();
 
+        // 최적화를 위한 렌더 값 기준 해시 사전 및 리스트 (O(1) 조회용)
+        private static readonly Dictionary<string, OriginalIdentity> OriginalsByRenderUid = new Dictionary<string, OriginalIdentity>();
+        private static readonly Dictionary<string, OriginalIdentity> OriginalsByRenderMirrorUid = new Dictionary<string, OriginalIdentity>();
+        private static readonly Dictionary<string, OriginalIdentity> OriginalsByRenderConfigNoteUid = new Dictionary<string, OriginalIdentity>();
+        private static readonly Dictionary<int, OriginalIdentity> OriginalsByRenderNoteUid = new Dictionary<int, OriginalIdentity>();
+        private static readonly List<OriginalIdentity> OriginalsWithRenderPrefabName = new List<OriginalIdentity>();
+
+        // 리플렉션 캐시
+        private static readonly Dictionary<Type, FieldInfo[]> FieldsCache = new Dictionary<Type, FieldInfo[]>();
+        private static readonly Dictionary<Type, PropertyInfo[]> PropertiesCache = new Dictionary<Type, PropertyInfo[]>();
+        private static readonly Dictionary<Type, PropertyInfo> CountPropertyCache = new Dictionary<Type, PropertyInfo>();
+        private static readonly Dictionary<Type, PropertyInfo> ItemPropertyCache = new Dictionary<Type, PropertyInfo>();
+
+        private static FieldInfo[] GetFieldsCached(Type type)
+        {
+            if (!FieldsCache.TryGetValue(type, out var fields))
+            {
+                fields = type.GetFields(DefaultFlags);
+                FieldsCache[type] = fields;
+            }
+            return fields;
+        }
+
+        private static PropertyInfo[] GetPropertiesCached(Type type)
+        {
+            if (!PropertiesCache.TryGetValue(type, out var props))
+            {
+                var list = new List<PropertyInfo>();
+                foreach (var prop in type.GetProperties(DefaultFlags))
+                {
+                    if (prop.CanRead && prop.GetIndexParameters().Length == 0)
+                    {
+                        list.Add(prop);
+                    }
+                }
+                props = list.ToArray();
+                PropertiesCache[type] = props;
+            }
+            return props;
+        }
+
+        private static PropertyInfo GetCountProperty(Type type)
+        {
+            if (!CountPropertyCache.TryGetValue(type, out var prop))
+            {
+                prop = type.GetProperty("Count");
+                CountPropertyCache[type] = prop;
+            }
+            return prop;
+        }
+
+        private static PropertyInfo GetItemProperty(Type type)
+        {
+            if (!ItemPropertyCache.TryGetValue(type, out var prop))
+            {
+                prop = type.GetProperty("Item");
+                ItemPropertyCache[type] = prop;
+            }
+            return prop;
+        }
+
         public static int Count => OriginalsByObjId.Count;
         public static int BmsOriginalCount => BmsOriginalsByObjId.Count;
 
@@ -59,6 +120,11 @@ namespace muse_dash_test
         public static void Clear()
         {
             OriginalsByObjId.Clear();
+            OriginalsByRenderUid.Clear();
+            OriginalsByRenderMirrorUid.Clear();
+            OriginalsByRenderConfigNoteUid.Clear();
+            OriginalsByRenderNoteUid.Clear();
+            OriginalsWithRenderPrefabName.Clear();
         }
 
         public static void ClearBmsOriginalIdentities()
@@ -117,6 +183,7 @@ namespace muse_dash_test
             }
             catch { }
 
+            OriginalIdentity captured;
             if (BmsOriginalsByObjId.TryGetValue(note.objId, out var bmsOriginal))
             {
                 bmsOriginal.RenderUid = renderUid;
@@ -125,16 +192,34 @@ namespace muse_dash_test
                 bmsOriginal.RenderConfigNoteUid = renderConfigNoteUid;
                 bmsOriginal.RenderPrefabName = renderPrefabName;
                 OriginalsByObjId[note.objId] = bmsOriginal;
-                return;
+                captured = bmsOriginal;
+            }
+            else
+            {
+                captured = CaptureIdentity(note);
+                captured.RenderUid = renderUid;
+                captured.RenderMirrorUid = renderMirrorUid;
+                captured.RenderNoteUid = renderNoteUid;
+                captured.RenderConfigNoteUid = renderConfigNoteUid;
+                captured.RenderPrefabName = renderPrefabName;
+                OriginalsByObjId[note.objId] = captured;
             }
 
-            var captured = CaptureIdentity(note);
-            captured.RenderUid = renderUid;
-            captured.RenderMirrorUid = renderMirrorUid;
-            captured.RenderNoteUid = renderNoteUid;
-            captured.RenderConfigNoteUid = renderConfigNoteUid;
-            captured.RenderPrefabName = renderPrefabName;
-            OriginalsByObjId[note.objId] = captured;
+            // O(1) 조회를 위한 인덱스 등록
+            if (!string.IsNullOrEmpty(renderUid))
+                OriginalsByRenderUid[renderUid] = captured;
+            if (!string.IsNullOrEmpty(renderMirrorUid))
+                OriginalsByRenderMirrorUid[renderMirrorUid] = captured;
+            if (!string.IsNullOrEmpty(renderConfigNoteUid))
+                OriginalsByRenderConfigNoteUid[renderConfigNoteUid] = captured;
+            OriginalsByRenderNoteUid[renderNoteUid] = captured;
+            if (!string.IsNullOrEmpty(renderPrefabName))
+            {
+                if (!OriginalsWithRenderPrefabName.Contains(captured))
+                {
+                    OriginalsWithRenderPrefabName.Add(captured);
+                }
+            }
         }
 
         /// <summary>
@@ -213,8 +298,10 @@ namespace muse_dash_test
         {
             if (scene == null) return;
 
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("[SceneZzTransformTracker] Starting non-07 runtime object diagnostics dump...");
+
             // 각 런타임 리스트를 단 한 번만 스캔해 objId→객체 인덱스를 만든다.
-            // (기존엔 추적 원본마다 리스트 전체를 재귀 리플렉션으로 다시 훑어 O(원본×리스트) 였다.)
             var indexes = new (string Label, Dictionary<short, RuntimeHit> Map)[]
             {
                 ("objCtrls", BuildObjIdIndex(SafeGet(() => scene.objCtrls))),
@@ -222,6 +309,7 @@ namespace muse_dash_test
                 ("preloads1", BuildObjIdIndex(SafeGet(() => scene.preloads1))),
             };
 
+            int trackedCount = 0;
             foreach (var pair in OriginalsByObjId)
             {
                 var original = pair.Value;
@@ -230,17 +318,21 @@ namespace muse_dash_test
                     continue;
                 }
 
-                MelonLogger.Msg($"[SceneZzTransformTracker] non-07 original tracked: objId={pair.Key}, originalUid={original.Uid}, renderUid={original.RenderUid}, scene={original.Scene}, prefab={original.PrefabName}");
+                trackedCount++;
+                sb.AppendLine($"[SceneZzTransformTracker] non-07 original tracked: objId={pair.Key}, originalUid={original.Uid}, renderUid={original.RenderUid}, scene={original.Scene}, prefab={original.PrefabName}");
 
                 foreach (var index in indexes)
                 {
                     if (index.Map.TryGetValue(pair.Key, out var hit))
                     {
-                        MelonLogger.Msg($"[SceneZzTransformTracker] runtime object dump: list={index.Label}, index={hit.Index}, type={hit.Item.GetType().FullName}");
-                        DumpObjectScalars(hit.Item, 0, new HashSet<int>());
+                        sb.AppendLine($"[SceneZzTransformTracker] runtime object dump: list={index.Label}, index={hit.Index}, type={hit.Item.GetType().FullName}");
+                        DumpObjectScalars(hit.Item, 0, new HashSet<int>(), sb);
                     }
                 }
             }
+
+            sb.AppendLine($"[SceneZzTransformTracker] Diagnostics dump completed. Total non-07 tracked notes analyzed: {trackedCount}");
+            MelonLogger.Msg(sb.ToString());
         }
 
         /// <summary>
@@ -250,12 +342,21 @@ namespace muse_dash_test
         private static Dictionary<short, RuntimeHit> BuildObjIdIndex(object listObj)
         {
             var map = new Dictionary<short, RuntimeHit>();
-            int count = GetListCount(listObj);
-            if (count < 0) return map;
+            if (listObj == null) return map;
 
+            var listType = listObj.GetType();
+            var countProp = GetCountProperty(listType);
+            if (countProp == null) return map;
+
+            int count = (int)countProp.GetValue(listObj);
+            var itemProp = GetItemProperty(listType);
+            if (itemProp == null) return map;
+
+            var indexArgs = new object[1];
             for (int i = 0; i < count; i++)
             {
-                object item = GetListItem(listObj, i);
+                indexArgs[0] = i;
+                object item = itemProp.GetValue(listObj, indexArgs);
                 if (item == null) continue;
 
                 if (TryGetObjId(item, 0, new HashSet<int>(), out short objId) && !map.ContainsKey(objId))
@@ -293,7 +394,7 @@ namespace muse_dash_test
             var type = obj.GetType();
 
             // 2. 클래스 내부의 필드들을 리플렉션으로 검사
-            foreach (var field in type.GetFields(DefaultFlags))
+            foreach (var field in GetFieldsCached(type))
             {
                 try
                 {
@@ -313,12 +414,10 @@ namespace muse_dash_test
             }
 
             // 3. 클래스 내부의 프로퍼티들을 리플렉션으로 검사
-            foreach (var prop in type.GetProperties(DefaultFlags))
+            foreach (var prop in GetPropertiesCached(type))
             {
                 try
                 {
-                    if (!prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
-
                     object value = prop.GetValue(obj);
                     if (value is MusicData propMusicData)
                     {
@@ -340,7 +439,7 @@ namespace muse_dash_test
         /// <summary>
         /// [재귀 탐색] 특정 객체 내부의 문자열이나 숫자 필드를 로깅하여 값을 분석합니다.
         /// </summary>
-        private static void DumpObjectScalars(object obj, int depth, HashSet<int> inspectedObjects)
+        private static void DumpObjectScalars(object obj, int depth, HashSet<int> inspectedObjects, System.Text.StringBuilder sb)
         {
             if (obj == null || depth > 1) return;
 
@@ -349,45 +448,43 @@ namespace muse_dash_test
 
             var type = obj.GetType();
 
-            foreach (var field in type.GetFields(DefaultFlags))
+            foreach (var field in GetFieldsCached(type))
             {
                 try
                 {
                     object value = field.GetValue(obj);
                     if (IsInterestingScalar(value))
                     {
-                        MelonLogger.Msg($"[SceneZzTransformTracker]   scalar field depth={depth}: {type.Name}.{field.Name}={value}");
+                        sb.AppendLine($"[SceneZzTransformTracker]   scalar field depth={depth}: {type.Name}.{field.Name}={value}");
                     }
                     else if (value is MusicData musicData)
                     {
-                        MelonLogger.Msg($"[SceneZzTransformTracker]   MusicData field depth={depth}: {type.Name}.{field.Name}, objId={musicData.objId}, uid={musicData.noteData?.uid}, scene={musicData.noteData?.scene}, prefab={musicData.noteData?.prefab_name}, configUid={musicData.configData?.note_uid}");
+                        sb.AppendLine($"[SceneZzTransformTracker]   MusicData field depth={depth}: {type.Name}.{field.Name}, objId={musicData.objId}, uid={musicData.noteData?.uid}, scene={musicData.noteData?.scene}, prefab={musicData.noteData?.prefab_name}, configUid={musicData.configData?.note_uid}");
                     }
                     else if (ShouldInspectNested(value))
                     {
-                        DumpObjectScalars(value, depth + 1, inspectedObjects);
+                        DumpObjectScalars(value, depth + 1, inspectedObjects, sb);
                     }
                 }
                 catch { }
             }
 
-            foreach (var prop in type.GetProperties(DefaultFlags))
+            foreach (var prop in GetPropertiesCached(type))
             {
                 try
                 {
-                    if (!prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
-
                     object value = prop.GetValue(obj);
                     if (IsInterestingScalar(value))
                     {
-                        MelonLogger.Msg($"[SceneZzTransformTracker]   scalar prop depth={depth}: {type.Name}.{prop.Name}={value}");
+                        sb.AppendLine($"[SceneZzTransformTracker]   scalar prop depth={depth}: {type.Name}.{prop.Name}={value}");
                     }
                     else if (value is MusicData musicData)
                     {
-                        MelonLogger.Msg($"[SceneZzTransformTracker]   MusicData prop depth={depth}: {type.Name}.{prop.Name}, objId={musicData.objId}, uid={musicData.noteData?.uid}, scene={musicData.noteData?.scene}, prefab={musicData.noteData?.prefab_name}, configUid={musicData.configData?.note_uid}");
+                        sb.AppendLine($"[SceneZzTransformTracker]   MusicData prop depth={depth}: {type.Name}.{prop.Name}, objId={musicData.objId}, uid={musicData.noteData?.uid}, scene={musicData.noteData?.scene}, prefab={musicData.noteData?.prefab_name}, configUid={musicData.configData?.note_uid}");
                     }
                     else if (ShouldInspectNested(value))
                     {
-                        DumpObjectScalars(value, depth + 1, inspectedObjects);
+                        DumpObjectScalars(value, depth + 1, inspectedObjects, sb);
                     }
                 }
                 catch { }
@@ -419,13 +516,20 @@ namespace muse_dash_test
             if (listObj == null) return 0;
 
             int restored = 0;
-            int count = GetListCount(listObj);
-            if (count < 0) return 0;
+            var listType = listObj.GetType();
+            var countProp = GetCountProperty(listType);
+            if (countProp == null) return 0;
+
+            int count = (int)countProp.GetValue(listObj);
+            var itemProp = GetItemProperty(listType);
+            if (itemProp == null) return 0;
 
             var itemTypes = new HashSet<string>();
+            var indexArgs = new object[1];
             for (int i = 0; i < count; i++)
             {
-                object item = GetListItem(listObj, i);
+                indexArgs[0] = i;
+                object item = itemProp.GetValue(listObj, indexArgs);
                 if (item == null) continue;
 
                 if (itemTypes.Count < 4)
@@ -459,7 +563,7 @@ namespace muse_dash_test
             var type = obj.GetType();
 
             // 1. 필드 탐색 및 복구
-            foreach (var field in type.GetFields(DefaultFlags))
+            foreach (var field in GetFieldsCached(type))
             {
                 try
                 {
@@ -489,12 +593,10 @@ namespace muse_dash_test
             }
 
             // 2. 프로퍼티 탐색 및 복구
-            foreach (var prop in type.GetProperties(DefaultFlags))
+            foreach (var prop in GetPropertiesCached(type))
             {
                 try
                 {
-                    if (!prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
-
                     object value = prop.GetValue(obj);
                     if (value is MusicData musicData)
                     {
@@ -530,19 +632,15 @@ namespace muse_dash_test
         {
             if (obj == null || field == null || value == null) return false;
 
-            foreach (var original in OriginalsByObjId.Values)
+            if (TryGetRestoredScalar(value, field.FieldType, out object restored))
             {
-                if (TryGetRestoredScalar(value, field.FieldType, original, out object restored))
+                try
                 {
-                    try
-                    {
-                        field.SetValue(obj, restored);
-                        return true;
-                    }
-                    catch { return false; }
+                    field.SetValue(obj, restored);
+                    return true;
                 }
+                catch { return false; }
             }
-
             return false;
         }
 
@@ -550,70 +648,83 @@ namespace muse_dash_test
         {
             if (obj == null || prop == null || !prop.CanWrite || value == null) return false;
 
-            foreach (var original in OriginalsByObjId.Values)
+            if (TryGetRestoredScalar(value, prop.PropertyType, out object restored))
             {
-                if (TryGetRestoredScalar(value, prop.PropertyType, original, out object restored))
+                try
                 {
-                    try
-                    {
-                        prop.SetValue(obj, restored);
-                        return true;
-                    }
-                    catch { return false; }
+                    prop.SetValue(obj, restored);
+                    return true;
                 }
+                catch { return false; }
             }
-
             return false;
         }
 
-        private static bool TryGetRestoredScalar(object value, Type targetType, OriginalIdentity original, out object restored)
+        private static bool TryGetRestoredScalar(object value, Type targetType, out object restored)
         {
             restored = null;
-            if (original == null) return false;
+            if (value == null) return false;
 
             if (targetType == typeof(string) && value is string text)
             {
-                if (!string.IsNullOrEmpty(original.RenderPrefabName) && text.Contains(original.RenderPrefabName))
+                // 1. 다이렉트 매칭 (O(1))
+                if (OriginalsByRenderUid.TryGetValue(text, out var origUid))
                 {
-                    restored = text.Replace(original.RenderPrefabName, original.PrefabName ?? original.Uid);
+                    restored = origUid.Uid;
                     return true;
                 }
-                if (!string.IsNullOrEmpty(original.RenderUid) && text.Contains(original.RenderUid))
+                if (OriginalsByRenderMirrorUid.TryGetValue(text, out var origMirror))
                 {
-                    restored = text.Replace(original.RenderUid, original.Uid);
+                    restored = origMirror.MirrorUid;
                     return true;
                 }
-                if (!string.IsNullOrEmpty(original.RenderUid) && text == original.RenderUid)
+                if (OriginalsByRenderConfigNoteUid.TryGetValue(text, out var origConfig))
                 {
-                    restored = original.Uid;
+                    restored = origConfig.ConfigNoteUid;
                     return true;
                 }
-                if (!string.IsNullOrEmpty(original.RenderMirrorUid) && text == original.RenderMirrorUid)
-                {
-                    restored = original.MirrorUid;
-                    return true;
-                }
-                if (!string.IsNullOrEmpty(original.RenderConfigNoteUid) && text == original.RenderConfigNoteUid)
-                {
-                    restored = original.ConfigNoteUid;
-                    return true;
-                }
-            }
 
-            if (targetType == typeof(int) && value is int intValue && intValue == original.RenderNoteUid)
-            {
-                restored = original.NoteUid;
-                return true;
+                // 2. 부분 일치 검색
+                foreach (var orig in OriginalsWithRenderPrefabName)
+                {
+                    if (text.Contains(orig.RenderPrefabName))
+                    {
+                        restored = text.Replace(orig.RenderPrefabName, orig.PrefabName ?? orig.Uid);
+                        return true;
+                    }
+                }
+                foreach (var orig in OriginalsByRenderUid.Values)
+                {
+                    if (text.Contains(orig.RenderUid))
+                    {
+                        restored = text.Replace(orig.RenderUid, orig.Uid);
+                        return true;
+                    }
+                }
             }
-            if (targetType == typeof(short) && value is short shortValue && shortValue == original.RenderNoteUid)
+            else if (targetType == typeof(int) && value is int intValue)
             {
-                restored = (short)original.NoteUid;
-                return true;
+                if (OriginalsByRenderNoteUid.TryGetValue(intValue, out var orig))
+                {
+                    restored = orig.NoteUid;
+                    return true;
+                }
             }
-            if (targetType == typeof(uint) && value is uint uintValue && uintValue == (uint)original.RenderNoteUid)
+            else if (targetType == typeof(short) && value is short shortValue)
             {
-                restored = (uint)original.NoteUid;
-                return true;
+                if (OriginalsByRenderNoteUid.TryGetValue(shortValue, out var orig))
+                {
+                    restored = (short)orig.NoteUid;
+                    return true;
+                }
+            }
+            else if (targetType == typeof(uint) && value is uint uintValue)
+            {
+                if (OriginalsByRenderNoteUid.TryGetValue((int)uintValue, out var orig))
+                {
+                    restored = (uint)orig.NoteUid;
+                    return true;
+                }
             }
 
             return false;
@@ -678,8 +789,13 @@ namespace muse_dash_test
             if (value == null) return false;
 
             string typeName = value.GetType().FullName ?? string.Empty;
+            
+            // Unity 엔진 및 시스템 기본 형식 검색 차단 (GC 및 네이티브 속성 탐색 속도 대폭 개선)
             return typeName.StartsWith("Il2Cpp", StringComparison.Ordinal)
-                && !typeName.StartsWith("Il2CppSystem.Collections", StringComparison.Ordinal)
+                && !typeName.StartsWith("Il2CppUnityEngine.", StringComparison.Ordinal)
+                && !typeName.StartsWith("Il2CppSystem.", StringComparison.Ordinal)
+                && !typeName.StartsWith("UnityEngine.", StringComparison.Ordinal)
+                && !typeName.StartsWith("System.", StringComparison.Ordinal)
                 && !typeName.Contains("String");
         }
 
