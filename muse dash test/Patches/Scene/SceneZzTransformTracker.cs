@@ -196,9 +196,31 @@ namespace muse_dash_test
             return restored;
         }
 
+        // 런타임 리스트에서 찾아낸 객체의 위치 정보(인덱스 + 실제 객체)
+        private readonly struct RuntimeHit
+        {
+            public readonly int Index;
+            public readonly object Item;
+
+            public RuntimeHit(int index, object item)
+            {
+                Index = index;
+                Item = item;
+            }
+        }
+
         private static void DumpNonDefaultOriginalRuntimeObjects(GameMusicScene scene)
         {
             if (scene == null) return;
+
+            // 각 런타임 리스트를 단 한 번만 스캔해 objId→객체 인덱스를 만든다.
+            // (기존엔 추적 원본마다 리스트 전체를 재귀 리플렉션으로 다시 훑어 O(원본×리스트) 였다.)
+            var indexes = new (string Label, Dictionary<short, RuntimeHit> Map)[]
+            {
+                ("objCtrls", BuildObjIdIndex(SafeGet(() => scene.objCtrls))),
+                ("preloads", BuildObjIdIndex(SafeGet(() => scene.preloads))),
+                ("preloads1", BuildObjIdIndex(SafeGet(() => scene.preloads1))),
+            };
 
             foreach (var pair in OriginalsByObjId)
             {
@@ -209,40 +231,52 @@ namespace muse_dash_test
                 }
 
                 MelonLogger.Msg($"[SceneZzTransformTracker] non-07 original tracked: objId={pair.Key}, originalUid={original.Uid}, renderUid={original.RenderUid}, scene={original.Scene}, prefab={original.PrefabName}");
-                DumpRuntimeObjectForObjId("objCtrls", SafeGet(() => scene.objCtrls), pair.Key);
-                DumpRuntimeObjectForObjId("preloads", SafeGet(() => scene.preloads), pair.Key);
-                DumpRuntimeObjectForObjId("preloads1", SafeGet(() => scene.preloads1), pair.Key);
+
+                foreach (var index in indexes)
+                {
+                    if (index.Map.TryGetValue(pair.Key, out var hit))
+                    {
+                        MelonLogger.Msg($"[SceneZzTransformTracker] runtime object dump: list={index.Label}, index={hit.Index}, type={hit.Item.GetType().FullName}");
+                        DumpObjectScalars(hit.Item, 0, new HashSet<int>());
+                    }
+                }
             }
         }
 
-        private static void DumpRuntimeObjectForObjId(string label, object listObj, short objId)
+        /// <summary>
+        /// 런타임 리스트를 한 번 순회하며 각 객체가 품고 있는 MusicData의 objId를 추출해 인덱스를 구축합니다.
+        /// 동일 objId가 여러 번 나오면 기존 동작(첫 매칭만 덤프)과 맞추기 위해 첫 항목만 보존합니다.
+        /// </summary>
+        private static Dictionary<short, RuntimeHit> BuildObjIdIndex(object listObj)
         {
+            var map = new Dictionary<short, RuntimeHit>();
             int count = GetListCount(listObj);
-            if (count < 0) return;
+            if (count < 0) return map;
 
             for (int i = 0; i < count; i++)
             {
                 object item = GetListItem(listObj, i);
                 if (item == null) continue;
 
-                if (ObjectContainsObjId(item, objId, 0, new HashSet<int>()))
+                if (TryGetObjId(item, 0, new HashSet<int>(), out short objId) && !map.ContainsKey(objId))
                 {
-                    MelonLogger.Msg($"[SceneZzTransformTracker] runtime object dump: list={label}, index={i}, type={item.GetType().FullName}");
-                    DumpObjectScalars(item, 0, new HashSet<int>());
-                    return;
+                    map[objId] = new RuntimeHit(i, item);
                 }
             }
+
+            return map;
         }
 
         /// <summary>
-        /// [재귀 탐색] 특정 런타임 객체 트리 내부의 필드나 프로퍼티 중에 해당 objId를 가진 MusicData가 들어있는지 재귀적으로 검사합니다.
+        /// [재귀 탐색] 런타임 객체 트리 내부에서 첫 번째로 발견되는 MusicData의 objId를 추출합니다.
         /// </summary>
         /// <param name="obj">검사할 객체</param>
-        /// <param name="objId">찾을 노트 고유 ID</param>
         /// <param name="depth">재귀 탐색 깊이 (최대 2단계 제한)</param>
         /// <param name="inspectedObjects">순환 참조 방지용 방문 기록 집합</param>
-        private static bool ObjectContainsObjId(object obj, short objId, int depth, HashSet<int> inspectedObjects)
+        /// <param name="objId">발견된 MusicData의 objId</param>
+        private static bool TryGetObjId(object obj, int depth, HashSet<int> inspectedObjects, out short objId)
         {
+            objId = 0;
             if (obj == null || depth > 2) return false;
 
             // 순환 참조 방지
@@ -252,7 +286,8 @@ namespace muse_dash_test
             // 1. 직접 찾으려는 MusicData 형식일 때
             if (obj is MusicData musicData)
             {
-                return musicData.objId == objId;
+                objId = musicData.objId;
+                return true;
             }
 
             var type = obj.GetType();
@@ -263,12 +298,13 @@ namespace muse_dash_test
                 try
                 {
                     object value = field.GetValue(obj);
-                    if (value is MusicData fieldMusicData && fieldMusicData.objId == objId)
+                    if (value is MusicData fieldMusicData)
                     {
+                        objId = fieldMusicData.objId;
                         return true;
                     }
 
-                    if (ShouldInspectNested(value) && ObjectContainsObjId(value, objId, depth + 1, inspectedObjects))
+                    if (ShouldInspectNested(value) && TryGetObjId(value, depth + 1, inspectedObjects, out objId))
                     {
                         return true;
                     }
@@ -284,12 +320,13 @@ namespace muse_dash_test
                     if (!prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
 
                     object value = prop.GetValue(obj);
-                    if (value is MusicData propMusicData && propMusicData.objId == objId)
+                    if (value is MusicData propMusicData)
                     {
+                        objId = propMusicData.objId;
                         return true;
                     }
 
-                    if (ShouldInspectNested(value) && ObjectContainsObjId(value, objId, depth + 1, inspectedObjects))
+                    if (ShouldInspectNested(value) && TryGetObjId(value, depth + 1, inspectedObjects, out objId))
                     {
                         return true;
                     }
