@@ -46,6 +46,134 @@ namespace muse_dash_test
         private static readonly Dictionary<int, OriginalIdentity> OriginalsByRenderNoteUid = new Dictionary<int, OriginalIdentity>();
         private static readonly List<OriginalIdentity> OriginalsWithRenderPrefabName = new List<OriginalIdentity>();
 
+        // 리플렉션 컴파일된 접근 경로 클래스
+        private sealed class AccessPath
+        {
+            public readonly string Description;
+            public readonly MemberInfo[] Members;
+
+            public AccessPath(string description, List<MemberInfo> members)
+            {
+                Description = description;
+                Members = members.ToArray();
+            }
+
+            public object Evaluate(object obj)
+            {
+                object current = obj;
+                for (int i = 0; i < Members.Length; i++)
+                {
+                    if (current == null) return null;
+                    var member = Members[i];
+                    if (member is FieldInfo field)
+                    {
+                        current = field.GetValue(current);
+                    }
+                    else if (member is PropertyInfo prop)
+                    {
+                        current = prop.GetValue(current);
+                    }
+                }
+                return current;
+            }
+        }
+
+        // 특정 타입의 MusicData 및 scalar 진단 필드 스키마 정보
+        private sealed class TypeDumpSchema
+        {
+            public readonly List<AccessPath> MusicDataPaths = new List<AccessPath>();
+            public readonly List<AccessPath> ScalarPaths = new List<AccessPath>();
+        }
+
+        private static readonly Dictionary<Type, TypeDumpSchema> DumpSchemas = new Dictionary<Type, TypeDumpSchema>();
+
+        private static TypeDumpSchema GetOrCreateDumpSchema(Type type)
+        {
+            if (!DumpSchemas.TryGetValue(type, out var schema))
+            {
+                schema = new TypeDumpSchema();
+                DiscoverSchemaPaths(type, new List<MemberInfo>(), 0, new HashSet<Type>(), schema);
+                DumpSchemas[type] = schema;
+            }
+            return schema;
+        }
+
+        private static void DiscoverSchemaPaths(Type type, List<MemberInfo> currentPath, int depth, HashSet<Type> visitedTypes, TypeDumpSchema schema)
+        {
+            if (type == null || depth > 2) return;
+            if (!visitedTypes.Add(type)) return;
+
+            // 1. Fields 탐색
+            foreach (var field in GetFieldsCached(type))
+            {
+                try
+                {
+                    var fieldType = field.FieldType;
+                    var nextPath = new List<MemberInfo>(currentPath) { field };
+
+                    if (fieldType == typeof(MusicData))
+                    {
+                        string desc = string.Join(".", nextPath.ConvertAll(m => m.Name));
+                        schema.MusicDataPaths.Add(new AccessPath(desc, nextPath));
+                    }
+                    else if (fieldType == typeof(string) || fieldType == typeof(int) || fieldType == typeof(uint))
+                    {
+                        if (field.Name.Equals("name", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string desc = string.Join(".", nextPath.ConvertAll(m => m.Name));
+                            schema.ScalarPaths.Add(new AccessPath(desc, nextPath));
+                        }
+                    }
+                    else if (ShouldInspectNestedType(fieldType))
+                    {
+                        DiscoverSchemaPaths(fieldType, nextPath, depth + 1, new HashSet<Type>(visitedTypes), schema);
+                    }
+                }
+                catch (Exception) { }
+            }
+
+            // 2. Properties 탐색
+            foreach (var prop in GetPropertiesCached(type))
+            {
+                try
+                {
+                    var propType = prop.PropertyType;
+                    var nextPath = new List<MemberInfo>(currentPath) { prop };
+
+                    if (propType == typeof(MusicData))
+                    {
+                        string desc = string.Join(".", nextPath.ConvertAll(m => m.Name));
+                        schema.MusicDataPaths.Add(new AccessPath(desc, nextPath));
+                    }
+                    else if (propType == typeof(string) || propType == typeof(int) || propType == typeof(uint))
+                    {
+                        if (prop.Name.Equals("name", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string desc = string.Join(".", nextPath.ConvertAll(m => m.Name));
+                            schema.ScalarPaths.Add(new AccessPath(desc, nextPath));
+                        }
+                    }
+                    else if (ShouldInspectNestedType(propType))
+                    {
+                        DiscoverSchemaPaths(propType, nextPath, depth + 1, new HashSet<Type>(visitedTypes), schema);
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
+
+        private static bool ShouldInspectNestedType(Type type)
+        {
+            if (type == null) return false;
+            string typeName = type.FullName ?? string.Empty;
+            return typeName.StartsWith("Il2Cpp", StringComparison.Ordinal)
+                && !typeName.StartsWith("Il2CppUnityEngine.", StringComparison.Ordinal)
+                && !typeName.StartsWith("Il2CppSystem.", StringComparison.Ordinal)
+                && !typeName.StartsWith("UnityEngine.", StringComparison.Ordinal)
+                && !typeName.StartsWith("System.", StringComparison.Ordinal)
+                && !typeName.Contains("String");
+        }
+
         // 리플렉션 캐시
         private static readonly Dictionary<Type, FieldInfo[]> FieldsCache = new Dictionary<Type, FieldInfo[]>();
         private static readonly Dictionary<Type, PropertyInfo[]> PropertiesCache = new Dictionary<Type, PropertyInfo[]>();
@@ -344,7 +472,7 @@ namespace muse_dash_test
                     if (index.Map.TryGetValue(pair.Key, out var hit))
                     {
                         sb.AppendLine($"[SceneZzTransformTracker] runtime object dump: list={index.Label}, index={hit.Index}, type={hit.Item.GetType().FullName}");
-                        DumpObjectScalars(hit.Item, 0, new HashSet<int>(), sb);
+                        DumpObjectScalarsOptimized(hit.Item, sb);
                     }
                 }
             }
@@ -377,7 +505,7 @@ namespace muse_dash_test
                 object item = itemProp.GetValue(listObj, indexArgs);
                 if (item == null) continue;
 
-                if (TryGetObjId(item, 0, new HashSet<int>(), out short objId) && !map.ContainsKey(objId))
+                if (TryGetObjIdOptimized(item, out short objId) && !map.ContainsKey(objId))
                 {
                     map[objId] = new RuntimeHit(i, item);
                 }
@@ -386,23 +514,11 @@ namespace muse_dash_test
             return map;
         }
 
-        /// <summary>
-        /// [재귀 탐색] 런타임 객체 트리 내부에서 첫 번째로 발견되는 MusicData의 objId를 추출합니다.
-        /// </summary>
-        /// <param name="obj">검사할 객체</param>
-        /// <param name="depth">재귀 탐색 깊이 (최대 2단계 제한)</param>
-        /// <param name="inspectedObjects">순환 참조 방지용 방문 기록 집합</param>
-        /// <param name="objId">발견된 MusicData의 objId</param>
-        private static bool TryGetObjId(object obj, int depth, HashSet<int> inspectedObjects, out short objId)
+        private static bool TryGetObjIdOptimized(object obj, out short objId)
         {
             objId = 0;
-            if (obj == null || depth > 2) return false;
+            if (obj == null) return false;
 
-            // 순환 참조 방지
-            int identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
-            if (!inspectedObjects.Add(identity)) return false;
-
-            // 1. 직접 찾으려는 MusicData 형식일 때
             if (obj is MusicData musicData)
             {
                 objId = musicData.objId;
@@ -410,114 +526,60 @@ namespace muse_dash_test
             }
 
             var type = obj.GetType();
-
-            // 2. 클래스 내부의 필드들을 리플렉션으로 검사
-            foreach (var field in GetFieldsCached(type))
+            var schema = GetOrCreateDumpSchema(type);
+            foreach (var path in schema.MusicDataPaths)
             {
                 try
                 {
-                    object value = field.GetValue(obj);
-                    if (value is MusicData fieldMusicData)
+                    var val = path.Evaluate(obj);
+                    if (val is MusicData md)
                     {
-                        objId = fieldMusicData.objId;
-                        return true;
-                    }
-
-                    if (ShouldInspectNested(value) && TryGetObjId(value, depth + 1, inspectedObjects, out objId))
-                    {
+                        objId = md.objId;
                         return true;
                     }
                 }
-                catch (Exception)
-                {
-                    // Ignored: 필드 값 획득 실패 시 건너뜀
-                }
-            }
-
-            // 3. 클래스 내부의 프로퍼티들을 리플렉션으로 검사
-            foreach (var prop in GetPropertiesCached(type))
-            {
-                try
-                {
-                    object value = prop.GetValue(obj);
-                    if (value is MusicData propMusicData)
-                    {
-                        objId = propMusicData.objId;
-                        return true;
-                    }
-
-                    if (ShouldInspectNested(value) && TryGetObjId(value, depth + 1, inspectedObjects, out objId))
-                    {
-                        return true;
-                    }
-                }
-                catch (Exception)
-                {
-                    // Ignored: 프로퍼티 값 획득 실패 시 건너뜀
-                }
+                catch (Exception) { }
             }
 
             return false;
         }
 
-        /// <summary>
-        /// [재귀 탐색] 특정 객체 내부의 문자열이나 숫자 필드를 로깅하여 값을 분석합니다.
-        /// </summary>
-        private static void DumpObjectScalars(object obj, int depth, HashSet<int> inspectedObjects, System.Text.StringBuilder sb)
+        private static void DumpObjectScalarsOptimized(object obj, System.Text.StringBuilder sb)
         {
-            if (obj == null || depth > 1) return;
-
-            int identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
-            if (!inspectedObjects.Add(identity)) return;
-
+            if (obj == null) return;
             var type = obj.GetType();
+            var schema = GetOrCreateDumpSchema(type);
 
-            foreach (var field in GetFieldsCached(type))
+            // 1. MusicData 프로퍼티들 덤프
+            foreach (var path in schema.MusicDataPaths)
             {
                 try
                 {
-                    object value = field.GetValue(obj);
-                    if (IsInterestingScalar(value))
+                    var val = path.Evaluate(obj);
+                    if (val is MusicData musicData)
                     {
-                        sb.AppendLine($"[SceneZzTransformTracker]   scalar field depth={depth}: {type.Name}.{field.Name}={value}");
-                    }
-                    else if (value is MusicData musicData)
-                    {
-                        sb.AppendLine($"[SceneZzTransformTracker]   MusicData field depth={depth}: {type.Name}.{field.Name}, objId={musicData.objId}, uid={musicData.noteData?.uid}, scene={musicData.noteData?.scene}, prefab={musicData.noteData?.prefab_name}, configUid={musicData.configData?.note_uid}");
-                    }
-                    else if (ShouldInspectNested(value))
-                    {
-                        DumpObjectScalars(value, depth + 1, inspectedObjects, sb);
+                        var lastMember = path.Members[path.Members.Length - 1];
+                        string declaringTypeName = lastMember.DeclaringType?.Name ?? type.Name;
+                        sb.AppendLine($"[SceneZzTransformTracker]   MusicData prop depth={path.Members.Length}: {declaringTypeName}.{lastMember.Name}, objId={musicData.objId}, uid={musicData.noteData?.uid}, scene={musicData.noteData?.scene}, prefab={musicData.noteData?.prefab_name}, configUid={musicData.configData?.note_uid}");
                     }
                 }
-                catch (Exception)
-                {
-                    // Ignored: 진단 필드 조회 실패 시 건너뜀
-                }
+                catch (Exception) { }
             }
 
-            foreach (var prop in GetPropertiesCached(type))
+            // 2. 스칼라 프로퍼티들 덤프 (IsInterestingScalar에 부합할 경우에만)
+            foreach (var path in schema.ScalarPaths)
             {
                 try
                 {
-                    object value = prop.GetValue(obj);
-                    if (IsInterestingScalar(value))
+                    var val = path.Evaluate(obj);
+                    if (IsInterestingScalar(val))
                     {
-                        sb.AppendLine($"[SceneZzTransformTracker]   scalar prop depth={depth}: {type.Name}.{prop.Name}={value}");
-                    }
-                    else if (value is MusicData musicData)
-                    {
-                        sb.AppendLine($"[SceneZzTransformTracker]   MusicData prop depth={depth}: {type.Name}.{prop.Name}, objId={musicData.objId}, uid={musicData.noteData?.uid}, scene={musicData.noteData?.scene}, prefab={musicData.noteData?.prefab_name}, configUid={musicData.configData?.note_uid}");
-                    }
-                    else if (ShouldInspectNested(value))
-                    {
-                        DumpObjectScalars(value, depth + 1, inspectedObjects, sb);
+                        var lastMember = path.Members[path.Members.Length - 1];
+                        string declaringTypeName = lastMember.DeclaringType?.Name ?? type.Name;
+                        sb.AppendLine($"[SceneZzTransformTracker]   scalar prop depth={path.Members.Length - 1}: {declaringTypeName}.{lastMember.Name}={val}");
                     }
                 }
-                catch (Exception)
-                {
-                    // Ignored: 진단 프로퍼티 조회 실패 시 건너뜀
-                }
+                catch (Exception) { }
             }
         }
 
