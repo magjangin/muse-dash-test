@@ -332,11 +332,11 @@ namespace muse_dash_test
 
                     if (!inStageSelectionContext)
                     {
-                        // 곡 선택/준비 화면을 벗어나면 메뉴 BGM 감시만 종료한다.
-                        // SelectedMusicUid는 전투 진입 직후 배틀 미디어/채보 패치가 계속 사용하므로 여기서 지우면 안 된다.
+                        // 곡 선택/준비 화면을 벗어나면 커스텀 BGM 재생을 정지하고 모니터링을 종료하여 게임이 자기 BGM을 회복하도록 합니다.
                         if (!string.IsNullOrEmpty(CustomPlaySession.Current.SelectedMusicUid))
                         {
-                            MelonLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 메뉴 BGM 감시만 중지: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
+                            MelonLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 커스텀 BGM 정지 및 모니터링 종료: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
+                            HwaMenuBgmController.StopCustomMenuBgm("곡 선택/준비 화면 이탈 감지");
                             HwaMenuBgmController.StopMenuMonitoring("곡 선택/준비 화면 이탈 감지");
                         }
                     }
