@@ -223,6 +223,7 @@ public class PnlStage_SetAchievementPercent_Patch
         try
         {
             MelonLogger.Msg($"PnlStage.SetAchievementPercent Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.SetAchievementPercent Postfix 예외: {ex}"); }
     }
@@ -287,6 +288,8 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
+            CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
+
             if (PnlStagePatchHelper.ApplyTagTitleForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
             {
                 // 다이내믹 주입에 성공했으면 다른 정적 주입은 실행하지 않고 리턴합니다.

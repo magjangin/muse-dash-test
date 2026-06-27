@@ -45,6 +45,10 @@ public class PnlPreparation_OnEnable_Patch
                 HwaMenuBgmController.TriggerMenuBgmChange(selectedUid);
             }
 
+            CustomRecordUiPatchHelper.ApplyCustomRecordToPnlPreparation(__instance);
+            MelonCoroutines.Start(CustomRecordUiPatchHelper.DelayedApplyPrep(__instance, 0.25f));
+            MelonCoroutines.Start(CustomRecordUiPatchHelper.DelayedApplyPrep(__instance, 1.0f));
+
             MelonCoroutines.Start(PnlMusicDiagnostics.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.OnEnable.Delay", 0.25f));
             MelonCoroutines.Start(PnlMusicDiagnostics.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.OnEnable.DelayLong", 1.0f));
         }
@@ -79,6 +83,10 @@ public class PnlPreparation_OnDownloadBestReport_Patch
             MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
             DumpRecordContext(__instance, "Postfix");
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnDownloadBestReport");
+
+            CustomRecordUiPatchHelper.ApplyCustomRecordToPnlPreparation(__instance);
+            MelonCoroutines.Start(CustomRecordUiPatchHelper.DelayedApplyPrep(__instance, 0.25f));
+
             MelonCoroutines.Start(PnlMusicDiagnostics.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.OnDownloadBestReport.Delay", 0.25f));
         }
         catch (Exception ex)
@@ -208,6 +216,10 @@ public class PnlPreparation_RefreshUi_Patch
             }
 
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.RefreshUi");
+
+            CustomRecordUiPatchHelper.ApplyCustomRecordToPnlPreparation(__instance);
+            MelonCoroutines.Start(CustomRecordUiPatchHelper.DelayedApplyPrep(__instance, 0.25f));
+
             MelonCoroutines.Start(PnlMusicDiagnostics.DelayedApplyPrepMusicInfo(__instance, "PnlPreparation.RefreshUi.Delay", 0.25f));
         }
         catch (Exception ex)

@@ -82,12 +82,31 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         int totalHearts = 0;
         int totalBlueNotes = 0;
 
+        int longCount = 0;
+        int longDenominatorCount = 0;
+        int longHeadCount = 0;
+        int longBodyCount = 0;
+        int longTailCount = 0;
+        int heartCount = 0;
+        int blueNoteCount = 0;
+
         for (int i = 1; i < musicList.Count; i++)
         {
             var note = musicList[i];
             if (note?.noteData == null) continue;
 
             int type = (int)note.noteData.type;
+            string uid = note.noteData.uid ?? string.Empty;
+
+            // 추가 진단 집계 (유형 매칭 또는 UID 접두사 검사)
+            if (type == NoteTypes.Heart || uid.StartsWith("0002"))
+            {
+                heartCount++;
+            }
+            if (type == NoteTypes.Blue || uid.StartsWith("0003"))
+            {
+                blueNoteCount++;
+            }
 
             if (type == NoteTypes.Boss || type == NoteTypes.SceneToggle || IsSceneToggleNote(note))
             {
@@ -97,20 +116,32 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             {
                 totalGears++;
             }
-            else if (type == NoteTypes.Heart)
+            else if (type == NoteTypes.Heart || uid.StartsWith("0002"))
             {
                 totalHearts++;
             }
-            else if (type == NoteTypes.Blue)
+            else if (type == NoteTypes.Blue || uid.StartsWith("0003"))
             {
                 totalBlueNotes++;
             }
             else if (type == NoteTypes.Long)
             {
-                // 롱노트는 시작 노트만 분모에 포함하고 중간/끝 마디는 제외합니다.
-                if (!note.isLongPressing && !note.isLongPressEnd)
+                longCount++;
+                if (note.isLongPressing)
                 {
+                    longBodyCount++;
+                }
+                else if (note.isLongPressEnd)
+                {
+                    longTailCount++;
                     totalStandard++;
+                    longDenominatorCount++;
+                }
+                else
+                {
+                    longHeadCount++;
+                    totalStandard++;
+                    longDenominatorCount++;
                 }
             }
             else
@@ -125,6 +156,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         CustomPlaySession.Current.TotalBlueNotes = totalBlueNotes;
 
         MelonLogger.Msg($"[APMod.Accuracy] Custom chart note counts: Standard={totalStandard}, Gears={totalGears}, Hearts={totalHearts}, BlueNotes={totalBlueNotes}");
+        MelonLogger.Msg($"[APMod.Accuracy.LongDiag] Long 노트 진단: type==Long 총 {longCount}개 (머리={longHeadCount}, 몸통={longBodyCount}, 꼬리={longTailCount}) -> 분모 인정 {longDenominatorCount}개 (머리 및 꼬리만 분모로 인정)");
+        MelonLogger.Msg($"[APMod.Accuracy.Diag] 추가 집계 진단: Heart(유형/UID)={heartCount}개, BlueNote(유형/UID)={blueNoteCount}개");
     }
 
     public static void AddExperimentNotes(Il2CppSystem.Collections.Generic.List<MusicData> outputList, MusicData sourceNote, ExperimentNoteSpec spec)

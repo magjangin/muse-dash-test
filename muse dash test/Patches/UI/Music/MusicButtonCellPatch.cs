@@ -33,6 +33,18 @@ namespace muse_dash_test
                 MelonLogger.Error($"MusicButtonCell.OnButtonClicked Prefix 예외: {ex}");
             }
         }
+
+        public static void Postfix(MusicButtonCell __instance)
+        {
+            try
+            {
+                MelonLogger.Msg($"[Postfix] SelectedMusicUid={CustomPlaySession.Current.SelectedMusicUid}, LastClickedMusicUid={CustomPlaySession.Current.LastClickedMusicUid}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"MusicButtonCell.OnButtonClicked Postfix 예외: {ex}");
+            }
+        }
     }
 
     // MusicButtonCell.InitMusicCell 후킹

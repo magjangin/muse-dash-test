@@ -259,6 +259,10 @@ namespace muse_dash_test.Patches
                 // 결과 화면 진입 시 커스텀 BGM/BGA 미디어를 강제로 정지시킵니다.
                 HwaBattleMediaController.StopMedia();
 
+                // [기록 1단계] 커스텀 곡이면 별도 record/ 폴더에 플레이 결과를 저장합니다.
+                // 배너 UI(__instance) 유무와 무관하게 기록은 남도록 여기서 먼저 처리합니다.
+                TrySaveCustomRecord();
+
                 if (__instance == null)
                 {
                     MelonLogger.Msg("[APMod] __instance가 null입니다!");
@@ -293,6 +297,52 @@ namespace muse_dash_test.Patches
             catch (Exception ex)
             {
                 MelonLogger.Error($"[APMod] OnShowVictory Postfix 예외 발생: {ex}");
+            }
+        }
+
+        // [기록 1단계] 커스텀 곡 플레이 결과를 record/ 폴더에 저장합니다.
+        private static void TrySaveCustomRecord()
+        {
+            try
+            {
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
+                if (!CustomContentIds.IsVirtualSong(uid))
+                {
+                    // 순정 곡은 게임 세이브가 처리하므로 우리 기록 대상이 아닙니다.
+                    return;
+                }
+
+                var target = VictoryDataCache.ActiveTarget;
+                if (target == null)
+                {
+                    MelonLogger.Warning("[CustomRecordStore] ActiveTarget이 null이라 기록을 저장할 수 없습니다.");
+                    return;
+                }
+
+                int perfect = ModReflection.GetInt(target, "PerfectResult");
+                int great = target.m_GreatResult;
+                int miss = target.m_MissResult;
+                float accuracy = target.GetAccuracy();
+                bool isFullCombo = target.IsFullCombo();
+                bool isAllPerfect = isFullCombo && great == 0 && miss == 0;
+
+                int difficulty = 1;
+                if (Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage != null)
+                {
+                    difficulty = Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage.m_MapDifficulty;
+                }
+
+                var session = CustomPlaySession.Current;
+                CustomRecordStore.SaveResult(
+                    uid, difficulty,
+                    session.TotalStandard, session.TotalGears, session.TotalHearts, session.TotalBlueNotes,
+                    perfect, great, miss,
+                    accuracy,
+                    isFullCombo, isAllPerfect);
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[CustomRecordStore] 기록 저장 시도 중 예외: {ex}");
             }
         }
 

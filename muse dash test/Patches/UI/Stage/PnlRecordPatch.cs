@@ -1,5 +1,6 @@
 using MelonLoader;
 using System;
+using muse_dash_test;
 
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlRecord), "RefreshRecord")]
 public class PnlRecord_RefreshRecord_Patch
@@ -21,6 +22,7 @@ public class PnlRecord_RefreshRecord_Patch
         try
         {
             MelonLogger.Msg($"[PnlRecord.RefreshRecord.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
+            CustomRecordUiPatchHelper.ApplyCustomRecordToPnlRecord(__instance);
         }
         catch (Exception ex)
         {

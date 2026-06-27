@@ -203,7 +203,7 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 ### 3. 결과 화면 ALL PERFECT 골드 배너 동적 주입
 - 플레이어의 판정 결과가 **Great 0, Miss 0, Full Combo(정확도 100%)**를 만족하는 경우(`isAllPerfect`), 기존 `"FULL COMBO"` 낱개 문자 이미지를 비활성화합니다.
-- 가상의 텍스트 오브젝트를 생성하고, 인게임 HUD에서 추출한 골드빛 그라데이션 스타일의 두꺼운 외곽선 폰트(예: `LuckiestGuy-Regular`)를 동적 바인딩하여 화려한 **"ALL PERFECT !"** 골드 텍스트 배너를 동적으로 생성 및 배치합니다.
+- 새 텍스트 오브젝트를 생성하고, 인게임 HUD에서 추출한 외곽선 폰트(예: `LuckiestGuy-Regular`)를 적용해 그라데이션 색상의 **"ALL PERFECT !"** 배너를 생성·배치합니다.
 
 ---
 
