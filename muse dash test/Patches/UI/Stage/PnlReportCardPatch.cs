@@ -30,27 +30,46 @@ public class PnlReportCard_RefreshBestRecord_Patch
             // 1. 곡명 및 아티스트 이름 주입
             string title = "Custom Chart";
             string artist = "Custom Artist";
-            if (MainMod.TryGetHwaPrimarySong(
+            bool foundInManifest = MainMod.TryGetHwaPrimarySong(
                     uid,
                     out string manifestTitle,
                     out string manifestArtist,
                     out _,
-                    out _, out _, out _, out _, out _, out _))
+                    out _, out _, out _, out _, out _, out _);
+
+            if (foundInManifest)
             {
+                MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] HwaPrimarySong 매니페스트 조회 성공: uid={uid}, title='{manifestTitle}', artist='{manifestArtist}'");
                 if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
+                else MelonLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] 매니페스트 내 곡명(title)이 비어있습니다. uid={uid}");
+                
                 if (!string.IsNullOrWhiteSpace(manifestArtist)) artist = manifestArtist;
+                else MelonLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] 매니페스트 내 아티스트(artist)가 비어있습니다. uid={uid}");
             }
             else
             {
-                var musicInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
-                if (musicInfo != null)
+                MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] HwaPrimarySong 조회 실패. dbMusicTag 조회를 백업 시도합니다: uid={uid}");
+                if (GlobalDataBase.dbMusicTag == null)
                 {
-                    title = musicInfo.name;
-                    artist = musicInfo.author;
+                    MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] GlobalDataBase.dbMusicTag가 null입니다!");
+                }
+                else
+                {
+                    var musicInfo = GlobalDataBase.dbMusicTag.GetMusicInfoFromAll(uid);
+                    if (musicInfo != null)
+                    {
+                        title = musicInfo.name;
+                        artist = musicInfo.author;
+                        MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] dbMusicTag에서 MusicInfo 획득 성공: name='{title}', author='{artist}'");
+                    }
+                    else
+                    {
+                        MelonLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] dbMusicTag 내에서도 uid={uid} 정보를 찾을 수 없습니다.");
+                    }
                 }
             }
 
-            MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord] Resolved Metadata: title='{title}', artist='{artist}'");
+            MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord] 최종 적용 텍스트: title='{title}', artist='{artist}'");
 
             // 디버그: 컨트롤러 존재 여부 및 하위 컴포넌트 정보 로깅
             if (__instance.longSongNameController != null)
@@ -68,7 +87,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
             }
             else
             {
-                MelonLogger.Warning("[PnlReportCard.RefreshBestRecord] longSongNameController가 null입니다.");
+                MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] longSongNameController가 null입니다. 곡 제목 반영 불가.");
             }
 
             if (__instance.longAuthorNameController != null)
@@ -86,7 +105,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
             }
             else
             {
-                MelonLogger.Warning("[PnlReportCard.RefreshBestRecord] longAuthorNameController가 null입니다.");
+                MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] longAuthorNameController가 null입니다. 아티스트명 반영 불가.");
             }
 
             // 방법 C: PnlMusicOverride를 통한 텍스트 계층 구조 일괄 변경 시도
@@ -96,7 +115,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlReportCard.RefreshBestRecord] PnlMusicOverride 적용 중 에러: {ex}");
+                MelonLogger.Error($"[PnlReportCard.RefreshBestRecord.Debug] PnlMusicOverride 적용 중 에러: {ex}");
             }
 
             // 2. 앨범 커버 주입
@@ -107,12 +126,33 @@ public class PnlReportCard_RefreshBestRecord_Patch
                     __instance.imgCover.sprite = coverSprite;
                     MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord] 앨범 커버 주입 성공: {uid}");
                 }
+                else
+                {
+                    MelonLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] 커스텀 앨범 커버(cover.png) 로드 실패: uid={uid}");
+                }
+            }
+            else
+            {
+                MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] imgCover 컴포넌트가 null입니다. 앨범 커버 반영 불가.");
             }
 
             // 3. 난이도 별점 및 난이도 수치 주입
             try
             {
                 var musicInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
+                if (musicInfo == null)
+                {
+                    MelonLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] 난이도 별점 주입 실패: dbMusicTag에서 uid={uid}의 MusicInfo를 찾지 못했습니다.");
+                }
+                if (__instance.starObjs == null)
+                {
+                    MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] 난이도 별점 주입 실패: __instance.starObjs가 null입니다.");
+                }
+                if (__instance.starTxtValues == null)
+                {
+                    MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] 난이도 별점 주입 실패: __instance.starTxtValues가 null입니다.");
+                }
+
                 if (musicInfo != null && __instance.starObjs != null && __instance.starTxtValues != null)
                 {
                     int[] levels = {
@@ -132,33 +172,46 @@ public class PnlReportCard_RefreshBestRecord_Patch
                         {
                             __instance.starObjs[i].SetActive(isCurrentDiff);
                         }
+                        else
+                        {
+                            MelonLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] starObjs[{i}]가 null입니다.");
+                        }
 
                         if (i < __instance.starTxtValues.Count && __instance.starTxtValues[i] != null)
                         {
                             int lvl = (i < levels.Length) ? levels[i] : 0;
                             __instance.starTxtValues[i].text = lvl > 0 ? lvl.ToString() : "?";
                         }
+                        else if (i < __instance.starTxtValues.Count)
+                        {
+                            MelonLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] starTxtValues[{i}]가 null입니다.");
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlReportCard.RefreshBestRecord] 난이도 별점 주입 중 예외: {ex}");
+                MelonLogger.Error($"[PnlReportCard.RefreshBestRecord.Debug] 난이도 별점 주입 중 예외: {ex}");
             }
 
             // 4. 기록 정보 대입
             var record = CustomRecordStore.LoadResult(uid, difficulty);
             if (record != null)
             {
+                MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] 가상 곡 기록 로드 성공: uid={uid}, diff={difficulty}");
                 if (__instance.txtScrore != null)
                 {
                     int score = (record.perfect * 300) + (record.great * 150);
                     __instance.txtScrore.text = $"{score:N0}";
                 }
+                else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtScrore가 null입니다.");
+
                 if (__instance.txtAccuracy != null)
                 {
                     __instance.txtAccuracy.text = $"{record.accuracy:0.00}%";
                 }
+                else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtAccuracy가 null입니다.");
+
                 if (__instance.txtCombo != null)
                 {
                     if (record.isFullCombo)
@@ -170,17 +223,23 @@ public class PnlReportCard_RefreshBestRecord_Patch
                         __instance.txtCombo.text = $"{record.perfect + record.great}";
                     }
                 }
+                else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtCombo가 null입니다.");
+
                 if (__instance.txtTotalPassCountValue != null)
                 {
                     __instance.txtTotalPassCountValue.text = "1";
                 }
+                else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtTotalPassCountValue가 null입니다.");
+
                 if (__instance.imgFc != null)
                 {
                     __instance.imgFc.gameObject.SetActive(record.isFullCombo);
                 }
+                else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] imgFc가 null입니다.");
             }
             else
             {
+                MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] 가상 곡 플레이 이력 없음. 대시(-) 처리 진행: uid={uid}, diff={difficulty}");
                 if (__instance.txtScrore != null) __instance.txtScrore.text = "-";
                 if (__instance.txtAccuracy != null) __instance.txtAccuracy.text = "-";
                 if (__instance.txtCombo != null) __instance.txtCombo.text = "-";
