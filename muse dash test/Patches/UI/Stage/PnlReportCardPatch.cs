@@ -188,6 +188,12 @@ public class PnlReportCard_RefreshBestRecord_Patch
                 if (__instance.imgFc != null) __instance.imgFc.gameObject.SetActive(false);
             }
 
+            // 5. 등급 평가 이미지 비활성화 (추후 연동 예정으로 항상 비활성화)
+            if (__instance.imgS != null)
+            {
+                __instance.imgS.gameObject.SetActive(false);
+            }
+
             // 오리지널 메소드 실행을 차단하여 NullReferenceException 방지
             return false;
         }
