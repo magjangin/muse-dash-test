@@ -196,7 +196,7 @@ new BossRule
 
 ## 곡 제목/아티스트가 안 바뀔 때
 
-곡 정보 실험은 `PnlMusicUtils.cs` 및 `PnlStagePatchHelper.cs` 등의 유틸리티를 기반으로 동작하며, `PnlStagePatch.cs` (`Patches/UI/Stage/Selection/`) 등의 상수에서 켭니다.
+곡 정보 실험은 `PnlMusicDiagnostics.cs` 및 `PnlStagePatchHelper.cs` 등의 유틸리티를 기반으로 동작하며, 곡 제목/아티스트 오버라이드 상수는 `PnlMusicOverride.cs` (`Patches/UI/Music/`) 상단에서 켭니다.
 
 ```csharp
 private const bool EnableSongTitleExperiment = true;

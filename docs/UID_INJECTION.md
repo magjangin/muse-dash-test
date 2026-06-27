@@ -1,3 +1,10 @@
+> [!NOTE]
+> **이 문서는 가상 곡 UID 등록 기능을 처음 설계할 때의 탐색·기획 메모입니다.**
+> 여기서 "제안 / 다음 단계 / 검증 예정"으로 적힌 내용은 현재 대부분 구현 완료되었습니다.
+> 실제 현행 등록 흐름은 `CustomTagRegistry`(가상 곡/앨범 주입) → `CustomPlaySession`(선택 상태 추적) →
+> `DBStageInfo.SetRuntimeMusicData`(차트 주입) 순서로 동작합니다.
+> 최신 구조는 [ARCHITECTURE.md](ARCHITECTURE.md)와 [CAST_AND_CUSTOM_TAG_GUIDE.md](CAST_AND_CUSTOM_TAG_GUIDE.md)를 참고하세요.
+
 **개요**
 - 목적: 런타임에 커스텀 곡 UID(예: `1999-0`)를 데이터베이스에 등록하고 UI에 선택되도록 처리하는 절차를 정리합니다.
 
@@ -33,7 +40,7 @@
    - 가능한 방법 B: `PnlStage` 인스턴스의 내부 `MusicInfo` 필드(또는 프로퍼티)를 리플렉션으로 직접 설정하고 `Refresh()` 호출.
 
 **권장 구현(샘플, 간단)**
-- 파일 위치 제안: `muse dash test/Patches/UI/CustomUidRegistrar.cs`
+- 파일 위치 제안(당시): `muse dash test/Patches/UI/CustomUidRegistrar.cs` — 현재는 이 별도 파일 대신 `Patches/UI/Custom/Tags/CustomTagRegistry.cs`로 구현되어 실제로 만들어지지 않았습니다.
 
 샘플 코드(개념적):
 ```csharp
@@ -81,10 +88,10 @@ if(stage != null) {
 - `Il2CppAssets.Scripts.Database.MusicInfo` 접근자: `get_uid()` / `set_uid()` — `MusicInfo`의 uid를 읽고 쓸 수 있습니다. (참조: reflect_output.txt)
 - `GlobalDataBase.dbMusicTag.AddCustomAlbumTagsSort(int)` — 커스텀 태그 UID를 태그 정렬 목록에 등록합니다. (파일: muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
 - `GlobalDataBase.dbMusicTag.AddAlbumTagData(int, AlbumTagInfo)` — 앨범/태그 데이터를 글로벌 DB에 최종 등록합니다. (파일: muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
-- `PnlStagePatchHelper.GetCurrentSelectedMusicUid()` — `PnlStage` 인스턴스에서 현재 선택된 곡의 UID를 검색하는 헬퍼입니다. (파일: muse dash test/Patches/UI/Common/PnlStagePatchHelper.cs)
-- `PnlStage` / `LongSongNameController` 관련 패치들 — UI에서 `selectedUid`를 처리하거나 강제 변경 로그를 남기는 위치입니다. (파일: muse dash test/Patches/UI/Stage/Selection/PnlStagePatch.cs, muse dash test/Patches/UI/Stage/Selection/LongSongNameControllerPatch.cs)
+- `PnlStagePatchHelper.GetCurrentSelectedMusicUid()` — `PnlStage` 인스턴스에서 현재 선택된 곡의 UID를 검색하는 헬퍼입니다. (파일: muse dash test/Patches/UI/Pnl/PnlStagePatchHelper.cs)
+- `PnlStage` / `LongSongNameController` 관련 패치들 — UI에서 `selectedUid`를 처리하거나 강제 변경 로그를 남기는 위치입니다. (파일: muse dash test/Patches/UI/Stage/PnlStagePatch.cs)
 - `PnlMusicTagPatchLogger.ApplyCustomCellTitle()` — `cell.musicInfo.uid`로 셀을 식별해 제목을 변경합니다; 셀 레벨에서 UID를 검사하는 좋은 예제입니다. (파일: muse dash test/Patches/UI/Music/PnlMusicTagPatch.cs)
-- `PnlMusicUtils.ExtractMusicInfo(...)` — 패널 객체에서 `MusicInfo`를 추출하는 유틸리티로, UI→데이터 연동 흐름을 이해하는 데 유용합니다. (파일: muse dash test/Patches/UI/Common/PnlMusicUtils.cs)
+- `PnlMusicDiagnostics.ExtractMusicInfo(...)` — 패널 객체에서 `MusicInfo`를 추출하는 유틸리티로, UI→데이터 연동 흐름을 이해하는 데 유용합니다. (파일: muse dash test/Patches/UI/Music/PnlMusicDiagnostics.Extraction.cs)
 - `DBStageInfoExperimentChart的` UID 처리 로직 — 노트/스테이지 도메인에서 UID를 생성/변환/할당하는 예시가 존재합니다. (파일: muse dash test/Patches/Database/Stage/DBStageInfoExperimentChart.cs)
 
 위 후보들은 `1999-0`을 생성·등록·선택 상태로 만드는 구현에서 직접 참고하거나 호출할 수 있는 지점들입니다. 문서 상단의 절차와 조합해 실제 구현을 진행하면 됩니다.

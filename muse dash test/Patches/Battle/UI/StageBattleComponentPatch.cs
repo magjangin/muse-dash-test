@@ -7,6 +7,8 @@ using Il2CppGameLogic;
 namespace muse_dash_test
 {
     // Il2CppFormulaBase.StageBattleComponent.LoadMusicData 하모니 패치
+    // 현재는 호출 시점만 로그로 남기는 관찰 전용 패치다.
+    // MusicData 상세 덤프가 필요하면 아래 19행의 StageBattleMusicDataDump.Dump 호출 주석을 해제하면 된다.
     [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "LoadMusicData")]
     public class StageBattleComponent_LoadMusicData_Patch
     {
@@ -15,7 +17,8 @@ namespace muse_dash_test
             try
             {
                 MelonLogger.Msg($"[StageBattleComponent.LoadMusicData] 호출됨: {__instance}");
-                // [비활성] MusicData 덤프 로직 중단 (요청에 따라 꺼둠)
+                // [비활성] MusicData 덤프 로직. 평소엔 로그 과다/성능 때문에 꺼두며,
+                // 노트 주입 디버깅이 필요할 때만 아래 한 줄을 주석 해제한다.
                 // StageBattleMusicDataDump.Dump(__instance);
             }
             catch (Exception ex)
@@ -25,6 +28,9 @@ namespace muse_dash_test
         }
     }
 
+    // 진단 전용(평소 비활성): StageBattleComponent의 MusicData 관련 멤버를 리플렉션으로 훑어
+    // 노트 정보를 로그로 덤프한다. 위 LoadMusicData_Patch의 호출이 주석 처리돼 있어 평소엔 실행되지 않는다.
+    // 노트 주입/씬 전환 디버깅 시에만 임시로 켜는 용도로 의도적으로 남겨둔 코드다.
     internal static class StageBattleMusicDataDump
     {
         private const BindingFlags InstanceMembers =

@@ -67,7 +67,8 @@ public class PnlReportCard_RefreshBestRecord_Patch
 
             MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord] 최종 적용 텍스트: title='{title}', artist='{artist}'");
 
-            // 디버그: 컨트롤러 존재 여부 및 하위 컴포넌트 정보 로깅
+            // 곡 제목 주입: 컨트롤러 상태를 로깅한 뒤, 게임 기본 메서드(RefreshText)와
+            // 내부 텍스트 컴포넌트 직접 대입을 함께 적용한다(둘 중 하나만으론 누락되는 경우가 있어 병행).
             if (__instance.longSongNameController != null)
             {
                 var c = __instance.longSongNameController;

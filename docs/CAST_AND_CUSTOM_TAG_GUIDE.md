@@ -17,7 +17,7 @@ graph TD
     C -->|원본 얇은 복제 및 MusicInfoWrapper 강타입 속성 주입| E[GlobalDataBase.dbMusicTag]
     B -->|2. 가상 앨범 동적 생성| D[ConfigManager 복제 및 AlbumsInfoWrapper 주입]
     D -->|안전 폴백 생성 및 데이터 결합| F[GlobalDataBase.dbMusicTag]
-    G[PnlMusicUtils.SetChildTextByNames] -->|3. 초고속 UI 텍스트 변조| H[Transform 1차 매칭 검사]
+    G[PnlMusicOverride.SetChildTextsBatch] -->|3. 초고속 UI 텍스트 변조| H[Transform 1차 매칭 검사]
     H -->|일치하는 오브젝트만 핀포인트 획득| I[ModReflection 캐시 바인딩]
 ```
 
@@ -30,9 +30,9 @@ graph TD
 ### 2.1 유니버설 래퍼 (Universal Wrapper)
 IL2CPP 네이티브 메모리 객체를 직접 다루면 게임 업데이트 때마다 필드 구조가 바뀌어 매번 코드를 고쳐야 합니다. 래퍼 계층(`Il2CppWrapperBase`)을 두면 모더는 C# 강타입 프로퍼티로 접근하고, 래퍼가 리플렉션으로 네이티브 값을 읽고 씁니다.
 
-* **[Il2CppWrapperBase.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/Il2CppWrapperBase.cs)**: 모든 래퍼의 베이스 클래스로, 리플렉션 조회를 담당합니다.
-* **[ModReflection.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Reflection/ModReflection.cs)**: 래퍼가 사용하는 필드 검색 모듈입니다. 개발사(PeroPeroGames)가 변수명 앞에 `m_`을 붙이거나 컴파일 과정에서 백킹 필드(`_k__BackingField`)로 이름이 바뀌어도, 대소문자를 무시하고 찾아내어 조회 실패로 인한 오류를 방지합니다.
-* **[MusicInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/MusicInfoWrapper.cs) & [AlbumsInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/AlbumsInfoWrapper.cs)**: 각각 곡 정보(`MusicInfo`)와 앨범 정보(`AlbumsInfo`) 전용 래퍼입니다.
+* **[Il2CppWrapperBase.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/Il2CppWrapperBase.cs)**: 모든 래퍼의 베이스 클래스로, 리플렉션 조회를 담당합니다.
+* **[ModReflection.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/ModReflection.cs)**: 래퍼가 사용하는 필드 검색 모듈입니다. 개발사(PeroPeroGames)가 변수명 앞에 `m_`을 붙이거나 컴파일 과정에서 백킹 필드(`_k__BackingField`)로 이름이 바뀌어도, 대소문자를 무시하고 찾아내어 조회 실패로 인한 오류를 방지합니다.
+* **[MusicInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/MusicInfoWrapper.cs) & [AlbumsInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/AlbumsInfoWrapper.cs)**: 각각 곡 정보(`MusicInfo`)와 앨범 정보(`AlbumsInfo`) 전용 래퍼입니다.
 
 ---
 

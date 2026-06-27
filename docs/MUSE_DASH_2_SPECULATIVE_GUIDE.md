@@ -43,7 +43,7 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 ## 🛠️ Phase 1. 리플렉션 계층 설정 및 래퍼 준비
 
-2편 빌드는 1편과 다른 변수명, 새로운 컴포넌트 네이밍, 그리고 강력한 난독화가 적용될 것입니다. 정적 종속성이 깨져 컴파일 조차 되지 않는 참사를 피하기 위해 **[Il2CppWrapperBase.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Wrappers/Il2CppWrapperBase.cs)**와 **[ModReflection.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Common/Reflection/ModReflection.cs)**를 그대로 복사해 이식합니다.
+2편 빌드는 1편과 다른 변수명, 새로운 컴포넌트 네이밍, 그리고 강력한 난독화가 적용될 것입니다. 정적 종속성이 깨져 컴파일 조차 되지 않는 참사를 피하기 위해 **[Il2CppWrapperBase.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/Il2CppWrapperBase.cs)**와 **[ModReflection.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/ModReflection.cs)**를 그대로 복사해 이식합니다.
 
 ### 1. ILSpy 스캔 타겟
 - **게임 에셋 로더 계층**: `AlbumsInfo`, `MusicInfo`에 대응되는 핵심 데이터 클래스명을 탐색합니다.

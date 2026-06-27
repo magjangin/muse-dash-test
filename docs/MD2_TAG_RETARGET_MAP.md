@@ -192,7 +192,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 ## 📋 정확도 보정 및 결과 화면(AP) 연출 재타깃팅 지도
 
-**파일**: [APModPatch.cs](../muse%20dash%20test/Patches/APModPatch.cs)
+**파일**: [APModPatch.cs](../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|

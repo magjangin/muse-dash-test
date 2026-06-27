@@ -13,6 +13,9 @@ namespace muse_dash_test
     /// </summary>
     public static class PnlMusicOverride
     {
+        // 아래 이름의 "Experiment" 접두사는 초기 실험 코드의 잔재일 뿐, 현재는 정식 기능이다.
+        // EnableSongTitleExperiment는 항상 true(상시 활성)이고, Experiment* 문자열들은
+        // 매니페스트/musicInfo 조회가 모두 실패했을 때 쓰는 폴백 기본 표시 텍스트다.
         private const bool EnableSongTitleExperiment = true;
         private const string ExperimentTitle = "Custom Chart";
         private const string ExperimentArtist = "Custom Artist";

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.7.7", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.7.8", "화영왕")]
 [assembly: MelonColor(255, 147, 112, 219)] // 모드 이름 색상: 보라색(MediumPurple #9370DB)
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
@@ -53,6 +53,15 @@ namespace muse_dash_test
                 Directory.CreateDirectory(hwaTagImageFolderPath);
                 MelonLogger.Msg($"hwa tag image 폴더를 확인/생성했습니다: {hwaTagImageFolderPath}");
                 EnsureTagIconExtracted(hwaTagImageFolderPath);
+            }, maxConsecutiveFailures: 0);
+
+            // skins 폴더 생성 및 샘플 skins.txt 추출 (FavGirl 실시간 외형 교체 설정)
+            FeatureGuard.Run("Init.SkinsConfig", () =>
+            {
+                string skinsFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "skins");
+                Directory.CreateDirectory(skinsFolderPath);
+                MelonLogger.Msg($"skins 폴더를 확인/생성했습니다: {skinsFolderPath}");
+                EnsureSampleSkinsFile(skinsFolderPath);
             }, maxConsecutiveFailures: 0);
 
             // hwa 매니페스트 사전 로드
@@ -116,6 +125,34 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 MelonLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 중 예외 발생: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// FavGirl 실시간 외형 교체용 샘플 skins.txt를 생성합니다(이미 존재하면 건너뜀).
+        /// 형식은 RealTimeSwapper.ReadSkinSettings의 파싱 규칙과 일치해야 합니다:
+        /// '#'로 시작하는 줄은 주석, 그 외 첫 유효 줄을 쉼표로 나눈 3개 토큰(스킬/외형/3번째 슬롯)을 사용.
+        /// </summary>
+        private static void EnsureSampleSkinsFile(string skinsFolderPath)
+        {
+            string skinsTxtPath = Path.Combine(skinsFolderPath, "skins.txt");
+            if (File.Exists(skinsTxtPath)) return;
+
+            try
+            {
+                string sample =
+                    "# FavGirl 실시간 외형 교체 설정 파일\r\n" +
+                    "# 형식: 스킬캐릭터, 외형캐릭터, 3번째슬롯  (쉼표로 구분, 3개 필요)\r\n" +
+                    "# '#'로 시작하는 줄은 주석이며, 첫 유효 줄만 사용됩니다.\r\n" +
+                    "# 사용법: 게임 내에서 P키로 실시간 교체 모드를 켜고, O키로 아래 3개 슬롯을 순환 적용합니다.\r\n" +
+                    "# 캐릭터 토큰 예시: RIN_BASS, BURO_PILOT, MARIJA_BLACK, MARIJA_DEVIL, MIKU_HATSUNE, MARISA, AMIYA 등\r\n" +
+                    "MARIJA_BLACK, MARIJA_DEVIL, RIN_BASS\r\n";
+                File.WriteAllText(skinsTxtPath, sample, new System.Text.UTF8Encoding(true));
+                MelonLogger.Msg($"[FavGirl] 샘플 skins.txt를 생성했습니다: {skinsTxtPath}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[FavGirl] 샘플 skins.txt 생성 중 예외 발생: {ex}");
             }
         }
 
@@ -189,7 +226,9 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 실험 모드가 활성화되어 있다면, 주기적으로 인게임 스테이지 진입 여부 및 노트 이벤트를 모니터링하여 가상 노트를 생성/조작합니다.
+        /// 커스텀 차트 적용 중이고 인게임 스테이지에 들어가 있으면, 체력바 텍스트 워터마크
+        /// ("made in 화영왕")가 게임에 의해 덮어써졌는지 주기적으로 확인해 다시 적용합니다.
+        /// (가상 노트 생성/주입은 여기가 아니라 DBStageInfoExperimentChart에서 차트 주입 시점에 수행됩니다.)
         /// </summary>
         private void HandleExperimentStageUpdate()
         {

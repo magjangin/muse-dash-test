@@ -1,8 +1,14 @@
 using MelonLoader;
 using System;
 
-// Il2CppGameLogic.GameMusicScene.InitTimer(Decimal) / InitSceneEvents() 후킹 로깅.
-// 씬 타이머·씬 이벤트 초기화가 언제 일어나는지(씬 풀 구성 타이밍) 관찰용.
+// Il2CppGameLogic.GameMusicScene.InitTimer(Decimal) / InitSceneEvents() 후킹.
+// InitSceneEvents는 관찰 로깅용이지만, InitTimer Prefix는 단순 관찰이 아니라
+// 노트 UID의 "렌더 씬(zz)"을 실제로 다시 쓰는 변형 작업(TransformSceneSegments)을 수행한다.
+//
+// UID 구조 규약(자세한 내용은 docs/BMS_PARSING.md): 6자리 숫자 UID = zzxxyy
+//   zz = 렌더 씬 번호(배경/스테이지 계열), xx = 노트 타입, yy = 슬롯/세부값
+//   접두사 "0004…" = 씬 전환 토글 노트(xx=04지만 0004가 우선 분류), 끝 2자리 yy = 전환할 씬 번호
+//   zz == "00" = 특정 씬에 묶이지 않는 씬 무관 노트(렌더 씬 변형 대상에서 제외)
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "InitTimer",
     new Type[] { typeof(Il2CppSystem.Decimal) })]
 public class GameMusicScene_InitTimer_Patch
@@ -56,6 +62,8 @@ public class GameMusicScene_InitTimer_Patch
                     continue;
                 }
 
+                // fromZz: 이 노트가 원래 갖고 있던 렌더 씬. "00"(씬 무관)이거나 이미 현재
+                // 활성 렌더 씬과 같으면 다시 쓸 필요가 없으므로 건너뛴다.
                 string fromZz = uid.Substring(0, 2);
                 if (fromZz == "00" || fromZz == activeRenderZz) continue;
 
@@ -82,6 +90,9 @@ public class GameMusicScene_InitTimer_Patch
                 muse_dash_test.SceneZzTransformTracker.Record(note, newUid, renderPrefabName);
                 CountZz(changedByOriginalZz, fromZz);
                 nd.uid = newUid;
+                // 아래 필드 쓰기들을 한 줄씩 개별 try/catch로 격리하는 이유:
+                // il2cpp 바인딩에서 일부 필드 접근만 던질 수 있어, 한 필드 실패가
+                // 나머지 필드 갱신까지 막지 않도록 각각 독립적으로 적용한다.
                 try { if (IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch (Exception) { }
                 try { nd.scene = "scene_" + renderZz; } catch (Exception) { }
                 try { nd.prefab_name = renderPrefabName; } catch (Exception) { }
@@ -111,7 +122,9 @@ public class GameMusicScene_InitTimer_Patch
             return manifestScene.ToString("00");
         }
 
-        MelonLogger.Msg($"[GameMusicScene.InitTimer] manifest scene 없음, initialRenderZz=07 사용: uid={uid ?? "(null)"}");
+        // manifest에 씬 번호가 지정되지 않은 커스텀 곡의 기본 렌더 씬.
+        // 07은 대부분의 곡에 존재하는 표준 배경 씬이라 안전한 기본값으로 사용한다.
+        MelonLogger.Msg($"[GameMusicScene.InitTimer] manifest scene 없음, 기본 렌더 씬 07 사용: uid={uid ?? "(null)"}");
         return "07";
     }
 

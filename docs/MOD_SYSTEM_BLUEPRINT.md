@@ -10,7 +10,7 @@
 
 ```mermaid
 graph TD
-    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.4.8 로드]
+    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.7.8 로드]
     MainMod --> Diagnostics[PatchHealthCheck: 모드 로드 시 패치 무결성 검사]
     MainMod --> Preload[HwaResourceManager: hwa 폴더 & info.txt 메타 선읽기]
     
@@ -50,14 +50,14 @@ graph TD
 | :--- | :---: | :--- | :--- |
 | `DataManager.Save` | **Prefix** | [SaveDataManagerPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs) | 물리 저장 직전 세이브 오염 방지용 가상 레코드(UID) 정밀 정화 |
 | `DBStageInfo.SetRuntimeMusicData` | **Prefix** | [DBStageInfoExperimentChart.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Stage/DBStageInfoExperimentChart.cs) | 커스텀 차트(BMS)를 읽어 인게임 가상 런타임 노트로 복제 및 변환 주입 |
-| `TaskStageTarget.AddScore` | **Prefix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/APModPatch.cs) | 실시간 점수 누계 수집 및 인게임 HUD 폰트 리소스 캐싱 |
-| `TaskStageTarget.GetAccuracy` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/APModPatch.cs) | 소수점 3자리 반올림 가독 정확도 출력 (`GetTrueAccuracyNew` 기반) |
-| `TaskStageTarget.GetTrueAccuracy` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/APModPatch.cs) | 일반 노트 기반 정확도 계산 공식 오버라이드 |
-| `TaskStageTarget.GetTrueAccuracyNew` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/APModPatch.cs) | 기어, 하트, 음표를 합산한 종합 오브젝트 정확도 공식 오버라이드 |
-| `PnlVictory2dManager.OnShowVictory` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/APModPatch.cs) | ALL PERFECT 달성 시 기존 배너 숨김 및 골드 3D 텍스트 배너 주입 |
+| `TaskStageTarget.AddScore` | **Prefix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 실시간 점수 누계 수집 및 인게임 HUD 폰트 리소스 캐싱 |
+| `TaskStageTarget.GetAccuracy` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 소수점 3자리 반올림 가독 정확도 출력 (`GetTrueAccuracyNew` 기반) |
+| `TaskStageTarget.GetTrueAccuracy` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 일반 노트 기반 정확도 계산 공식 오버라이드 |
+| `TaskStageTarget.GetTrueAccuracyNew` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 기어, 하트, 음표를 합산한 종합 오브젝트 정확도 공식 오버라이드 |
+| `PnlVictory2dManager.OnShowVictory` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | ALL PERFECT 달성 시 기존 배너 숨김 및 골드 3D 텍스트 배너 주입 |
 | `StageBattleComponent.Dead` | **Postfix** | [ChangeHealthValuePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 인게임 사망 이벤트 및 체력 강제 오버라이드(체력 무한 모드 등) |
-| `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [PnlStagePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/Selection/PnlStagePatch.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
-| `PnlPreparation.OnEnable` | **Prefix/Postfix** | [PnlPreparationPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/Preparation/PnlPreparationPatch.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
+| `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [PnlStagePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/PnlStagePatch.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
+| `PnlPreparation.OnEnable` | **Prefix/Postfix** | [PnlPreparationPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/PnlPreparationPatch.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
 
 ---
 
@@ -141,7 +141,7 @@ $$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Gre
 
 ## 6. 전체 문서 디렉토리 인덱스 (Documentation Index)
 
-모드의 각 기술 파트를 세부적으로 깊게 분석하고자 할 때 필요한 12개의 원천 마크다운 파일들의 위치와 참조 맵입니다.
+모드의 각 기술 파트를 세부적으로 깊게 분석하고자 할 때 필요한 원천 마크다운 파일들의 위치와 참조 맵입니다.
 
 1. **환경 빌드 및 초기 셋업**
    * [MODDING.md](file:///h:/source/repos/muse%20dash%20test/docs/MODDING.md): MelonLoader 환경 셋업, 의존성 라이브러리 목록 및 `build.bat` 사용법.

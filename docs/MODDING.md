@@ -65,7 +65,7 @@ Muse Dash/
       new ExperimentNoteSpec { Label = "지상 일반 노트", Uid = "051001", NoteType = 1, Pathway = 0, StartTick = 15.0, Speed = 5 },
   };
   ```
-* **곡 메타데이터 실험**: `UI/Stage/Selection/PnlStagePatch.cs` 상단 상수 수정
+* **곡 메타데이터 실험**: `Patches/UI/Music/PnlMusicOverride.cs` 상단 상수 수정
   ```csharp
   private const bool EnableSongTitleExperiment = true;
   private const string ExperimentTitle = "화영왕";

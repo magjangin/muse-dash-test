@@ -94,8 +94,13 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             MelonLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: activeUid={uid ?? "(null)"}");
 
             // [진단] 주입 후 호출 스택 확인 — 이 데이터가 어디로 흘러가는지 역추적.
-            MelonLogger.Msg("[SetRuntimeMusicData.StackTrace] ↓ 호출 스택");
-            MelonLogger.Msg(new System.Diagnostics.StackTrace(true).ToString());
+            // 매 호출(순정 곡 포함)마다 전체 스택을 찍으면 로그가 폭발하므로,
+            // 이 서브시스템의 다른 진단 로그들과 동일하게 DebugExperimentNotes 플래그로 게이트한다.
+            if (DebugExperimentNotes)
+            {
+                MelonLogger.Msg("[SetRuntimeMusicData.StackTrace] ↓ 호출 스택");
+                MelonLogger.Msg(new System.Diagnostics.StackTrace(true).ToString());
+            }
 
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {

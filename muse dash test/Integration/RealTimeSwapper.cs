@@ -185,7 +185,7 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("=== [FavGirl] 실시간 외형 교체 디버깅 시작 ===");
+                MelonLogger.Msg("=== [FavGirl] 실시간 외형 교체 시작 ===");
                 
                 var currentRole = GlobalDataBase.s_DbBattleStage.m_SelectedRole;
                 var currentFavGirl = FavSave.FavGirl;
@@ -198,8 +198,10 @@ namespace muse_dash_test
                     MelonLogger.Msg($"원래 스킬 캐릭터 저장: {_originalSkillRole}");
                 }
                 
+                // skins.txt에 설정된 3개 슬롯을 순환한다: 스킬 → 외형 → 3번째 슬롯 → 다시 스킬.
+                // (testCharacter는 테스트 전용이 아니라 skins.txt 3번째 열에 지정된 정식 로테이션 슬롯이다.)
                 var (skillCharacter, appearanceCharacter, testCharacter) = ReadSkinSettings();
-                
+
                 if (FavSave.FavGirl == skillCharacter)
                 {
                     MelonLogger.Msg($"스킬 캐릭터 → 외형 캐릭터: {skillCharacter} → {appearanceCharacter}");
@@ -220,7 +222,7 @@ namespace muse_dash_test
                 
                 ForceCharacterRecreation();
                 
-                MelonLogger.Msg("=== [FavGirl] 실시간 외형 교체 디버깅 완료 ===");
+                MelonLogger.Msg("=== [FavGirl] 실시간 외형 교체 완료 ===");
             }
             catch (Exception e)
             {
@@ -308,7 +310,9 @@ namespace muse_dash_test
         {
             try
             {
-                var skinPath = @"H:\steam\steamapps\common\Muse Dash\skins\skins.txt";
+                // 게임 루트 기준 상대경로로 해석한다(다른 리소스 경로와 동일한 규칙).
+                // 과거에는 개발자 PC 절대경로가 하드코딩돼 있어 다른 PC에선 항상 폴백되는 버그가 있었다.
+                var skinPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "skins", "skins.txt");
                 
                 if (!File.Exists(skinPath))
                 {

@@ -18,6 +18,8 @@ internal static class SceneFlowLog
     }
 
     // curScene은 il2cpp 바인딩상 static(전역 현재 씬)이라 타입명으로 접근한다.
+    // 실패 시 반환하는 -888은 실제 씬 번호가 아니라 "curScene 읽기 실패"를 뜻하는
+    // 센티널 값이다. 로그에서 -888이 보이면 게임 상태가 아니라 접근 실패로 해석한다.
     public static int SafeCurScene(Il2Cpp.SceneChangeController inst)
     {
         try { return Il2Cpp.SceneChangeController.curScene; }
