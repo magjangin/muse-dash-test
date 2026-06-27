@@ -11,6 +11,8 @@ namespace muse_dash_test
         public string LastClickedMusicUid { get; set; } = string.Empty;
         public bool IsExperimentModeActive { get; set; }
         public bool ShouldApplyExperimentChart { get; private set; }
+        public string LastApplyDecisionReasonCode { get; private set; } = string.Empty;
+        public string LastApplyDecisionDescription { get; private set; } = string.Empty;
         public bool IsDynamicBossSwap { get; set; }
 
         public int TotalStandard { get; set; }
@@ -21,13 +23,22 @@ namespace muse_dash_test
         public string LastKnownMusicUid =>
             !string.IsNullOrEmpty(SelectedMusicUid) ? SelectedMusicUid : LastClickedMusicUid;
 
+        public string DescribeApplyDecision()
+        {
+            return $"apply={ShouldApplyExperimentChart}, reason={LastApplyDecisionReasonCode}, detail={LastApplyDecisionDescription}, isExperimentModeActive={IsExperimentModeActive}, selectedUid={SelectedMusicUid}, lastClickedUid={LastClickedMusicUid}";
+        }
+
         public void RememberMusicSelection(string uid)
         {
             string prevUid = SelectedMusicUid;
             bool prevShouldApply = ShouldApplyExperimentChart;
             SelectedMusicUid = uid ?? string.Empty;
-            ShouldApplyExperimentChart = HwaResourceManager.ShouldApplyCustomChartForSelection(uid, IsExperimentModeActive);
-            MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] RememberMusicSelection 호출: prevUid={prevUid}, newUid={uid ?? "(null)"}, experimentMode={IsExperimentModeActive}, prevShouldApply={prevShouldApply}, newShouldApply={ShouldApplyExperimentChart}");
+            bool isExperimentMode = IsExperimentModeActive;
+            var decision = HwaResourceManager.DecideCustomChartForSelection(uid, IsExperimentModeActive);
+            ShouldApplyExperimentChart = decision.ShouldApply;
+            LastApplyDecisionReasonCode = decision.ReasonCode;
+            LastApplyDecisionDescription = decision.Description;
+            MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] RememberMusicSelection 호출: prevUid={prevUid}, newUid={uid ?? "(null)"}, experimentMode={isExperimentMode}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, prevShouldApply={prevShouldApply}, newShouldApply={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
         }
 
         public void ResetCounts()
@@ -36,6 +47,21 @@ namespace muse_dash_test
             TotalGears = 0;
             TotalHearts = 0;
             TotalBlueNotes = 0;
+        }
+
+        /// <summary>
+        /// 배틀 종료/이탈 시 실험 차트 적용 결정을 초기화합니다.
+        /// RememberMusicSelection은 곡 선택 시점에만 호출되므로, 이 메서드가 없으면
+        /// 도중에 나가도 ShouldApplyExperimentChart가 직전 값(true)으로 남아 다음 곡
+        /// 선택 전까지 stale 상태가 됩니다.
+        /// </summary>
+        public void ResetApplyDecision()
+        {
+            bool prevShouldApply = ShouldApplyExperimentChart;
+            ShouldApplyExperimentChart = false;
+            LastApplyDecisionReasonCode = "BATTLE_EXIT_RESET";
+            LastApplyDecisionDescription = "배틀 종료/이탈로 실험 차트 적용 결정 초기화";
+            MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] ResetApplyDecision 호출: prevShouldApply={prevShouldApply}, newShouldApply=false");
         }
     }
 }

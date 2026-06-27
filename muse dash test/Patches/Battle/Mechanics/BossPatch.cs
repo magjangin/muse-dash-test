@@ -160,7 +160,7 @@ public class Boss_InitBossObject_Patch
 
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
-                MelonLogger.Msg("Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (실험 차트 아님)");
+                MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: 변경 건너뜀 ({CustomPlaySession.Current.DescribeApplyDecision()})");
                 return;
             }
 

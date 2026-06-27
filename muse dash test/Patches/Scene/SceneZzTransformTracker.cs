@@ -48,7 +48,11 @@ namespace muse_dash_test
         private static readonly Dictionary<string, OriginalIdentity> OriginalsByRenderMirrorUid = new Dictionary<string, OriginalIdentity>();
         private static readonly Dictionary<string, OriginalIdentity> OriginalsByRenderConfigNoteUid = new Dictionary<string, OriginalIdentity>();
         private static readonly Dictionary<int, OriginalIdentity> OriginalsByRenderNoteUid = new Dictionary<int, OriginalIdentity>();
+        // prefab_name 부분일치 검색용 후보 목록. distinct prefab_name 기준으로만 채워(아래 SeenRenderPrefabNames)
+        // 노트 수가 아니라 프리팹 종류 수로 크기가 제한됩니다. 리스트인 이유는 첫 매치 우선 순회를 유지하기 위함입니다.
         private static readonly List<OriginalIdentity> OriginalsWithRenderPrefabName = new List<OriginalIdentity>();
+        // 위 리스트 중복 등록 방지용 O(1) 집합(노트마다 List.Contains O(N) 스캔하던 것을 대체).
+        private static readonly HashSet<string> SeenRenderPrefabNames = new HashSet<string>(StringComparer.Ordinal);
 
         public static int Count => OriginalsByObjId.Count;
         public static int BmsOriginalCount => BmsOriginalsByObjId.Count;
@@ -75,6 +79,7 @@ namespace muse_dash_test
             OriginalsByRenderConfigNoteUid.Clear();
             OriginalsByRenderNoteUid.Clear();
             OriginalsWithRenderPrefabName.Clear();
+            SeenRenderPrefabNames.Clear();
         }
 
         public static void ClearBmsOriginalIdentities()
@@ -164,7 +169,9 @@ namespace muse_dash_test
             OriginalsByRenderNoteUid[renderNoteUid] = captured;
             if (!string.IsNullOrEmpty(renderPrefabName))
             {
-                if (!OriginalsWithRenderPrefabName.Contains(captured))
+                // distinct prefab_name 당 한 번만 등록(O(1) HashSet). 같은 프리팹을 쓰는 노트가
+                // 수천 개여도 후보 목록은 프리팹 종류 수만큼만 커지므로 Restore의 부분일치 루프가 가벼워집니다.
+                if (SeenRenderPrefabNames.Add(renderPrefabName))
                 {
                     OriginalsWithRenderPrefabName.Add(captured);
                 }

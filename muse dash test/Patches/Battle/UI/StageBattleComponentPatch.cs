@@ -241,7 +241,11 @@ namespace muse_dash_test
         public static void Postfix(StageBattleComponent __instance)
         {
             MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Exit 호출됨");
-            HwaBattleMediaController.StopMedia();
+            // 리셋을 먼저 수행해 StopMedia가 예외를 던져도 stale 플래그가 남지 않게 합니다.
+            try { CustomPlaySession.Current.ResetApplyDecision(); }
+            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Exit ResetApplyDecision 예외: {ex}"); }
+            try { HwaBattleMediaController.StopMedia(); }
+            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Exit StopMedia 예외: {ex}"); }
         }
     }
 

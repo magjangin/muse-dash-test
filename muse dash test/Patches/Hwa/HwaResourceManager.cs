@@ -177,15 +177,22 @@ namespace muse_dash_test
             }
         }
 
-        /// <summary>
-        /// 가상 uid(1999-N) 또는 매니페스트가 숙주로 지정한 순정 uid(예: 66-0)면 true를 반환합니다.
-        /// 이 값은 "등록 여부"만 뜻합니다. 실제 플레이에 커스텀 차트를 적용할지는 선택 문맥까지
-        /// 포함해서 <see cref="ShouldApplyCustomChartForSelection"/>로 판단해야 합니다.
-        /// </summary>
+        /// <summary>실제로 모드가 생성한 1999-* 가상 커스텀 곡 UID인지 확인합니다.</summary>
         public static bool IsCustomSong(string uid)
         {
             if (string.IsNullOrEmpty(uid)) return false;
-            // 매니페스트가 아직 로드되기 전이라도 1999- 가상곡은 항상 커스텀으로 간주(하위 호환).
+            return CustomContentIds.IsVirtualSong(uid);
+        }
+
+        /// <summary>
+        /// 가상 uid(1999-N) 또는 매니페스트가 숙주로 지정한 순정 uid(예: 66-0)면 true를 반환합니다.
+        /// 이 값은 "커스텀 시스템과 관련 있는 UID인지"만 뜻합니다. 실제 플레이에 커스텀 차트를
+        /// 적용할지는 선택 문맥까지 포함해서 <see cref="ShouldApplyCustomChartForSelection"/>로 판단해야 합니다.
+        /// </summary>
+        public static bool IsCustomRelatedUid(string uid)
+        {
+            if (string.IsNullOrEmpty(uid)) return false;
+            // 매니페스트가 아직 로드되기 전이라도 1999- 가상곡은 항상 커스텀 관련 UID로 간주(하위 호환).
             return CustomContentIds.IsVirtualSong(uid) || customClaimedUids.Contains(uid);
         }
 
@@ -195,14 +202,66 @@ namespace muse_dash_test
             return !CustomContentIds.IsVirtualSong(uid) && customClaimedUids.Contains(uid);
         }
 
+        public sealed class CustomChartSelectionDecision
+        {
+            public bool ShouldApply;
+            public string ReasonCode;
+            public string Description;
+            public bool IsVirtualSong;
+            public bool IsRegisteredHost;
+            public bool IsExperimentModeActive;
+        }
+
+        public static CustomChartSelectionDecision DecideCustomChartForSelection(string uid, bool isExperimentModeActive)
+        {
+            var decision = new CustomChartSelectionDecision
+            {
+                IsExperimentModeActive = isExperimentModeActive,
+                ReasonCode = "OfficialOrUnknown",
+                Description = "공식 곡 또는 알 수 없는 UID이므로 원본 차트를 유지합니다."
+            };
+
+            if (string.IsNullOrEmpty(uid))
+            {
+                decision.ReasonCode = "EmptyUid";
+                decision.Description = "선택 UID가 비어 있어 커스텀 차트를 적용하지 않습니다.";
+                return decision;
+            }
+
+            decision.IsVirtualSong = CustomContentIds.IsVirtualSong(uid);
+            decision.IsRegisteredHost = IsRegisteredCustomHostUid(uid);
+
+            if (decision.IsVirtualSong)
+            {
+                decision.ShouldApply = true;
+                decision.ReasonCode = "VirtualSong";
+                decision.Description = "1999-* 가상 곡이므로 커스텀 차트를 적용합니다.";
+                return decision;
+            }
+
+            if (decision.IsRegisteredHost && isExperimentModeActive)
+            {
+                decision.ShouldApply = true;
+                decision.ReasonCode = "ExperimentHost";
+                decision.Description = "커스텀 태그/실험 모드에서 선택된 숙주 UID이므로 커스텀 차트를 적용합니다.";
+                return decision;
+            }
+
+            if (decision.IsRegisteredHost)
+            {
+                decision.ReasonCode = "OfficialHostProtected";
+                decision.Description = "등록된 숙주 UID이지만 공식 앨범 문맥이므로 원본 차트를 보호합니다.";
+                return decision;
+            }
+
+            return decision;
+        }
+
         public static bool ShouldApplyCustomChartForSelection(string uid, bool isExperimentModeActive)
         {
-            if (string.IsNullOrEmpty(uid)) return false;
-            if (CustomContentIds.IsVirtualSong(uid)) return true;
-
-            // 순정 uid를 숙주로 쓰는 경우에도 공식 앨범에서 같은 uid를 고르면 원본 채보가 살아야 합니다.
-            // 그래서 숙주 uid는 실험 모드/커스텀 태그 문맥일 때만 커스텀 차트 적용 대상으로 봅니다.
-            return isExperimentModeActive && IsRegisteredCustomHostUid(uid);
+            var decision = DecideCustomChartForSelection(uid, isExperimentModeActive);
+            MelonLogger.Msg($"[HwaResourceManager.Debug] ShouldApplyCustomChartForSelection: uid={uid ?? "(null)"}, isExperimentModeActive={isExperimentModeActive}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
+            return decision.ShouldApply;
         }
 
         public static HwaManifest GetManifest(string uid)

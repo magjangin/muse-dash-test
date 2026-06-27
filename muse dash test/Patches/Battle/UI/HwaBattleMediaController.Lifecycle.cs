@@ -126,6 +126,14 @@ namespace muse_dash_test
                     injectedAudioSource = null;
                 }
 
+                // 주입했던 커스텀 클립 메모리 해제 (배틀 종료 시 ogg가 새지 않도록)
+                if (injectedClip != null)
+                {
+                    UnityEngine.Object.Destroy(injectedClip);
+                    injectedClip = null;
+                    MelonLogger.Msg("[HwaBattleMediaController] 주입 커스텀 클립 해제 완료 (메모리 누수 방지)");
+                }
+
                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
                 if (bgmGo != null)
                 {

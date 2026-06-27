@@ -326,17 +326,18 @@ namespace muse_dash_test.Patches
                 bool isFullCombo = target.IsFullCombo();
                 bool isAllPerfect = isFullCombo && great == 0 && miss == 0;
 
-                int difficulty = 1;
-                if (Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage != null)
-                {
-                    difficulty = Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage.m_MapDifficulty;
-                }
+                // 실제 점수/최대콤보를 게임 필드(m_Score, m_MaxCombo)에서 직접 읽습니다. (추정 공식 대신)
+                int score = ModReflection.GetInt(target, "Score");
+                int maxCombo = ModReflection.GetInt(target, "MaxCombo");
+
+                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
                 var session = CustomPlaySession.Current;
                 CustomRecordStore.SaveResult(
                     uid, difficulty,
                     session.TotalStandard, session.TotalGears, session.TotalHearts, session.TotalBlueNotes,
                     perfect, great, miss,
+                    score, maxCombo,
                     accuracy,
                     isFullCombo, isAllPerfect);
             }

@@ -52,10 +52,12 @@ public class PnlStage_ChangeMusic_Patch
     {
         try
         {
+            MelonLogger.Msg($"[PnlStage.ChangeMusic] enter index={i}, previousSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, previousShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, previousExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.ChangeMusic", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.ChangeMusic.Force", __instance);
             PnlStagePatchHelper.LogButtons("PnlStage.ChangeMusic", __instance);
+            MelonLogger.Msg($"[PnlStage.ChangeMusic] exit index={i}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, currentShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, currentExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }
     }
@@ -288,6 +290,7 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
+            MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
 
             if (PnlStagePatchHelper.ApplyTagTitleForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
@@ -301,6 +304,7 @@ public class PnlStage_RefreshDiffUI_Patch
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.RefreshDiffUI", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.RefreshDiffUI.Force", __instance);
 
+            MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] exit uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
             MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle={musicText}, artistNameTitle={artistText}");

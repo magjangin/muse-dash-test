@@ -162,6 +162,7 @@
 │   └── muse dash test.csproj # C# .NET 6.0 프로젝트 파일
 │
 ├── docs/                     # 고도로 정리된 기능별 실험/분석 한글 가이드
+│   ├── ARCHITECTURE.md                 # 유지보수 지도 및 핵심 흐름 요약
 │   ├── MODDING.md                      # 전체 모딩 빌드 및 연동 기초
 │   ├── NOTE_EXPERIMENTS.md             # 커스텀 노트 스펙 설계 가이드
 │   ├── BOSS_EXPERIMENTS.md             # 실시간 보스 교환 기믹 가이드

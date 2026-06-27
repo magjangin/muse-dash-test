@@ -16,6 +16,8 @@ namespace muse_dash_test
     {
         private static string currentLoadingUid = null;
         private static int monitorGeneration;
+        // 우리가 직접 주입한 커스텀 메뉴 BGM 클립만 추적합니다(게임 원본 클립은 절대 해제하지 않기 위해).
+        private static AudioClip injectedMenuClip;
 
         public static void TriggerMenuBgmChange(string uid)
         {
@@ -37,6 +39,33 @@ namespace muse_dash_test
             currentLoadingUid = null;
             monitorGeneration++;
             MelonLogger.Msg($"[MenuBGM.Monitor] 메뉴 BGM 모니터링 중지 요청: {reason}");
+        }
+
+        /// <summary>
+        /// 곡 선택/준비 화면을 벗어난 화면(메인 메뉴·캐릭터/엘핀 선택 등)으로 이동했을 때 호출합니다.
+        /// 모니터링을 끄고, 우리가 주입한 커스텀 클립이 아직 "BGM" 소스에서 재생 중이면 멈춰서
+        /// 게임이 자기 BGM을 되찾을 수 있게 합니다(커스텀 곡 미리듣기가 엉뚱한 화면까지 따라오는 문제 방지).
+        /// </summary>
+        public static void StopCustomMenuBgm(string reason)
+        {
+            currentLoadingUid = null;
+            monitorGeneration++;
+            try
+            {
+                GameObject bgmGo = GameObject.Find("BGM");
+                if (bgmGo == null) return;
+
+                AudioSource src = bgmGo.GetComponent<AudioSource>();
+                if (src != null && injectedMenuClip != null && src.clip == injectedMenuClip)
+                {
+                    src.Stop();
+                    MelonLogger.Msg($"[MenuBGM] 커스텀 메뉴 BGM 정지 ({reason}): 우리가 주입한 클립 재생 중단");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[MenuBGM] StopCustomMenuBgm 예외: {ex}");
+            }
         }
 
         private static IEnumerator LoadAndPlayCustomMenuBgm(string uid)
@@ -109,10 +138,21 @@ namespace muse_dash_test
                     float prevVolume = menuSource.volume;
                     bool prevMute = menuSource.mute;
 
+                    AudioClip previousInjected = injectedMenuClip;
+
                     menuSource.Stop();
                     menuSource.clip = customClip;
                     menuSource.loop = true;
                     menuSource.Play();
+                    injectedMenuClip = customClip;
+
+                    // 직전에 우리가 주입했던 커스텀 클립만 해제합니다(곡을 바꿀 때마다 ogg가 누적되는 누수 방지).
+                    if (previousInjected != null && previousInjected != customClip)
+                    {
+                        UnityEngine.Object.Destroy(previousInjected);
+                        MelonLogger.Msg("[MenuBGM] 이전 주입 커스텀 클립 해제 완료 (메모리 누수 방지)");
+                    }
+
                     MelonLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
                     MelonLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
 
@@ -301,7 +341,10 @@ namespace muse_dash_test
                         }
                     }
 
-                    if (CustomContentIds.IsVirtualSong(selectedUid))
+                    // 클립 대입 차단은 곡 선택/준비 화면 안에서만 적용합니다. 메인 메뉴·캐릭터/엘핀
+                    // 선택 등으로 빠져나온 뒤에도 차단하면, 게임이 자기 BGM을 되찾지 못해 커스텀 곡
+                    // 미리듣기가 계속 재생되는 버그가 생깁니다.
+                    if (inStageSelectionContext && CustomContentIds.IsVirtualSong(selectedUid))
                     {
                         bool isCustomClip = IsCustomOggClip(value);
                         if (!isCustomClip)

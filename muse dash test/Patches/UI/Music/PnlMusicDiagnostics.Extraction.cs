@@ -65,7 +65,7 @@ namespace muse_dash_test
                     }
                     else
                     {
-                        info.LevelDesigner = "Custom Designer";
+                        info.LevelDesigner = "(unknown)";
                     }
                 }
             }

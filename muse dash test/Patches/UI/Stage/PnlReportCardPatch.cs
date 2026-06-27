@@ -19,11 +19,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
                 return true;
             }
 
-            int difficulty = 1;
-            if (GlobalDataBase.s_DbBattleStage != null)
-            {
-                difficulty = GlobalDataBase.s_DbBattleStage.selectedDifficulty;
-            }
+            int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
             MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord] 가상 곡 기록 적용: uid={uid}, diff={difficulty}");
 
@@ -201,8 +197,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
                 MelonLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] 가상 곡 기록 로드 성공: uid={uid}, diff={difficulty}");
                 if (__instance.txtScrore != null)
                 {
-                    int score = (record.perfect * 300) + (record.great * 150);
-                    __instance.txtScrore.text = $"{score:N0}";
+                    __instance.txtScrore.text = CustomRecordUiPatchHelper.FormatScore(record);
                 }
                 else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtScrore가 null입니다.");
 
@@ -214,14 +209,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
 
                 if (__instance.txtCombo != null)
                 {
-                    if (record.isFullCombo)
-                    {
-                        __instance.txtCombo.text = $"{record.noteCount}";
-                    }
-                    else
-                    {
-                        __instance.txtCombo.text = $"{record.perfect + record.great}";
-                    }
+                    __instance.txtCombo.text = CustomRecordUiPatchHelper.FormatCombo(record);
                 }
                 else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtCombo가 null입니다.");
 

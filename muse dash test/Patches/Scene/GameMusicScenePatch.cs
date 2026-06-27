@@ -10,7 +10,11 @@ public class GameMusicScene_LoadScene_Patch
     {
         try
         {
-            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+            {
+                MelonLogger.Msg($"[GameMusicScene.LoadScene] 스킵: 커스텀 씬 리다이렉션 비활성, scene={sceneName}, {CustomPlaySession.Current.DescribeApplyDecision()}");
+                return;
+            }
 
             string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
@@ -18,7 +22,10 @@ public class GameMusicScene_LoadScene_Patch
                 uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
 
-            if (!muse_dash_test.MainMod.TryGetCachedHwaScene(uid, out int scene))
+            bool hasCachedScene = muse_dash_test.MainMod.TryGetCachedHwaScene(uid, out int scene);
+            MelonLogger.Msg($"[GameMusicScene.LoadScene] uid={uid ?? "(null)"}, sceneName={sceneName}, hasCachedScene={hasCachedScene}, resolvedScene={scene}");
+
+            if (!hasCachedScene)
             {
                 ExperimentHitPointInstaller.RememberLoadSceneRedirect(sceneName, sceneName);
                 MelonLogger.Msg($"[GameMusicScene.LoadScene] manifest scene이 없어 리다이렉션을 건너뜁니다: current={sceneName}");

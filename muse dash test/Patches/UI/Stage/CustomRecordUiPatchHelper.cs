@@ -9,6 +9,15 @@ namespace muse_dash_test
 {
     public static class CustomRecordUiPatchHelper
     {
+        // 콤보 표시값: 풀콤보면 전체 노트 수, 아니면 실제 최대 콤보(record.maxCombo)를 씁니다.
+        // (이전엔 perfect+great = 총 히트 수를 썼는데, 미스가 섞이면 최대 콤보보다 커서 부정확했습니다.)
+        public static string FormatCombo(CustomRecordStore.PlayRecord r)
+            => (r.isFullCombo ? r.noteCount : r.maxCombo).ToString();
+
+        // 점수 표시값: 게임에서 읽어 저장한 실제 점수를 천 단위 구분으로 표시합니다. (추정 공식 아님)
+        public static string FormatScore(CustomRecordStore.PlayRecord r)
+            => r.score.ToString("N0");
+
         public static void ApplyCustomRecordToPnlStage(PnlStage stage, MusicInfo musicInfo)
         {
             try
@@ -16,11 +25,7 @@ namespace muse_dash_test
                 if (stage == null || musicInfo == null) return;
                 if (!CustomContentIds.IsVirtualSong(musicInfo.uid)) return;
 
-                int difficulty = 1;
-                if (GlobalDataBase.s_DbBattleStage != null)
-                {
-                    difficulty = GlobalDataBase.s_DbBattleStage.selectedDifficulty;
-                }
+                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
                 MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlStage] 적용 감지: uid={musicInfo.uid}, diff={difficulty}");
 
@@ -62,11 +67,7 @@ namespace muse_dash_test
                 if (string.IsNullOrEmpty(uid)) uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 
-                int difficulty = 1;
-                if (GlobalDataBase.s_DbBattleStage != null)
-                {
-                    difficulty = GlobalDataBase.s_DbBattleStage.selectedDifficulty;
-                }
+                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
                 MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlPrep] 적용 감지: uid={uid}, diff={difficulty}");
 
@@ -121,11 +122,7 @@ namespace muse_dash_test
                 if (string.IsNullOrEmpty(uid)) uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 
-                int difficulty = 1;
-                if (GlobalDataBase.s_DbBattleStage != null)
-                {
-                    difficulty = GlobalDataBase.s_DbBattleStage.selectedDifficulty;
-                }
+                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
                 MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] 적용 감지: uid={uid}, diff={difficulty}");
 
@@ -143,14 +140,7 @@ namespace muse_dash_test
 
                     if (pnlRecord.txtCombo != null)
                     {
-                        if (record.isFullCombo)
-                        {
-                            pnlRecord.txtCombo.text = $"{record.noteCount}";
-                        }
-                        else
-                        {
-                            pnlRecord.txtCombo.text = $"{record.perfect + record.great}";
-                        }
+                        pnlRecord.txtCombo.text = FormatCombo(record);
                     }
 
                     if (pnlRecord.imgIconFc != null)
@@ -160,8 +150,7 @@ namespace muse_dash_test
 
                     if (pnlRecord.txtScore != null)
                     {
-                        int score = (record.perfect * 300) + (record.great * 150);
-                        pnlRecord.txtScore.text = $"{score:N0}";
+                        pnlRecord.txtScore.text = FormatScore(record);
                     }
 
                     MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> acc={record.accuracy:0.00}%, FC={record.isFullCombo}, AP={record.isAllPerfect}");

@@ -194,6 +194,7 @@ namespace muse_dash_test
                 if (!ImageConversion.LoadImage(tex, data))
                 {
                     MelonLogger.Error($"[Cover] cover.png 디코딩 실패: {coverPath}");
+                    UnityEngine.Object.Destroy(tex); // 디코딩 실패한 텍스처가 새지 않도록 즉시 해제
                     missing.Add(uid);
                     return false;
                 }

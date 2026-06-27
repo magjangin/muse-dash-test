@@ -22,12 +22,32 @@ namespace muse_dash_test
             Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "record");
 
         /// <summary>
+        /// 현재 선택/플레이 중인 난이도를 해석합니다.
+        /// 기록 파일명의 키이므로, 저장(승리 시점)과 로드(패널)가 반드시 같은 출처를 쓰도록
+        /// 이 메서드 하나로 단일화합니다. 값을 못 구하면 1로 폴백합니다.
+        /// </summary>
+        public static int ResolveCurrentDifficulty()
+        {
+            try
+            {
+                var stage = Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage;
+                if (stage != null) return stage.selectedDifficulty;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[CustomRecordStore] 난이도 해석 실패, 1로 폴백: {ex.Message}");
+            }
+            return 1;
+        }
+
+        /// <summary>
         /// 한 판의 플레이 결과를 record/{uid}_{difficulty}.json 에 기록합니다.
         /// </summary>
         public static void SaveResult(
             string uid, int difficulty,
             int standard, int gears, int hearts, int blueNotes,
             int perfect, int great, int miss,
+            int score, int maxCombo,
             float accuracy,
             bool isFullCombo, bool isAllPerfect)
         {
@@ -42,12 +62,15 @@ namespace muse_dash_test
                 Directory.CreateDirectory(RecordFolderPath);
 
                 int noteCount = standard + gears + hearts + blueNotes;
+                // 풀콤보면 최대 콤보는 정의상 전체 노트 수입니다. (게임 필드 읽기 실패 시 안전 보정)
+                if (isFullCombo && maxCombo < noteCount) maxCombo = noteCount;
+
                 string filePath = Path.Combine(RecordFolderPath, $"{SanitizeFileName(uid)}_{difficulty}.json");
                 string json = BuildJson(uid, noteCount, standard, gears, hearts, blueNotes,
-                    perfect, great, miss, accuracy, isFullCombo, isAllPerfect);
+                    perfect, great, miss, score, maxCombo, accuracy, isFullCombo, isAllPerfect);
 
                 File.WriteAllText(filePath, json, Encoding.UTF8);
-                MelonLogger.Msg($"[CustomRecordStore] 기록 저장 완료 → {filePath} (notes={noteCount}, acc={accuracy:0.0000}, FC={isFullCombo}, AP={isAllPerfect})");
+                MelonLogger.Msg($"[CustomRecordStore] 기록 저장 완료 → {filePath} (notes={noteCount}, score={score}, maxCombo={maxCombo}, acc={accuracy:0.0000}, FC={isFullCombo}, AP={isAllPerfect})");
             }
             catch (Exception ex)
             {
@@ -66,6 +89,8 @@ namespace muse_dash_test
             public int perfect;
             public int great;
             public int miss;
+            public int score;
+            public int maxCombo;
             public float accuracy;
             public bool isFullCombo;
             public bool isAllPerfect;
@@ -150,6 +175,12 @@ namespace muse_dash_test
                     case "miss":
                         int.TryParse(val, out record.miss);
                         break;
+                    case "score":
+                        int.TryParse(val, out record.score);
+                        break;
+                    case "maxCombo":
+                        int.TryParse(val, out record.maxCombo);
+                        break;
                     case "accuracy":
                         float.TryParse(val, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out record.accuracy);
                         break;
@@ -172,6 +203,7 @@ namespace muse_dash_test
             string uid, int noteCount,
             int standard, int gears, int hearts, int blueNotes,
             int perfect, int great, int miss,
+            int score, int maxCombo,
             float accuracy, bool isFullCombo, bool isAllPerfect)
         {
             var ci = CultureInfo.InvariantCulture;
@@ -186,6 +218,8 @@ namespace muse_dash_test
             sb.Append("  \"perfect\": ").Append(perfect).Append(",\n");
             sb.Append("  \"great\": ").Append(great).Append(",\n");
             sb.Append("  \"miss\": ").Append(miss).Append(",\n");
+            sb.Append("  \"score\": ").Append(score).Append(",\n");
+            sb.Append("  \"maxCombo\": ").Append(maxCombo).Append(",\n");
             sb.Append("  \"accuracy\": ").Append(accuracy.ToString("0.000000", ci)).Append(",\n");
             sb.Append("  \"isFullCombo\": ").Append(isFullCombo ? "true" : "false").Append(",\n");
             sb.Append("  \"isAllPerfect\": ").Append(isAllPerfect ? "true" : "false").Append(",\n");

@@ -16,11 +16,19 @@ namespace muse_dash_test
     {
         private static bool battleMediaInjectionStarted;
         private static AudioSource injectedAudioSource;
+        // 우리가 직접 주입한 커스텀 배틀 BGM 클립만 추적합니다(해제 대상 한정).
+        private static AudioClip injectedClip;
 
         public static void ResetState()
         {
             battleMediaInjectionStarted = false;
             injectedAudioSource = null;
+            // 이전 배틀의 클립이 StopMedia로 정리되지 않은 경우를 대비한 방어적 해제.
+            if (injectedClip != null)
+            {
+                UnityEngine.Object.Destroy(injectedClip);
+                injectedClip = null;
+            }
         }
 
         public static void StartBattleMediaInjection()
@@ -32,7 +40,7 @@ namespace muse_dash_test
                 {
                     debugUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
                 }
-                MelonLogger.Msg($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, ShouldApplyExperimentChart={CustomPlaySession.Current.ShouldApplyExperimentChart}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
+                MelonLogger.Msg($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, {CustomPlaySession.Current.DescribeApplyDecision()}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
 
                 if (battleMediaInjectionStarted)
                 {
@@ -42,7 +50,7 @@ namespace muse_dash_test
 
                 if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
-                    MelonLogger.Msg("[HwaBattleMediaController.Debug] 스킵: ShouldApplyExperimentChart=false (커스텀 곡이 아님)");
+                    MelonLogger.Msg($"[HwaBattleMediaController.Debug] 스킵: 커스텀 배틀 미디어 비활성 ({CustomPlaySession.Current.DescribeApplyDecision()})");
                     return;
                 }
 
@@ -170,12 +178,21 @@ namespace muse_dash_test
 
                 string beforeState = DescribeAudioSource(targetSource);
 
+                AudioClip previousInjected = injectedClip;
+
                 targetSource.clip = clip;
                 targetSource.loop = true;
                 targetSource.playOnAwake = false;
                 targetSource.Stop();
                 targetSource.Play();
                 injectedAudioSource = targetSource;
+                injectedClip = clip;
+
+                // 직전에 우리가 주입했던 커스텀 클립만 해제합니다(배틀 반복 시 ogg 누적 방지).
+                if (previousInjected != null && previousInjected != clip)
+                {
+                    UnityEngine.Object.Destroy(previousInjected);
+                }
 
                 MelonLogger.Msg($"[HwaBattleMediaController] 배틀 BGM 주입 완료: before={beforeState}, after={DescribeAudioSource(targetSource)}, loadedClip={DescribeAudioClip(clip)}");
             }
@@ -319,6 +336,12 @@ namespace muse_dash_test
                 Transform existingQuad = mainCam.transform.Find("VideoBackgroundQuad");
                 if (existingQuad != null && existingQuad.gameObject != null)
                 {
+                    // GameObject 파괴는 할당된 머티리얼(런타임 인스턴스)을 자동 해제하지 않으므로 먼저 직접 해제합니다.
+                    var existingRenderer = existingQuad.GetComponent<MeshRenderer>();
+                    if (existingRenderer != null && existingRenderer.material != null)
+                    {
+                        UnityEngine.Object.Destroy(existingRenderer.material);
+                    }
                     UnityEngine.Object.Destroy(existingQuad.gameObject);
                     MelonLogger.Msg("[HwaBattleMediaController.Video] 기존 잔존 VideoBackgroundQuad 오브젝트를 삭제했습니다.");
                 }
