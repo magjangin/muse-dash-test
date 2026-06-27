@@ -203,7 +203,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
 
                 if (__instance.txtAccuracy != null)
                 {
-                    __instance.txtAccuracy.text = $"{record.accuracy:0.00}%";
+                    __instance.txtAccuracy.text = CustomRecordUiPatchHelper.FormatAccuracy(record);
                 }
                 else MelonLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtAccuracy가 null입니다.");
 

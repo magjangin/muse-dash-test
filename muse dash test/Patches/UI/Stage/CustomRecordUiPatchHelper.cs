@@ -18,6 +18,10 @@ namespace muse_dash_test
         public static string FormatScore(CustomRecordStore.PlayRecord r)
             => r.score.ToString("N0");
 
+        // 정확도 표시값: 저장값은 0~1(GetAccuracy)이라 백분율(×100)로 변환해 표시합니다.
+        public static string FormatAccuracy(CustomRecordStore.PlayRecord r)
+            => $"{r.accuracy * 100f:0.00}%";
+
         public static void ApplyCustomRecordToPnlStage(PnlStage stage, MusicInfo musicInfo)
         {
             try
@@ -37,9 +41,9 @@ namespace muse_dash_test
                         var textComp = stage.stageAchievementPercent.GetComponentInChildren<Text>(true);
                         if (textComp != null)
                         {
-                            textComp.text = $"{record.accuracy:0.00}%";
+                            textComp.text = FormatAccuracy(record);
                             stage.stageAchievementPercent.SetActive(true);
-                            MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlStage] UI 갱신 성공 -> {record.accuracy:0.00}%");
+                            MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlStage] UI 갱신 성공 -> {FormatAccuracy(record)}");
                         }
                     }
                 }
@@ -82,8 +86,8 @@ namespace muse_dash_test
                     }
                     if (prep.stageAchievementValue != null)
                     {
-                        prep.stageAchievementValue.text = $"{record.accuracy:0.00}%";
-                        MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlPrep] UI 갱신 성공 -> {record.accuracy:0.00}%");
+                        prep.stageAchievementValue.text = FormatAccuracy(record);
+                        MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlPrep] UI 갱신 성공 -> {FormatAccuracy(record)}");
                     }
                 }
                 else
@@ -131,7 +135,7 @@ namespace muse_dash_test
                 {
                     if (pnlRecord.txtAccuracy != null)
                     {
-                        pnlRecord.txtAccuracy.text = $"{record.accuracy:0.00}%";
+                        pnlRecord.txtAccuracy.text = FormatAccuracy(record);
                     }
                     if (pnlRecord.txtClear != null)
                     {
@@ -153,7 +157,7 @@ namespace muse_dash_test
                         pnlRecord.txtScore.text = FormatScore(record);
                     }
 
-                    MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> acc={record.accuracy:0.00}%, FC={record.isFullCombo}, AP={record.isAllPerfect}");
+                    MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> acc={FormatAccuracy(record)}, FC={record.isFullCombo}, AP={record.isAllPerfect}");
                 }
                 else
                 {
