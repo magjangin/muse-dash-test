@@ -25,7 +25,7 @@ namespace muse_dash_test
             public const string IsFullCombo = "IsFullCombo";
         }
 
-        /// <summary>Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager — 결과(승리) 화면.</summary>
+        /// <summary>Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager — 인게임 풀콤보/승리 2D 배너.</summary>
         public static class PnlVictory2dManager
         {
             public const string OnShowVictory = "OnShowVictory";

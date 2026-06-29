@@ -126,13 +126,16 @@ namespace muse_dash_test
                     injectedAudioSource = null;
                 }
 
-                // 주입했던 커스텀 클립 메모리 해제 (배틀 종료 시 ogg가 새지 않도록)
-                if (injectedClip != null)
-                {
-                    UnityEngine.Object.Destroy(injectedClip);
-                    injectedClip = null;
-                    MelonLogger.Msg("[HwaBattleMediaController] 주입 커스텀 클립 해제 완료 (메모리 누수 방지)");
-                }
+                // [중요] 여기서 injectedClip을 Destroy하면 안 됩니다.
+                // StopMedia는 승리 직후 OnShowVictory 동기 이벤트 안에서 호출되는데, 그 이벤트는
+                // 게임의 GameMusic.BattleEnd() 실행 도중 동기로 디스패치됩니다. 게임의 BGM AudioSource는
+                // 아직 이 클립을 참조 중이라, 여기서 파괴하면 BattleEnd가 복귀해 파괴된 클립을 건드려
+                // NullReferenceException으로 죽고(매 프레임 반복), 결과 화면으로 절대 넘어가지 못합니다.
+                // (v0.7.6에서 이 Destroy가 추가되며 결과창 회귀가 발생함.)
+                // 메모리 누수는 이미 안전한 시점에 처리됩니다:
+                //   1) 다음 배틀 주입 시 previousInjected 클립을 파괴 (HwaBattleMediaController.cs)
+                //   2) ResetState()의 방어적 파괴
+                // 따라서 여기서는 우리 참조만 남겨두고 파괴하지 않습니다.
 
                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
                 if (bgmGo != null)
