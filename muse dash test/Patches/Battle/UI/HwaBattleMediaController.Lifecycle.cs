@@ -96,7 +96,7 @@ namespace muse_dash_test
             try
             {
                 long heapMem = GC.GetTotalMemory(false);
-                MelonLogger.Msg($"[HwaBattleMediaController] StopMedia 호출됨 - 비디오 및 BGM 정지 시작 (ManagedHeap={heapMem / 1048576f:F2}MB)");
+                MelonLogger.Msg($"[HwaBattleMediaController.Memory] StopMedia 호출됨 - 비디오 및 BGM 정지 시작 (ManagedHeap={heapMem / 1048576f:F2}MB)");
                 
                 Camera mainCam = Camera.main;
                 if (mainCam != null)

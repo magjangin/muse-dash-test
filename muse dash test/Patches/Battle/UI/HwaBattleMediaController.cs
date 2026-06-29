@@ -186,7 +186,8 @@ namespace muse_dash_test
                 injectedAudioSource = targetSource;
                 injectedClip = clip;
 
-                MelonLogger.Msg($"[HwaBattleMediaController] 배틀 BGM 주입 완료: before={beforeState}, after={DescribeAudioSource(targetSource)}, loadedClip={DescribeAudioClip(clip)}");
+                long heapMem = GC.GetTotalMemory(false);
+                MelonLogger.Msg($"[HwaBattleMediaController.Memory] 배틀 BGM 주입 완료 (ManagedHeap={heapMem / 1048576f:F2}MB): loadedClip={DescribeAudioClip(clip)}");
             }
             finally
             {
