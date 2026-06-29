@@ -23,12 +23,7 @@ namespace muse_dash_test
         {
             battleMediaInjectionStarted = false;
             injectedAudioSource = null;
-            // 이전 배틀의 클립이 StopMedia로 정리되지 않은 경우를 대비한 방어적 해제.
-            if (injectedClip != null)
-            {
-                UnityEngine.Object.Destroy(injectedClip);
-                injectedClip = null;
-            }
+            injectedClip = null;
         }
 
         public static void StartBattleMediaInjection()
@@ -188,12 +183,6 @@ namespace muse_dash_test
                 injectedAudioSource = targetSource;
                 injectedClip = clip;
 
-                // 직전에 우리가 주입했던 커스텀 클립만 해제합니다(배틀 반복 시 ogg 누적 방지).
-                if (previousInjected != null && previousInjected != clip)
-                {
-                    UnityEngine.Object.Destroy(previousInjected);
-                }
-
                 MelonLogger.Msg($"[HwaBattleMediaController] 배틀 BGM 주입 완료: before={beforeState}, after={DescribeAudioSource(targetSource)}, loadedClip={DescribeAudioClip(clip)}");
             }
             finally
@@ -336,12 +325,6 @@ namespace muse_dash_test
                 Transform existingQuad = mainCam.transform.Find("VideoBackgroundQuad");
                 if (existingQuad != null && existingQuad.gameObject != null)
                 {
-                    // GameObject 파괴는 할당된 머티리얼(런타임 인스턴스)을 자동 해제하지 않으므로 먼저 직접 해제합니다.
-                    var existingRenderer = existingQuad.GetComponent<MeshRenderer>();
-                    if (existingRenderer != null && existingRenderer.material != null)
-                    {
-                        UnityEngine.Object.Destroy(existingRenderer.material);
-                    }
                     UnityEngine.Object.Destroy(existingQuad.gameObject);
                     MelonLogger.Msg("[HwaBattleMediaController.Video] 기존 잔존 VideoBackgroundQuad 오브젝트를 삭제했습니다.");
                 }
