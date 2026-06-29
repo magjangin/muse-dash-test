@@ -21,9 +21,12 @@ namespace muse_dash_test
 
         public static void ResetState()
         {
+            long currentMem = GC.GetTotalMemory(false);
+            string clipDesc = DescribeAudioClip(injectedClip);
             battleMediaInjectionStarted = false;
             injectedAudioSource = null;
             injectedClip = null;
+            MelonLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, ManagedHeap={currentMem / 1048576f:F2}MB)");
         }
 
         public static void StartBattleMediaInjection()
