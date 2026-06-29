@@ -237,6 +237,7 @@ namespace muse_dash_test
         public static void Postfix(StageBattleComponent __instance)
         {
             MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.End 호출됨");
+            muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             HwaBattleMediaController.StopMedia();
         }
     }
@@ -247,6 +248,7 @@ namespace muse_dash_test
         public static void Postfix(StageBattleComponent __instance)
         {
             MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Exit 호출됨");
+            muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             // 리셋을 먼저 수행해 StopMedia가 예외를 던져도 stale 플래그가 남지 않게 합니다.
             try { CustomPlaySession.Current.ResetApplyDecision(); }
             catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Exit ResetApplyDecision 예외: {ex}"); }
@@ -261,6 +263,7 @@ namespace muse_dash_test
         public static void Postfix(StageBattleComponent __instance)
         {
             MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Release 호출됨");
+            muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             HwaBattleMediaController.StopMedia();
         }
     }
@@ -271,6 +274,7 @@ namespace muse_dash_test
         public static void Postfix(StageBattleComponent __instance)
         {
             MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.GameRestart 호출됨");
+            muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             HwaBattleMediaController.StopMedia();
         }
     }

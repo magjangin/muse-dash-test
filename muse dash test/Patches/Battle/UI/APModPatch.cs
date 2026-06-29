@@ -246,6 +246,31 @@ namespace muse_dash_test.Patches
         }
     }
 
+    public static class VictoryFlowGuard
+    {
+        private static bool isEndReached = false;
+
+        public static void StartGuard()
+        {
+            isEndReached = false;
+            MelonCoroutines.Start(CheckTimeout());
+        }
+
+        public static void MarkCompleted()
+        {
+            isEndReached = true;
+        }
+
+        private static System.Collections.IEnumerator CheckTimeout()
+        {
+            yield return new UnityEngine.WaitForSeconds(3.5f);
+            if (!isEndReached)
+            {
+                MelonLogger.Error("❌ [APMod.Guard] [로직 오류 감지] APMod 승리 연출은 개시되었으나 StageBattleComponent.End(결과 화면 진입)에 정상 도달하지 못했습니다! 과도한 정리(Destroy)나 연출 억제가 수행되었는지 확인하세요.");
+            }
+        }
+    }
+
     // Intercept the transient Full Combo banner display and change it to ALL PERFECT if appropriate
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager), GameBindings.PnlVictory2dManager.OnShowVictory, new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class PnlVictory2dManager_OnShowVictory_Patch
@@ -255,6 +280,7 @@ namespace muse_dash_test.Patches
             try
             {
                 MelonLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
+                VictoryFlowGuard.StartGuard();
 
                 // 결과 화면 진입 시 커스텀 BGM/BGA 미디어를 강제로 정지시킵니다.
                 HwaBattleMediaController.StopMedia();
