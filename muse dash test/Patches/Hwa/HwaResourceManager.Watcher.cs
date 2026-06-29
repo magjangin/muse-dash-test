@@ -64,6 +64,7 @@ namespace muse_dash_test
             try
             {
                 if (string.IsNullOrEmpty(filePath)) return;
+                if (IsTempBmsFile(filePath)) return;
                 string ext = Path.GetExtension(filePath);
                 if (!string.Equals(ext, ".bms", StringComparison.OrdinalIgnoreCase)) return;
 

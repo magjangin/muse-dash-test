@@ -52,16 +52,41 @@ namespace muse_dash_test
             return HwaManifestLoader.LoadHwaManifest(folderPath);
         }
 
+        public static bool IsTempBmsFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return true;
+            string fileName = Path.GetFileName(filePath);
+            return fileName.StartsWith("~", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("___", StringComparison.OrdinalIgnoreCase)
+                || fileName.IndexOf("temp", StringComparison.OrdinalIgnoreCase) >= 0
+                || fileName.IndexOf("tmp", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private static string FindPreferredBmsFile(string folderPath, SearchOption searchOption)
         {
             try
             {
-                string[] bmsFiles = Directory.GetFiles(folderPath, "*.bms", searchOption);
-                if (bmsFiles == null || bmsFiles.Length == 0)
+                string[] rawBmsFiles = Directory.GetFiles(folderPath, "*.bms", searchOption);
+                if (rawBmsFiles == null || rawBmsFiles.Length == 0)
                 {
                     return null;
                 }
 
+                var bmsFilesList = new System.Collections.Generic.List<string>();
+                foreach (var f in rawBmsFiles)
+                {
+                    if (!IsTempBmsFile(f))
+                    {
+                        bmsFilesList.Add(f);
+                    }
+                }
+
+                if (bmsFilesList.Count == 0)
+                {
+                    return null;
+                }
+
+                string[] bmsFiles = bmsFilesList.ToArray();
                 Array.Sort(bmsFiles, StringComparer.OrdinalIgnoreCase);
                 foreach (string file in bmsFiles)
                 {
