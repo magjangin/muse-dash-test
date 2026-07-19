@@ -24,6 +24,7 @@ public class PnlStage_OnEnable_Patch
                     IVariable val = account["IsUnlockAllMaster"];
                     if (val != null)
                     {
+                        UnlockAllMasterGuard.CaptureOnce(val.GetResult<bool>());
                         VariableUtils.SetResult(val, (Il2CppSystem.Object)true);
                         MelonLogger.Msg("[🔓 FixLocksPatch] PnlStage.OnEnable - IsUnlockAllMaster를 true로 설정 완료!");
                     }
@@ -252,6 +253,7 @@ public class PnlStage_RefreshDiffUI_Patch
                     val = account["IsUnlockAllMaster"];
                     if (val != null)
                     {
+                        UnlockAllMasterGuard.CaptureOnce(val.GetResult<bool>());
                         VariableUtils.SetResult(val, (Il2CppSystem.Object)true);
                         success = true;
                     }

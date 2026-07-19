@@ -1,5 +1,5 @@
 param(
-    [string]$File = 'H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll',
+    [string]$File = 'H:\muse dash hwa\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll',
     [int]$Max = 50
 )
 

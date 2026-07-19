@@ -1,7 +1,7 @@
 param(
-    [string]$DllPath = "H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll",
-    [string]$Net6Dir = "H:\steam\steamapps\common\Muse Dash\MelonLoader\net6",
-    [string]$Il2cppDir = "H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies"
+    [string]$DllPath = "H:\muse dash hwa\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll",
+    [string]$Net6Dir = "H:\muse dash hwa\MelonLoader\net6",
+    [string]$Il2cppDir = "H:\muse dash hwa\MelonLoader\Il2CppAssemblies"
 )
 
 if (-not (Test-Path $DllPath)) {

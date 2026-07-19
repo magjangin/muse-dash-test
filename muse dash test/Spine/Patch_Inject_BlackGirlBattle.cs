@@ -1,0 +1,72 @@
+using System.Collections.Generic;
+using HarmonyLib;
+using MelonLoader;
+using Il2Cpp;
+using Il2CppSpine.Unity;
+
+namespace muse_dash_test
+{
+    // 스테이지에서 특정 GameObject 이름의 캐릭터/고스트를 커스텀 스킨으로 교체한다.
+    // 그림자는 대상에서 제외한다(사용자 요청으로 원래대로 유지).
+    // (원래 spine skin 모드에서 이식: 주입 기능만 가져옴)
+    internal static class InjectHelper
+    {
+        // GameObject 이름 -> skin test 폴더의 파일 베이스 이름({baseName}.png/.atlas/.json)
+        private static readonly Dictionary<string, string> TargetToBaseName = new Dictionary<string, string>
+        {
+            { "black_girl_battle(Clone)", "char_3_black" },
+            { "black_girl_battle_ghost(Clone)", "char_3_black" },
+            { "sleepy_girl_battle(Clone)", "char_1_sleepy" },
+            { "sleepy_girl_battle_ghost(Clone)", "char_1_sleepy" },
+            { "rock_girl_battle(Clone)", "char_1_rock" },
+            { "rock_girl_battle_ghost(Clone)", "char_1_rock" },
+            { "rampage_girl_battle(Clone)", "char_1_rampage" },
+            { "rampage_girl_battle_ghost(Clone)", "char_1_rampage" },
+            { "violin_girl_battle(Clone)", "char_3_violin" },
+            { "violin_girl_battle_ghost(Clone)", "char_3_violin" },
+        };
+
+        public static void TryInject(SpineActionController instance)
+        {
+            if (!TargetToBaseName.TryGetValue(instance.gameObject.name, out var baseName)) return;
+
+            var customAsset = CustomSkinInjector.GetOrBuild(baseName);
+            if (customAsset == null)
+            {
+                MelonLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
+                return;
+            }
+
+            var ska = instance.skeletonAnimation;
+            if (ska == null)
+            {
+                MelonLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
+                return;
+            }
+
+            ska.skeletonDataAsset = customAsset;
+            ska.Initialize(true);
+            MelonLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료");
+        }
+    }
+
+    // 오브젝트가 처음 생성될 때(Init).
+    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.Init), typeof(int), typeof(int))]
+    internal static class Patch_Inject_Init
+    {
+        static void Postfix(SpineActionController __instance, int idx, int curScene)
+        {
+            InjectHelper.TryInject(__instance);
+        }
+    }
+
+    // 스테이지 (재)시작마다 불릴 것으로 추정되는 지점. 재시도/재진입 시에도 주입되도록 커버.
+    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.OnControllerStart))]
+    internal static class Patch_Inject_OnControllerStart
+    {
+        static void Postfix(SpineActionController __instance)
+        {
+            InjectHelper.TryInject(__instance);
+        }
+    }
+}

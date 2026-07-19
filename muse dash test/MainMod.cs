@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.8.1", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.8.2", "화영왕")]
 [assembly: MelonColor(255, 147, 112, 219)] // 모드 이름 색상: 보라색(MediumPurple #9370DB)
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
@@ -62,6 +62,18 @@ namespace muse_dash_test
                 Directory.CreateDirectory(skinsFolderPath);
                 MelonLogger.Msg($"skins 폴더를 확인/생성했습니다: {skinsFolderPath}");
                 EnsureSampleSkinsFile(skinsFolderPath);
+            }, maxConsecutiveFailures: 0);
+
+            // skin test 폴더 + 세트별 하위 폴더 생성 (커스텀 Spine 스킨 주입용 원본 파일 위치)
+            // 예: skin test/char_3_black/char_3_black.png/.atlas/.json 세트를 두면 black_girl_battle에 주입됨
+            FeatureGuard.Run("Init.SpineSkinFolder", () =>
+            {
+                CustomSkinInjector.EnsureSetFolders();
+                MelonLogger.Msg($"skin test 폴더를 확인/생성했습니다: {CustomSkinInjector.SkinTestDirectory}");
+                foreach (var baseName in CustomSkinInjector.KnownBaseNames)
+                {
+                    MelonLogger.Msg($"  - 세트 폴더: {CustomSkinInjector.GetSetDirectory(baseName)}");
+                }
             }, maxConsecutiveFailures: 0);
 
             // hwa 매니페스트 사전 로드

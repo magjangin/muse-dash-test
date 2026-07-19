@@ -99,7 +99,19 @@
       "Bash(cp \"/c/Users/화평/AppData/Local/Steam/MuseDash/76561199502858707MuseDashSaves.sav\" \"/c/Users/화평/AppData/Local/Temp/claude/H--source-repos-muse-dash-test/33d6b3c2-8e40-4b9c-b6f2-dcc6f89dc324/scratchpad/MuseDashSaves_backup.sav\" && ls -la \"/c/Users/화평/AppData/Local/Temp/claude/H--source-repos-muse-dash-test/33d6b3c2-8e40-4b9c-b6f2-dcc6f89dc324/scratchpad/MuseDashSaves_backup.sav\")",
       "Bash(xargs -0 -n1 dirname)",
       "Bash(awk '$1>=5')",
-      "PowerShell(dotnet build \"muse dash test\\\\muse dash test.csproj\" -c Debug --nologo)"
+      "PowerShell(dotnet build \"muse dash test\\\\muse dash test.csproj\" -c Debug --nologo)",
+      "Bash(ls H:/steam/steamapps/common/\"Muse Dash\"/MelonLoader/Il2CppAssemblies/ | grep -i \"Assembly-CSharp.dll\")",
+      "Read(//h/steam/steamapps/common/Muse Dash/MelonLoader/**)",
+      "PowerShell(dotnet build $proj -c Debug -v quiet 2>&1)",
+      "PowerShell($proj=\"H:\\\\source\\\\repos\\\\muse dash test\\\\scratch\\\\read_il\\\\read_il.csproj\")",
+      "Bash(awk '/##### \\\\[0\\\\]/{p=1} /##### \\\\[1\\\\]/{p=0} p' pv.txt)",
+      "Bash(awk '/##### \\\\[0\\\\]/{p=1} /##### \\\\[1\\\\]/{p=0} p' scene_il.txt)",
+      "Bash(gh auth *)",
+      "WebFetch(domain:www.youtube.com)",
+      "Bash(ls -la \"H:/source/repos/\" 2>/dev/null | head -50; echo \"---SPINE SKIN---\"; ls -la \"H:/source/repos/spine skin\" 2>/dev/null)",
+      "PowerShell(dotnet build \"H:\\\\source\\\\repos\\\\muse dash test\\\\muse dash test\\\\muse dash test.csproj\" -c Debug -v quiet -clp:ErrorsOnly 2>&1)",
+      "Bash(cd \"H:/steam/steamapps/common/Muse Dash/MelonLoader/Il2CppAssemblies\" 2>/dev/null && grep -aoi \"char_[0-9]*_rock[a-z_]*\" Assembly-CSharp.dll 2>/dev/null | sort -u | head; echo \"--- also search any dll ---\"; grep -aoil \"rock\" *.dll 2>/dev/null | head)",
+      "PowerShell($f = \"H:\\\\steam\\\\steamapps\\\\common\\\\Muse Dash\\\\Mods\\\\muse dash custom chart.dll\"; if \\(Test-Path $f\\) { Get-Item $f | Select-Object Name, @{n='SizeKB';e={[math]::Round\\($_.Length/1KB,1\\)}}, LastWriteTime; \\(Get-Item $f\\).VersionInfo.FileVersion } else { \"파일 없음\" })"
     ]
   }
 }

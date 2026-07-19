@@ -1,5 +1,5 @@
-$il2cppDir = 'H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies'
-$net6Dir = 'H:\steam\steamapps\common\Muse Dash\MelonLoader\net6'
+$il2cppDir = 'H:\muse dash hwa\MelonLoader\Il2CppAssemblies'
+$net6Dir = 'H:\muse dash hwa\MelonLoader\net6'
 
 $loading = New-Object System.Collections.Generic.HashSet[string]
 [System.AppDomain]::CurrentDomain.add_AssemblyResolve({

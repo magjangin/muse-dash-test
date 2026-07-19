@@ -1,5 +1,5 @@
 param(
-    [string]$Path = 'H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies'
+    [string]$Path = 'H:\muse dash hwa\MelonLoader\Il2CppAssemblies'
 )
 
 if (-not (Test-Path $Path)) {

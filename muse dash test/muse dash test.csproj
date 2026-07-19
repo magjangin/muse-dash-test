@@ -27,141 +27,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
+  <!-- 게임 설치 경로 (build.bat 등에서 /p:GamePath=... 로 덮어쓸 수 있음) -->
+  <PropertyGroup>
+    <GamePath Condition="'$(GamePath)' == ''">H:\muse dash hwa</GamePath>
+  </PropertyGroup>
+
+  <!-- 개별 DLL을 나열하는 대신 폴더 전체를 와일드카드로 참조.
+       새 Il2Cpp 어셈블리가 필요해질 때마다 참조를 수동으로 추가할 필요가 없어짐. -->
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\net6\0Harmony.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppInterop.Common">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\net6\Il2CppInterop.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppInterop.Generator">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\net6\Il2CppInterop.Generator.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppInterop.HarmonySupport">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\net6\Il2CppInterop.HarmonySupport.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppInterop.Runtime">
-      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2Cppmscorlib">
-      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2Cppmscorlib.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppSirenix.OdinInspector.Attributes">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSirenix.OdinInspector.Attributes.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppSirenix.OdinInspector.CompatibilityLayer">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSirenix.OdinInspector.CompatibilityLayer.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppSirenix.Serialization">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSirenix.Serialization.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppSirenix.Serialization.AOTGenerated">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSirenix.Serialization.AOTGenerated.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppSirenix.Serialization.Config">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSirenix.Serialization.Config.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppSirenix.Utilities">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSirenix.Utilities.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppSystem">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppSystem.dll</HintPath>
-    </Reference>
-    <Reference Include="MelonLoader">
-      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\net6\MelonLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.AudioModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.AudioModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.AnimationModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UnityWebRequestModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.UnityWebRequestModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UnityWebRequestAudioModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UnityWebRequestWWWModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.UI.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.VideoModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.VideoModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.TextRenderingModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.UIModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.ImageConversionModule.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppDOTween">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2CppDOTween.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2Cppcom.rlabrecque.steamworks.net">
-      <HintPath>H:\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2Cppcom.rlabrecque.steamworks.net.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2Cppspine-unity">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\Il2Cppspine-unity.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.ParticleSystemModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.ParticleSystemModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.InputLegacyModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\Il2CppAssemblies\UnityEngine.IMGUIModule.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Il2CppPeroTools2">
-      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppPeroTools2.Account">
-      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Account.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppPeroTools2.GeneralLocalization">
-      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.GeneralLocalization.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppPeroTools2.Pool">
-      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Pool.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppPeroTools2.Resources">
-      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Resources.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppPeroTools2.UI">
-      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.UI.dll</HintPath>
-    </Reference>
-    <Reference Include="Il2CppPeroTools2.Watermark">
-      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Il2CppPeroTools2.Watermark.dll</HintPath>
-    </Reference>
+    <Reference Include="$(GamePath)\MelonLoader\net6\*.dll" Private="false" />
+    <Reference Include="$(GamePath)\MelonLoader\Il2CppAssemblies\*.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\tag_icon.png" />
   </ItemGroup>
-
-  <!-- 게임 설치 경로 (build.bat 등에서 /p:GamePath=... 로 덮어쓸 수 있음) -->
-  <PropertyGroup>
-    <GamePath Condition="'$(GamePath)' == ''">H:\steam\steamapps\common\Muse Dash</GamePath>
-  </PropertyGroup>
 
   <!-- 빌드 후 산출 DLL을 게임 Mods 폴더로 항상 자동 배포.
        게임이 실행 중이라 DLL이 잠겨 있어도 빌드가 실패하지 않도록 복사 실패는 경고로 처리. -->
