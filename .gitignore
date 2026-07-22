@@ -22,3 +22,9 @@ Thumbs.db
 # Temporary scratch files
 scratch/
 
+# Decompiled sources
+디컴파일/
+Decompiled/
+
+
+
