@@ -27,13 +27,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <!-- 게임 설치 경로 (build.bat 등에서 /p:GamePath=... 로 덮어쓸 수 있음) -->
+  <!-- 게임 설치 경로 (기본값: H:\muse dash hwa) -->
   <PropertyGroup>
     <GamePath Condition="'$(GamePath)' == ''">H:\muse dash hwa</GamePath>
+    <ModsDir>$(GamePath)\Mods</ModsDir>
   </PropertyGroup>
 
-  <!-- 개별 DLL을 나열하는 대신 폴더 전체를 와일드카드로 참조.
-       새 Il2Cpp 어셈블리가 필요해질 때마다 참조를 수동으로 추가할 필요가 없어짐. -->
+  <!-- 개별 DLL을 나열하는 대신 폴더 전체를 와일드카드로 참조 -->
   <ItemGroup>
     <Reference Include="$(GamePath)\MelonLoader\net6\*.dll" Private="false" />
     <Reference Include="$(GamePath)\MelonLoader\Il2CppAssemblies\*.dll" Private="false" />
@@ -42,17 +42,16 @@
     <EmbeddedResource Include="Resources\tag_icon.png" />
   </ItemGroup>
 
-  <!-- 빌드 후 산출 DLL을 게임 Mods 폴더로 항상 자동 배포.
-       게임이 실행 중이라 DLL이 잠겨 있어도 빌드가 실패하지 않도록 복사 실패는 경고로 처리. -->
-  <Target Name="DeployToMods" AfterTargets="Build" Condition="Exists('$(GamePath)')">
-    <PropertyGroup>
-      <ModsDir>$(GamePath)\Mods</ModsDir>
-    </PropertyGroup>
+  <!-- 빌드 후 산출 DLL을 게임 Mods 폴더로 항상 자동 배포 -->
+  <Target Name="DeployToMods" AfterTargets="Build">
     <MakeDir Directories="$(ModsDir)" Condition="!Exists('$(ModsDir)')" />
     <Copy SourceFiles="$(TargetPath)"
           DestinationFolder="$(ModsDir)"
           OverwriteReadOnlyFiles="true"
           ContinueOnError="WarnAndContinue" />
-    <Message Importance="high" Text="[Deploy] $(TargetFileName) -> $(ModsDir)" />
+    <Message Importance="high" Text="================================================================================" />
+    <Message Importance="high" Text="[AutoDeploy] Successfully deployed '$(TargetFileName)' -> '$(ModsDir)'" />
+    <Message Importance="high" Text="================================================================================" />
   </Target>
 </Project>
+
