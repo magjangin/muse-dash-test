@@ -1,13 +1,13 @@
 using HarmonyLib;
+using Il2Cpp;
 using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI;
 
 namespace muse_dash_test.Patches.Database
 {
     /// <summary>
-    /// 로컬 EXP 기반 레벨 계산 함수(AccountSaveUtils.CacularLevel)와
-    /// DataHelper.Level 프로퍼티를 동시에 9999(만렙)로 고정하여
-    /// 로컬 데이터 및 UI 레벨 표기를 9999로 변경하고 레벨업 연출/효과음을 완벽히 차단합니다.
+    /// 글로벌/로컬 레벨 및 경험치 계산, 레벨업 트리거 메서드를 광역 패치하여
+    /// 표시 레벨을 9999(만렙)로 고정하고 레벨업 팝업 및 효과음("띠리링~")을 완벽 차단합니다.
     /// </summary>
     [HarmonyPatch(typeof(DataHelper), nameof(DataHelper.Level), MethodType.Getter)]
     public static class DataHelper_Level_Patch
@@ -24,6 +24,43 @@ namespace muse_dash_test.Patches.Database
         public static void Postfix(ref int __result)
         {
             __result = 9999;
+        }
+    }
+
+    [HarmonyPatch(typeof(AccountSaveUtils), nameof(AccountSaveUtils.CacularCurExp))]
+    public static class AccountSaveUtils_CacularCurExp_Patch
+    {
+        public static void Postfix(ref int __result)
+        {
+            __result = 999999;
+        }
+    }
+
+    [HarmonyPatch(typeof(PnlUnlock), "CheckHaveEnoughExpToLevelUp")]
+    public static class PnlUnlock_CheckHaveEnoughExpToLevelUp_Patch
+    {
+        public static bool Prefix(ref bool __result)
+        {
+            __result = false;
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(PnlUnlock), "OnLevelUp")]
+    public static class PnlUnlock_OnLevelUp_Patch
+    {
+        public static bool Prefix()
+        {
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(PnlLevelUpAward), "OnShow")]
+    public static class PnlLevelUpAward_OnShow_Patch
+    {
+        public static bool Prefix()
+        {
+            return false;
         }
     }
 }
