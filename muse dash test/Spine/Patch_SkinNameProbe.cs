@@ -15,11 +15,10 @@ namespace muse_dash_test
     {
         static void Postfix(SpineActionController __instance)
         {
+            if (__instance == null || __instance.gameObject == null) return;
             var name = __instance.gameObject.name;
-            if (name.ToLowerInvariant().Contains("battle"))
-            {
-                MelonLogger.Msg($"[SkinNameProbe] 배틀 오브젝트 이름 = \"{name}\"");
-            }
+            MelonLogger.Msg($"[SkinNameProbe] 배틀 오브젝트 Awake 감지 = \"{name}\"");
+            InjectHelper.TryInject(__instance, "Awake");
         }
     }
 }

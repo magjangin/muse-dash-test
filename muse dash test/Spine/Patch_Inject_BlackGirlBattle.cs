@@ -11,7 +11,6 @@ namespace muse_dash_test
     // (원래 spine skin 모드에서 이식: 주입 기능만 가져옴)
     internal static class InjectHelper
     {
-        // GameObject 이름 -> skin test 폴더의 파일 베이스 이름({baseName}.png/.atlas/.json)
         private static readonly Dictionary<string, string> TargetToBaseName = new Dictionary<string, string>
         {
             { "black_girl_battle(Clone)", "char_3_black" },
@@ -26,27 +25,61 @@ namespace muse_dash_test
             { "violin_girl_battle_ghost(Clone)", "char_3_violin" },
         };
 
-        public static void TryInject(SpineActionController instance)
+        public static string ResolveBaseName(string name)
         {
-            if (!TargetToBaseName.TryGetValue(instance.gameObject.name, out var baseName)) return;
+            if (string.IsNullOrEmpty(name)) return null;
+            if (TargetToBaseName.TryGetValue(name, out var exact)) return exact;
+
+            string lower = name.ToLowerInvariant();
+            if (lower.Contains("black_girl") || lower.Contains("marija_black") || lower.Contains("black_marija") || lower.Contains("char_3_black") || lower.Contains("marija_3"))
+                return "char_3_black";
+            if (lower.Contains("sleepy_girl") || lower.Contains("sleepy"))
+                return "char_1_sleepy";
+            if (lower.Contains("rock_girl") || lower.Contains("rock"))
+                return "char_1_rock";
+            if (lower.Contains("rampage_girl") || lower.Contains("rampage"))
+                return "char_1_rampage";
+            if (lower.Contains("violin_girl") || lower.Contains("violin"))
+                return "char_3_violin";
+
+            return null;
+        }
+
+        public static void TryInject(SpineActionController instance, string sourceCaller)
+        {
+            if (instance == null || instance.gameObject == null) return;
+            string goName = instance.gameObject.name;
+
+            string baseName = ResolveBaseName(goName);
+            if (baseName == null)
+            {
+                // battle 단어가 포함된 경우 디버그용 수집 출력
+                if (goName.ToLowerInvariant().Contains("battle"))
+                {
+                    MelonLogger.Msg($"[SpineSkin.Debug] [{sourceCaller}] '{goName}' -> 등록되지 않은 배틀 오브젝트 감지");
+                }
+                return;
+            }
+
+            MelonLogger.Msg($"[SpineSkin.Debug] [{sourceCaller}] '{goName}' -> 타겟 베이스네임 매칭: '{baseName}'");
 
             var customAsset = CustomSkinInjector.GetOrBuild(baseName);
             if (customAsset == null)
             {
-                MelonLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
+                MelonLogger.Warning($"[SpineSkin] [{sourceCaller}] '{goName}' -> {baseName} 커스텀 스킨 에셋이 null이므로 주입 스킵");
                 return;
             }
 
             var ska = instance.skeletonAnimation;
             if (ska == null)
             {
-                MelonLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
+                MelonLogger.Warning($"[SpineSkin] [{sourceCaller}] '{goName}' -> skeletonAnimation 컴포넌트가 null이라 주입 스킵");
                 return;
             }
 
             ska.skeletonDataAsset = customAsset;
             ska.Initialize(true);
-            MelonLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료");
+            MelonLogger.Msg($"[SpineSkin] 🎉 [{sourceCaller}] '{goName}'에 '{baseName}' 커스텀 스킨 적용 성공!");
         }
     }
 
@@ -56,17 +89,17 @@ namespace muse_dash_test
     {
         static void Postfix(SpineActionController __instance, int idx, int curScene)
         {
-            InjectHelper.TryInject(__instance);
+            InjectHelper.TryInject(__instance, "Init");
         }
     }
 
-    // 스테이지 (재)시작마다 불릴 것으로 추정되는 지점. 재시도/재진입 시에도 주입되도록 커버.
+    // 스테이지 (재)시작마다 불릴 것으로 추정되는 지점.
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.OnControllerStart))]
     internal static class Patch_Inject_OnControllerStart
     {
         static void Postfix(SpineActionController __instance)
         {
-            InjectHelper.TryInject(__instance);
+            InjectHelper.TryInject(__instance, "OnControllerStart");
         }
     }
 }
