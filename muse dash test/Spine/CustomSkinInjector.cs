@@ -56,6 +56,11 @@ namespace muse_dash_test
                     return null;
                 }
 
+                if (CheckObfuscatedJson(jsonPath, baseName, out string warningMsg))
+                {
+                    MelonLogger.Warning($"[CustomSkinInjector] ⚠️ 경고: '{baseName}.json' 스킨 파일의 난독화/바이너리 형식이 감지되었습니다! 사유: {warningMsg}");
+                }
+
                 var pngBytes = File.ReadAllBytes(pngPath);
                 var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                 texture.name = baseName;
@@ -93,6 +98,59 @@ namespace muse_dash_test
             {
                 MelonLogger.Error($"[CustomSkinInjector] {baseName} 예외: " + ex);
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// JSON 스킨 파일이 난독화되어 있거나 바이너리/암호화된 형식인지 감지하고, 감지 시 경고 이유를 반환합니다.
+        /// </summary>
+        public static bool CheckObfuscatedJson(string jsonPath, string baseName, out string reason)
+        {
+            reason = null;
+            if (!File.Exists(jsonPath)) return false;
+
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(jsonPath);
+                if (bytes.Length == 0)
+                {
+                    reason = "파일 크기가 0바이트입니다.";
+                    return true;
+                }
+
+                // 1. 바이너리 / 암호화 / 비-JSON 헤더 탐색
+                int firstCharIdx = 0;
+                while (firstCharIdx < bytes.Length && (bytes[firstCharIdx] == ' ' || bytes[firstCharIdx] == '\t' || bytes[firstCharIdx] == '\r' || bytes[firstCharIdx] == '\n'))
+                {
+                    firstCharIdx++;
+                }
+
+                if (firstCharIdx >= bytes.Length || (bytes[firstCharIdx] != '{' && bytes[firstCharIdx] != '['))
+                {
+                    reason = $"JSON 시작 문자가 아닙니다 ('{{' 또는 '[' 대신 0x{bytes[firstCharIdx]:X2} 감지 -> 바이너리 .skel 또는 암호화 파일일 가능성 높음)";
+                    return true;
+                }
+
+                // 2. Spine 키 구성 검사 (bones, slots, skins, skeleton)
+                string text = System.Text.Encoding.UTF8.GetString(bytes);
+
+                bool hasBones = text.Contains("\"bones\"") || text.Contains("'bones'");
+                bool hasSlots = text.Contains("\"slots\"") || text.Contains("'slots'");
+                bool hasSkins = text.Contains("\"skins\"") || text.Contains("'skins'");
+                bool hasSkeleton = text.Contains("\"skeleton\"") || text.Contains("'skeleton'");
+
+                if (!hasBones && !hasSlots && !hasSkins && !hasSkeleton)
+                {
+                    reason = "Spine 핵심 필드(\"bones\", \"slots\", \"skins\", \"skeleton\")가 탐색되지 않았습니다. 변형/난독화된 JSON 구조입니다.";
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                reason = $"파일 탐색 예외: {ex.Message}";
+                return true;
             }
         }
     }
