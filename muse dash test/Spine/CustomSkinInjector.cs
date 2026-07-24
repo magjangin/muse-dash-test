@@ -58,7 +58,20 @@ namespace muse_dash_test
 
                 if (CheckObfuscatedJson(jsonPath, baseName, out string warningMsg))
                 {
-                    MelonLogger.Warning($"[CustomSkinInjector] ⚠️ 경고: '{baseName}.json' 스킨 파일의 난독화/바이너리 형식이 감지되었습니다! 사유: {warningMsg}");
+                    string banner = string.Format(
+                        "\n================================================================================\n" +
+                        "🚨 [CustomSkinInjector] 스킨 파일 난독화 / 바이너리 변형 경고 🚨\n" +
+                        "--------------------------------------------------------------------------------\n" +
+                        "  대상 스킨 : {0}\n" +
+                        "  파일 경로 : {1}\n" +
+                        "  감지 사유 : {2}\n" +
+                        "--------------------------------------------------------------------------------\n" +
+                        "  💡 안내: 해당 .json 파일이 암호화/난독화되어 있거나, .skel 바이너리를 확장자만\n" +
+                        "     .json으로 변경한 파일입니다. 순정 Spine 파서 로드가 불가능합니다.\n" +
+                        "================================================================================\n",
+                        baseName, jsonPath, warningMsg);
+
+                    MelonLogger.Error(banner);
                 }
 
                 var pngBytes = File.ReadAllBytes(pngPath);
