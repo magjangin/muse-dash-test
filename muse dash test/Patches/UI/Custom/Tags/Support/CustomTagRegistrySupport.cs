@@ -205,7 +205,26 @@ namespace muse_dash_test
             {
                 if (target is Il2CppSystem.Object il2cppObj)
                 {
-                    return il2cppObj.MemberwiseClone();
+                    var cloned = il2cppObj.MemberwiseClone();
+                    if (cloned != null)
+                    {
+                        Type originalType = target.GetType();
+                        if (originalType != typeof(Il2CppSystem.Object))
+                        {
+                            try
+                            {
+                                var tryCastMethod = typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).GetMethod("TryCast");
+                                if (tryCastMethod != null)
+                                {
+                                    var generic = tryCastMethod.MakeGenericMethod(originalType);
+                                    var castResult = generic.Invoke(cloned, null);
+                                    if (castResult != null) return castResult;
+                                }
+                            }
+                            catch { }
+                        }
+                        return cloned;
+                    }
                 }
                 var method = target.GetType().GetMethod("MemberwiseClone", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
                 if (method != null)

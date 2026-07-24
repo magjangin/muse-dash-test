@@ -288,6 +288,23 @@ namespace muse_dash_test
             if (underlying.IsInstanceOfType(value)) return value;
             if (underlying == typeof(string)) return value.ToString();
             if (underlying.IsEnum) return Enum.ToObject(underlying, value);
+
+            if (value is Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase objBase && typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).IsAssignableFrom(underlying))
+            {
+                try
+                {
+                    var tryCastMethod = typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).GetMethod("TryCast");
+                    if (tryCastMethod != null)
+                    {
+                        var generic = tryCastMethod.MakeGenericMethod(underlying);
+                        var casted = generic.Invoke(objBase, null);
+                        if (casted != null) return casted;
+                    }
+                }
+                catch { }
+                return value;
+            }
+
             return Convert.ChangeType(value, underlying);
         }
 
