@@ -104,14 +104,30 @@ namespace muse_dash_test
                 var atlasAsset = SpineAtlasAsset.CreateRuntimeInstance(atlasTextAsset, new Texture2D[] { texture }, shader, true);
                 if (atlasAsset != null) atlasAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-                var jsonText = File.ReadAllText(jsonPath);
-                var skeletonTextAsset = new TextAsset(jsonText);
+                byte[] rawSkeletonBytes = File.ReadAllBytes(jsonPath);
+                bool isBinary = rawSkeletonBytes.Length > 0 && rawSkeletonBytes[0] != '{' && rawSkeletonBytes[0] != '[';
+
+                MelonLogger.Msg($"[CustomSkinInjector.Debug] [{baseName}] 스켈레톤 포맷 판별: {(isBinary ? "BINARY (.skel)" : "TEXT JSON (.json)")}, 크기={rawSkeletonBytes.Length} bytes");
+
+                TextAsset skeletonTextAsset;
+                if (isBinary)
+                {
+                    string binaryStr = System.Text.Encoding.GetEncoding("iso-8859-1").GetString(rawSkeletonBytes);
+                    skeletonTextAsset = new TextAsset(binaryStr);
+                    skeletonTextAsset.name = baseName + ".skel.bytes";
+                }
+                else
+                {
+                    string jsonText = File.ReadAllText(jsonPath);
+                    skeletonTextAsset = new TextAsset(jsonText);
+                    skeletonTextAsset.name = baseName + ".json";
+                }
                 skeletonTextAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
                 var skeletonDataAsset = SkeletonDataAsset.CreateRuntimeInstance(skeletonTextAsset, atlasAsset, true, 0.01f);
-                if (skeletonDataAsset == null || skeletonDataAsset.GetSkeletonData(true) == null)
+                if (skeletonDataAsset == null || skeletonDataAsset.GetSkeletonData(false) == null)
                 {
-                    MelonLogger.Warning($"[CustomSkinInjector] [{baseName}] 스켈레톤 데이터 생성 실패 (JSON 파싱 불일치 또는 아틀라스 키 무효)");
+                    MelonLogger.Warning($"[CustomSkinInjector] [{baseName}] 스켈레톤 데이터 생성 실패 (JSON/Binary 파싱 불일치 또는 아틀라스 키 무효)");
                     return null;
                 }
 
