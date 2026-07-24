@@ -141,6 +141,12 @@ namespace muse_dash_test
                                 var albumExInfo = ModReflection.GetValue(clonedAlbum, "m_AlbumExInfo");
                                 if (albumExInfo != null)
                                 {
+                                    var clonedExObj = CloneSubObject(albumExInfo);
+                                    if (clonedExObj != null)
+                                    {
+                                        ModReflection.SetValue(clonedAlbum, "m_AlbumExInfo", clonedExObj);
+                                        albumExInfo = clonedExObj;
+                                    }
                                     CustomTagRegistrySupport.CleanPurchaseProperties(albumExInfo);
                                 }
 
@@ -190,6 +196,28 @@ namespace muse_dash_test
             }
 
             return albumInfo;
+        }
+
+        internal static object CloneSubObject(object target)
+        {
+            if (target == null) return null;
+            try
+            {
+                if (target is Il2CppSystem.Object il2cppObj)
+                {
+                    return il2cppObj.MemberwiseClone();
+                }
+                var method = target.GetType().GetMethod("MemberwiseClone", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                if (method != null)
+                {
+                    return method.Invoke(target, null);
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[CustomTagRegistry] 서브 객체 복제 중 예외 발생: {ex.Message}");
+            }
+            return null;
         }
 
         internal static Il2CppSystem.Collections.Generic.List<string> ToIl2CppStringList(List<string> source)
@@ -245,6 +273,17 @@ namespace muse_dash_test
             {
                 MelonLogger.Error($"[CustomTagRegistry] [실패] {uid} clonedObj를 MusicInfo로 캐스팅하지 못했습니다.");
                 return false;
+            }
+
+            var musicExInfo = ModReflection.GetValue(clonedInfo, "m_MusicExInfo") ?? ModReflection.GetValue(clonedInfo, "MusicExInfo");
+            if (musicExInfo != null)
+            {
+                var clonedExObj = CloneSubObject(musicExInfo);
+                if (clonedExObj != null)
+                {
+                    ModReflection.SetValue(clonedInfo, "m_MusicExInfo", clonedExObj);
+                    ModReflection.SetValue(clonedInfo, "MusicExInfo", clonedExObj, silent: true);
+                }
             }
 
             return true;

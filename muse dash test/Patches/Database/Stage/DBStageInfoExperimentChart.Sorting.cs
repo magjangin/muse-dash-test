@@ -196,7 +196,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 }
             }
 
-            int pairCount = group.Count == 2 && roadIndices.Count == 1 && airIndices.Count == 1 ? 1 : 0;
+            int pairCount = System.Math.Min(roadIndices.Count, airIndices.Count);
             for (int i = 0; i < pairCount; i++)
             {
                 int roadIndex = roadIndices[i];
