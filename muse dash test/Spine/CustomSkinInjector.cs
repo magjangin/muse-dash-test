@@ -38,53 +38,21 @@ namespace muse_dash_test
 
         public static SkeletonDataAsset GetOrBuild(string baseName)
         {
+            // Unity Object의 == 오버로드 때문에, 네이티브 오브젝트가 파괴되면(씬 전환 중 회수 등)
+            // 캐시에 값이 있어도 "죽은" 상태일 수 있다. 그런 경우 다시 만든다.
             if (Cache.TryGetValue(baseName, out var existing) && existing != null)
                 return existing;
 
             try
             {
                 var dir = GetSetDirectory(baseName);
-                if (!Directory.Exists(dir))
+                var pngPath = Path.Combine(dir, baseName + ".png");
+                var atlasPath = Path.Combine(dir, baseName + ".atlas");
+                var jsonPath = Path.Combine(dir, baseName + ".json");
+
+                if (!File.Exists(pngPath) || !File.Exists(atlasPath) || !File.Exists(jsonPath))
                 {
-                    MelonLogger.Warning($"[CustomSkinInjector] {baseName} 디렉터리가 없습니다: {dir}");
-                    return null;
-                }
-
-                string pngPath = Path.Combine(dir, baseName + ".png");
-                string atlasPath = Path.Combine(dir, baseName + ".atlas");
-                string jsonPath = Path.Combine(dir, baseName + ".json");
-
-                if (!File.Exists(pngPath))
-                {
-                    var pngs = Directory.GetFiles(dir, "*.png");
-                    if (pngs.Length > 0) pngPath = pngs[0];
-                }
-
-                if (!File.Exists(atlasPath))
-                {
-                    var atlases = Directory.GetFiles(dir, "*.atlas");
-                    if (atlases.Length == 0) atlases = Directory.GetFiles(dir, "*.atlas.txt");
-                    if (atlases.Length == 0) atlases = Directory.GetFiles(dir, "*atlas*.txt");
-                    if (atlases.Length > 0) atlasPath = atlases[0];
-                }
-
-                if (!File.Exists(jsonPath))
-                {
-                    var jsons = Directory.GetFiles(dir, "*.json");
-                    if (jsons.Length == 0) jsons = Directory.GetFiles(dir, "*.json.txt");
-                    if (jsons.Length == 0) jsons = Directory.GetFiles(dir, "*json*.txt");
-                    if (jsons.Length > 0) jsonPath = jsons[0];
-                }
-
-                bool hasPng = File.Exists(pngPath);
-                bool hasAtlas = File.Exists(atlasPath);
-                bool hasJson = File.Exists(jsonPath);
-
-                MelonLogger.Msg($"[CustomSkinInjector.Debug] [{baseName}] 파일 탐색 결과: PNG({hasPng})='{pngPath}', ATLAS({hasAtlas})='{atlasPath}', JSON({hasJson})='{jsonPath}'");
-
-                if (!hasPng || !hasAtlas || !hasJson)
-                {
-                    MelonLogger.Warning($"[CustomSkinInjector] [{baseName}] 필수 스킨 파일이 없어 주입을 스킵합니다 (PNG={hasPng}, ATLAS={hasAtlas}, JSON={hasJson}) 경로: {dir}");
+                    MelonLogger.Msg($"[CustomSkinInjector] {baseName} 파일이 없습니다: {dir}");
                     return null;
                 }
 
@@ -104,42 +72,26 @@ namespace muse_dash_test
                 var atlasAsset = SpineAtlasAsset.CreateRuntimeInstance(atlasTextAsset, new Texture2D[] { texture }, shader, true);
                 if (atlasAsset != null) atlasAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-                byte[] rawSkeletonBytes = File.ReadAllBytes(jsonPath);
-                bool isBinary = rawSkeletonBytes.Length > 0 && rawSkeletonBytes[0] != '{' && rawSkeletonBytes[0] != '[';
-
-                MelonLogger.Msg($"[CustomSkinInjector.Debug] [{baseName}] 스켈레톤 포맷 판별: {(isBinary ? "BINARY (.skel)" : "TEXT JSON (.json)")}, 크기={rawSkeletonBytes.Length} bytes");
-
-                TextAsset skeletonTextAsset;
-                if (isBinary)
-                {
-                    string binaryStr = System.Text.Encoding.GetEncoding("iso-8859-1").GetString(rawSkeletonBytes);
-                    skeletonTextAsset = new TextAsset(binaryStr);
-                    skeletonTextAsset.name = baseName + ".skel.bytes";
-                }
-                else
-                {
-                    string jsonText = File.ReadAllText(jsonPath);
-                    skeletonTextAsset = new TextAsset(jsonText);
-                    skeletonTextAsset.name = baseName + ".json";
-                }
+                var jsonText = File.ReadAllText(jsonPath);
+                var skeletonTextAsset = new TextAsset(jsonText);
                 skeletonTextAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
                 var skeletonDataAsset = SkeletonDataAsset.CreateRuntimeInstance(skeletonTextAsset, atlasAsset, true, 0.01f);
-                if (skeletonDataAsset == null || skeletonDataAsset.GetSkeletonData(false) == null)
+                if (skeletonDataAsset == null || skeletonDataAsset.GetSkeletonData(true) == null)
                 {
-                    MelonLogger.Warning($"[CustomSkinInjector] [{baseName}] 스켈레톤 데이터 생성 실패 (JSON/Binary 파싱 불일치 또는 아틀라스 키 무효)");
+                    MelonLogger.Msg($"[CustomSkinInjector] {baseName} 스켈레톤 데이터 생성 실패");
                     return null;
                 }
 
                 skeletonDataAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
                 Cache[baseName] = skeletonDataAsset;
-                MelonLogger.Msg($"[CustomSkinInjector] 🎉 [{baseName}] 커스텀 SkeletonDataAsset 로드/생성 성공!");
+                MelonLogger.Msg($"[CustomSkinInjector] {baseName} 커스텀 SkeletonDataAsset 생성 완료");
                 return skeletonDataAsset;
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomSkinInjector] [{baseName}] 스킨 생성 예외: " + ex);
+                MelonLogger.Error($"[CustomSkinInjector] {baseName} 예외: " + ex);
                 return null;
             }
         }
