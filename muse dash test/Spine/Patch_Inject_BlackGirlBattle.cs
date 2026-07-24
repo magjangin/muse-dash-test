@@ -102,4 +102,46 @@ namespace muse_dash_test
             InjectHelper.TryInject(__instance, "OnControllerStart");
         }
     }
+
+    // 커스텀 스킨에 특정 애니메이션(예: atk_g_1, atk_p_2 등)이 누락되어 있을 때 Spine 예외(Animation not found)로 게임이 튕기는 것을 방지하는 안전 패치
+    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation), typeof(string), typeof(bool))]
+    internal static class Patch_SpineActionController_SetAnimation
+    {
+        private static readonly HashSet<string> LoggedMissingAnimations = new HashSet<string>();
+
+        static bool Prefix(SpineActionController __instance, string n, bool isLoop)
+        {
+            if (__instance == null || string.IsNullOrEmpty(n)) return true;
+
+            var ska = __instance.skeletonAnimation;
+            if (ska == null || ska.Skeleton == null || ska.Skeleton.Data == null) return true;
+
+            var anim = ska.Skeleton.Data.FindAnimation(n);
+            if (anim == null)
+            {
+                if (LoggedMissingAnimations.Add(n))
+                {
+                    MelonLogger.Warning($"[SpineSkin] [{__instance.gameObject.name}] 누락된 애니메이션 '{n}' 재생 요청 감지 -> 예외 방지 조치 (스킵/폴백 적용)");
+                }
+
+                // 폴백 애니메이션 검색 (stand, idle, run)
+                var fallbackAnim = ska.Skeleton.Data.FindAnimation("stand")
+                                ?? ska.Skeleton.Data.FindAnimation("idle")
+                                ?? ska.Skeleton.Data.FindAnimation("run");
+
+                if (fallbackAnim != null && ska.AnimationState != null)
+                {
+                    try
+                    {
+                        ska.AnimationState.SetAnimation(0, fallbackAnim.Name, isLoop);
+                    }
+                    catch { }
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+    }
 }
