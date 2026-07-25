@@ -8,7 +8,7 @@ namespace muse_dash_test
 {
     /// <summary>
     /// 뮤즈대시 원본 DiscordManager의 주요 메서드를 후킹하여 디스코드 상태 업데이트 파라미터를 변조하고,
-    /// 홈 메뉴(패널 홈) 이탈 시 게임 본래의 "In Menu" 상태로 깔끔하게 돌아가도록 제어하는 패치입니다.
+    /// 홈 메뉴(패널 홈) 복귀 시 디스코드 프로필을 "In Menu" 상태로 명시적 갱신하는 패치입니다.
     /// </summary>
     [HarmonyPatch]
     public static class DiscordManagerDebugPatch
@@ -27,10 +27,12 @@ namespace muse_dash_test
             bool isSelectionActive = IsStageSelectionContextActive();
             bool isInBattle = IsInBattleStageContext();
 
-            // 패널 홈(메인 메뉴 등)으로 돌아와 곡 선택 패널도 아니고 배틀 중도 아니면, 게임 본래의 "In Menu" 갱신을 허용하고 건너뜁니다.
+            // 곡 선택 패널도 아니고 배틀 중도 아니면 (홈 메뉴 복귀 시) "In Menu"로 명시적 덮어쓰기 전송
             if (!isSelectionActive && !isInBattle)
             {
-                MelonLogger.Msg("[DiscordHook.SetUpdateActivity.Prefix] 곡 선택/배틀 컨텍스트 밖(홈 메뉴) 감지 -> 게임 원본 In Menu 상태 허용");
+                levelInfo = "In Menu";
+                isPlaying = false;
+                MelonLogger.Msg("[DiscordHook.SetUpdateActivity.Prefix] 홈 메뉴 복귀 감지 ➔ 'In Menu' (isPlaying=false) 명시적 갱신 전송");
                 return;
             }
 

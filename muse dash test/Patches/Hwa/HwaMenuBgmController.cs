@@ -61,6 +61,13 @@ namespace muse_dash_test
                     src.Stop();
                     MelonLogger.Msg($"[MenuBGM] 커스텀 메뉴 BGM 정지 ({reason}): 우리가 주입한 클립 재생 중단");
                 }
+
+                // 곡 선택/준비 화면 이탈 시 디스코드 프로필도 In Menu 상태로 즉시 복원
+                var discordManager = Il2CppPeroTools2.Commons.Singleton<Il2Cpp.DiscordManager>.instance;
+                if (discordManager != null)
+                {
+                    discordManager.SetUpdateActivity(false, "In Menu");
+                }
             }
             catch (Exception ex)
             {
