@@ -45,6 +45,15 @@ namespace muse_dash_test
             try
             {
                 DiscordPresenceManager.UpdateForSelection(uid);
+
+                // 원본 게임의 DiscordManager에도 즉시 통보하여 곡 목록/선택 패널에서 곡을 넘길 때마다 디스코드에 바로 갱신
+                var discordManager = Il2CppPeroTools2.Commons.Singleton<Il2Cpp.DiscordManager>.instance;
+                if (discordManager != null)
+                {
+                    DiscordPresenceManager.ResolveSongDetails(uid, out string title, out string artist);
+                    string info = $"{title} - {artist}";
+                    discordManager.SetUpdateActivity(false, info);
+                }
             }
             catch (Exception ex)
             {
