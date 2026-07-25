@@ -55,6 +55,7 @@
 | **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (`music.ogg`)** | ✅ 완료 |
 | **로컬 `cover.png` 기반 커스텀 곡 셀/디스크 앨범 아트 주입** | ✅ 완료 |
 | **가상 곡 플레이 기록(정확도·스코어·최대 콤보·풀콤보) 로컬 JSON 저장 및 결과/기록 카드 표시** | ✅ 완료 |
+| **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](file:///H:/source/repos/muse%20dash%20test/docs/DISCORD_RICH_PRESENCE.md)) |
 
 
 ---
