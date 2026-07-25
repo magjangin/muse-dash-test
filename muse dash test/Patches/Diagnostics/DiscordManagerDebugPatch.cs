@@ -7,8 +7,8 @@ using Il2CppAssets.Scripts.UI.Panels;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 뮤즈대시 원본 DiscordManager의 주요 메서드를 후킹하여 디스코드 상태 업데이트 파라미터와
-    /// 호출 타이밍을 추적하고, isPlaying이 false일 때 게임이 "In Menu"로 덮어쓰는 버그를 차단하는 진단 패치입니다.
+    /// 뮤즈대시 원본 DiscordManager의 주요 메서드를 후킹하여 디스코드 상태 업데이트 파라미터를 변조하고,
+    /// 홈 메뉴(패널 홈) 이탈 시 게임 본래의 "In Menu" 상태로 깔끔하게 돌아가도록 제어하는 패치입니다.
     /// </summary>
     [HarmonyPatch]
     public static class DiscordManagerDebugPatch
@@ -24,11 +24,21 @@ namespace muse_dash_test
         [HarmonyPrefix]
         public static void SetUpdateActivity_Prefix(DiscordManager __instance, ref bool isPlaying, ref string levelInfo)
         {
-            string currentUid = CustomPlaySession.Current.LastKnownMusicUid;
+            bool isSelectionActive = IsStageSelectionContextActive();
             bool isInBattle = IsInBattleStageContext();
+
+            // 패널 홈(메인 메뉴 등)으로 돌아와 곡 선택 패널도 아니고 배틀 중도 아니면, 게임 본래의 "In Menu" 갱신을 허용하고 건너뜁니다.
+            if (!isSelectionActive && !isInBattle)
+            {
+                MelonLogger.Msg("[DiscordHook.SetUpdateActivity.Prefix] 곡 선택/배틀 컨텍스트 밖(홈 메뉴) 감지 -> 게임 원본 In Menu 상태 허용");
+                return;
+            }
+
+            string currentUid = CustomPlaySession.Current.LastKnownMusicUid;
 
             MelonLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
             MelonLogger.Msg($"  - isPlaying (입력값): {isPlaying}");
+            MelonLogger.Msg($"  - isSelectionActive (곡선택 패널): {isSelectionActive}");
             MelonLogger.Msg($"  - isInBattle (배틀 여부): {isInBattle}");
             MelonLogger.Msg($"  - levelInfo (원본 전달값): '{levelInfo ?? "(null)"}'");
             MelonLogger.Msg($"  - Current Selected UID: '{currentUid}'");
@@ -47,9 +57,9 @@ namespace muse_dash_test
                     string statusTag = isInBattle ? "플레이 중" : "곡 선택 중";
                     levelInfo = $"{title} - {artist} ({statusTag})";
 
-                    // [핵심 해결] isPlaying이 false면 게임 내부 C++ 코드에서 'In Menu'로 강제 덮어쓰므로 true로 승환
+                    // isPlaying이 false면 게임 내부 C++ 코드에서 'In Menu'로 강제 덮어쓰므로 true로 전환
                     isPlaying = true;
-                    MelonLogger.Msg($"  - [가로채기 대성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 강제 전환 (상태: {statusTag})");
+                    MelonLogger.Msg($"  - [가로채기 성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 전환 (상태: {statusTag})");
                 }
             }
             MelonLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
@@ -70,27 +80,39 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 곡 선택 UI/준비 화면 패널의 활성화 여부를 점검하여 실제로 인게임 배틀 중인지 판별합니다.
+        /// 곡 선택 패널(PnlStage) 또는 곡 준비 패널(PnlPreparation)이 실제로 활성화되어 있는지 확인합니다.
+        /// </summary>
+        private static bool IsStageSelectionContextActive()
+        {
+            try
+            {
+                var pnlStage = UnityEngine.Object.FindObjectOfType<PnlStage>();
+                if (pnlStage != null && pnlStage.gameObject != null && pnlStage.gameObject.activeInHierarchy)
+                {
+                    return true;
+                }
+
+                var pnlPreparation = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlPreparation>();
+                if (pnlPreparation != null && pnlPreparation.gameObject != null && pnlPreparation.gameObject.activeInHierarchy)
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[DiscordHook.IsStageSelectionContextActive] 예외 발생: {ex.Message}");
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 실제 인게임 배틀 화면(PnlBattle)이 활성화되어 있는지 확인합니다.
         /// </summary>
         private static bool IsInBattleStageContext()
         {
             try
             {
-                // 곡 선택 패널(PnlStage)이 활성화되어 있으면 곡 선택 중
-                var pnlStage = UnityEngine.Object.FindObjectOfType<PnlStage>();
-                if (pnlStage != null && pnlStage.gameObject != null && pnlStage.gameObject.activeInHierarchy)
-                {
-                    return false;
-                }
-
-                // 곡 준비 패널(PnlPreparation)이 활성화되어 있으면 곡 선택 중
-                var pnlPreparation = UnityEngine.Object.FindObjectOfType<PnlPreparation>();
-                if (pnlPreparation != null && pnlPreparation.gameObject != null && pnlPreparation.gameObject.activeInHierarchy)
-                {
-                    return false;
-                }
-
-                // 배틀 패널(PnlBattle)이나 배틀 스테이지가 있으면 플레이 중
                 var pnlBattle = UnityEngine.Object.FindObjectOfType<PnlBattle>();
                 if (pnlBattle != null && pnlBattle.gameObject != null && pnlBattle.gameObject.activeInHierarchy)
                 {
