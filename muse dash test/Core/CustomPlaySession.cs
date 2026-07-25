@@ -1,3 +1,5 @@
+using System;
+
 namespace muse_dash_test
 {
     /// <summary>현재 커스텀 곡 선택과 플레이에서 공유되는 런타임 상태입니다.</summary>
@@ -39,6 +41,22 @@ namespace muse_dash_test
             LastApplyDecisionReasonCode = decision.ReasonCode;
             LastApplyDecisionDescription = decision.Description;
             MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] RememberMusicSelection 호출: prevUid={prevUid}, newUid={uid ?? "(null)"}, experimentMode={isExperimentMode}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, prevShouldApply={prevShouldApply}, newShouldApply={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
+
+            try
+            {
+                if (HwaResourceManager.TryGetHwaPrimarySong(uid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
+                {
+                    DiscordPresenceManager.SetSelectingSong(title, artist, "커스텀 차트");
+                }
+                else if (!string.IsNullOrEmpty(uid))
+                {
+                    DiscordPresenceManager.SetSelectingSong($"곡 {uid}", "Muse Dash");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLoader.MelonLogger.Error($"[CustomPlaySession] Discord Presence 갱신 에러: {ex.Message}");
+            }
         }
 
         public void ResetCounts()

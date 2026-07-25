@@ -71,6 +71,22 @@ namespace muse_dash_test
 
                 File.WriteAllText(filePath, json, Encoding.UTF8);
                 MelonLogger.Msg($"[CustomRecordStore] 기록 저장 완료 → {filePath} (notes={noteCount}, score={score}, maxCombo={maxCombo}, acc={accuracy:0.0000}, FC={isFullCombo}, AP={isAllPerfect})");
+
+                try
+                {
+                    if (HwaResourceManager.TryGetHwaPrimarySong(uid, out string title, out _, out _, out _, out _, out _, out _, out _, out _))
+                    {
+                        DiscordPresenceManager.SetResults(title, score, accuracy, isFullCombo, isAllPerfect);
+                    }
+                    else
+                    {
+                        DiscordPresenceManager.SetResults($"곡 {uid}", score, accuracy, isFullCombo, isAllPerfect);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error($"[CustomRecordStore] Discord Presence 갱신 에러: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {

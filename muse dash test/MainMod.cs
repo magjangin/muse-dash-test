@@ -85,6 +85,9 @@ namespace muse_dash_test
             MelonLogger.Msg("P키: 실시간 교체 모드 켜기/끄기");
             MelonLogger.Msg("O키: 실시간 교체 실행 (모드 활성화 후)");
             MelonLogger.Msg("======================================");
+
+            // Discord Rich Presence 초기화
+            FeatureGuard.Run("Init.DiscordRPC", DiscordPresenceManager.Initialize, maxConsecutiveFailures: 0);
         }
 
         // 이전 실행에서 생성된 진단 덤프 파일 목록. 매 실행 시작 시 삭제하여 새로 기록되게 합니다.
@@ -217,13 +220,8 @@ namespace muse_dash_test
             FeatureGuard.Run("ExperimentHitPoint", () =>
                 ExperimentHitPointInstaller.Update(hywStageManager != null && hywStageManager.IsInStage));
 
-            // 3. 디버그용 공격 키 입력 감지 테스트는 릴리즈 버전이므로 주석 처리합니다.
-            /*
-            if (hywStageManager != null && hywStageManager.IsInStage)
-            {
-                InputOverlay.UpdateKeyTest();
-            }
-            */
+            // 3. Discord RPC 콜백 처리
+            FeatureGuard.Run("DiscordRPC.Update", DiscordPresenceManager.Update);
         }
 
         public override void OnGUI()
@@ -264,6 +262,7 @@ namespace muse_dash_test
 
         public override void OnApplicationQuit()
         {
+            DiscordPresenceManager.Shutdown();
             MelonLogger.Msg("모드가 종료되었습니다.");
         }
 
