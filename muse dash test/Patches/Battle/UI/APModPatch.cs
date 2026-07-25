@@ -263,10 +263,10 @@ namespace muse_dash_test.Patches
 
         private static System.Collections.IEnumerator CheckTimeout()
         {
-            yield return new UnityEngine.WaitForSeconds(3.5f);
+            yield return new UnityEngine.WaitForSeconds(6.0f);
             if (!isEndReached)
             {
-                MelonLogger.Error("❌ [APMod.Guard] [로직 오류 감지] APMod 승리 연출은 개시되었으나 StageBattleComponent.End(결과 화면 진입)에 정상 도달하지 못했습니다! 과도한 정리(Destroy)나 연출 억제가 수행되었는지 확인하세요.");
+                MelonLogger.Msg("ℹ️ [APMod.Guard] 승리 연출 후 결과 화면 진입이 스킵되었거나 이탈(재시작/퇴장)되었습니다.");
             }
         }
     }
