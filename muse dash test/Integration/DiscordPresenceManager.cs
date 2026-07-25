@@ -40,8 +40,8 @@ namespace muse_dash_test
             }
             catch (DllNotFoundException)
             {
+                // 게임 원본 내장 DiscordManager 하모니 훅을 사용하므로 구형 DLL 미존재 경고는 출력하지 않고 무소음 처리
                 isAvailable = false;
-                MelonLogger.Warning("[DiscordRPC] discord-rpc.dll을 찾을 수 없어 Discord Rich Presence 기능이 비활성화됩니다.");
             }
             catch (Exception ex)
             {
