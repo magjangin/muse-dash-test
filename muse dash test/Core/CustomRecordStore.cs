@@ -74,14 +74,8 @@ namespace muse_dash_test
 
                 try
                 {
-                    if (HwaResourceManager.TryGetHwaPrimarySong(uid, out string title, out _, out _, out _, out _, out _, out _, out _, out _))
-                    {
-                        DiscordPresenceManager.SetResults(title, score, accuracy, isFullCombo, isAllPerfect);
-                    }
-                    else
-                    {
-                        DiscordPresenceManager.SetResults($"곡 {uid}", score, accuracy, isFullCombo, isAllPerfect);
-                    }
+                    DiscordPresenceManager.ResolveSongDetails(uid, out string title, out _);
+                    DiscordPresenceManager.SetResults(title, score, accuracy, isFullCombo, isAllPerfect);
                 }
                 catch (Exception ex)
                 {

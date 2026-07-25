@@ -1,14 +1,15 @@
 using System;
 using MelonLoader;
+using Il2CppAssets.Scripts.Database;
 
 namespace muse_dash_test
 {
     /// <summary>
-    /// 뮤즈대시 모드의 플레이 상태(곡 선택, 인게임 플레이, 결과 화면)를 디스코드 Rich Presence에 동동 업데이트하는 매니저입니다.
+    /// 뮤즈대시 모드의 플레이 상태(곡 선택, 인게임 플레이, 결과 화면)를 디스코드 Rich Presence에 실시간 업데이트하는 매니저입니다.
+    /// 커스텀 곡 및 공식 곡의 실제 제목과 아티스트명을 최우선으로 탐색하여 디스코드 프로필에 정확하게 렌더링합니다.
     /// </summary>
     public static class DiscordPresenceManager
     {
-        // Muse Dash 기본 디스코드 Application ID (또는 모드 커스텀 ID)
         private const string DefaultAppId = "1180000000000000000";
 
         private static bool isInitialized;
@@ -84,6 +85,61 @@ namespace muse_dash_test
             SendPresence();
         }
 
+        public static void ResolveSongDetails(string uid, out string title, out string artist)
+        {
+            title = null;
+            artist = null;
+
+            if (string.IsNullOrEmpty(uid))
+            {
+                title = "뮤즈대시";
+                artist = "PeroPeroGames";
+                return;
+            }
+
+            // 1순위: HwaResourceManager 매니페스트 확인 (커스텀 곡)
+            var manifest = HwaResourceManager.GetManifest(uid);
+            if (manifest != null)
+            {
+                title = !string.IsNullOrWhiteSpace(manifest.CustomTitle) ? manifest.CustomTitle : manifest.Title;
+                artist = !string.IsNullOrWhiteSpace(manifest.CustomArtist) ? manifest.CustomArtist : manifest.Artist;
+            }
+
+            // 2순위: 게임 DB (GlobalDataBase.dbMusicTag) 확인 (공식 곡 또는 등록된 가상 곡)
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(artist))
+            {
+                try
+                {
+                    var dbTag = GlobalDataBase.dbMusicTag;
+                    if (dbTag != null)
+                    {
+                        var musicInfo = dbTag.GetMusicInfoFromAll(uid);
+                        if (musicInfo != null)
+                        {
+                            if (string.IsNullOrWhiteSpace(title)) title = musicInfo.name;
+                            if (string.IsNullOrWhiteSpace(artist)) artist = musicInfo.author;
+                        }
+                    }
+                }
+                catch
+                {
+                    // DB 접근 실패 시 무시
+                }
+            }
+
+            // 3순위: 폴백
+            if (string.IsNullOrWhiteSpace(title)) title = $"곡 {uid}";
+            if (string.IsNullOrWhiteSpace(artist)) artist = "Muse Dash";
+        }
+
+        public static void UpdateForSelection(string uid)
+        {
+            ResolveSongDetails(uid, out string title, out string artist);
+            bool isCustom = CustomContentIds.IsVirtualSong(uid) || HwaResourceManager.IsRegisteredCustomHostUid(uid);
+            string difficultyTag = isCustom ? "커스텀 차트" : "공식 차트";
+            SetSelectingSong(title, artist, difficultyTag);
+        }
+
         public static void SetSelectingSong(string title, string artist, string difficultyText = "")
         {
             if (!isInitialized || !isAvailable) return;
@@ -101,6 +157,14 @@ namespace muse_dash_test
             };
 
             SendPresence();
+        }
+
+        public static void UpdateForPlaying(string uid)
+        {
+            ResolveSongDetails(uid, out string title, out string artist);
+            bool isCustom = CustomContentIds.IsVirtualSong(uid) || HwaResourceManager.IsRegisteredCustomHostUid(uid);
+            string difficultyTag = isCustom ? "커스텀 플레이" : "공식 플레이";
+            SetPlayingSong(title, artist, difficultyTag);
         }
 
         public static void SetPlayingSong(string title, string artist, string difficultyText = "")

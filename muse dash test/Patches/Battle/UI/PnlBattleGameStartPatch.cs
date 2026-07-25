@@ -14,14 +14,7 @@ public class PnlBattle_GameStart_Patch
         try
         {
             string uid = muse_dash_test.CustomPlaySession.Current.LastKnownMusicUid;
-            if (muse_dash_test.HwaResourceManager.TryGetHwaPrimarySong(uid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
-            {
-                muse_dash_test.DiscordPresenceManager.SetPlayingSong(title, artist, "커스텀 플레이");
-            }
-            else
-            {
-                muse_dash_test.DiscordPresenceManager.SetPlayingSong($"곡 {uid}", "Muse Dash");
-            }
+            muse_dash_test.DiscordPresenceManager.UpdateForPlaying(uid);
         }
         catch (Exception ex)
         {

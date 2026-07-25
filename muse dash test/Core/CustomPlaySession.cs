@@ -44,14 +44,7 @@ namespace muse_dash_test
 
             try
             {
-                if (HwaResourceManager.TryGetHwaPrimarySong(uid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
-                {
-                    DiscordPresenceManager.SetSelectingSong(title, artist, "커스텀 차트");
-                }
-                else if (!string.IsNullOrEmpty(uid))
-                {
-                    DiscordPresenceManager.SetSelectingSong($"곡 {uid}", "Muse Dash");
-                }
+                DiscordPresenceManager.UpdateForSelection(uid);
             }
             catch (Exception ex)
             {
