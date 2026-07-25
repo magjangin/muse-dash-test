@@ -52,7 +52,7 @@ namespace muse_dash_test
                 {
                     DiscordPresenceManager.ResolveSongDetails(uid, out string title, out string artist);
                     string info = $"{title} - {artist}";
-                    discordManager.SetUpdateActivity(false, info);
+                    discordManager.SetUpdateActivity(true, info);
                 }
             }
             catch (Exception ex)
