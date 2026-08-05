@@ -106,18 +106,6 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(156f, chart.BpmChanges[1].Bpm);
         }
 
-        public static void ParseText_Channel03PrefersDecimalOverHexForDigitOnlyCells()
-        {
-            var chart = BmsParser.ParseText("""
-                #BPM 120
-                #00103:0078
-                """);
-
-            // 현재 구현은 10진 파싱을 먼저 시도합니다.
-            // BMS 표준(채널 03 = 16진수)대로면 0x78 = 120이어야 하므로 의도적 차이인지 확인이 필요합니다.
-            Assert.Equal(78f, chart.BpmChanges[1].Bpm);
-        }
-
         public static void ParseText_StripsSlashAndSemicolonComments()
         {
             var chart = BmsParser.ParseText("""

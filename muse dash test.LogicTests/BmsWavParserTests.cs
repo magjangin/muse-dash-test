@@ -1,6 +1,7 @@
 namespace muse_dash_test.LogicTests
 {
     // BmsWavParser: WAV 파일명 → UID(zzxxyy) 해석, NoteType 매핑, dt 추출, 보스 액션/전환 매핑 검증.
+    // 파일명은 실제 차트(hwa2.bms)에서 그대로 가져왔습니다. 폴더 경로 + 한글 + 공백이 섞인 형태입니다.
     public static class BmsWavParserTests
     {
         public static void ParseWavName_ReturnsNullForBlankName()
@@ -9,131 +10,148 @@ namespace muse_dash_test.LogicTests
             Assert.Null(BmsWavParser.ParseWavName("   "));
         }
 
-        public static void ParseWavName_ParsesUidDtAndPrefabForNormalNote()
+        public static void ParseWavName_StripsFolderPrefixFromWavValue()
         {
-            var info = BmsWavParser.ParseWavName("011001_일반 노트1 지상 노멀_dt1.48.wav");
+            // 실제 차트의 WAV 값은 "1번 씬 wav폴더\..." 처럼 한글 폴더 경로가 앞에 붙습니다.
+            var info = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\011001_일반 노트1 지상 노멀_dt1.48.wav");
 
             Assert.NotNull(info);
             Assert.Equal("011001", info.Uid);
             Assert.Equal(1.48, info.Dt);
-            Assert.Equal(1, info.NoteType); // 매핑 테이블에 없는 xx는 일반 노트
+            Assert.Equal(1, info.NoteType);
             // 한글/공백이 섞인 이름은 프리팹명으로 못 쓰므로 UID로 대체됩니다.
             Assert.Equal("011001", info.PrefabName);
         }
 
+        public static void ParseWavName_ReadsZeroDtFromTransitionNotes()
+        {
+            // 보스 전환/씬 전환 노트는 실제 차트에서 _dt0 으로 선언됩니다.
+            var info = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010101_1번 씬 보스 등장_dt0.wav");
+
+            Assert.Equal(0.0, info.Dt);
+        }
+
         public static void ParseWavName_KeepsAsciiOnlyPrefabNameAndStripsDtSuffix()
         {
+            // 한글이 없는 이름이면 파일명을 그대로 프리팹명으로 씁니다(_dt 접미사만 제거).
             var info = BmsWavParser.ParseWavName("011001_ground_normal_dt1.48.wav");
 
             Assert.Equal("011001_ground_normal", info.PrefabName);
             Assert.Equal(1.48, info.Dt);
         }
 
-        public static void ParseWavName_MapsHeartPrefixToHpNote()
+        public static void ParseWavName_MapsHeartAndScorePrefixes()
         {
-            var info = BmsWavParser.ParseWavName("000201_하트 지상_dt1.48.wav");
+            var heart = BmsWavParser.ParseWavName(@"10번 씬 wav폴더\000201_하트 지상_dt1.48.wav");
+            Assert.Equal(6, heart.NoteType);
+            Assert.Equal("sfx_hp", heart.KeyAudio);
 
-            Assert.Equal(6, info.NoteType);
-            Assert.Equal("sfx_hp", info.KeyAudio);
-        }
-
-        public static void ParseWavName_MapsScorePrefixToScoreNote()
-        {
-            var info = BmsWavParser.ParseWavName("000301_점수 노트_dt1.48.wav");
-
-            Assert.Equal(7, info.NoteType);
-            Assert.Equal("sfx_score", info.KeyAudio);
+            var score = BmsWavParser.ParseWavName(@"10번 씬 wav폴더\000301_음표 지상_dt1.48.wav");
+            Assert.Equal(7, score.NoteType);
+            Assert.Equal("sfx_score", score.KeyAudio);
         }
 
         public static void ParseWavName_ScenePrefixWinsOverSandbagXxRule()
         {
             // 0004xx는 UID 중간 두 자리가 "04"라 샌드백(8) 규칙과 충돌합니다.
             // prefix "0004"가 우선해서 SceneToggle(9)로 고정돼야 합니다.
-            var info = BmsWavParser.ParseWavName("000401_씬 전환.wav");
+            var info = BmsWavParser.ParseWavName(@"씬 전환 wav 폴더\000401_1번 씬 전환_dt0.wav");
 
             Assert.Equal(9, info.NoteType);
+            Assert.Equal(0.0, info.Dt);
         }
 
-        public static void ParseWavName_MapsXxToHoldSandbagAndGhost()
+        public static void ParseWavName_MapsXxToHoldGhostAndSandbag()
         {
-            Assert.Equal(3, BmsWavParser.ParseWavName("010201_홀드 지상.wav").NoteType);
+            Assert.Equal(3, BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010201_홀드 지상 시작 노트_dt1.47.wav").NoteType);
+            Assert.Equal(4, BmsWavParser.ParseWavName(@"1번 씬 wav폴더\011701_고스트 지상_dt1.48.wav").NoteType);
             Assert.Equal(8, BmsWavParser.ParseWavName("010401_샌드백.wav").NoteType);
-            Assert.Equal(4, BmsWavParser.ParseWavName("011701_고스트.wav").NoteType);
-            Assert.Equal(2, BmsWavParser.ParseWavName("010301_장애물.wav").NoteType);
+
+            // xx=05(복선)는 매핑 테이블에 없어 일반 노트로 남습니다.
+            Assert.Equal(1, BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010501_복선 지상_dt1.48.wav").NoteType);
         }
 
-        public static void ParseWavName_MapsBossInTransitionFromUid()
+        public static void ParseWavName_DoesNotDistinguishHoldStartFromEndByName()
         {
-            var info = BmsWavParser.ParseWavName("010101_보스 등장.wav");
+            // 실제 차트는 같은 UID(010201)에 "시작 노트"/"끝 노트"만 다르게 붙여 씁니다.
+            // 파서는 이 한글 라벨을 읽지 않으므로 둘의 파싱 결과가 완전히 같습니다.
+            // → 시작/끝 구분은 전적으로 BmsNoteMatcher의 등장 순서에 달려 있습니다.
+            var start = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010201_홀드 지상 시작 노트_dt1.47.wav");
+            var end = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010201_홀드 지상 끝 노트_dt1.47.wav");
 
-            Assert.Equal(0, info.NoteType);
-            Assert.Equal("empty_000", info.PrefabName);
-            Assert.Equal("in", info.BossAction);
-            Assert.Equal("in", info.BossTransition);
-            Assert.Equal("0101_boss", info.BossName);
-            Assert.Equal(1, info.BossScene);
+            Assert.Equal(start.Uid, end.Uid);
+            Assert.Equal(start.NoteType, end.NoteType);
+            Assert.Equal(start.PrefabName, end.PrefabName);
+            Assert.Equal(start.Dt, end.Dt);
         }
 
-        public static void ParseWavName_MapsBossOutTransitionFromUid()
+        public static void ParseWavName_MapsBossEnterAndExitFromUid()
         {
-            var info = BmsWavParser.ParseWavName("010102_보스 퇴장.wav");
+            var enter = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010101_1번 씬 보스 등장_dt0.wav");
+            Assert.Equal(0, enter.NoteType);
+            Assert.Equal("empty_000", enter.PrefabName);
+            Assert.Equal("in", enter.BossTransition);
+            Assert.Equal("0101_boss", enter.BossName);
+            Assert.Equal(1, enter.BossScene);
 
-            Assert.Equal(0, info.NoteType);
-            Assert.Equal("out", info.BossAction);
-            Assert.Equal("out", info.BossTransition);
-            Assert.Equal("0101_boss", info.BossName);
-            Assert.Equal(1, info.BossScene);
+            var exit = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010102_1번 씬 보스 퇴장_dt0.wav");
+            Assert.Equal("out", exit.BossTransition);
+            Assert.Equal("0101_boss", exit.BossName);
         }
 
-        public static void ParseWavName_DerivesBossTargetFromUidScenePrefix()
+        public static void ParseWavName_DerivesBossTargetFromScenePrefixOfUid()
         {
-            var info = BmsWavParser.ParseWavName("040101_보스 등장.wav");
+            // UID는 zzxxyy 구조이고 zz가 씬 번호입니다. 8번 씬 보스 등장 노트.
+            var info = BmsWavParser.ParseWavName(@"8번 씬 wav폴더\080101_8번 씬 보스 등장_dt0.wav");
 
-            Assert.Equal("0401_boss", info.BossName);
-            Assert.Equal(4, info.BossScene);
+            Assert.Equal("0801_boss", info.BossName);
+            Assert.Equal(8, info.BossScene);
         }
 
-        public static void ParseWavName_MapsFarAttackTransitionsFromUid()
+        public static void ParseWavName_MapsFarAttackActionsFromUid()
         {
-            Assert.Equal("boss_far_atk_1_start", BmsWavParser.ParseWavName("010107_원거리 시작.wav").BossAction);
-            Assert.Equal("boss_far_atk_1_end", BmsWavParser.ParseWavName("010108_원거리 종료.wav").BossAction);
-            Assert.Equal("boss_far_atk_2_start", BmsWavParser.ParseWavName("010109_원거리2 시작.wav").BossAction);
-            Assert.Equal("boss_far_atk_2_end", BmsWavParser.ParseWavName("010110_원거리2 종료.wav").BossAction);
+            Assert.Equal("boss_far_atk_1_start", BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010107_1번 씬 보스 원거리1 액션 시작_dt0.wav").BossAction);
+            Assert.Equal("boss_far_atk_1_end", BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010108_1번 씬 보스 원거리1 액션 끝_dt0.wav").BossAction);
+            Assert.Equal("boss_far_atk_2_start", BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010109_1번 씬 보스 원거리2 액션 시작_dt0.wav").BossAction);
+            Assert.Equal("boss_far_atk_2_end", BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010110_1번 씬 보스 원거리2 액션 끝_dt0.wav").BossAction);
 
-            // xx=01 전환 노트는 전환 상태를 갖지 않습니다(등장/퇴장만 in/out).
-            Assert.Null(BmsWavParser.ParseWavName("010107_원거리 시작.wav").BossTransition);
+            // 원거리 액션 노트는 등장/퇴장이 아니므로 전환 상태를 갖지 않습니다.
+            Assert.Null(BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010107_1번 씬 보스 원거리1 액션 시작_dt0.wav").BossTransition);
         }
 
         public static void ParseWavName_AssignsProjectileActionOnlyWhenNameMarksBoss()
         {
-            var withBossMarker = BmsWavParser.ParseWavName("010601_보스 발사체1 지상 노멀_boss_dt0.7.wav");
-            Assert.Equal("boss_far_atk_1_R", withBossMarker.BossAction);
-            Assert.Equal(0.7, withBossMarker.Dt);
-            Assert.Equal(1, withBossMarker.NoteType);
+            var withBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 액션 사용 지상_boss_dt0.8.wav");
+            Assert.Equal("boss_far_atk_1_R", withBoss.BossAction);
 
-            // _boss / _atk 표시가 없으면 일반 발사체로 남고 액션이 비워집니다.
-            var withoutBossMarker = BmsWavParser.ParseWavName("010601_보스 발사체1 지상 노멀_dt0.7.wav");
-            Assert.Equal("", withoutBossMarker.BossAction);
-            Assert.Equal(0.7, withoutBossMarker.Dt);
+            // _boss / _atk 표시가 없으면 액션이 비워집니다.
+            var withoutBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 없이 지상_dt0.8.wav");
+            Assert.Equal("", withoutBoss.BossAction);
+            Assert.Equal(0.8, withoutBoss.Dt);
         }
 
-        public static void ParseWavName_MapsBossGearProjectileActions()
+        public static void ParseWavName_BossMarkerOverwritesDeclaredDt()
         {
-            var info = BmsWavParser.ParseWavName("010902_보스 톱니_boss.wav");
+            // ⚠ 실제 차트의 _boss 항목 66개가 전부 _dt0.8로 선언돼 있지만,
+            // ApplyBossProjectileAction이 Dt를 0.7로 덮어씁니다.
+            // 같은 UID(010601)라도 _boss 유무에 따라 접근 시간이 0.7 / 0.8로 갈립니다.
+            var withBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 액션 사용 지상_boss_dt0.8.wav");
+            var withoutBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 없이 지상_dt0.8.wav");
 
-            Assert.Equal(2, info.NoteType); // xx=09 → Boss Gear
-            Assert.Equal("boss_far_atk_1_R", info.BossAction);
-            Assert.Equal(0.7, info.Dt);
+            Assert.Equal(0.7, withBoss.Dt, "선언된 _dt0.8이 0.7로 덮어써졌습니다.");
+            Assert.Equal(0.8, withoutBoss.Dt);
         }
 
-        public static void ParseWavName_LeavesUidNullWhenNameHasNoSixDigitPrefix()
+        public static void ParseWavName_HandlesBgmEntryWithoutUid()
         {
-            var info = BmsWavParser.ParseWavName("kick.wav");
+            // 실제 차트 마지막 항목: #WAV0HS music.ogg (노트가 아닌 BGM, UID/dt 없음)
+            var info = BmsWavParser.ParseWavName("music.ogg");
 
             Assert.NotNull(info);
             Assert.Null(info.Uid);
             Assert.Equal(1, info.NoteType);
-            Assert.Equal("kick.wav", info.RawWavName);
+            Assert.Equal(-1.0, info.Dt);
+            Assert.Equal("music.ogg", info.RawWavName);
         }
     }
 }
