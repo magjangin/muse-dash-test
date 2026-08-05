@@ -177,7 +177,10 @@
 │   ├── LOGGING_AND_TROUBLESHOOTING.md  # 로그 분석 및 트러블슈팅 가이드
 │   └── MUSE_DASH_2_SPECULATIVE_GUIDE.md # 뮤즈대시 2 대비 분석 가이드
 │
+├── muse dash test.LogicTests/ # 게임 없이 BMS 파싱 로직만 검증하는 테스트 프로젝트
+│
 ├── build.bat                 # MSBuild 자동 추적 및 모드 파일(DLL) 빌드/배포 스크립트
+├── run-logic-tests.bat       # BMS 로직 테스트 실행 스크립트
 └── README.md                 # 본 프로젝트 소개 파일
 ```
 
@@ -194,6 +197,25 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug
 
 * **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse dash custom chart.dll` (또는 Release 빌드 시 `bin/Release/net6.0/muse dash custom chart.dll`)
 * **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉토리
+
+---
+
+## 🧪 로직 테스트
+
+모드 본체는 IL2CPP 어셈블리(`Il2CppAssemblies`)를 참조하므로 게임 밖에서 로드할 수 없습니다.
+대신 `Bms/` 폴더의 순수 파싱 로직만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다.
+
+```powershell
+.\run-logic-tests.bat
+```
+
+```powershell
+# 특정 테스트만 실행 (이름 부분 일치)
+.\run-logic-tests.bat BmsWavParser
+```
+
+* **검증 대상**: `BmsParser`(헤더/채널→레인/틱·시간 계산), `BmsWavParser`(UID `zzxxyy` → NoteType·보스 액션 매핑), `BmsBossSwapPlanner`(out→in 보스 교체), `BmsNoteMatcher`(홀드/샌드백 짝 매칭)
+* **외부 패키지 없음**: NuGet 의존성 없이 `dotnet run`만으로 동작하며, `MelonLogger`는 스텁으로 대체됩니다.
 
 ---
 
