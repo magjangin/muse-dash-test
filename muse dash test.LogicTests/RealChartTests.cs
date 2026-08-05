@@ -165,6 +165,7 @@ namespace muse_dash_test.LogicTests
             var chart = Parse();
 
             // 같은 UID(010601)에 같은 _dt0.8 선언이지만 _boss 유무로 dt가 갈립니다.
+            // (실제 차트에는 발사체 WAV가 선언만 돼 있고 아직 배치되진 않았습니다)
             var withBoss = BmsBossSwapPlanner.ResolveWavInfo(chart, chart.Notes.First(n => n.RawValue == "00H"));
             var withoutBoss = BmsBossSwapPlanner.ResolveWavInfo(chart, chart.Notes.First(n => n.RawValue == "00I"));
 

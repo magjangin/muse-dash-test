@@ -132,9 +132,10 @@ namespace muse_dash_test.LogicTests
 
         public static void ParseWavName_BossMarkerOverwritesDeclaredDt()
         {
-            // ⚠ 실제 차트의 _boss 항목 66개가 전부 _dt0.8로 선언돼 있지만,
-            // ApplyBossProjectileAction이 Dt를 0.7로 덮어씁니다.
+            // ⚠ ApplyBossProjectileAction이 파일명에 선언된 dt를 0.7로 덮어씁니다.
             // 같은 UID(010601)라도 _boss 유무에 따라 접근 시간이 0.7 / 0.8로 갈립니다.
+            // 실제 차트에는 _boss 항목 66개(발사체 1/2/3 × 지상/공중 × 11씬)가 전부 _dt0.8로
+            // "선언"돼 있지만 아직 마디에 배치된 발사체 노트는 0개라, 현재는 잠재 버그입니다.
             var withBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 액션 사용 지상_boss_dt0.8.wav");
             var withoutBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 없이 지상_dt0.8.wav");
 
