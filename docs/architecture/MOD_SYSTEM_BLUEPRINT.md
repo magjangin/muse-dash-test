@@ -53,7 +53,7 @@ graph TD
 | `TaskStageTarget.GetAccuracy` | **Postfix** | [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 소수점 3자리 반올림 가독 정확도 출력 (`GetTrueAccuracyNew` 기반) |
 | `TaskStageTarget.GetTrueAccuracy` | **Postfix** | [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 일반 노트 기반 정확도 계산 공식 오버라이드 |
 | `TaskStageTarget.GetTrueAccuracyNew` | **Postfix** | [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 기어, 하트, 음표를 합산한 종합 오브젝트 정확도 공식 오버라이드 |
-| `PnlVictory2dManager.OnShowVictory` | **Postfix** | [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | ALL PERFECT 달성 시 기존 배너 숨김 및 골드 3D 텍스트 배너 주입 |
+| `PnlVictory2dManager.OnShowVictory` | **Postfix** | [APModPatch.VictoryBanner.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.VictoryBanner.cs) | ALL PERFECT 달성 시 기존 배너 숨김 및 골드 3D 텍스트 배너 주입 |
 | `StageBattleComponent.Dead` | **Postfix** | [ChangeHealthValuePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 인게임 사망 이벤트 및 체력 강제 오버라이드(체력 무한 모드 등) |
 | `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 |
 | `PnlPreparation.OnEnable` | **Prefix/Postfix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 |

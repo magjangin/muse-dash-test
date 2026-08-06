@@ -53,6 +53,8 @@ MelonLoader 모드 진입점 클래스입니다.
 
 ### 📂 [Battle/UI/APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) [NEW]
 올 퍼펙트(All Perfect) 여부를 판정하고 결과창의 풀콤보 배너를 교체하는 패치입니다.
+
+> 500줄 규칙에 따라 세 파일로 나뉘어 있습니다. 캐시와 `TaskStageTarget` 훅은 [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs), 정확도 공식은 [APModPatch.Accuracy.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.Accuracy.cs), 결과 화면 배너 연출과 기록 저장은 [APModPatch.VictoryBanner.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.VictoryBanner.cs)에 있습니다.
 * **`VictoryDataCache`**: 인게임 상태(`TaskStageTarget`)와 스코어 폰트(`Font`)를 결과 화면(Victory)에서 다시 쓸 수 있도록 보관하는 정적 캐시입니다.
 * **`TaskStageTarget_AddScore_Patch` (Prefix)**:
   * 노트 처리로 인해 스코어가 업데이트되는 런타임 이벤트(`TaskStageTarget.AddScore`)를 후킹합니다.
