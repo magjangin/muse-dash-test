@@ -14,31 +14,33 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 정렬은 노트들의 배열 위치를 바꾸는데, MusicData는 서로를 "정수 인덱스"로 가리킨다
         // (endIndex=롱노트 끝, doubleIdx=더블 짝). 따라서 정렬 전 상호참조를 objId 기준으로
         // 스냅샷해 두고, 정렬 후 새 위치로 재연결(Relink)해야 채보가 깨지지 않는다.
-        var runtimeNotes = new System.Collections.Generic.List<MusicData>();
+        // 정렬 키(showTick/tick)는 노트당 한 번만 뽑아 둔다. ParseMusicDecimal은 Il2Cpp 문자열
+        // 마샬링을 동반하므로, 비교자 안에서 매번 호출하면 O(n log n)번 문자열 변환이 일어난다.
+        var runtimeNotes = new System.Collections.Generic.List<SortEntry>(musicList.Count - startIndex);
         var references = new NoteReferenceSnapshot();
 
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            runtimeNotes.Add(note);
+            runtimeNotes.Add(new SortEntry(note, ParseMusicDecimal(note.showTick), ParseMusicDecimal(note.tick)));
             references.Capture(note);
         }
 
         runtimeNotes.Sort((left, right) =>
         {
-            int showTickCompare = ParseMusicDecimal(left.showTick).CompareTo(ParseMusicDecimal(right.showTick));
+            int showTickCompare = left.ShowTick.CompareTo(right.ShowTick);
             if (showTickCompare != 0) return showTickCompare;
 
-            int tickCompare = ParseMusicDecimal(left.tick).CompareTo(ParseMusicDecimal(right.tick));
+            int tickCompare = left.Tick.CompareTo(right.Tick);
             if (tickCompare != 0) return tickCompare;
 
-            return left.objId.CompareTo(right.objId);
+            return left.ObjId.CompareTo(right.ObjId);
         });
 
         // 정렬 후 확정된 새 위치를 (옛 objId → 새 인덱스)로 등록.
         for (int i = 0; i < runtimeNotes.Count; i++)
         {
-            references.MapNewIndex(runtimeNotes[i].objId, startIndex + i);
+            references.MapNewIndex(runtimeNotes[i].ObjId, startIndex + i);
         }
 
         while (musicList.Count > startIndex)
@@ -48,8 +50,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         for (int i = 0; i < runtimeNotes.Count; i++)
         {
-            var note = runtimeNotes[i];
-            short oldObjId = note.objId;
+            var note = runtimeNotes[i].Note;
+            short oldObjId = runtimeNotes[i].ObjId;
             int newIndex = startIndex + i;
 
             note.objId = (short)newIndex;
@@ -70,6 +72,26 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         MelonLogger.Msg($"[ExperimentChart.Bms] 공식 방식 showTick 정렬 완료: notes={runtimeNotes.Count}, bossOffset={BossEventTickOffset}");
         DumpSortedBmsBossContext(musicList, startIndex);
+    }
+
+    /// <summary>
+    /// 정렬용 노트 항목. showTick/tick을 미리 double로 뽑아 두어 비교자가 Il2Cpp 문자열 변환을
+    /// 반복하지 않도록 합니다. ObjId도 정렬 전 값으로 고정 보관해, 재연결 시 옛 키로 쓸 수 있게 합니다.
+    /// </summary>
+    private readonly struct SortEntry
+    {
+        public readonly MusicData Note;
+        public readonly double ShowTick;
+        public readonly double Tick;
+        public readonly short ObjId;
+
+        public SortEntry(MusicData note, double showTick, double tick)
+        {
+            Note = note;
+            ShowTick = showTick;
+            Tick = tick;
+            ObjId = note.objId;
+        }
     }
 
     /// <summary>
@@ -126,11 +148,42 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
     }
 
+    // ParseMusicDecimal이 두 로케일 모두에서 실패했을 때 로그가 노트 수만큼 쏟아지는 것을 막습니다.
+    private static bool warnedDecimalParseFailure = false;
+
+    /// <summary>
+    /// Il2CppSystem.Decimal을 double로 변환합니다.
+    /// <para>
+    /// 주의: <c>Decimal.ToString()</c>은 인자가 없으므로 <b>CurrentCulture</b>를 따릅니다.
+    /// 소수점 구분자가 쉼표인 로케일(de/fr/ru 등)에서 게임이 돌면 "15,5"가 나오는데,
+    /// 이를 InvariantCulture로만 파싱하면 실패해서 0.0이 됩니다. 이 값은 정렬 비교뿐 아니라
+    /// <see cref="ApplyBmsDoubleState"/>에서 dt/showTick으로 <b>되써지기 때문에</b>,
+    /// 0.0 폴백은 더블 노트의 등장 타이밍을 통째로 망가뜨립니다.
+    /// 그래서 ToString()과 같은 CurrentCulture로 먼저 시도하고 InvariantCulture로 재시도합니다.
+    /// </para>
+    /// </summary>
     public static double ParseMusicDecimal(Il2CppSystem.Decimal value)
     {
-        if (double.TryParse(value.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double parsed))
+        string raw = value.ToString();
+
+        // ToString()이 CurrentCulture를 썼으므로 같은 문화권으로 먼저 되돌립니다.
+        if (double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.CurrentCulture, out double parsed))
         {
             return parsed;
+        }
+
+        // 게임이 InvariantGlobalization으로 빌드된 경우 등을 위한 2차 시도.
+        if (double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out parsed))
+        {
+            return parsed;
+        }
+
+        // 여기까지 왔으면 차트 타이밍이 손상됩니다. 조용히 0을 넘기지 않고 반드시 알립니다.
+        if (!warnedDecimalParseFailure)
+        {
+            warnedDecimalParseFailure = true;
+            MelonLogger.Error($"[ExperimentChart] Decimal 파싱 실패: raw='{raw}', culture={System.Globalization.CultureInfo.CurrentCulture.Name}. " +
+                              "이 상태에서는 더블 노트의 dt/showTick이 0으로 덮어써져 채보 타이밍이 깨집니다. (이 경고는 1회만 출력)");
         }
 
         return 0.0;

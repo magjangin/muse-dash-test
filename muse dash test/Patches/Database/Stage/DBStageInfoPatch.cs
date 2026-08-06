@@ -16,6 +16,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     private const double LongMiddleStep = 0.1;
 
+    // 주입되는 모든 커스텀 노트는 "현재 로드된 순정 곡"의 이 인덱스 노트를 복제해 만듭니다.
+    // 즉 템플릿이 호스트 곡에 의존합니다. ResetRuntimeFlags가 롱/더블 런타임 상태는 지우지만
+    // noteData의 des/key_audio/scene 같은 필드는 호스트 곡 것을 물려받으므로,
+    // 호스트로 쓰는 순정 곡을 바꾸면 노트 연출이 달라질 수 있습니다.
     private const int SourceNoteIndex = 1;
 
     private static readonly bool DebugExperimentNotes = false;

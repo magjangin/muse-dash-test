@@ -19,19 +19,25 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return;
         }
 
-        var sourceNotes = new MusicData[musicList.Count];
-        for (int i = 0; i < musicList.Count; i++)
-        {
-            sourceNotes[i] = CloneMusicData(musicList[i]);
-        }
+        // 실제로 필요한 원본은 [0](앵커)과 [SourceNoteIndex](템플릿) 두 개뿐입니다.
+        // 곡 전체를 클론하면 노트 수만큼 MusicData/NoteConfigData/MusicConfigData가 낭비되므로
+        // 전량 클론은 진단 로그가 켜졌을 때만 수행합니다.
+        int sourceCount = musicList.Count;
+        var anchor = CloneMusicData(musicList[0]);
+        var sourceNote = CloneMusicData(musicList[SourceNoteIndex]);
 
-        var anchor = CloneMusicData(sourceNotes[0]);
-        var sourceNote = CloneMusicData(sourceNotes[SourceNoteIndex]);
-
-        DebugMsg($"[ExperimentDebug] source count={sourceNotes.Length}, SourceNoteIndex={SourceNoteIndex}");
+        DebugMsg($"[ExperimentDebug] source count={sourceCount}, SourceNoteIndex={SourceNoteIndex}");
         DebugNote("[ExperimentDebug] anchor original [0]", anchor);
         DebugNote($"[ExperimentDebug] source original [{SourceNoteIndex}]", sourceNote);
-        if (DebugExperimentNotes) LogOriginalUidMatches(sourceNotes, "05", "05");
+        if (DebugExperimentNotes)
+        {
+            var sourceNotes = new MusicData[sourceCount];
+            for (int i = 0; i < sourceCount; i++)
+            {
+                sourceNotes[i] = CloneMusicData(musicList[i]);
+            }
+            LogOriginalUidMatches(sourceNotes, "05", "05");
+        }
 
         musicList.Clear();
         musicList.Add(anchor);
@@ -54,6 +60,15 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         foreach (var spec in runtimeSpecs)
         {
             AddExperimentNotes(musicList, sourceNote, spec);
+        }
+
+        // MusicData.objId는 short입니다. 노트들은 서로를 이 objId(=삽입 시 리스트 인덱스)로 가리키므로,
+        // short 범위를 넘기면 objId가 겹쳐 정렬 후 재연결(endIndex/doubleIdx)이 조용히 어긋납니다.
+        // 롱노트는 ceil(length / LongMiddleStep)개로 전개되어 노트 수가 빠르게 불어나므로 상한을 감시합니다.
+        if (musicList.Count > short.MaxValue)
+        {
+            MelonLogger.Error($"[ExperimentChart] 노트 수 {musicList.Count}개가 objId(short) 상한 {short.MaxValue}을 초과했습니다. " +
+                              "노트 간 상호참조가 깨져 채보가 정상 동작하지 않습니다. 롱노트 길이나 노트 수를 줄이세요.");
         }
 
         SceneZzTransformTracker.ClearBmsOriginalIdentities();
