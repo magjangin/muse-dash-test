@@ -145,7 +145,7 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 ### 2. 차트 변조 메커니즘
 - 원본 리스트의 레코드를 전부 비워내는 `Clear()`를 수행한 뒤, 우리가 구현해 둔 `BmsParser`가 해석한 노트 노드들을 루프를 돌며 `Add` 해줍니다.
-- 이때, 2편에 새롭게 추가된 기믹 노트(예: 3선 노트, 특수 연출 노트 등)가 있다면 6자리 UID 파싱 규칙([BMS_PARSING.md](file:///h:/source/repos/muse%20dash%20test/docs/BMS_PARSING.md))에 해당 노트 유형 코드를 분기 처리해 얹어주면 끝납니다.
+- 이때, 2편에 새롭게 추가된 기믹 노트(예: 3선 노트, 특수 연출 노트 등)가 있다면 6자리 UID 파싱 규칙([BMS_PARSING.md](../guides/BMS_PARSING.md))에 해당 노트 유형 코드를 분기 처리해 얹어주면 끝납니다.
 
 ---
 

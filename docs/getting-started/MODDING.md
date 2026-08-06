@@ -17,10 +17,10 @@ Muse Dash/
 가장 자주 보는 문서는 아래 문서들입니다.
 
 - [비유로 이해하는 모드 구조](ANALOGIES.md): 핵심 개념을 비유로 빠르게 잡기 (입문용)
-- [노트 실험](NOTE_EXPERIMENTS.md): 일반 노트, 공중 노트, 롱노트, 샌드백, 하트, 음표, 속도, dt 실험
-- [보스 실험](BOSS_EXPERIMENTS.md): 보스 액션 트리거와 실제 보스 프리팹 변경
-- [코드 파일별 레퍼런스](CODE_REFERENCE.md): 전체 C# 파일의 역할, 주요 클래스/메서드, 읽는 순서
-- [로그와 문제 해결](LOGGING_AND_TROUBLESHOOTING.md): 로그 해석, 노트/보스/UI가 안 될 때 확인 순서
+- [노트 실험](../experiments/NOTE_EXPERIMENTS.md): 일반 노트, 공중 노트, 롱노트, 샌드백, 하트, 음표, 속도, dt 실험
+- [보스 실험](../experiments/BOSS_EXPERIMENTS.md): 보스 액션 트리거와 실제 보스 프리팹 변경
+- [코드 파일별 레퍼런스](../architecture/CODE_REFERENCE.md): 전체 C# 파일의 역할, 주요 클래스/메서드, 읽는 순서
+- [로그와 문제 해결](../guides/LOGGING_AND_TROUBLESHOOTING.md): 로그 해석, 노트/보스/UI가 안 될 때 확인 순서
 - 이 문서: 전체 파일 구조, 빌드, 로그 확인, 곡 제목/아티스트/레벨 디자이너 실험
 
 ---

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// Il2CppGameLogic.GameMusicScene.InitTimer / InitSceneEvents 패치 클래스입니다.
 /// 인게임 스테이지 진입 시 노트 UID의 렌더 씬(zz) 계층을 커스텀 채보에 맞게 변형(TransformSceneSegments)합니다.
 /// 
-/// [UID 구조 규약] (자세한 내용은 docs/BMS_PARSING.md 참조)
+/// [UID 구조 규약] (자세한 내용은 docs/guides/BMS_PARSING.md 참조)
 /// 6자리 숫자 UID = zzxxyy
 ///   - zz: 렌더 씬 번호 (배경/스테이지 계열)
 ///   - xx: 노트 타입

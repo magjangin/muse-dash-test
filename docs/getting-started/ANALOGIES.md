@@ -4,7 +4,7 @@
 
 > 비유는 어디까지나 이해를 돕는 도구입니다. 문화권에 상관없이 통하는 보편적인 비유를 골랐고, 정확한 동작은 항상 "실제 의미" 항목과 코드를 기준으로 판단하세요.
 
-관련 기술 문서: [코드 레퍼런스](CODE_REFERENCE.md) · [모딩 가이드](MODDING.md) · [캐스트/커스텀 태그](CAST_AND_CUSTOM_TAG_GUIDE.md)
+관련 기술 문서: [코드 레퍼런스](../architecture/CODE_REFERENCE.md) · [모딩 가이드](MODDING.md) · [캐스트/커스텀 태그](../architecture/CAST_AND_CUSTOM_TAG_GUIDE.md)
 
 ---
 
@@ -17,21 +17,21 @@
 
 판단에 쓰는 주요 필드: `noteData.type`, `pathway`, `uid`, `prefab_name`, `key_audio`, `configData.length`, `tick`/`dt`/`showTick`.
 
-→ [노트 실험](NOTE_EXPERIMENTS.md), [모딩 가이드 1장](MODDING.md)
+→ [노트 실험](../experiments/NOTE_EXPERIMENTS.md), [모딩 가이드 1장](MODDING.md)
 
 ### 1.2 리스트 갱신 ➡️ "방은 그대로, 가구만 교체" 🛋️
 > **비유**: 방(엔진이 들고 있는 참조 주소)에 놓인 가구를 바꾸고 싶을 때, 방을 통째로 부수고 새 방(새 List 객체)으로 옮기면 다른 관리자들이 옛 방을 계속 바라봐서 길을 잃습니다. 방의 골격은 그대로 두고 **안의 가구만 비우고 다시 채우는** 편이 안전합니다.
 
 **실제 의미**: List를 새 객체로 교체하지 않고, 기존 List의 메모리 주소를 유지한 채 `Clear()` 후 새 항목을 채우는 **In-place 갱신**을 씁니다. 이렇게 해야 그 List를 참조하던 모든 컴포넌트가 변경된 결과를 그대로 보게 됩니다.
 
-→ `DBStageInfoPatch.ApplyExperimentChart()` ([CODE_REFERENCE](CODE_REFERENCE.md))
+→ `DBStageInfoPatch.ApplyExperimentChart()` ([CODE_REFERENCE](../architecture/CODE_REFERENCE.md))
 
 ### 1.3 `[0]`번 슬롯 ➡️ "건드리지 않는 기준점" 🧱
 > **비유**: 줄 세운 도미노의 맨 앞 한 개(`[0]`번 슬롯)를 함부로 빼면 줄 전체가 무너지듯, 0번 노트를 깨면 노트가 아예 스폰되지 않거나 판정이 멈출 수 있습니다.
 
 **실제 의미**: `[0]`번 노트는 게임이 기준점으로 쓰므로 원본 그대로 두고, 실험 노트는 `[1]`번 슬롯부터 채우는 것이 이 모드의 표준 원칙입니다.
 
-→ [노트 실험](NOTE_EXPERIMENTS.md)
+→ [노트 실험](../experiments/NOTE_EXPERIMENTS.md)
 
 ---
 
@@ -67,7 +67,7 @@
 
 **실제 의미**: 후킹 대상 메서드가 사라졌는지 모드 로드 시점에 자가 진단합니다. 대상을 못 찾으면 `MusicTagManager`에서 `Init`으로 시작하는 메서드 목록을 `hwa/tag_manager_dump.txt`로 출력해, 모더가 바뀐 메서드 이름을 찾아 바로 고칠 수 있게 합니다.
 
-→ `PatchHealthCheck.cs` ([CODE_REFERENCE](CODE_REFERENCE.md))
+→ `PatchHealthCheck.cs` ([CODE_REFERENCE](../architecture/CODE_REFERENCE.md))
 
 ---
 
@@ -78,14 +78,14 @@
 
 **실제 의미**: 판정 레코드(`TaskStageTarget.AddScore`)를 가로채 정확도 100% 여부를 계산하고, 조건이 맞으면 기본 `FULL COMBO` 이미지들을 비활성화한 뒤 게임 폰트(`LuckiestGuy-Regular`)를 복사해 그라데이션 색상·외곽선·그림자를 적용한 `ALL PERFECT !` 배너를 표시합니다. 조건 미달이면 순정 배너를 그대로 둡니다.
 
-→ `APModPatch.cs` ([CODE_REFERENCE](CODE_REFERENCE.md))
+→ `APModPatch.cs` ([CODE_REFERENCE](../architecture/CODE_REFERENCE.md))
 
 ### 4.2 커스텀 BGA ➡️ "카메라 렌즈 앞에 고정한 스크린" 📽️
 > **비유**: 카메라 렌즈 바로 앞에 스크린(`VideoBackgroundQuad`)을 붙여 고정해 둔 것과 같습니다. 카메라가 움직여도 화면을 꽉 채운 비디오가 늘 스크린에 비치고, 노트들은 그 스크린 앞을 지나갑니다.
 
 **실제 의미**: VideoPlayer가 투사되는 Quad를 카메라 앞에 배치하고, 노트보다 뒤로 가도록 소팅 오더를 낮게 잡아 배경 영상으로 깔립니다.
 
-→ `PnlBattleGameStartPatch.cs` ([CODE_REFERENCE](CODE_REFERENCE.md))
+→ `PnlBattleGameStartPatch.cs` ([CODE_REFERENCE](../architecture/CODE_REFERENCE.md))
 
 ---
 

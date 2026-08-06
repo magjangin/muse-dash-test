@@ -144,19 +144,19 @@ $$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Gre
 모드의 각 기술 파트를 세부적으로 깊게 분석하고자 할 때 필요한 원천 마크다운 파일들의 위치와 참조 맵입니다.
 
 1. **환경 빌드 및 초기 셋업**
-   * [MODDING.md](file:///h:/source/repos/muse%20dash%20test/docs/MODDING.md): MelonLoader 환경 셋업, 의존성 라이브러리 목록 및 `build.bat` 사용법.
-   * [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](file:///h:/source/repos/muse%20dash%20test/docs/OFFLINE_CUSTOM_SANDBOX_GUIDE.md): 골드버그 에뮬레이터 세팅 및 완전 오프라인 모드 보존 환경 설계 가이드.
+   * [MODDING.md](../getting-started/MODDING.md): MelonLoader 환경 셋업, 의존성 라이브러리 목록 및 `build.bat` 사용법.
+   * [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](../guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md): 골드버그 에뮬레이터 세팅 및 완전 오프라인 모드 보존 환경 설계 가이드.
 2. **곡 데이터베이스 확장 및 앨범 태그**
-   * [UID_INJECTION.md](file:///h:/source/repos/muse%20dash%20test/docs/UID_INJECTION.md): 가상 앨범 및 가상 곡 UID 동적 인젝션 프로세스 명세.
-   * [CAST_AND_CUSTOM_TAG_GUIDE.md](file:///h:/source/repos/muse%20dash%20test/docs/CAST_AND_CUSTOM_TAG_GUIDE.md): IL2CPP 형변환 가이드 및 커스텀 앨범 태그 UI 추가 방법.
+   * [UID_INJECTION.md](../experiments/UID_INJECTION.md): 가상 앨범 및 가상 곡 UID 동적 인젝션 프로세스 명세.
+   * [CAST_AND_CUSTOM_TAG_GUIDE.md](CAST_AND_CUSTOM_TAG_GUIDE.md): IL2CPP 형변환 가이드 및 커스텀 앨범 태그 UI 추가 방법.
 3. **BMS 엔진 및 차트 조작**
-   * [BMS_PARSING.md](file:///h:/source/repos/muse%20dash%20test/docs/BMS_PARSING.md): BMS 구문 해석, WAV 파일명 파싱 규칙 및 노트 타입 상세 코드 매핑.
-   * [NOTE_EXPERIMENTS.md](file:///h:/source/repos/muse%20dash%20test/docs/NOTE_EXPERIMENTS.md): 가상 노트 스펙 정의 및 동적 런타임 생성 구조.
-   * [BOSS_EXPERIMENTS.md](file:///h:/source/repos/muse%20dash%20test/docs/BOSS_EXPERIMENTS.md): 보스 액션(애니메이션, 페이즈 전환) 매핑 제어 흐름.
+   * [BMS_PARSING.md](../guides/BMS_PARSING.md): BMS 구문 해석, WAV 파일명 파싱 규칙 및 노트 타입 상세 코드 매핑.
+   * [NOTE_EXPERIMENTS.md](../experiments/NOTE_EXPERIMENTS.md): 가상 노트 스펙 정의 및 동적 런타임 생성 구조.
+   * [BOSS_EXPERIMENTS.md](../experiments/BOSS_EXPERIMENTS.md): 보스 액션(애니메이션, 페이즈 전환) 매핑 제어 흐름.
 4. **로깅 및 트러블슈팅**
-   * [LOGGING_AND_TROUBLESHOOTING.md](file:///h:/source/repos/muse%20dash%20test/docs/LOGGING_AND_TROUBLESHOOTING.md): 디버깅 로깅 기법, 폰트 캐시 및 프레임워크 크래시 자가 진단 가이드.
+   * [LOGGING_AND_TROUBLESHOOTING.md](../guides/LOGGING_AND_TROUBLESHOOTING.md): 디버깅 로깅 기법, 폰트 캐시 및 프레임워크 크래시 자가 진단 가이드.
 5. **코어 코드 구조 명세**
-   * [CODE_REFERENCE.md](file:///h:/source/repos/muse%20dash%20test/docs/CODE_REFERENCE.md): 각 소스 파일의 구성 요소, 주요 메서드 및 런타임 수명 주기 매칭 레퍼런스.
+   * [CODE_REFERENCE.md](CODE_REFERENCE.md): 각 소스 파일의 구성 요소, 주요 메서드 및 런타임 수명 주기 매칭 레퍼런스.
 6. **차세대 플랫폼 (Muse Dash 2) 포팅 가이드**
-   * [MUSE_DASH_2_SPECULATIVE_GUIDE.md](file:///h:/source/repos/muse%20dash%20test/docs/MUSE_DASH_2_SPECULATIVE_GUIDE.md): 2026년 말 신작 포팅을 대비한 패치 시나리오 및 설계 로드맵.
-   * [MD2_TAG_RETARGET_MAP.md](file:///h:/source/repos/muse%20dash%20test/docs/MD2_TAG_RETARGET_MAP.md): Muse Dash 2의 신규 클래스 매핑 예상 리타게팅 레이아웃.
+   * [MUSE_DASH_2_SPECULATIVE_GUIDE.md](../muse-dash-2/MUSE_DASH_2_SPECULATIVE_GUIDE.md): 2026년 말 신작 포팅을 대비한 패치 시나리오 및 설계 로드맵.
+   * [MD2_TAG_RETARGET_MAP.md](../muse-dash-2/MD2_TAG_RETARGET_MAP.md): Muse Dash 2의 신규 클래스 매핑 예상 리타게팅 레이아웃.

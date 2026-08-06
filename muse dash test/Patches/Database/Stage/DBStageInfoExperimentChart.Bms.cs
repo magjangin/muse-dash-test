@@ -159,7 +159,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     }
 
     // UID 끝 2자리(yy) = 전환할 sceneInfo 번호 → 게임 내부 ibms_id 매핑.
-    // (docs/NOTE_EXPERIMENTS.md의 검증된 표. scene 11은 표에 없어 제외.)
+    // (docs/experiments/NOTE_EXPERIMENTS.md의 검증된 표. scene 11은 표에 없어 제외.)
     private static readonly System.Collections.Generic.Dictionary<int, string> SceneToggleIbmsIdByScene =
         new System.Collections.Generic.Dictionary<int, string>
     {

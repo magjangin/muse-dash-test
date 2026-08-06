@@ -55,7 +55,7 @@
 | **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (`music.ogg`)** | ✅ 완료 |
 | **로컬 `cover.png` 기반 커스텀 곡 셀/디스크 앨범 아트 주입** | ✅ 완료 |
 | **가상 곡 플레이 기록(정확도·스코어·최대 콤보·풀콤보) 로컬 JSON 저장 및 결과/기록 카드 표시** | ✅ 완료 |
-| **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](file:///H:/source/repos/muse%20dash%20test/docs/DISCORD_RICH_PRESENCE.md)) |
+| **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](docs/guides/DISCORD_RICH_PRESENCE.md)) |
 
 
 ---
@@ -162,20 +162,32 @@
 │   ├── main.cs               # MelonLoader 진입점 (MelonMod)
 │   └── muse dash test.csproj # C# .NET 6.0 프로젝트 파일
 │
-├── docs/                     # 고도로 정리된 기능별 실험/분석 한글 가이드
-│   ├── ARCHITECTURE.md                 # 유지보수 지도 및 핵심 흐름 요약
-│   ├── MODDING.md                      # 전체 모딩 빌드 및 연동 기초
-│   ├── NOTE_EXPERIMENTS.md             # 커스텀 노트 스펙 설계 가이드
-│   ├── BOSS_EXPERIMENTS.md             # 실시간 보스 교환 기믹 가이드
-│   ├── UID_INJECTION.md                # 커스텀 UID 정식 등록 및 UI 선택 흐름 정리
-│   ├── CAST_AND_CUSTOM_TAG_GUIDE.md    # 커스텀 태그 및 캐스트 제어 가이드
-│   ├── CUSTOM_CHART_GUIDE.md           # 커스텀 차트 환경 가이드
-│   ├── BMS_PARSING.md                  # BMS 채보 데이터 분석 및 파싱 명세
-│   ├── MD2_TAG_RETARGET_MAP.md         # 다국어 및 태그 리타게팅 맵 분석
-│   ├── OFFLINE_CUSTOM_SANDBOX_GUIDE.md  # 오프라인 샌드박스 플래그 설정법
-│   ├── CODE_REFERENCE.md               # C# 패치 코드 상세 분석 참고서
-│   ├── LOGGING_AND_TROUBLESHOOTING.md  # 로그 분석 및 트러블슈팅 가이드
-│   └── MUSE_DASH_2_SPECULATIVE_GUIDE.md # 뮤즈대시 2 대비 분석 가이드
+├── docs/                     # 목적별로 분류된 실험/분석 한글 문서 (→ docs/README.md 목차)
+│   ├── README.md             # 전체 문서 목차
+│   ├── getting-started/      # 처음 읽는 문서
+│   │   ├── MODDING_MINDSET.md          # 모딩에서 진짜 중요한 것
+│   │   ├── ANALOGIES.md                # 비유로 이해하는 모드 구조
+│   │   └── MODDING.md                  # 전체 모딩 빌드 및 연동 기초
+│   ├── architecture/         # 시스템 구조와 코드 지도
+│   │   ├── ARCHITECTURE.md             # 유지보수 지도 및 핵심 흐름 요약
+│   │   ├── MOD_SYSTEM_BLUEPRINT.md     # 통합 시스템 설계도 및 기술 명세서
+│   │   ├── CODE_REFERENCE.md           # C# 패치 코드 상세 분석 참고서
+│   │   └── CAST_AND_CUSTOM_TAG_GUIDE.md # 커스텀 태그 및 캐스트 제어 가이드
+│   ├── guides/               # 제작·설정·운영 가이드
+│   │   ├── CUSTOM_CHART_GUIDE.md       # 커스텀 차트 환경 가이드
+│   │   ├── BMS_PARSING.md              # BMS 채보 데이터 분석 및 파싱 명세
+│   │   ├── OFFLINE_CUSTOM_SANDBOX_GUIDE.md # 오프라인 샌드박스 플래그 설정법
+│   │   ├── DISCORD_RICH_PRESENCE.md    # 디스코드 리치 프레젠스 연동 명세
+│   │   └── LOGGING_AND_TROUBLESHOOTING.md # 로그 분석 및 트러블슈팅 가이드
+│   ├── experiments/          # 기능별 실험 기록
+│   │   ├── NOTE_EXPERIMENTS.md         # 커스텀 노트 스펙 설계 가이드
+│   │   ├── BOSS_EXPERIMENTS.md         # 실시간 보스 교환 기믹 가이드
+│   │   ├── SCENE_BACKGROUND_SWAP.md    # 씬 배경 스왑 원리
+│   │   └── UID_INJECTION.md            # 커스텀 UID 정식 등록 및 UI 선택 흐름 정리
+│   ├── muse-dash-2/          # 차기작 대비 분석
+│   │   ├── MUSE_DASH_2_SPECULATIVE_GUIDE.md # 뮤즈대시 2 대비 분석 가이드
+│   │   └── MD2_TAG_RETARGET_MAP.md     # 태그 리타게팅 맵 분석
+│   └── inferred_game_code/   # 디컴파일·실측 기반 게임 원본 코드 역추론
 │
 ├── muse dash test.LogicTests/ # 게임 없이 BMS 파싱 로직만 검증하는 테스트 프로젝트
 │
