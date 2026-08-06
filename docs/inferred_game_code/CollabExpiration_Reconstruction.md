@@ -10,7 +10,7 @@
 - 각 `DlcUIExtensionInfo` 항목은 `jsonIndex`(int, 콜라보 식별자)와 `dlcEndTime`(DateTime, 종료 시각)을 갖는다. 나머지 필드(`dlcCountdownPosition`, `dlcCountDownTxtPadding`, `dlcCountDownBaseImg` 등)는 카운트다운 UI 표시 위치/스타일용 설정값이다.
 - 조회는 `DBConfigDlcUIExtension.GetDlcUIExtensionByJsonIndex(int jsonIndex)`로 한다.
 
-**중요한 한계**: `DlcUIExtensionInfo`는 "모든 콜라보의 종료일 저장소"가 아니라 **"현재 카운트다운 UI를 띄워야 하는 콜라보"에만 등록되는 표**다. `AlbumJsonIndexDefine`에 정의된 47개 이름 중 실제로 이 표에 항목이 있는 건 10개뿐이었다(`djmax`, `wacca`, `arcaea`, `cytus` 등 다수는 항목 자체가 없음 — 기간 제한이 없거나, 이미 오래 전에 정리됐거나, 다른 경로로 관리되는 것으로 추정).
+**중요한 한계**: `DlcUIExtensionInfo`는 "모든 콜라보의 종료일 저장소"가 아니라 **"현재 카운트다운 UI를 띄워야 하는 콜라보"에만 등록되는 표**다. `AlbumJsonIndexDefine`에 정의된 47개 이름 중 실제로 이 표에 항목이 있는 건 11개뿐이었다(`djmax`, `wacca`, `arcaea`, `cytus` 등 다수는 항목 자체가 없음 — 기간 제한이 없거나, 이미 오래 전에 정리됐거나, 다른 경로로 관리되는 것으로 추정).
 
 ## 2. jsonIndex → 이름 매핑: `AlbumJsonIndexDefine`
 
@@ -42,7 +42,7 @@
 
 ## 5. 실측 결과: 콜라보 종료일 전체 목록 (측정일 2026-08-03)
 
-`DlcUIExtensionInfo`에 실제로 항목이 있던 10개 (jsonIndex 오름차순):
+`DlcUIExtensionInfo`에 실제로 항목이 있던 11개 (jsonIndex 오름차순):
 
 | jsonIndex | 이름 (AlbumJsonIndexDefine) | dlcEndTime | 상태 (2026-08-03 기준) |
 | :--- | :--- | :--- | :--- |

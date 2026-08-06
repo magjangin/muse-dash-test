@@ -15,12 +15,11 @@ graph TD
     MainMod --> Preload[HwaResourceManager: hwa 폴더 & info.txt 메타 선읽기]
     
     subgraph 1. 데이터베이스 및 앨범 주입
-        Preload --> DBStagePatch[DBStageInfoPatch: 가상 앨범/곡 레코드 메모리 주입]
-        DBStagePatch --> CustomTag[CustomTagRegistry: 1998-0 카테고리 탭 생성 및 정렬]
+        Preload --> CustomTag[CustomTagRegistry: 가상 앨범/곡 레코드 주입 및 1998-0 카테고리 탭 생성]
     end
     
     subgraph 2. 차트 로딩 및 노트 분석
-        SelectSong[곡 선택 & 시작] --> DBStageExp[DBStageInfoExperimentChart: BMS 차트 주입]
+        SelectSong[곡 선택 & 시작] --> DBStageExp[DBStageInfoPatch: SetRuntimeMusicData Postfix로 BMS 차트 주입]
         DBStageExp --> ParseTiming["BMS timing 공식 적용 및 가상 노트 생성"]
         DBStageExp --> ScanCount["노트 유형 카운트 저장 (CustomPlaySession)"]
         SelectSong --> BgmSwap[HwaMenuBgmController: 곡 선택/준비 화면 BGM 실시간 핫스왑]
@@ -49,15 +48,15 @@ graph TD
 | 후킹 대상 클래스 및 메서드 | 패치 타입 | 구현 파일 | 주요 역할 및 유지보수적 목적 |
 | :--- | :---: | :--- | :--- |
 | `DataManager.Save` | **Prefix** | [SaveDataManagerPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs) | 물리 저장 직전 세이브 오염 방지용 가상 레코드(UID) 정밀 정화 |
-| `DBStageInfo.SetRuntimeMusicData` | **Prefix** | [DBStageInfoExperimentChart.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Stage/DBStageInfoExperimentChart.cs) | 커스텀 차트(BMS)를 읽어 인게임 가상 런타임 노트로 복제 및 변환 주입 |
+| `DBStageInfo.SetRuntimeMusicData` | **Postfix** | [DBStageInfoPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Stage/DBStageInfoPatch.cs) | 커스텀 차트(BMS)를 읽어 인게임 가상 런타임 노트로 복제 및 변환 주입 |
 | `TaskStageTarget.AddScore` | **Prefix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 실시간 점수 누계 수집 및 인게임 HUD 폰트 리소스 캐싱 |
 | `TaskStageTarget.GetAccuracy` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 소수점 3자리 반올림 가독 정확도 출력 (`GetTrueAccuracyNew` 기반) |
 | `TaskStageTarget.GetTrueAccuracy` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 일반 노트 기반 정확도 계산 공식 오버라이드 |
 | `TaskStageTarget.GetTrueAccuracyNew` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 기어, 하트, 음표를 합산한 종합 오브젝트 정확도 공식 오버라이드 |
 | `PnlVictory2dManager.OnShowVictory` | **Postfix** | [APModPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | ALL PERFECT 달성 시 기존 배너 숨김 및 골드 3D 텍스트 배너 주입 |
 | `StageBattleComponent.Dead` | **Postfix** | [ChangeHealthValuePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 인게임 사망 이벤트 및 체력 강제 오버라이드(체력 무한 모드 등) |
-| `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [PnlStagePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/PnlStagePatch.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
-| `PnlPreparation.OnEnable` | **Prefix/Postfix** | [PnlPreparationPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/PnlPreparationPatch.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 (`HwaMenuBgmController`) |
+| `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [HwaMenuBgmController.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 |
+| `PnlPreparation.OnEnable` | **Prefix/Postfix** | [HwaMenuBgmController.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 |
 
 ---
 
