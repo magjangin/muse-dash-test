@@ -26,6 +26,7 @@ namespace muse_dash_test
                     string uid = musicInfo != null ? musicInfo.uid : "(null)";
                     CustomPlaySession.Current.LastClickedMusicUid = uid;
                     CustomPlaySession.Current.RememberMusicSelection(uid);
+                    MelonLogger.Msg($"[MusicButtonCell.OnButtonClicked] Prefix: uid='{uid}'");
                 }
             }
             catch (Exception ex)
@@ -57,6 +58,10 @@ namespace muse_dash_test
         {
             try
             {
+                if (initMusicInfo != null)
+                {
+                    MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Prefix: uid='{initMusicInfo.uid}', name='{initMusicInfo.name}', author='{initMusicInfo.author}', tabIndex={tabIndex}");
+                }
             }
             catch (Exception ex)
             {
@@ -70,6 +75,8 @@ namespace muse_dash_test
             {
                 if (__instance == null || initMusicInfo == null) return;
                 
+                MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Postfix: uid='{initMusicInfo.uid}', name='{initMusicInfo.name}', author='{initMusicInfo.author}', tabIndex={tabIndex}, isVirtual={CustomContentIds.IsVirtualSong(initMusicInfo.uid)}");
+
                 // 가상 곡인지 여부 체크
                 if (!CustomContentIds.IsVirtualSong(initMusicInfo.uid)) return;
 
@@ -86,6 +93,8 @@ namespace muse_dash_test
                     if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
                     if (!string.IsNullOrWhiteSpace(manifestArtist)) author = manifestArtist;
                 }
+
+                MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] 가상 곡 텍스트 적용 시작: uid='{initMusicInfo.uid}', appliedTitle='{title}', appliedAuthor='{author}'");
 
                 // cell의 게임오브젝트 텍스트 컴포넌트들을 직접 업데이트
                 var go = __instance.gameObject;
@@ -111,6 +120,7 @@ namespace muse_dash_test
                         if (text.text != title)
                         {
                             text.text = title;
+                            MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Title 텍스트 교체 완료: obj='{objectName}', text='{title}'");
                         }
                     }
                     else if (isAuthor)
@@ -118,6 +128,7 @@ namespace muse_dash_test
                         if (text.text != author)
                         {
                             text.text = author;
+                            MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Author 텍스트 교체 완료: obj='{objectName}', text='{author}'");
                         }
                     }
                 }
@@ -194,13 +205,13 @@ namespace muse_dash_test
                 if (!ImageConversion.LoadImage(tex, data))
                 {
                     MelonLogger.Error($"[Cover] cover.png 디코딩 실패: {coverPath}");
-                    UnityEngine.Object.Destroy(tex); // 디코딩 실패한 텍스처가 새지 않도록 즉시 해제
+                    UnityEngine.Object.Destroy(tex);
                     missing.Add(uid);
                     return false;
                 }
 
                 tex.name = $"CustomCoverTex_{uid}";
-                tex.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC 방지
+                tex.hideFlags |= HideFlags.DontUnloadUnusedAsset;
 
                 var spr = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
                 spr.name = $"CustomCoverSprite_{uid}";
@@ -225,7 +236,6 @@ namespace muse_dash_test
     /// </summary>
     public static class MusicCellImageDiagnostics
     {
-        // UID당 1회만 로깅해 스크롤 중 로그 폭발을 방지합니다.
         private static readonly HashSet<string> loggedUids = new HashSet<string>();
 
         public static void LogCellImagesOnce(MusicButtonCell cell, string uid)
