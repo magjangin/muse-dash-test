@@ -78,5 +78,54 @@ namespace muse_dash_test
                 return true;
             }
         }
+
+        /// <summary>
+        /// MusicInfo.GetLocal 호출 시 가상 곡의 LocalALBUMInfo(name, author)를 즉석 반환하여 로컬라이제이션 오버라이드를 차단합니다.
+        /// </summary>
+        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.GetLocal))]
+        internal class MusicInfo_GetLocal_Patch
+        {
+            private static bool Prefix(MusicInfo __instance, int languageIndex, ref LocalALBUMInfo __result)
+            {
+                if (__instance != null && CustomContentIds.IsVirtualSong(__instance.uid))
+                {
+                    if (MainMod.TryGetHwaPrimarySong(__instance.uid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
+                    {
+                        var localInfo = new LocalALBUMInfo();
+                        localInfo.name = title;
+                        localInfo.author = artist;
+                        __result = localInfo;
+                        MelonLogger.Msg($"[MusicInfo.GetLocal Patch] 가상 곡 로컬 라이브러리 가로채기 성공: uid={__instance.uid}, title={title}, artist={artist}");
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// DBConfigLocalALBUM.GetLocalAlbumInfoByIndex 쿼리 시 가상 곡의 LocalALBUMInfo를 즉석 응답합니다.
+        /// </summary>
+        [HarmonyPatch(typeof(DBConfigLocalALBUM), nameof(DBConfigLocalALBUM.GetLocalAlbumInfoByIndex))]
+        internal class DBConfigLocalALBUM_GetLocalAlbumInfoByIndex_Patch
+        {
+            private static bool Prefix(DBConfigLocalALBUM __instance, int index, ref LocalALBUMInfo __result)
+            {
+                string currentUid = CustomPlaySession.Current.SelectedMusicUid;
+                if (CustomContentIds.IsVirtualSong(currentUid))
+                {
+                    if (MainMod.TryGetHwaPrimarySong(currentUid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
+                    {
+                        var localInfo = new LocalALBUMInfo();
+                        localInfo.name = title;
+                        localInfo.author = artist;
+                        __result = localInfo;
+                        MelonLogger.Msg($"[DBConfigLocalALBUM Patch] Index={index} 쿼리를 가상 곡 로컬 정보로 응답: uid={currentUid}, title={title}, artist={artist}");
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
     }
 }
