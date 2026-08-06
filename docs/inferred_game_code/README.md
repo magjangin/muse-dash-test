@@ -18,6 +18,7 @@
 | [DBStageInfo_Reconstruction.md](./DBStageInfo_Reconstruction.md) | `Il2CppAssets.Scripts.Database.DBStageInfo` | `SetRuntimeMusicData()`, `GetMusicData()`, `GetMusicInfoFromConfig()`, `MusicTagMetaData` 파싱/바인딩 |
 | [NoteController_Reconstruction.md](./NoteController_Reconstruction.md) | `Il2CppGameLogic.NoteController` / `TaskStageTarget` | `OnHit()`, `OnMiss()`, `ChangeHealthValue()`, `CalculateJudge()`, `TickToTime()` |
 | [SaveDataManager_Reconstruction.md](./SaveDataManager_Reconstruction.md) | `Il2CppPeroPeroGames.GlobalSave.SaveDataManager` | `Init()`, `Save()`, `Load()`, `UnlockStage()`, `VerifySkillAndItem()` |
+| [CollabExpiration_Reconstruction.md](./CollabExpiration_Reconstruction.md) | `DBConfigDlcUIExtension`, `TimeLimitedItemManager`, `PeroServerTime` | `Deserialize()`, `IsItemInTime()`, `GetServerTime()`/`ResetToLocal()` — 콜라보 종료일 실측 결과 포함 |
 
 ---
 
