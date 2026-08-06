@@ -283,7 +283,10 @@ public class PnlStage_RefreshDiffUI_Patch
             }
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-            MelonLogger.Msg($"PnlStage.RefreshDiffUI Prefix: musicNameTitle={musicText}, artistNameTitle={artistText}");
+            
+            var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
+            string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}', diff1={infoWrap.difficulty1}" : "(null)";
+            MelonLogger.Msg($"PnlStage.RefreshDiffUI Prefix: musicNameTitle='{musicText}', artistNameTitle='{artistText}' | [Passed musicInfo details]: {argDetails}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshDiffUI Prefix 예외: {ex}"); }
     }
@@ -292,7 +295,9 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
-            MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
+            var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
+            string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}'" : "(null)";
+            MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, argDetails=[{argDetails}], currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
 
             if (PnlStagePatchHelper.ApplyTagTitleForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
@@ -300,7 +305,7 @@ public class PnlStage_RefreshDiffUI_Patch
                 // 다이내믹 주입에 성공했으면 다른 정적 주입은 실행하지 않고 리턴합니다.
                 string mText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
                 string aText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-                MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle={mText}, artistNameTitle={aText}");
+                MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix (Direct Applied): musicNameTitle='{mText}', artistNameTitle='{aText}'");
                 return;
             }
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.RefreshDiffUI", __instance);
@@ -309,7 +314,7 @@ public class PnlStage_RefreshDiffUI_Patch
             MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] exit uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-            MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle={musicText}, artistNameTitle={artistText}");
+            MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle='{musicText}', artistNameTitle='{artistText}'");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshDiffUI Postfix 예외: {ex}"); }
     }
