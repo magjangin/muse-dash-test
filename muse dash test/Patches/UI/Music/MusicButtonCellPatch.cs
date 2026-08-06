@@ -26,7 +26,6 @@ namespace muse_dash_test
                     string uid = musicInfo != null ? musicInfo.uid : "(null)";
                     CustomPlaySession.Current.LastClickedMusicUid = uid;
                     CustomPlaySession.Current.RememberMusicSelection(uid);
-                    MelonLogger.Msg($"[MusicButtonCell.OnButtonClicked] Prefix: uid='{uid}'");
                 }
             }
             catch (Exception ex)
@@ -37,18 +36,10 @@ namespace muse_dash_test
 
         public static void Postfix(MusicButtonCell __instance)
         {
-            try
-            {
-                MelonLogger.Msg($"[Postfix] SelectedMusicUid={CustomPlaySession.Current.SelectedMusicUid}, LastClickedMusicUid={CustomPlaySession.Current.LastClickedMusicUid}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"MusicButtonCell.OnButtonClicked Postfix 예외: {ex}");
-            }
         }
     }
 
-    // MusicButtonCell.InitMusicCell 후킹
+    // MusicButtonCell.InitMusicCell 후킹 - 스크롤 뷰 갱신 폭발 스파이크 방지를 위해 수동 UI 오버라이드 비활성화
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.InitMusicCell), new Type[] { typeof(MusicInfo), typeof(int) })]
     public class MusicButtonCell_InitMusicCell_Patch
     {
@@ -56,115 +47,13 @@ namespace muse_dash_test
 
         public static void Prefix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
         {
-            try
-            {
-                if (initMusicInfo != null)
-                {
-                    MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Prefix: uid='{initMusicInfo.uid}', name='{initMusicInfo.name}', author='{initMusicInfo.author}', tabIndex={tabIndex}");
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"MusicButtonCell.InitMusicCell Prefix 예외: {ex}");
-            }
         }
 
         public static void Postfix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
         {
-            try
-            {
-                if (__instance == null || initMusicInfo == null) return;
-                
-                MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Postfix: uid='{initMusicInfo.uid}', name='{initMusicInfo.name}', author='{initMusicInfo.author}', tabIndex={tabIndex}, isVirtual={CustomContentIds.IsVirtualSong(initMusicInfo.uid)}");
-
-                // 가상 곡인지 여부 체크
-                if (!CustomContentIds.IsVirtualSong(initMusicInfo.uid)) return;
-
-                // [조사] cover.png 주입 대상 컴포넌트를 찾기 위해 셀의 이미지 후보를 UID당 1회 덤프합니다.
-                MusicCellImageDiagnostics.LogCellImagesOnce(__instance, initMusicInfo.uid);
-
-                string title = initMusicInfo.name;
-                string author = initMusicInfo.author;
-
-                // 캐시된 manifest 정보 조회 시도
-                if (MainMod.TryGetHwaPrimarySong(initMusicInfo.uid,
-                    out string manifestTitle, out string manifestArtist, out _, out _, out _, out _, out _, out _, out _))
-                {
-                    if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
-                    if (!string.IsNullOrWhiteSpace(manifestArtist)) author = manifestArtist;
-                }
-
-                MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] 가상 곡 텍스트 적용 시작: uid='{initMusicInfo.uid}', appliedTitle='{title}', appliedAuthor='{author}'");
-
-                // cell의 게임오브젝트 텍스트 컴포넌트들을 직접 업데이트
-                var go = __instance.gameObject;
-                if (go == null) return;
-
-                var texts = go.GetComponentsInChildren<Text>(true);
-                for (int i = 0; i < texts.Length; i++)
-                {
-                    var text = texts[i];
-                    if (text == null) continue;
-
-                    string objectName = text.gameObject.name;
-                    bool isTitle = objectName.IndexOf("SongTitle", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                   objectName.IndexOf("TxtTitle", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                   objectName.IndexOf("Name", StringComparison.OrdinalIgnoreCase) >= 0;
-
-                    bool isAuthor = objectName.IndexOf("Artist", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                    objectName.IndexOf("TxtAuthor", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                    objectName.IndexOf("Author", StringComparison.OrdinalIgnoreCase) >= 0;
-
-                    if (isTitle)
-                    {
-                        if (text.text != title)
-                        {
-                            text.text = title;
-                            MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Title 텍스트 교체 완료: obj='{objectName}', text='{title}'");
-                        }
-                    }
-                    else if (isAuthor)
-                    {
-                        if (text.text != author)
-                        {
-                            text.text = author;
-                            MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Author 텍스트 교체 완료: obj='{objectName}', text='{author}'");
-                        }
-                    }
-                }
-
-                // 곡 폴더의 cover.png를 ImgCover에 주입 (있을 때만)
-                ApplyCustomCover(go, initMusicInfo.uid);
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"MusicButtonCell.InitMusicCell Postfix 예외: {ex}");
-            }
-        }
-
-        // 곡 셀의 ImgCover 컴포넌트를 커스텀 커버 스프라이트로 교체합니다.
-        private static void ApplyCustomCover(GameObject cellGo, string uid)
-        {
-            if (!CoverImageManager.TryGetCoverSprite(uid, out var coverSprite) || coverSprite == null)
-            {
-                return;
-            }
-
-            var images = cellGo.GetComponentsInChildren<Image>(true);
-            foreach (var img in images)
-            {
-                if (img == null || img.gameObject == null) continue;
-                if (img.gameObject.name != "ImgCover") continue;
-
-                if (img.sprite != coverSprite)
-                {
-                    img.sprite = coverSprite;
-                    MelonLogger.Msg($"[Cover] 곡 셀 ImgCover 스프라이트를 커스텀 커버로 교체 uid='{uid}'");
-                }
-                return;
-            }
-
-            MelonLogger.Warning($"[Cover] ImgCover 컴포넌트를 찾지 못했습니다 uid='{uid}'");
+            // 렉 주범인 InitMusicCell 수동 GetComponentsInChildren 순회 및 덮어쓰기 로직을 전면 차단합니다.
+            // 이미 MusicInfo.GetLocal 및 DBMusicTag.GetMusicInfoFromAll 패치로 
+            // 게임 본체가 아기상어 / 화영왕 등 커스텀 텍스트를 내장 바인딩으로 가져옵니다.
         }
     }
 
@@ -219,7 +108,6 @@ namespace muse_dash_test
 
                 cache[uid] = spr;
                 sprite = spr;
-                MelonLogger.Msg($"[Cover] cover.png 로드 성공 uid='{uid}' {tex.width}x{tex.height} path={coverPath}");
                 return true;
             }
             catch (Exception ex)
@@ -227,44 +115,6 @@ namespace muse_dash_test
                 MelonLogger.Error($"[Cover] cover.png 로드 예외 uid='{uid}': {ex}");
                 missing.Add(uid);
                 return false;
-            }
-        }
-    }
-
-    /// <summary>
-    /// 곡 셀(MusicButtonCell)의 ImgCover 현재 커버 스프라이트명을 UID당 1회만 간단히 로깅합니다.
-    /// </summary>
-    public static class MusicCellImageDiagnostics
-    {
-        private static readonly HashSet<string> loggedUids = new HashSet<string>();
-
-        public static void LogCellImagesOnce(MusicButtonCell cell, string uid)
-        {
-            try
-            {
-                if (cell == null) return;
-                string key = uid ?? "(null)";
-                if (loggedUids.Contains(key)) return;
-                loggedUids.Add(key);
-
-                var go = cell.gameObject;
-                if (go == null) return;
-
-                string coverName = "(없음)";
-                var images = go.GetComponentsInChildren<Image>(true);
-                foreach (var img in images)
-                {
-                    if (img == null || img.gameObject == null) continue;
-                    if (img.gameObject.name != "ImgCover") continue;
-                    coverName = img.sprite != null ? img.sprite.name : "(null)";
-                    break;
-                }
-
-                MelonLogger.Msg($"[CoverDiag] uid='{key}' cover='{coverName}'");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[CoverDiag] 커버 로깅 실패: {ex}");
             }
         }
     }
