@@ -85,7 +85,7 @@ namespace muse_dash_test
         [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.GetLocal))]
         internal class MusicInfo_GetLocal_Patch
         {
-            private static bool Prefix(MusicInfo __instance, int languageIndex, ref LocalALBUMInfo __result)
+            private static bool Prefix(MusicInfo __instance, int language, ref LocalALBUMInfo __result)
             {
                 if (__instance != null && CustomContentIds.IsVirtualSong(__instance.uid))
                 {
