@@ -96,78 +96,51 @@
 
 ```text
 ├── muse dash test/           # C# 모드 프로젝트 폴더
+│   ├── Bms/                  # BMS 파서, 어휘 분석기, WAV/노트 매처
+│   ├── Core/                 # 바인딩, 예외 격리, 플레이 세션, 레코드 저장소
+│   ├── Integration/          # Discord RPC 연동 모듈
 │   ├── Patches/              # Harmony 런타임 패치 클래스들
-│   │   ├── APModPatch.cs     # 올 퍼펙트 배너 제어 및 인게임 폰트 캐싱 [NEW]
-│   │   ├── Database/         # 런타임 차트 및 세이브 데이터 관련 패치
-│   │   │   ├── Stage/        # 인메모리 차트 수명 주기 제어 및 로더
-│   │   │   │   ├── DBStageInfoPatch.cs
-│   │   │   │   ├── DBStageInfoExperimentChart.cs
-│   │   │   │   ├── DBStageInfoExperimentChart.Helpers.cs
-│   │   │   │   └── DBStageInfoSetStageInfoPatch.cs
-│   │   │   ├── Skill/        # 캐릭터 스킬 및 오토플레이 제어
-│   │   │   │   └── DBSkillPatch.cs
-│   │   │   └── Save/         # 세이브 가상 데이터 클렌징 (오염 방지) [NEW]
-│   │   │       └── SaveDataManagerPatch.cs
 │   │   ├── Battle/           # 인게임 배틀 제어 및 연출
 │   │   │   ├── Mechanics/    # 오토플레이, 피버 차단, 보스 런타임 스왑
 │   │   │   │   ├── AutoPlayPatch.cs
 │   │   │   │   ├── BossPatch.cs
 │   │   │   │   └── ChangeFeverValuePatch.cs
-│   │   │   └── UI/           # 배틀 스크린 영상 재생 및 진행바 은폐
-│   │   │       ├── PnlBattleGameStartPatch.cs
-│   │   │       ├── ProgressBarPatch.cs
-│   │   │       └── StageBattleComponentPatch.cs
-│   │   ├── UI/               # UI 정보 변조 및 커스텀 가상 앨범
-│   │   │   ├── Common/       # 공용 메타데이터 추출 및 래핑
-│   │   │   │   ├── PnlMusicUtils.cs
-│   │   │   │   ├── PnlMusicUtils.Helpers.cs
-│   │   │   │   ├── PnlStagePatchHelper.cs
-│   │   │   │   ├── PnlStagePatchHelper.TextDebug.cs
-│   │   │   │   ├── Hwa/          # Hwa 리소스 및 오디오 동기화 제어 [NEW]
-│   │   │   │   │   ├── HwaResourceManager.cs
-│   │   │   │   │   ├── HwaSyncManager.cs
-│   │   │   │   │   ├── HwaMenuBgmController.cs
-│   │   │   │   │   ├── HwaChartDiagnostics.cs
-│   │   │   │   │   └── HwaManifestLoader.cs
-│   │   │   │   ├── Wrappers/    # Il2Cpp 데이터 강타입 래퍼 [NEW]
-│   │   │   │   │   ├── AlbumsInfoWrapper.cs
-│   │   │   │   │   ├── Il2CppWrapperBase.cs
-│   │   │   │   │   └── MusicInfoWrapper.cs
-│   │   │   │   ├── Reflection/  # 고성능 리플렉션 [NEW]
-│   │   │   │   │   └── ModReflection.cs
-│   │   │   │   ├── Diagnostics/ # 음악 정보 덤프 및 진단 [NEW]
-│   │   │   │   │   ├── PnlMusicUtils.Diagnostics.cs
-│   │   │   │   │   └── PnlMusicUtils.Log.cs
-│   │   │   │   └── Search/      # 곡 정보 정밀 통합 검색 [NEW]
-│   │   │   │       └── PnlStagePatchHelper.Search.cs
-│   │   │   ├── Stage/        # 곡 선택 화면 패치
-│   │   │   │   ├── Preparation/ # 준비 단계 변조
-│   │   │   │   │   └── PnlPreparationPatch.cs
-│   │   │   │   ├── Record/      # 기록 변조
-│   │   │   │   │   └── PnlRecordPatch.cs
-│   │   │   │   └── Selection/   # 곡 및 타이틀 선택 제어
-│   │   │   │       ├── PnlStagePatch.cs
-│   │   │   │       ├── LongSongNameControllerPatch.cs
-│   │   │   │       └── MusicButtonAreaTitlePatch.cs
-│   │   │   ├── Custom/       # 커스텀 태그 및 체력바 개조
-│   │   │   │   ├── Tags/        # 동적 가상 앨범/태그 이식
-│   │   │   │   │   ├── CustomTagPatch.cs
-│   │   │   │   │   ├── CustomTagPatch.AlbumPatches.cs
-│   │   │   │   │   └── CustomTagRegistry.cs
-│   │   │   │   └── HpMod/       # 배틀 체력바 스타일러
-│   │   │   │       ├── HywStageManager.cs
-│   │   │   │       └── HywTextStyler.cs
-│   │   │   └── Music/        # 스크롤 뷰 동적 로딩 및 정렬
-│   │   │       ├── FancyScrollViewPatch.cs
-│   │   │       ├── MusicButtonCellPatch.cs
-│   │   │       └── PnlMusicTagPatch.cs
-│   │   ├── Diagnostics/      # 글로벌 시퀀스 메서드 트레이스
+│   │   │   └── UI/           # 올 퍼펙트 배너, 폰트 캐싱, 오프셋, 렌더링
+│   │   │       ├── APModPatch.cs
+   │   │       ├── PnlBattleGameStartPatch.cs
+   │   │       ├── ProgressBarPatch.cs
+   │   │       └── StageBattleComponentPatch.cs
+│   │   ├── Common/           # Il2Cpp 래퍼, 리플렉션 헬퍼
+│   │   │   ├── AlbumsInfoWrapper.cs
+│   │   │   ├── Il2CppWrapperBase.cs
+│   │   │   ├── ModReflection.cs
+│   │   │   └── MusicInfoWrapper.cs
+│   │   ├── Database/         # 런타임 차트 및 세이브 데이터 관련 패치
+│   │   │   ├── Save/         # 세이브 가상 데이터 클렌징 (오염 방지)
+│   │   │   │   └── SaveDataManagerPatch.cs
+│   │   │   └── Stage/        # 인메모리 차트 수명 주기 제어 및 BMS 주입
+│   │   │       ├── DBStageInfoPatch.cs
+│   │   │       └── DBStageInfoExperimentChart*.cs
+│   │   ├── Diagnostics/      # 오프셋 훅, 트레이스, 헬스 체크, 진단
+│   │   │   ├── OffsetHookPatches.cs
+│   │   │   ├── PatchHealthCheck.cs
 │   │   │   └── UidMethodTracePatches.cs
-│   │   └── Scene/            # 씬 흐름 강제 제어
-│   │       ├── GameMusicScenePatch.cs
-│   │       └── SceneFlowPatch.cs
-│   ├── main.cs               # MelonLoader 진입점 (MelonMod)
-│   └── muse dash test.csproj # C# .NET 6.0 프로젝트 파일
+│   │   ├── Hwa/              # Hwa 리소스, 매니페스트, BGM 스왑 제어
+│   │   │   ├── HwaResourceManager.cs
+│   │   │   ├── HwaManifestLoader.cs
+│   │   │   └── HwaMenuBgmController.cs
+│   │   ├── UI/               # UI 정보 변조 및 커스텀 가상 앨범
+│   │   │   ├── Custom/       # 커스텀 태그 및 체력바/오버레이 개조
+│   │   │   │   ├── HpMod/    # 배틀 체력바 스타일러
+│   │   │   │   ├── InputOverlay*.cs # 키보드 입력 시각화 오버레이
+│   │   │   │   └── Tags/     # 동적 가상 앨범/태그 이식
+│   │   │   └── Music/        # 곡 셀 앨범아트, 핫스왑, 덤프
+│   │   │       ├── MusicButtonCellPatch.cs
+│   │   │       └── PnlMusicDiagnostics*.cs
+│   │   └── Scene/            # 씬 오브젝트 위치 덤프 및 트래킹
+│   │       └── SceneZzTransformTracker*.cs
+│   ├── MainMod.cs            # MelonLoader 진입점 (MelonMod)
+│   └── muse dash test.csproj # C# .NET 6.0 / Il2CppInterop 프로젝트 파일
 │
 ├── docs/                     # 목적별로 분류된 실험/분석 한글 문서 (→ docs/README.md 목차)
 │   ├── README.md             # 전체 문서 목차
