@@ -33,7 +33,8 @@ IL2CPP 네이티브 메모리 객체를 직접 다루면 게임 업데이트 때
 * **[Il2CppWrapperBase.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/Il2CppWrapperBase.cs)**: 모든 래퍼의 베이스 클래스로, 리플렉션 조회를 담당합니다.
 * **[ModReflection.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/ModReflection.cs)**: 래퍼가 사용하는 필드 검색 모듈입니다. 개발사(PeroPeroGames)가 변수명 앞에 `m_`을 붙이거나 컴파일 과정에서 백킹 필드(`_k__BackingField`)로 이름이 바뀌어도, 대소문자를 무시하고 찾아내어 조회 실패로 인한 오류를 방지합니다.
 * **[MusicInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/MusicInfoWrapper.cs) & [AlbumsInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/AlbumsInfoWrapper.cs)**: 각각 곡 정보(`MusicInfo`)와 앨범 정보(`AlbumsInfo`) 전용 래퍼입니다. `music` (에셋 식별자 키) 및 `musicName` (UI 전용 프로퍼티)의 동적 래핑을 지원합니다.
-* **[LocalALBUMInfo 로컬라이제이션 인터셉트 (v0.9.1)]**: 게임 엔진의 `MusicInfo.GetLocal(int language)` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(int index)` 호출을 훅하여 가상 곡 선택 시 커스텀 `LocalALBUMInfo(name, author)`를 반환합니다. 원본 `PnlStage.RefreshDiffUI` 단계부터 수동 덮어쓰기 없이 네이티브 UI 라벨이 스스로 커스텀 곡명을 그려내도록 완성되었습니다.
+* **[LocalALBUMInfo 로컬라이제이션 인터셉트 (v0.9.1)]**: 게임 엔진의 `MusicInfo.GetLocal(int language)` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(int index)` 호출을 훅하여 가상 곡 선택 시 커스텀 `LocalALBUMInfo(name, author)`를 반환합니다. 이로써 언어팩 경로가 원본 곡명을 되돌려 놓는 것을 차단합니다.
+  > **주의 — 수동 덮어쓰기는 아직 제거되지 않았습니다.** `PnlStage.RefreshDiffUI` Postfix의 `ApplyTagTitleForMusicInfo`가 여전히 라벨 텍스트를 직접 씁니다(성공 시 조기 반환). 즉 "네이티브 UI가 스스로 커스텀 곡명을 그린다"는 것은 **아직 검증되지 않은 상태**입니다. 실측 로그(`26-8-6_22-43-5.log`)에서도 가상 곡 선택 중 라벨이 원본 곡명(`单向地铁 Feat.karin`)을 보인 뒤 Postfix가 덮어쓰는 구간이 관측됩니다. 수동 경로를 제거하려면 먼저 그 경로를 끄고 라벨이 유지되는지 재측정해야 합니다.
 
 ---
 
@@ -95,12 +96,11 @@ InjectVirtualSong(
     "새로운 실험곡 3",       // 표시될 곡 제목
     "작곡가 이름",          // 아티스트 명
     "레벨 디자이너",         // 디자이너 명
-    "iyaiya_cover",       // 커버 아트 프리팹
-    "iyaiya_map",         // 노트 배치 JSON 리소스명
-    "iyaiya_music",       // 오디오 클립 리소스명
     3, 6,                 // 난이도 (이지, 하드 등)
     musicList             // 등록 리스트 컨텍스트
 );
 ```
+
+> **커버 · 음원 · 노트 JSON은 지정하지 않습니다.** 가상 곡은 `originalInfo`의 얇은 복제본이므로 `cover` / `music` / `noteJson` 에셋 키를 복제 원본에서 그대로 물려받아 기존 에셋을 재사용합니다. 새 에셋을 실제로 로딩하는 경로는 아직 구현돼 있지 않으므로, 임의의 리소스명을 넘겨도 반영되지 않습니다. 외부 에셋 로딩이 필요해지는 시점의 판단 기준은 [UID_INJECTION.md](../experiments/UID_INJECTION.md)를 참고하세요.
 
 이후 `build.bat`를 통해 빌드하면 게임의 "실험 모드" 태그 탭 아래에 새 곡이 동적으로 주입됩니다!

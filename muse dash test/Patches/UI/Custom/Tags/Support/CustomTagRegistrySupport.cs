@@ -97,7 +97,7 @@ namespace muse_dash_test
                         }
 
                         MelonLogger.Msg($"[CustomTagRegistry] === [{uid}] 주입 시도 === sourceUid={originalInfo.uid}, title={primaryName}, artist={primaryAuthor}, diff={primaryDiff1}/{primaryDiff2}");
-                        InjectVirtualSong(originalInfo, uid, primaryName, primaryAuthor, primaryLevelDesigner, "iyaiya_cover", "iyaiya_map", "iyaiya_music", primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
+                        InjectVirtualSong(originalInfo, uid, primaryName, primaryAuthor, primaryLevelDesigner, primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
                     }
                 }
 
@@ -249,12 +249,23 @@ namespace muse_dash_test
             return result;
         }
 
-        internal static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, string cover, string noteJson, string music, int diff1, int diff2, List<string> musicList)
+        /// <summary>
+        /// 난이도 3~5를 0으로 두는 간이 오버로드입니다.
+        /// </summary>
+        internal static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, int diff1, int diff2, List<string> musicList)
         {
-            InjectVirtualSong(originalInfo, uid, name, author, levelDesigner, cover, noteJson, music, diff1, diff2, 0, 0, 0, musicList);
+            InjectVirtualSong(originalInfo, uid, name, author, levelDesigner, diff1, diff2, 0, 0, 0, musicList);
         }
 
-        internal static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, string cover, string noteJson, string music, int diff1, int diff2, int diff3, int diff4, int diff5, List<string> musicList)
+        /// <summary>
+        /// 원본 곡을 얇게 복제해 가상 곡으로 등록합니다.
+        /// </summary>
+        /// <remarks>
+        /// 커버(cover) · 노트 JSON(noteJson) · 음원(music) 에셋 키는 지정하지 않습니다.
+        /// 복제 원본의 값을 그대로 물려받아 기존 에셋을 재사용하며, 새 에셋 로딩은 아직 구현돼 있지 않습니다.
+        /// (과거에는 이 3개를 파라미터로 받았으나 실제로 사용되지 않아 제거했습니다.)
+        /// </remarks>
+        internal static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, int diff1, int diff2, int diff3, int diff4, int diff5, List<string> musicList)
         {
             try
             {
