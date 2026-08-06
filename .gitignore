@@ -27,7 +27,6 @@ Decompiled/
 Decompiled_Firstpass/
 Decompiled_PeroTools2/
 
-
-
-
-
+# Zip archives
+*.zip
+docs.zip
