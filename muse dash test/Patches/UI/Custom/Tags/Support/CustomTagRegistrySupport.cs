@@ -315,6 +315,7 @@ namespace muse_dash_test
             var wrapper = new MusicInfoWrapper(clonedInfo);
             wrapper.uid = uid;
             wrapper.name = name;
+            wrapper.music = name;
             wrapper.musicName = name;
             wrapper.author = author;
             wrapper.levelDesigner = levelDesigner;
@@ -324,6 +325,7 @@ namespace muse_dash_test
             wrapper.difficulty4 = diff4;
             wrapper.difficulty5 = diff5;
 
+            wrapper.AddMaskValue("music", (Il2CppSystem.String)name);
             wrapper.AddMaskValue("musicName", (Il2CppSystem.String)name);
             wrapper.AddMaskValue("music_name", (Il2CppSystem.String)name);
 

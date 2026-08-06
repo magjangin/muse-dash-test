@@ -34,6 +34,15 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// 곡의 음원/에셋 식별자 명칭 (예: "danxiang_ditie_music")
+        /// </summary>
+        public string music
+        {
+            get => Get<string>("music");
+            set => Set("music", value);
+        }
+
+        /// <summary>
         /// UI 렌더링에 사용되는 곡 제목 프로퍼티 (언어팩 렌더링 키 참조)
         /// </summary>
         public string musicName
