@@ -28,6 +28,6 @@
    - `Prefix`에서 파라미터(`ref` 포함) 수정 및 `__result` 반환 지점 분석.
    - `Postfix`에서 객체의 `__instance` 필드 변이(State Mutation) 분석.
 2. **시간-틱 연산 수식 역산**:
-   - `time = tick * 240.0 / bpm` 및 노트별 `dt` (비행 시간), `showTick` 연산 흐름 복원.
+   - `time = tick * 240.0 / bpm` 및 누적 델타 틱 `time = time + (deltaTick * 240.0 / bpm)`, 노트별 `dt` (비행 시간), `showTick` 연산 흐름 복원.
 3. **Il2Cpp System Collection 래핑 역분석**:
    - `Il2CppSystem.Collections.Generic.List<MusicData>` 처리 방식 및 오브젝트 리플렉션 필드 역추적.

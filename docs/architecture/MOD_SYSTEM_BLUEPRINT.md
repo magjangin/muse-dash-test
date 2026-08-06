@@ -63,7 +63,12 @@ graph TD
 ## 3. 핵심 수학 및 시간 계산 공식 (Core Formulas)
 
 ### ① BMS 틱-시간 변환 공식 (BMS Timing Formula)
-BMS 파일에서 추출한 `deltaTick`을 누적하여 실제 인게임 오프셋 시간(`time`)을 계산하는 표준 물리 공식입니다.
+BMS 파일에서 추출한 틱(tick) 및 누적 `deltaTick`을 이용해 실제 인게임 오프셋 시간(`time`)을 계산하는 표준 물리 공식입니다.
+
+* **기본 틱 변환 공식**:
+$$time = \frac{tick \times 240}{BPM}$$
+
+* **누적 델타 틱 변환 공식**:
 $$time = time + \left(deltaTick \times \frac{240}{BPM}\right)$$
 
 * **BPM 변경 처리 (BPM Change Accumulation)**:
