@@ -6,6 +6,7 @@ using Il2CppAssets.Scripts.Database.DataClass;
 using Il2CppAssets.Scripts.PeroTools.Commons;
 using Il2CppAssets.Scripts.PeroTools.Managers;
 using System;
+using System.Collections.Generic;
 
 namespace muse_dash_test
 {
@@ -105,24 +106,30 @@ namespace muse_dash_test
 
         /// <summary>
         /// DBConfigLocalALBUM.GetLocalAlbumInfoByIndex 쿼리 시 가상 곡의 LocalALBUMInfo를 즉석 응답합니다.
-        /// 단, 가상 곡 자신이 참조하는 앨범 인덱스에 대한 조회만 가로챕니다.
+        /// 현재는 index를 검사하지 않습니다(아래 TODO 참고).
         /// </summary>
         [HarmonyPatch(typeof(DBConfigLocalALBUM), nameof(DBConfigLocalALBUM.GetLocalAlbumInfoByIndex))]
         internal class DBConfigLocalALBUM_GetLocalAlbumInfoByIndex_Patch
         {
-            /// <summary>가상 곡이 참조할 수 있는 앨범 인덱스 후보 멤버들. 앞쪽이 우선 순위가 높습니다.</summary>
+            /// <summary>가상 곡이 참조할 수 있는 앨범 인덱스 후보 멤버들.</summary>
             private static readonly string[] AlbumIndexMembers = { "albumJsonIndex", "albumIndex" };
 
-            private static bool _loggedIndexResolveFailure;
+            private static bool _loggedIndexDiagnostics;
 
             private static bool Prefix(DBConfigLocalALBUM __instance, int index, ref LocalALBUMInfo __result)
             {
                 string currentUid = CustomPlaySession.Current.SelectedMusicUid;
                 if (!CustomContentIds.IsVirtualSong(currentUid)) return true;
 
-                // 인덱스를 검사하지 않으면 가상 곡이 선택돼 있는 동안 다른 앨범의 조회까지 전부
-                // 커스텀 이름으로 응답해 버립니다(곡 목록 렌더링 등). 소유 인덱스만 가로챕니다.
-                if (!IsIndexOwnedByVirtualSong(currentUid, index)) return true;
+                // TODO(over-capture): 인덱스를 검사하지 않으므로, 가상 곡이 선택돼 있는 동안에는
+                // 다른 앨범을 대상으로 한 조회까지 커스텀 이름으로 응답합니다(곡 목록 렌더링 등).
+                //
+                // 인덱스 게이트를 한 번 시도했다가 되돌렸습니다. 가상 곡의 albumJsonIndex/albumIndex와
+                // 실제 조회 인덱스가 일치할 것이라 보고 게이트를 걸었으나, 실측 로그에서 조회가 전부
+                // 차단됐습니다(26-8-6_23-8-30.log: 종전에 히트하던 호출 지점 2곳에서 히트 소멸).
+                // 즉 게임이 넘기는 index는 곡의 albumJsonIndex/albumIndex가 아닌 다른 경로에서 옵니다.
+                // 아래 진단 로그로 실제 index와 후보값의 관계를 확정한 뒤 게이트를 다시 겁니다.
+                LogIndexDiagnostics(currentUid, index);
 
                 if (MainMod.TryGetHwaPrimarySong(currentUid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
                 {
@@ -138,44 +145,35 @@ namespace muse_dash_test
             }
 
             /// <summary>
-            /// 조회된 index가 해당 가상 곡이 실제로 참조하는 앨범 인덱스인지 판정합니다.
+            /// 게임이 넘긴 index와, 가상 곡이 들고 있는 앨범 인덱스 후보값들을 1회 대조 출력합니다.
+            /// over-capture를 막을 게이트 조건을 확정하기 위한 진단용이며 동작에는 영향을 주지 않습니다.
             /// </summary>
-            /// <remarks>
-            /// 가상 곡은 원본 곡의 얇은 복제본이고, MusicInfo의 albumIndex/albumJsonIndex는 인터롭 프록시에서
-            /// getter 전용이라 주입이 불가능합니다. 따라서 이 값들은 복제 원본의 인덱스를 그대로 물려받습니다.
-            /// 게임도 같은 값으로 조회하므로 이 대조가 성립합니다.
-            /// 어떤 후보도 읽어내지 못한 경우에만(게임 업데이트로 멤버명이 바뀐 상황) 종전의 관대한 동작으로
-            /// 폴백하되, 그 사실을 1회 경고로 남깁니다.
-            /// </remarks>
-            private static bool IsIndexOwnedByVirtualSong(string uid, int index)
+            private static void LogIndexDiagnostics(string uid, int index)
             {
-                var info = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
+                if (_loggedIndexDiagnostics) return;
+                _loggedIndexDiagnostics = true;
 
-                bool resolvedAny = false;
-                if (info != null)
+                var info = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
+                var parts = new List<string>();
+
+                foreach (var member in AlbumIndexMembers)
+                {
+                    object raw = info != null ? ModReflection.GetValue(info, member, silent: true) : null;
+                    parts.Add($"{member}={(raw?.ToString() ?? "(읽기 실패)")}");
+                }
+
+                var exInfo = info != null ? ModReflection.GetValue(info, "m_MusicExInfo", silent: true) : null;
+                if (exInfo != null)
                 {
                     foreach (var member in AlbumIndexMembers)
                     {
-                        if (ModReflection.GetValue(info, member, silent: true) is int candidate)
-                        {
-                            resolvedAny = true;
-                            if (candidate == index) return true;
-                        }
+                        object raw = ModReflection.GetValue(exInfo, member, silent: true);
+                        parts.Add($"ExInfo.{member}={(raw?.ToString() ?? "(읽기 실패)")}");
                     }
                 }
 
-                if (!resolvedAny)
-                {
-                    if (!_loggedIndexResolveFailure)
-                    {
-                        _loggedIndexResolveFailure = true;
-                        MelonLogger.Warning($"[DBConfigLocalALBUM Patch] '{uid}'의 앨범 인덱스를 읽지 못해 인덱스 검사 없이 응답합니다. " +
-                                            $"(이 경고는 1회만 표시됩니다. 게임 업데이트로 albumJsonIndex/albumIndex 멤버명이 바뀌었을 수 있습니다.)");
-                    }
-                    return true;
-                }
-
-                return false;
+                MelonLogger.Msg($"[DBConfigLocalALBUM 진단] 게임이 넘긴 index={index} vs 가상 곡 후보값 [{string.Join(", ", parts)}] " +
+                                $"(uid={uid}, 앨범 인덱스 상수 TagUid={CustomTagRegistry.TagUid}). 이 진단은 1회만 표시됩니다.");
             }
         }
     }
