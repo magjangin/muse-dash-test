@@ -27,7 +27,7 @@ namespace Il2CppGameLogic
 ## 🔍 핵심 메서드 바디 복원 (Reconstructed Method Bodies)
 
 ### 1. `Init()`
-**연관 패치**: [GameMusicSceneInitPatch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Scene/GameMusicSceneInitPatch.cs)
+**연관 패치**: [GameMusicSceneInitPatch](../../muse%20dash%20test/Patches/Scene/GameMusicSceneInitPatch.cs)
 **역추적 설명**: 인게임 진입 시 현재 스테이지의 기본 배경 씬(Main Scene Prefab)과 보스 씬 슬롯 인스턴스들을 생성하고 초기화합니다.
 
 ```csharp
@@ -55,7 +55,7 @@ public void Init()
 ---
 
 ### 2. `PreLoadEnemy()`
-**연관 패치**: [GameMusicScenePreLoadEnemyPatch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Scene/GameMusicScenePreLoadEnemyPatch.cs)
+**연관 패치**: [GameMusicScenePreLoadEnemyPatch](../../muse%20dash%20test/Patches/Scene/GameMusicScenePreLoadEnemyPatch.cs)
 **역추적 설명**: 차트의 `MusicData` 리스트에 포함된 잡몹 및 보스 몬스터, 배경 장애물의 Spine 애니메이션/스프라이트를 비동기 또는 프레임 분할로 사전 적재합니다.
 
 ```csharp
@@ -83,7 +83,7 @@ public void PreLoadEnemy()
 ---
 
 ### 3. `Run()`
-**연관 패치**: [GameMusicScene_Run_Patch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Scene/GameMusicSceneRunPatch.cs#L5-L121)
+**연관 패치**: [GameMusicScene_Run_Patch](../../muse%20dash%20test/Patches/Scene/GameMusicSceneRunPatch.cs#L5-L121)
 **역추적 설명**: 로딩이 완료된 후 배경 애니메이션 트랙과 스크롤링 루틴을 활성화하는 실제 스테이지 스타트 실행 메서드입니다.
 
 ```csharp

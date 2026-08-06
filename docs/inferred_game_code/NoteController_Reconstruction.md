@@ -95,7 +95,7 @@ public void OnMiss()
 ---
 
 ### 3. `ChangeHealthValue.OnHpDeduct(int damage)`
-**연관 패치**: [ChangeHealthValue_OnHpDeduct_Patch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs#L78-L98)
+**연관 패치**: [ChangeHealthValue_OnHpDeduct_Patch](../../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs#L78-L98)
 **역추적 설명**: 체력 차감 발생 시 플레이어 HP 게이지 슬라이더와 체력 텍스트 UI를 업데이트합니다.
 
 ```csharp

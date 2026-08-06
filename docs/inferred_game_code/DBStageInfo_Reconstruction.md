@@ -28,7 +28,7 @@ namespace Il2CppAssets.Scripts.Database
 ## 🔍 핵심 메서드 바디 복원 (Reconstructed Method Bodies)
 
 ### 1. `SetRuntimeMusicData()`
-**연관 패치**: [DBStageInfo_SetRuntimeMusicData_Patch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Stage/DBStageInfoPatch.cs#L8-L120)
+**연관 패치**: [DBStageInfo_SetRuntimeMusicData_Patch](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoPatch.cs#L8-L120)
 **역추적 설명**: 선택된 곡 UID 및 난이도 번호(Easy: 1, Hard: 2, Master: 3 등)에 따라 내장 텍스트/JSON 맵(bms 파일데이터)을 로드하여 `MusicData` 객체 리스트인 `musicList`를 구성합니다.
 
 ```csharp

@@ -9,7 +9,7 @@
 - 목적: 런타임에 커스텀 곡 UID(예: `1999-0`)를 데이터베이스에 등록하고 UI에 선택되도록 처리하는 절차를 정리합니다.
 
 **전제조건**
-- `CustomTagPatch.cs` 같은 파일로 앨범/태그를 먼저 주입해야 합니다. (참조: [muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs](muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs))
+- `CustomTagPatch.cs` 같은 파일로 앨범/태그를 먼저 주입해야 합니다. (참조: [muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs))
 - Il2Cpp 타입(예: `Il2CppAssets.Scripts.Database.MusicInfo`, `GlobalDataBase.dbMusic`, `GlobalDataBase.dbMusicTag`)에 접근 가능한 상태여야 합니다.
 
 **핵심 개념 요약**

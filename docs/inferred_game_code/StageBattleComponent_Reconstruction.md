@@ -29,7 +29,7 @@ namespace Il2CppFormulaBase
 ## 🔍 핵심 메서드 바디 복원 (Reconstructed Method Bodies)
 
 ### 1. `LoadMusicData()`
-**연관 패치**: [StageBattleComponent_LoadMusicData_Patch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L12-L29)
+**연관 패치**: [StageBattleComponent_LoadMusicData_Patch](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L12-L29)
 **역추적 설명**: `DBStageInfo`에서 구성된 `MusicData` 리스트를 전달받아 인게임 틱(Tick) 및 시간 단위로 정렬하고, 각 노트 오브젝트(`noteData`, `configData`)의 프리팹 프리로드 큐를 구축합니다.
 
 ```csharp
@@ -65,7 +65,7 @@ public void LoadMusicData()
 ---
 
 ### 2. `InitData()`
-**연관 패치**: [StageBattleComponent_InitData_Patch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L178-L190)
+**연관 패치**: [StageBattleComponent_InitData_Patch](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L178-L190)
 **역추적 설명**: 곡 UID 정보를 받아 스테이지 초기 세션 변수(점수, 판정 카운트, 피버 게이지, 체력)를 초기화합니다.
 
 ```csharp
@@ -87,7 +87,7 @@ public void InitData()
 ---
 
 ### 3. `Load()`
-**연관 패치**: [StageBattleComponent_Load_Patch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L192-L212)
+**연관 패치**: [StageBattleComponent_Load_Patch](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L192-L212)
 **역추적 설명**: 리소스 적재 완료 후 배틀 미디어, 사운드트랙, 인게임 판정 라인 UI 컴포넌트를 준비시키는 메서드입니다.
 
 ```csharp
@@ -105,7 +105,7 @@ public void Load()
 ---
 
 ### 4. `Pause(bool pauseCoroutine)` & `Resume(bool isExit)`
-**연관 패치**: [StageBattleComponent_Pause_Patch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L214-L232)
+**연관 패치**: [StageBattleComponent_Pause_Patch](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L214-L232)
 **역추적 설명**: 인게임 시계열 코루틴 및 오디오 트랙 재생 상태를 일시정지하거나 복구합니다.
 
 ```csharp
@@ -140,7 +140,7 @@ public void Resume(bool isExit)
 ---
 
 ### 5. `End()`, `Exit()`, `Release()`, `GameRestart()`
-**연관 패치**: [StageBattleComponent Exit/Release Patches](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L234-L280)
+**연관 패치**: [StageBattleComponent Exit/Release Patches](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs#L234-L280)
 **역추적 설명**: 스테이지 클리어/사망/강제 종료 시 호출되며 세션 정리, 미디어 정지, 결과 창 전환 및 승리 흐름 가드(`VictoryFlowGuard.MarkCompleted()`)를 실행시킵니다.
 
 ```csharp

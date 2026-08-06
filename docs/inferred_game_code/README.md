@@ -1,6 +1,6 @@
 # Muse Dash IL2CPP Inferred Game Code Method Body Reconstruction
 
-이 디렉토리는 *Muse Dash* (IL2CPP / Mono 하이브리드 어셈블리)의 주요 원본 게임 클래스 및 메서드 바디(Method Body)를 모드 패치([muse dash test/Patches](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches)), 리플렉션 훅, BMS 타이밍 연산식, 하모니 패치(Prefix/Postfix/Transpiler) 및 IL2CPP Interop 스텁 분석을 통해 **역추적 및 재구성(Reconstruction)한 C# pseudo-code 및 실행 흐름 문서**입니다.
+이 디렉토리는 *Muse Dash* (IL2CPP / Mono 하이브리드 어셈블리)의 주요 원본 게임 클래스 및 메서드 바디(Method Body)를 모드 패치([muse dash test/Patches](../../muse%20dash%20test/Patches)), 리플렉션 훅, BMS 타이밍 연산식, 하모니 패치(Prefix/Postfix/Transpiler) 및 IL2CPP Interop 스텁 분석을 통해 **역추적 및 재구성(Reconstruction)한 C# pseudo-code 및 실행 흐름 문서**입니다.
 
 ## 📌 왜 메서드 바디 재구성이 필요한가?
 `Decompiled/` 폴더 내 IL2CPP Interop C# 파일은 Cpp2IL / MelonLoader Interop 생성기로 만들어진 더미 스텁 어셈블리입니다. 따라서 주요 실행 메서드는 내부 바디가 비어 있거나 `throw new NullReferenceException()`으로 처리되어 있습니다.

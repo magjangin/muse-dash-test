@@ -30,7 +30,7 @@ namespace Il2CppAssets.Scripts.PeroTools.Nice.Datas
 ## 🔍 핵심 메서드 바디 복원 (Reconstructed Method Bodies)
 
 ### 1. `Save()`
-**연관 패치**: [SaveDataManagerPatch](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs#L15-L218)
+**연관 패치**: [SaveDataManagerPatch](../../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs#L15-L218)
 **역추적 설명**: 인메모리의 `datas` 컬렉션(Account, Task, IAP, Achievement)을 순회하며 JSON/AES 디스크 바이트 배열로 직렬화(Serialize)하여 로컬 `.sav` 파일에 기록합니다.
 
 ```csharp

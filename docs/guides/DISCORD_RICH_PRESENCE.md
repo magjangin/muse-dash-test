@@ -55,13 +55,13 @@ Il2Cpp.DiscordManager.SetUpdateActivity(bool isPlaying, string levelInfo)
 
 ## 4. 소스 코드 참조 연동 구조
 
-- **[DiscordManagerDebugPatch.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Diagnostics/DiscordManagerDebugPatch.cs)**:
+- **[DiscordManagerDebugPatch.cs](../../muse%20dash%20test/Patches/Diagnostics/DiscordManagerDebugPatch.cs)**:
   - `DiscordManager.SetUpdateActivity` Prefix/Postfix 훅 및 패널 상태 가드 구현
-- **[DiscordPresenceManager.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Integration/DiscordPresenceManager.cs)**:
+- **[DiscordPresenceManager.cs](../../muse%20dash%20test/Integration/DiscordPresenceManager.cs)**:
   - UID 기반 곡 제목/아티스트 정보 해독 헬퍼 (`ResolveSongDetails`)
-- **[CustomPlaySession.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Core/CustomPlaySession.cs)**:
+- **[CustomPlaySession.cs](../../muse%20dash%20test/Core/CustomPlaySession.cs)**:
   - 곡 탐색 및 선택 이벤트 시 `DiscordManager.instance.SetUpdateActivity` 즉시 유도 호출
-- **[HwaMenuBgmController.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs)**:
+- **[HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs)**:
   - 곡 선택 패널 이탈(`StopCustomMenuBgm`) 시 원본 `DiscordManager.SetUpdateActivity(false, "In Menu")` 직접 호출로 빠른 갱신 보장
 
 ---

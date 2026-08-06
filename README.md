@@ -1,6 +1,8 @@
 # muse-dash-custom-chart 🎵
 
-> **뮤즈대시(Muse Dash)에서 네이티브 훅(Native Hook) 없이도 실시간 커스텀 차트 및 보스 연출을 지원하는 최초의 정식 커스텀 차트 모드(첫 배포 버전)입니다.**
+> **뮤즈대시(Muse Dash)를 네이티브 훅(Native Detour) 없이 관리형 Harmony 계층만으로 다뤄, 실시간 커스텀 차트와 보스 연출을 구현한 최초의 모드입니다. (첫 배포 버전)**
+>
+> "최초"는 **이 고수준(managed) 접근 방식으로 구현한 것이 처음**이라는 뜻입니다. 커스텀 차트 모드 자체의 선후를 주장하는 것이 아닙니다.
 
 ---
 
@@ -15,7 +17,7 @@
 
 * **Custom Tag & LocalALBUMInfo Native Resolution (커스텀 태그 및 로컬라이제이션 네이티브 동적 결합) [v0.9.1]** ✅
   * `MusicInfo.GetLocal(int language)` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(int index)` 훅을 연동하여 게임 엔진 본연의 로컬라이즈 DB 조회 시 커스텀 곡 제목과 아티스트명을 반환하도록 확장했습니다.
-  * 원본 `PnlStage.RefreshDiffUI` 실행 시점(Prefix)부터 수동 덮어쓰기 없이도 UI 상단 곡 제목(`musicNameTitle`)과 아티스트(`artistNameTitle`)가 스스로 커스텀 곡 이름으로 렌더링됩니다.
+  * 이로써 언어팩 조회 경로가 원본 곡명을 되돌려 놓는 것을 차단합니다. 다만 `PnlStage.RefreshDiffUI` Postfix의 수동 덮어쓰기(`ApplyTagTitleForMusicInfo`) 경로는 **아직 제거되지 않았습니다** — UI 상단 곡 제목(`musicNameTitle`)/아티스트(`artistNameTitle`)가 훅만으로 스스로 렌더링되는지는 미검증 상태입니다. (→ [CAST_AND_CUSTOM_TAG_GUIDE.md](docs/architecture/CAST_AND_CUSTOM_TAG_GUIDE.md))
   * `MusicInfoWrapper`에 `music` 필드 래퍼 프로퍼티를 추가하고 에셋 키 참조를 차단했습니다.
 
 * **UI Metadata Manipulation (곡 메타데이터 실시간 조작)**
@@ -50,7 +52,7 @@
 | 커스텀 태그에 곡 바인딩 | ✅ 완료 |
 | `m_MaxAlbumUid` 성능 최적화 패치 | ✅ 완료 |
 | **`MusicInfo.GetLocal` & `DBConfigLocalALBUM` 로컬라이제이션 훅 (`LocalALBUMInfo` 반환)** | ✅ 완료 (v0.9.1) |
-| **`PnlStage.RefreshDiffUI` 원본 시점 네이티브 곡 제목/아티스트 스스로 렌더링** | ✅ 완료 (v0.9.1) |
+| **`PnlStage.RefreshDiffUI` 원본 시점 곡 제목/아티스트 렌더링** | 🟡 부분 완료 (v0.9.1) — Postfix 수동 덮어쓰기 병행, 훅 단독 렌더링은 미검증 |
 | 곡 제목 실시간 변조 (`PnlStage`) | ✅ 완료 |
 | 아티스트명 실시간 변조 (`PnlStage`) | ✅ 완료 |
 | 준비 화면 텍스트 보강 변조 (`PnlPreparation`) | ✅ 완료 |
@@ -96,20 +98,27 @@
 
 ```text
 ├── muse dash test/           # C# 모드 프로젝트 폴더
-│   ├── Bms/                  # BMS 파서, 어휘 분석기, WAV/노트 매처
-│   ├── Core/                 # 바인딩, 예외 격리, 플레이 세션, 레코드 저장소
-│   ├── Integration/          # Discord RPC 연동 모듈
+│   ├── Bms/                  # BMS 파서/렉서, WAV 코드 해석, 노트 매칭, 보스 스왑 플래너
+│   ├── Core/                 # 게임 바인딩, 예외 격리, 플레이 세션, 기록 저장소, 즐겨찾기 세이브
+│   ├── Integration/          # Discord RPC 연동 및 실시간 리소스 스와퍼
+│   │   ├── DiscordPresenceManager.cs
+│   │   ├── DiscordRpc.cs
+│   │   └── RealTimeSwapper.cs
 │   ├── Patches/              # Harmony 런타임 패치 클래스들
 │   │   ├── Battle/           # 인게임 배틀 제어 및 연출
 │   │   │   ├── Mechanics/    # 오토플레이, 피버 차단, 보스 런타임 스왑
 │   │   │   │   ├── AutoPlayPatch.cs
 │   │   │   │   ├── BossPatch.cs
 │   │   │   │   └── ChangeFeverValuePatch.cs
-│   │   │   └── UI/           # 올 퍼펙트 배너, 폰트 캐싱, 오프셋, 렌더링
+│   │   │   └── UI/           # 올 퍼펙트 배너, 폰트 캐싱, BGA/미디어, 진행바
 │   │   │       ├── APModPatch.cs
-   │   │       ├── PnlBattleGameStartPatch.cs
-   │   │       ├── ProgressBarPatch.cs
-   │   │       └── StageBattleComponentPatch.cs
+│   │   │       ├── AllPerfectSound.cs
+│   │   │       ├── ExperimentHitPointInstaller.cs
+│   │   │       ├── HwaBattleMediaController*.cs
+│   │   │       ├── PnlBattleGameStartPatch.cs
+│   │   │       ├── PnlVictoryLoggingPatch.cs
+│   │   │       ├── ProgressBarPatch.cs
+│   │   │       └── StageBattleComponentPatch.cs
 │   │   ├── Common/           # Il2Cpp 래퍼, 리플렉션 헬퍼
 │   │   │   ├── AlbumsInfoWrapper.cs
 │   │   │   ├── Il2CppWrapperBase.cs
@@ -118,27 +127,62 @@
 │   │   ├── Database/         # 런타임 차트 및 세이브 데이터 관련 패치
 │   │   │   ├── Save/         # 세이브 가상 데이터 클렌징 (오염 방지)
 │   │   │   │   └── SaveDataManagerPatch.cs
+│   │   │   ├── Skill/        # 스킬 DB 패치
+│   │   │   │   └── DBSkillPatch.cs
 │   │   │   └── Stage/        # 인메모리 차트 수명 주기 제어 및 BMS 주입
 │   │   │       ├── DBStageInfoPatch.cs
 │   │   │       └── DBStageInfoExperimentChart*.cs
-│   │   ├── Diagnostics/      # 오프셋 훅, 트레이스, 헬스 체크, 진단
+│   │   ├── Diagnostics/      # 판정 오프셋/딜레이 추적, UID 트레이스, 헬스 체크
+│   │   │   ├── CollabEndTimeDumpPatch.cs
+│   │   │   ├── DiscordManagerDebugPatch.cs
+│   │   │   ├── HwaChartDiagnostics.cs
 │   │   │   ├── OffsetHookPatches.cs
 │   │   │   ├── PatchHealthCheck.cs
 │   │   │   └── UidMethodTracePatches.cs
-│   │   ├── Hwa/              # Hwa 리소스, 매니페스트, BGM 스왑 제어
-│   │   │   ├── HwaResourceManager.cs
+│   │   ├── Fav/              # 커스텀 곡 즐겨찾기 관리
+│   │   │   └── FavManager.cs
+│   │   ├── Hwa/              # Hwa 리소스, 매니페스트, BGM 스왑, 동기화
+│   │   │   ├── HwaManifest.cs
 │   │   │   ├── HwaManifestLoader.cs
-│   │   │   └── HwaMenuBgmController.cs
-│   │   ├── UI/               # UI 정보 변조 및 커스텀 가상 앨범
-│   │   │   ├── Custom/       # 커스텀 태그 및 체력바/오버레이 개조
-│   │   │   │   ├── HpMod/    # 배틀 체력바 스타일러
-│   │   │   │   ├── InputOverlay*.cs # 키보드 입력 시각화 오버레이
-│   │   │   │   └── Tags/     # 동적 가상 앨범/태그 이식
-│   │   │   └── Music/        # 곡 셀 앨범아트, 핫스왑, 덤프
-│   │   │       ├── MusicButtonCellPatch.cs
-│   │   │       └── PnlMusicDiagnostics*.cs
-│   │   └── Scene/            # 씬 오브젝트 위치 덤프 및 트래킹
-│   │       └── SceneZzTransformTracker*.cs
+│   │   │   ├── HwaMenuBgmController.cs
+│   │   │   ├── HwaResourceManager*.cs
+│   │   │   └── HwaSyncManager.cs
+│   │   ├── Sandbox/          # 오프라인 샌드박스 (DLC 잠금 해제 및 검증 우회 토글)
+│   │   │   └── OfflineCustomSandbox.cs
+│   │   ├── Scene/            # 씬 전환 흐름 제어, 배틀 씬 초기화, 오브젝트 위치 트래킹
+│   │   │   ├── GameMusicScene*.cs
+│   │   │   ├── SceneFlowPatch.cs
+│   │   │   └── SceneZzTransformTracker*.cs
+│   │   └── UI/               # UI 정보 변조 및 커스텀 가상 앨범
+│   │       ├── Custom/       # 커스텀 태그, 체력바, 입력 오버레이, 판정바
+│   │       │   ├── HpMod/    # 배틀 체력바 스타일러
+│   │       │   ├── Tags/     # 동적 가상 앨범/태그 이식 (+ Support/)
+│   │       │   ├── InputOverlay*.cs # 키보드 입력 시각화 오버레이
+│   │       │   └── JudgmentBar.cs
+│   │       ├── Menu/         # 홈 화면 진단, 메뉴 BGM 정지
+│   │       ├── Music/        # 곡 셀 앨범아트, 태그, 핫스왑, 덤프
+│   │       │   ├── MusicButtonCellPatch.cs
+│   │       │   ├── MusicStageCellPatch.cs
+│   │       │   ├── PnlMusicOverride.cs
+│   │       │   ├── PnlMusicTagPatch.cs
+│   │       │   └── PnlMusicDiagnostics*.cs
+│   │       ├── Pnl/          # PnlStage 텍스트 탐색 헬퍼, 곡명 텍스트 대치
+│   │       │   ├── PnlStagePatchHelper*.cs
+│   │       │   └── SetSelectedMusicNameTxtPatch.cs
+│   │       └── Stage/        # 곡 선택/준비 화면, 기록 카드, 포스트카드, 랭크
+│   │           ├── CustomRecordUiPatchHelper.cs
+│   │           ├── PnlPreparationPatch.cs
+│   │           ├── PnlRankHookPatch.cs
+│   │           ├── PnlRecordPatch.cs
+│   │           ├── PnlReportCardPatch.cs
+│   │           ├── PnlStagePatch.cs
+│   │           └── RankCellHookPatch.cs
+│   ├── Spine/                # Spine 커스텀 스킨 주입 및 스킨명 프로브
+│   │   ├── CustomSkinInjector.cs
+│   │   ├── Patch_Inject_BlackGirlBattle.cs
+│   │   └── Patch_SkinNameProbe.cs
+│   ├── Properties/           # AssemblyInfo (MelonInfo/MelonGame 특성)
+│   ├── Resources/            # DLL 내장 리소스 (tag_icon.png)
 │   ├── MainMod.cs            # MelonLoader 진입점 (MelonMod)
 │   └── muse dash test.csproj # C# .NET 6.0 / Il2CppInterop 프로젝트 파일
 │

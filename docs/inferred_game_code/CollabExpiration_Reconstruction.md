@@ -90,4 +90,4 @@ DBConfigDlcUIExtension.Deserialize(json)
 
 ## 8. 참고: 관련 진단 패치
 
-- [CollabEndTimeDumpPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Diagnostics/CollabEndTimeDumpPatch.cs) — `DBConfigDlcUIExtension.Deserialize` Postfix에서 위 5번 표를 그대로 로그로 덤프함(이름 매칭 포함, `AlbumJsonIndexDefine` 전체 역조회 포함). 현재 프로젝트에 남아있는 유일한 진단 패치.
+- [CollabEndTimeDumpPatch.cs](../../muse%20dash%20test/Patches/Diagnostics/CollabEndTimeDumpPatch.cs) — `DBConfigDlcUIExtension.Deserialize` Postfix에서 위 5번 표를 그대로 로그로 덤프함(이름 매칭 포함, `AlbumJsonIndexDefine` 전체 역조회 포함). 현재 프로젝트에 남아있는 유일한 진단 패치.
