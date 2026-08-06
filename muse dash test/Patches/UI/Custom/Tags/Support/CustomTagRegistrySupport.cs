@@ -315,6 +315,7 @@ namespace muse_dash_test
             var wrapper = new MusicInfoWrapper(clonedInfo);
             wrapper.uid = uid;
             wrapper.name = name;
+            wrapper.musicName = name;
             wrapper.author = author;
             wrapper.levelDesigner = levelDesigner;
             wrapper.difficulty1 = diff1;
@@ -322,6 +323,9 @@ namespace muse_dash_test
             wrapper.difficulty3 = diff3;
             wrapper.difficulty4 = diff4;
             wrapper.difficulty5 = diff5;
+
+            wrapper.AddMaskValue("musicName", (Il2CppSystem.String)name);
+            wrapper.AddMaskValue("music_name", (Il2CppSystem.String)name);
 
             ModReflection.SetValue(clonedInfo, "callBackDifficulty1", diff1, silent: true);
             ModReflection.SetValue(clonedInfo, "callBackDifficulty2", diff2, silent: true);

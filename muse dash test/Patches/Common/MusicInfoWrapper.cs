@@ -34,6 +34,15 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// UI 렌더링에 사용되는 곡 제목 프로퍼티 (언어팩 렌더링 키 참조)
+        /// </summary>
+        public string musicName
+        {
+            get => Get<string>("musicName");
+            set => Set("musicName", value);
+        }
+
+        /// <summary>
         /// 곡의 작곡가 / 아티스트 이름
         /// </summary>
         public string author
