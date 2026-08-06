@@ -28,7 +28,7 @@ graph TD
 > 이 절의 개념을 비유로 보려면 → [통역사](../getting-started/ANALOGIES.md#21-유니버설-래퍼--통역사-) · [잘 되는 것 복사](../getting-started/ANALOGIES.md#22-얇은-복제--잘-되는-것을-복사한-뒤-이름표만-교체-) · [가격표 떼기](../getting-started/ANALOGIES.md#23-구매-정보-정리--복사된-가격표-떼기-)
 
 ### 2.1 유니버설 래퍼 (Universal Wrapper)
-IL2CPP 네이티브 메모리 객체를 직접 다루면 게임 업데이트 때마다 필드 구조가 바뀌어 매번 코드를 고쳐야 합니다. 래퍼 계층(`Il2CppWrapperBase`)을 두면 모더는 C# 강타입 프로퍼티로 접근하고, 래퍼가 리플렉션으로 네이티브 값을 읽고 씁니다.
+IL2CPP Interop 객체에 직접 바인딩하여 다루면 게임 업데이트 때마다 필드 구조가 바뀌어 매번 코드를 고쳐야 합니다. 래퍼 계층(`Il2CppWrapperBase`)을 두면 모더는 C# 강타입 프로퍼티로 접근하고, 래퍼가 리플렉션으로 Interop 객체 필드/프로퍼티 값을 읽고 씁니다.
 
 * **[Il2CppWrapperBase.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/Il2CppWrapperBase.cs)**: 모든 래퍼의 베이스 클래스로, 리플렉션 조회를 담당합니다.
 * **[ModReflection.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/ModReflection.cs)**: 래퍼가 사용하는 필드 검색 모듈입니다. 개발사(PeroPeroGames)가 변수명 앞에 `m_`을 붙이거나 컴파일 과정에서 백킹 필드(`_k__BackingField`)로 이름이 바뀌어도, 대소문자를 무시하고 찾아내어 조회 실패로 인한 오류를 방지합니다.

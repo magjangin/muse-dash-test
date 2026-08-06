@@ -1,6 +1,6 @@
 # Muse Dash Discord Rich Presence (리치 프레젠스) 모딩 & 통합 가이드
 
-이 문서는 *Muse Dash* 커스텀 차트 모드에서 디스코드 리치 프레젠스(Discord Rich Presence)를 성공적으로 연동하고, 게임 내부 C++ Native 동작 한계를 후킹으로 완벽하게 해결한 기술 명세 및 노하우를 기록합니다.
+이 문서는 *Muse Dash* 커스텀 차트 모드에서 디스코드 리치 프레젠스(Discord Rich Presence)를 성공적으로 연동하고, 게임 원본 C# 로직의 동작 한계를 후킹으로 해결한 기술 명세 및 노하우를 기록합니다.
 
 ---
 
@@ -15,17 +15,17 @@
 
 ---
 
-## 2. 핵심 메서드 분석 및 Native C++ 동작 특성
+## 2. 핵심 메서드 분석 및 게임 원본 C# 동작 특성
 
 ### 🔑 결정적 핵심 메서드
 ```csharp
 Il2Cpp.DiscordManager.SetUpdateActivity(bool isPlaying, string levelInfo)
 ```
 
-### ⚠️ Native C++ 덮어쓰기 메커니즘 및 우회 기법
+### ⚠️ 게임 원본 덮어쓰기 메커니즘 및 우회 기법
 
 1. **`isPlaying = false`일 때의 특성**:
-   - 게임 원본의 Native C++ 엔진 내부 로직은 `levelInfo` 매개변수로 무엇이 전달되든 이를 무시하고, 디스코드 SDK `Activity.State`를 강제로 **`"In Menu"`** 텍스트로 덮어써서 전송합니다.
+   - 게임 원본 C# 메서드 바디 로직은 `levelInfo` 매개변수로 무엇이 전달되든 이를 무시하고, 디스코드 SDK `Activity.State`를 강제로 **`"In Menu"`** 텍스트로 덮어써서 전송합니다.
    - 이로 인해 곡 목록/곡 선택 패널에서 곡을 선택하고 멈춰있을 때 디스코드 프로필이 계속 **"In Menu"**로 노출되는 현상이 발생했습니다.
 
 2. **`isPlaying = true`일 때의 특성**:
@@ -33,7 +33,7 @@ Il2Cpp.DiscordManager.SetUpdateActivity(bool isPlaying, string levelInfo)
 
 3. **해결책 (Prefix Intercept & Force `isPlaying = true`)**:
    - Harmony Prefix에서 `ref bool isPlaying` 및 `ref string levelInfo` 매개변수를 참조로 받습니다.
-   - 커스텀 곡 선택 시 `levelInfo = $"{title} - {artist} (곡 선택 중)"`으로 덮어쓰고, **`isPlaying = true`로 강제 스위칭**하여 C++ 레벨의 `"In Menu"` 덮어쓰기를 원천 차단합니다.
+   - 커스텀 곡 선택 시 `levelInfo = $"{title} - {artist} (곡 선택 중)"`으로 덮어쓰고, **`isPlaying = true`로 강제 스위칭**하여 원본 로직의 `"In Menu"` 덮어쓰기를 원천 차단합니다.
 
 ---
 

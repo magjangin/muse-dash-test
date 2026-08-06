@@ -56,7 +56,7 @@ MelonLoader 모드 진입점 클래스입니다.
 * **`VictoryDataCache`**: 인게임 상태(`TaskStageTarget`)와 스코어 폰트(`Font`)를 결과 화면(Victory)에서 다시 쓸 수 있도록 보관하는 정적 캐시입니다.
 * **`TaskStageTarget_AddScore_Patch` (Prefix)**:
   * 노트 처리로 인해 스코어가 업데이트되는 런타임 이벤트(`TaskStageTarget.AddScore`)를 후킹합니다.
-  * 실행 스레드 차단 없이 활성화된 `TaskStageTarget` 주소를 정적 캐시에 자동 등록합니다.
+  * 실행 스레드 차단 없이 활성화된 `TaskStageTarget` 객체 참조를 정적 캐시에 자동 등록합니다.
   * 동시에, 배틀 HUD 스코어 컴포넌트(`PnlBattle.instance.currentComps.scoreValue`)로부터 인게임용 메인 시그니처 폰트인 `LuckiestGuy-Regular_150_115`를 dynamic 스캔하여 결과 배너로 넘기기 위해 캐싱 처리합니다.
 * **`TaskStageTarget_GetAccuracy_Patch`, `GetTrueAccuracy_Patch` & `GetTrueAccuracyNew_Patch` (Postfix)**:
   * 커스텀 차트 플레이 시, 원본 곡의 고정 분모로 인해 발생하는 정확도 부정합을 해소합니다. 차트 로딩 시점에 일반 노트(단타, 롱노트 머리, 샌드백 등), 톱니바퀴(기어), 하트, 파란 음표를 전수 스캔하여 분모를 캐싱하고, 인게임 판정 누계(`Perfect`, `Great`, `JumpOver`, `EnergyCount`, `BluePoint`)를 공식에 대입하여 실제 정확도를 정밀 산출합니다.
@@ -65,7 +65,7 @@ MelonLoader 모드 진입점 클래스입니다.
   * 풀콤보 판단 타이밍에 `TaskStageTarget` 인스턴스를 확보하여 유실을 방지합니다.
 * **`PnlVictory2dManager_OnShowVictory_Patch` (Postfix)**:
   * 곡 플레이 종료 직후 화면에 풀콤보 텍스트 배너가 활성화되는 순간(`OnShowVictory`)에 개입합니다.
-  * 캐싱해 둔 `TaskStageTarget` 포인터를 통해 **Great 0, Miss 0, Full Combo (정확도 100%)** 조건이 완벽히 만족되는지(`isAllPerfect`) 판정합니다.
+  * 캐싱해 둔 `TaskStageTarget` 객체 참조를 통해 **Great 0, Miss 0, Full Combo (정확도 100%)** 조건이 완벽히 만족되는지(`isAllPerfect`) 판정합니다.
   * **올 퍼펙트 달성 시**: 기본 출력되는 `"F-U-L-L C-O-M-B-O"` 알파벳 이미지들을 모두 비활성화하고, 새 `"CustomAPText"` GameObject를 추가해 그라데이션 색상과 외곽선이 적용된 **"ALL PERFECT !"** 텍스트를 대신 표시합니다.
 
 ### 📂 [Battle/Mechanics/AutoPlayPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs)
@@ -150,7 +150,7 @@ MelonLoader 모드 진입점 클래스입니다.
 * **`ApplyMadeByHywStyle()`**: 찾아낸 체력 텍스트를 "made in 화영왕" 문구로 바꾸고 폰트 크기와 색상을 조정합니다.
 
 ### 📂 [Custom/HpMod/ChangeHealthValuePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) [NEW]
-체력바 수치가 변경될 때 작동하는 네이티브 이벤트들(`OnGameStart`, `OnHpRateChange`, `OnHpDeduct`, `OnHpAdd`)을 직접 후킹하여 즉시 텍스트와 서식을 강제 갱신하는 체력바 후크 패치입니다. 과도한 로그 스팸 방지를 위한 10초 쿨다운 제한이 구현되어 있습니다.
+체력바 수치가 변경될 때 작동하는 원본 C# 이벤트들(`OnGameStart`, `OnHpRateChange`, `OnHpDeduct`, `OnHpAdd`)을 직접 후킹하여 즉시 텍스트와 서식을 강제 갱신하는 체력바 후크 패치입니다. 과도한 로그 스팸 방지를 위한 10초 쿨다운 제한이 구현되어 있습니다.
 
 ### 📂 [UI/Pnl/SetSelectedMusicNameTxtPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Pnl/SetSelectedMusicNameTxtPatch.cs) [NEW]
 곡 선택 UI에서 가상 커스텀 곡을 감지하여 제목과 아티스트 텍스트 UI 컴포넌트(`SetSelectedMusicNameTxt`)의 출력 텍스트를 원본 곡 명이 아닌 가상 커스텀 곡 데이터로 알맞게 대치 적용하는 패치입니다.
@@ -200,9 +200,9 @@ IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 �
 * **`ApplyCustomRecordToPnlRecord`**: 팝업 상세 카드 내 최대 콤보, 클리어 횟수(1/0), 정확도 등을 주입하고, 기록이 없는 항목은 하이픈(`-`) 처리합니다.
 
 ### 📂 [Patches/UI/Stage/PnlReportCardPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Stage/PnlReportCardPatch.cs) [NEW]
-플레이 최고 기록 포스트카드(`PnlReportCard`) 로드 시점에 네이티브 세이브 조회로 인한 NullReferenceException 크래시를 전격 방지하고 메타데이터를 직접 주입하는 Harmony 패치입니다.
+플레이 최고 기록 포스트카드(`PnlReportCard`) 로드 시점에 원본 세이브 데이터 조회로 인한 NullReferenceException 크래시를 전격 방지하고 메타데이터를 직접 주입하는 Harmony 패치입니다.
 * **`RefreshBestRecord` (Prefix)**:
-  - 네이티브 메소드 실행을 전면 차단(`return false`)하여 강제 종료를 막습니다.
+  - 게임 원본 메서드 실행을 전면 차단(`return false`)하여 강제 종료를 막습니다.
   - 가상 곡 폴더의 OGG/커버 메타데이터와 플레이 기록 JSON을 매핑하여 앨범 아트, 제목, 아티스트, 최고 스코어, 콤보, FC 리본을 그립니다.
   - **난이도 별점 및 레벨 연동**: 선택한 난이도 마크(`starObjs`)만 활성화하고 레벨 숫자(`starTxtValues`)를 주입합니다.
   - **등급 이미지 비활성화**: 등급 이미지 `imgS` 오브젝트를 꺼서 불완전한 등급 대신 기록 데이터만 부각합니다.
