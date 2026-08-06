@@ -106,30 +106,38 @@ namespace muse_dash_test
 
         /// <summary>
         /// DBConfigLocalALBUM.GetLocalAlbumInfoByIndex 쿼리 시 가상 곡의 LocalALBUMInfo를 즉석 응답합니다.
-        /// 현재는 index를 검사하지 않습니다(아래 TODO 참고).
+        /// 단, 해당 가상 곡의 행 번호(musicIndex)를 대상으로 한 조회만 가로챕니다.
         /// </summary>
         [HarmonyPatch(typeof(DBConfigLocalALBUM), nameof(DBConfigLocalALBUM.GetLocalAlbumInfoByIndex))]
         internal class DBConfigLocalALBUM_GetLocalAlbumInfoByIndex_Patch
         {
-            /// <summary>가상 곡이 참조할 수 있는 앨범 인덱스 후보 멤버들.</summary>
-            private static readonly string[] AlbumIndexMembers = { "albumJsonIndex", "albumIndex" };
+            /// <summary>
+            /// 게임이 넘기는 index의 출처가 될 수 있는 후보 멤버들.
+            /// 로컬라이제이션 DB는 언어별 테이블(m_LocalDic) 안의 행 번호로 조회되므로,
+            /// 앨범 인덱스뿐 아니라 곡 행 번호(musicIndex)도 후보에 포함합니다.
+            /// </summary>
+            private static readonly string[] AlbumIndexMembers = { "musicIndex", "albumJsonIndex", "albumIndex" };
+
+            /// <summary>
+            /// 실측으로 확정된 index의 출처. 로컬라이제이션 테이블의 곡 행 번호입니다.
+            /// (26-8-6_23-19-54.log: 게임이 넘긴 index=4 vs musicIndex=4 / ExInfo.musicIndex=4 일치,
+            ///  albumJsonIndex=1 · albumIndex=0은 불일치)
+            /// </summary>
+            private static readonly string[] OwnedIndexMembers = { "musicIndex" };
 
             private static bool _loggedIndexDiagnostics;
+            private static bool _loggedIndexResolveFailure;
 
             private static bool Prefix(DBConfigLocalALBUM __instance, int index, ref LocalALBUMInfo __result)
             {
                 string currentUid = CustomPlaySession.Current.SelectedMusicUid;
                 if (!CustomContentIds.IsVirtualSong(currentUid)) return true;
 
-                // TODO(over-capture): 인덱스를 검사하지 않으므로, 가상 곡이 선택돼 있는 동안에는
-                // 다른 앨범을 대상으로 한 조회까지 커스텀 이름으로 응답합니다(곡 목록 렌더링 등).
-                //
-                // 인덱스 게이트를 한 번 시도했다가 되돌렸습니다. 가상 곡의 albumJsonIndex/albumIndex와
-                // 실제 조회 인덱스가 일치할 것이라 보고 게이트를 걸었으나, 실측 로그에서 조회가 전부
-                // 차단됐습니다(26-8-6_23-8-30.log: 종전에 히트하던 호출 지점 2곳에서 히트 소멸).
-                // 즉 게임이 넘기는 index는 곡의 albumJsonIndex/albumIndex가 아닌 다른 경로에서 옵니다.
-                // 아래 진단 로그로 실제 index와 후보값의 관계를 확정한 뒤 게이트를 다시 겁니다.
                 LogIndexDiagnostics(currentUid, index);
+
+                // 인덱스를 검사하지 않으면 가상 곡이 선택돼 있는 동안 다른 곡을 대상으로 한 조회까지
+                // 커스텀 이름으로 응답해 버립니다(곡 목록 렌더링 등). 소유 행 번호만 가로챕니다.
+                if (!IsIndexOwnedByVirtualSong(currentUid, index)) return true;
 
                 if (MainMod.TryGetHwaPrimarySong(currentUid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
                 {
@@ -145,8 +153,50 @@ namespace muse_dash_test
             }
 
             /// <summary>
-            /// 게임이 넘긴 index와, 가상 곡이 들고 있는 앨범 인덱스 후보값들을 1회 대조 출력합니다.
-            /// over-capture를 막을 게이트 조건을 확정하기 위한 진단용이며 동작에는 영향을 주지 않습니다.
+            /// 조회된 index가 해당 가상 곡의 행 번호인지 판정합니다.
+            /// </summary>
+            /// <remarks>
+            /// 가상 곡은 원본 곡의 얇은 복제본이므로 musicIndex를 원본에서 그대로 물려받고,
+            /// 게임도 같은 값으로 로컬라이제이션 테이블을 조회합니다(위 OwnedIndexMembers 주석의 실측 근거).
+            /// musicIndex를 MusicInfo에서도 MusicExInfo에서도 읽지 못하는 경우에만
+            /// (게임 업데이트로 멤버명이 바뀐 상황) 종전의 관대한 동작으로 폴백하고 1회 경고를 남깁니다.
+            /// </remarks>
+            private static bool IsIndexOwnedByVirtualSong(string uid, int index)
+            {
+                var info = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
+                var exInfo = info != null ? ModReflection.GetValue(info, "m_MusicExInfo", silent: true) : null;
+
+                bool resolvedAny = false;
+                foreach (var source in new[] { info, exInfo })
+                {
+                    if (source == null) continue;
+                    foreach (var member in OwnedIndexMembers)
+                    {
+                        if (ModReflection.GetValue(source, member, silent: true) is int candidate)
+                        {
+                            resolvedAny = true;
+                            if (candidate == index) return true;
+                        }
+                    }
+                }
+
+                if (!resolvedAny)
+                {
+                    if (!_loggedIndexResolveFailure)
+                    {
+                        _loggedIndexResolveFailure = true;
+                        MelonLogger.Warning($"[DBConfigLocalALBUM Patch] '{uid}'의 musicIndex를 읽지 못해 인덱스 검사 없이 응답합니다. " +
+                                            "(이 경고는 1회만 표시됩니다. 게임 업데이트로 멤버명이 바뀌었을 수 있습니다.)");
+                    }
+                    return true;
+                }
+
+                return false;
+            }
+
+            /// <summary>
+            /// 게임이 넘긴 index와 가상 곡이 들고 있는 인덱스 후보값들을 1회 대조 출력합니다.
+            /// 게임 업데이트로 index 출처가 바뀌었을 때 곧바로 알아차리기 위한 진단이며 동작에는 영향을 주지 않습니다.
             /// </summary>
             private static void LogIndexDiagnostics(string uid, int index)
             {
