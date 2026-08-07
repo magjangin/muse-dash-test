@@ -22,7 +22,7 @@
 | 5 | `muse dash test/Patches/Hwa/HwaResourceManager.cs` | `hwa/` 곡 폴더 탐색, manifest/BMS 캐시, 커스텀 UID 판정 |
 | 6 | `muse dash test/Patches/Hwa/HwaManifestLoader.cs` | `info.txt` 파싱 |
 | 7 | `muse dash test/Patches/UI/Custom/Tags/CustomTagRegistry.cs` | 커스텀 태그/가상 앨범/가상 곡 주입 진입점 |
-| 8 | `muse dash test/Core/CustomPlaySession.cs` | 현재 선택 곡, 실험 모드 여부, 커스텀 차트 적용 여부 저장 |
+| 8 | `muse dash test/Core/CustomPlaySession.cs` | 현재 선택 곡 및 커스텀 차트 적용 여부 저장 |
 | 9 | `muse dash test/Patches/Database/Stage/DBStageInfoPatch.cs` | 게임의 런타임 차트 생성 시점을 잡는 핵심 Harmony 패치 |
 | 10 | `muse dash test/Patches/Database/Stage/DBStageInfoExperimentChart.cs` | 실제 노트 복제, 이동, 타입 적용, BMS 주입 실행 |
 
@@ -83,7 +83,7 @@ flowchart TD
 
 ### 곡 선택 상태 추적
 
-`PnlStagePatch`, `MusicButtonCellPatch`, `MusicButtonAreaTitlePatch`, `PnlPreparationPatch`는 사용자가 어떤 곡을 보고 있는지, 실험 모드 태그 안에 있는지, 실제 플레이에 커스텀 차트를 적용해야 하는지 추적합니다.
+`PnlStagePatch`, `MusicButtonCellPatch`, `PnlPreparationPatch`는 사용자가 어떤 곡을 보고 있는지, 실제 플레이에 커스텀 차트를 적용해야 하는지 추적합니다.
 
 최종 판정은 `CustomPlaySession.Current.ShouldApplyExperimentChart`에 모입니다. 커스텀 차트가 원치 않는 순정 곡에 적용되면 이 값을 먼저 의심합니다.
 

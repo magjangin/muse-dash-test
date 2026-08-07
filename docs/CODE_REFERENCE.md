@@ -152,9 +152,6 @@ MelonLoader 모드 진입점 클래스입니다.
 ### 📂 [Custom/HpMod/ChangeHealthValuePatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) [NEW]
 체력바 수치가 변경될 때 작동하는 네이티브 이벤트들(`OnGameStart`, `OnHpRateChange`, `OnHpDeduct`, `OnHpAdd`)을 직접 후킹하여 즉시 텍스트와 서식을 강제 갱신하는 체력바 후크 패치입니다. 과도한 로그 스팸 방지를 위한 10초 쿨다운 제한이 구현되어 있습니다.
 
-### 📂 [UI/Pnl/SetSelectedMusicNameTxtPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Pnl/SetSelectedMusicNameTxtPatch.cs) [NEW]
-곡 선택 UI에서 가상 커스텀 곡을 감지하여 제목과 아티스트 텍스트 UI 컴포넌트(`SetSelectedMusicNameTxt`)의 출력 텍스트를 원본 곡 명이 아닌 가상 커스텀 곡 데이터로 알맞게 대치 적용하는 패치입니다.
-
 ### 📂 [Common/ModReflection.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/ModReflection.cs)
 IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 리플렉션·캐스팅으로 읽어오는 래퍼 도구입니다. 유니티 메인 스레드에서 런타임 오브젝트를 안전하게 추출합니다.
 
@@ -175,13 +172,11 @@ IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 �
 곡 로드, 차트 로딩, 노트 스폰 등 인게임 코어 시퀀스 전역에 핀포인트 추적 후크를 설치하여, 실행 시점의 메서드 트레이스 및 호출 시그니처 흐름을 실시간으로 파일에 기록하는 전문 디버깅 추적 모듈입니다.
 
 ### 📂 [UI/Music/MusicButtonCellPatch.cs](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Music/MusicButtonCellPatch.cs)
-곡 선택 리스트의 개별 곡 셀(`MusicButtonCell`) 클릭/초기화 수명 주기에 개입하여 곡 선택 상태를 추적하고, 가상 곡의 텍스트·커버 아트를 동적으로 주입하는 패치입니다.
+곡 선택 리스트의 개별 곡 셀(`MusicButtonCell`) 클릭/초기화 수명 주기에 개입하여 곡 선택 상태를 추적하고, 가상 곡의 커버 아트를 동적으로 주입하는 0-Allocation 최적화 패치입니다.
 * **`MusicButtonCell_OnButtonClicked_Patch`**:
   * **(Prefix)** 곡 셀 클릭(`OnButtonClicked`) 시점에 해당 셀의 `musicInfo.uid`를 `CustomPlaySession.Current.LastClickedMusicUid`에 기록하고 `RememberMusicSelection(uid)`로 세션 선택 상태를 갱신합니다.
-  * **(Postfix)** 클릭 처리 직후 `SelectedMusicUid`와 `LastClickedMusicUid`를 `[Postfix]` 로그로 출력하여 두 UID의 동기화/Stale 여부를 진단합니다.
 * **`MusicButtonCell_InitMusicCell_Patch` (Postfix)**:
-  * 셀 초기화(`InitMusicCell`) 시 가상 곡(`CustomContentIds.IsVirtualSong`)에 한해 캐시된 manifest(`info.txt`)의 제목·아티스트로 셀 내부 `Text` 컴포넌트(`SongTitle`/`Artist` 등)를 덮어씁니다.
-  * 곡 폴더의 `cover.png`를 디코딩·캐싱(`CoverImageManager`)하여 셀의 `ImgCover` 스프라이트로 교체하고, 진단을 위해 UID당 1회 현재 커버명을 `[CoverDiag]`로 로깅합니다.
+  * 셀 초기화(`InitMusicCell`) 시 가상 곡(`CustomContentIds.IsVirtualSong`)에 한해 초고속 `Direct Child Lookup`과 `InstanceID` 캐싱으로 `ImgCover` 스프라이트를 교체하여 스크롤 렉 및 메모리 할당을 100% 방지합니다.
 * **`CoverImageManager`**: 곡 폴더의 `cover.png`를 `Texture2D`/`Sprite`로 디코딩하여 UID별로 캐싱하며, 파일이 없거나 디코딩에 실패한 UID는 `missing` 집합에 기록해 불필요한 재시도 I/O를 차단합니다.
 
 ---

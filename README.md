@@ -140,8 +140,7 @@
 │   │   │   │   │   └── PnlRecordPatch.cs
 │   │   │   │   └── Selection/   # 곡 및 타이틀 선택 제어
 │   │   │   │       ├── PnlStagePatch.cs
-│   │   │   │       ├── LongSongNameControllerPatch.cs
-│   │   │   │       └── MusicButtonAreaTitlePatch.cs
+│   │   │   │       └── LongSongNameControllerPatch.cs
 │   │   │   ├── Custom/       # 커스텀 태그 및 체력바 개조
 │   │   │   │   ├── Tags/        # 동적 가상 앨범/태그 이식
 │   │   │   │   │   ├── CustomTagPatch.cs
