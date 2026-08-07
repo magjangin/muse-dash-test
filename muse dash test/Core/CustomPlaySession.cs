@@ -11,7 +11,6 @@ namespace muse_dash_test
 
         public string SelectedMusicUid { get; set; } = string.Empty;
         public string LastClickedMusicUid { get; set; } = string.Empty;
-        public bool IsExperimentModeActive { get; set; }
         public bool ShouldApplyExperimentChart { get; private set; }
         public string LastApplyDecisionReasonCode { get; private set; } = string.Empty;
         public string LastApplyDecisionDescription { get; private set; } = string.Empty;
@@ -27,7 +26,7 @@ namespace muse_dash_test
 
         public string DescribeApplyDecision()
         {
-            return $"apply={ShouldApplyExperimentChart}, reason={LastApplyDecisionReasonCode}, detail={LastApplyDecisionDescription}, isExperimentModeActive={IsExperimentModeActive}, selectedUid={SelectedMusicUid}, lastClickedUid={LastClickedMusicUid}";
+            return $"apply={ShouldApplyExperimentChart}, reason={LastApplyDecisionReasonCode}, detail={LastApplyDecisionDescription}, selectedUid={SelectedMusicUid}, lastClickedUid={LastClickedMusicUid}";
         }
 
         public void RememberMusicSelection(string uid)
@@ -35,12 +34,11 @@ namespace muse_dash_test
             string prevUid = SelectedMusicUid;
             bool prevShouldApply = ShouldApplyExperimentChart;
             SelectedMusicUid = uid ?? string.Empty;
-            bool isExperimentMode = IsExperimentModeActive;
-            var decision = HwaResourceManager.DecideCustomChartForSelection(uid, IsExperimentModeActive);
+            var decision = HwaResourceManager.DecideCustomChartForSelection(uid);
             ShouldApplyExperimentChart = decision.ShouldApply;
             LastApplyDecisionReasonCode = decision.ReasonCode;
             LastApplyDecisionDescription = decision.Description;
-            MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] RememberMusicSelection 호출: prevUid={prevUid}, newUid={uid ?? "(null)"}, experimentMode={isExperimentMode}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, prevShouldApply={prevShouldApply}, newShouldApply={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
+            MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] RememberMusicSelection 호출: prevUid={prevUid}, newUid={uid ?? "(null)"}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, prevShouldApply={prevShouldApply}, newShouldApply={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
 
             try
             {

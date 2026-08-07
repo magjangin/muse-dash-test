@@ -304,25 +304,6 @@ public static partial class PnlStagePatchHelper
 
     public static void SyncExperimentModeFromStage(PnlStage stage)
     {
-        try
-        {
-            if (stage == null) return;
-            var titleText = stage.titleOwn;
-            if (titleText == null) return;
-            string text = titleText.text ?? string.Empty;
-            bool isExp = false;
-            foreach (var t in ExperimentModeTitles)
-                if (text == t) { isExp = true; break; }
-
-            bool previous = CustomPlaySession.Current.IsExperimentModeActive;
-            CustomPlaySession.Current.IsExperimentModeActive = false; // 테스트를 위한 강제 false 설정
-
-            MelonLogger.Msg($"[PnlStage.ExperimentMode] title='{text}', detected={isExp}, previous={previous}, current={CustomPlaySession.Current.IsExperimentModeActive}");
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"SyncExperimentModeFromStage \uc608\uc678: {ex}");
-        }
     }
 
     public static void LogButtons(string source, PnlStage stage)

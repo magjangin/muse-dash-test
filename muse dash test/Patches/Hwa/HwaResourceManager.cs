@@ -209,14 +209,12 @@ namespace muse_dash_test
             public string Description;
             public bool IsVirtualSong;
             public bool IsRegisteredHost;
-            public bool IsExperimentModeActive;
         }
 
-        public static CustomChartSelectionDecision DecideCustomChartForSelection(string uid, bool isExperimentModeActive)
+        public static CustomChartSelectionDecision DecideCustomChartForSelection(string uid)
         {
             var decision = new CustomChartSelectionDecision
             {
-                IsExperimentModeActive = isExperimentModeActive,
                 ReasonCode = "OfficialOrUnknown",
                 Description = "공식 곡 또는 알 수 없는 UID이므로 원본 차트를 유지합니다."
             };
@@ -231,36 +229,21 @@ namespace muse_dash_test
             decision.IsVirtualSong = CustomContentIds.IsVirtualSong(uid);
             decision.IsRegisteredHost = IsRegisteredCustomHostUid(uid);
 
-            if (decision.IsVirtualSong)
+            if (decision.IsVirtualSong || decision.IsRegisteredHost)
             {
                 decision.ShouldApply = true;
-                decision.ReasonCode = "VirtualSong";
-                decision.Description = "1999-* 가상 곡이므로 커스텀 차트를 적용합니다.";
-                return decision;
-            }
-
-            if (decision.IsRegisteredHost && isExperimentModeActive)
-            {
-                decision.ShouldApply = true;
-                decision.ReasonCode = "ExperimentHost";
-                decision.Description = "커스텀 태그/실험 모드에서 선택된 숙주 UID이므로 커스텀 차트를 적용합니다.";
-                return decision;
-            }
-
-            if (decision.IsRegisteredHost)
-            {
-                decision.ReasonCode = "OfficialHostProtected";
-                decision.Description = "등록된 숙주 UID이지만 공식 앨범 문맥이므로 원본 차트를 보호합니다.";
+                decision.ReasonCode = decision.IsVirtualSong ? "VirtualSong" : "CustomHost";
+                decision.Description = decision.IsVirtualSong ? "1999-* 가상 곡이므로 커스텀 차트를 적용합니다." : "등록된 숙주 UID이므로 커스텀 차트를 적용합니다.";
                 return decision;
             }
 
             return decision;
         }
 
-        public static bool ShouldApplyCustomChartForSelection(string uid, bool isExperimentModeActive)
+        public static bool ShouldApplyCustomChartForSelection(string uid)
         {
-            var decision = DecideCustomChartForSelection(uid, isExperimentModeActive);
-            MelonLogger.Msg($"🧪 [ExperimentMode.Decision] 곡 선택 주입 판정: uid='{uid ?? "(null)"}', experimentMode={isExperimentModeActive}, isVirtual={decision.IsVirtualSong}, isHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail='{decision.Description}'");
+            var decision = DecideCustomChartForSelection(uid);
+            MelonLogger.Msg($"[CustomChart.Decision] 곡 선택 주입 판정: uid='{uid ?? "(null)"}', isVirtual={decision.IsVirtualSong}, isHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail='{decision.Description}'");
             return decision.ShouldApply;
         }
 

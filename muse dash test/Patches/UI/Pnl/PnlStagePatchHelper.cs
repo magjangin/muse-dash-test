@@ -98,11 +98,6 @@ public static partial class PnlStagePatchHelper
                 return;
             }
 
-            if (!CustomPlaySession.Current.IsExperimentModeActive)
-            {
-                return;
-            }
-
             string uid = CustomPlaySession.Current.SelectedMusicUid;
             if (string.IsNullOrEmpty(uid))
             {

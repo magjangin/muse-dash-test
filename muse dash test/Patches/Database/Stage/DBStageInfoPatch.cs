@@ -104,12 +104,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
-                MelonLogger.Msg($"🧪 [ExperimentMode.StageInit] 인게임 차트 주입 스킵: {CustomPlaySession.Current.LastApplyDecisionDescription} (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive})");
+                MelonLogger.Msg($"[StageInit] 인게임 차트 주입 스킵: {CustomPlaySession.Current.LastApplyDecisionDescription} (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode})");
                 DumpMusicList(__instance);
                 return;
             }
 
-            MelonLogger.Msg($"🧪 [ExperimentMode.StageInit] 인게임 차트 주입 시작! uid='{uid ?? "(null)"}', reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, detail='{CustomPlaySession.Current.LastApplyDecisionDescription}'");
+            MelonLogger.Msg($"[StageInit] 인게임 차트 주입 시작! uid='{uid ?? "(null)"}', reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, detail='{CustomPlaySession.Current.LastApplyDecisionDescription}'");
             ApplyExperimentChart(__instance, uid);
         }
         catch (System.Exception ex)
