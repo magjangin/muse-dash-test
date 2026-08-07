@@ -26,7 +26,6 @@ namespace muse_dash_test
                     string uid = musicInfo != null ? musicInfo.uid : "(null)";
                     CustomPlaySession.Current.LastClickedMusicUid = uid;
                     CustomPlaySession.Current.RememberMusicSelection(uid);
-                    MelonLogger.Msg($"[MusicButtonCell.OnButtonClicked] Prefix: uid='{uid}'");
                 }
             }
             catch (Exception ex)
@@ -40,25 +39,17 @@ namespace muse_dash_test
         }
     }
 
-    // MusicButtonCell.InitMusicCell 후킹 - 커버 주입 및 로깅 복구
+    // MusicButtonCell.InitMusicCell 후킹 - 초고속 Zero-Allocation 커버 교체 최적화
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.InitMusicCell), new Type[] { typeof(MusicInfo), typeof(int) })]
     public class MusicButtonCell_InitMusicCell_Patch
     {
+        // 스크롤 시 GetComponentsInChildren 배열 할당 및 유니티 계층 탐색 렉을 방지하기 위한 컴포넌트 캐시
+        private static readonly Dictionary<int, Image> cellImageCache = new Dictionary<int, Image>();
+
         public static bool Prepare() => true;
 
         public static void Prefix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
         {
-            try
-            {
-                if (initMusicInfo != null)
-                {
-                    MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Prefix: uid='{initMusicInfo.uid}', name='{initMusicInfo.name}', tabIndex={tabIndex}");
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"MusicButtonCell.InitMusicCell Prefix 예외: {ex}");
-            }
         }
 
         public static void Postfix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
@@ -67,13 +58,11 @@ namespace muse_dash_test
             {
                 if (__instance == null || initMusicInfo == null) return;
 
-                bool isVirtual = CustomContentIds.IsVirtualSong(initMusicInfo.uid);
-                MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Postfix: uid='{initMusicInfo.uid}', isVirtual={isVirtual}");
+                // 가상 곡이 아니면 처리 건너뜀
+                if (!CustomContentIds.IsVirtualSong(initMusicInfo.uid)) return;
 
-                if (!isVirtual) return;
-
-                // 곡 폴더의 cover.png를 셀의 ImgCover에 주입
-                ApplyCustomCover(__instance.gameObject, initMusicInfo.uid);
+                // 곡 폴더의 cover.png를 셀의 ImgCover에 초고속 주입
+                ApplyCustomCoverOptimized(__instance.gameObject, initMusicInfo.uid);
             }
             catch (Exception ex)
             {
@@ -81,25 +70,37 @@ namespace muse_dash_test
             }
         }
 
-        private static void ApplyCustomCover(GameObject cellGo, string uid)
+        private static void ApplyCustomCoverOptimized(GameObject cellGo, string uid)
         {
             if (cellGo == null) return;
             if (!CoverImageManager.TryGetCoverSprite(uid, out var coverSprite) || coverSprite == null) return;
 
-            var images = cellGo.GetComponentsInChildren<Image>(true);
-            if (images == null) return;
-
-            foreach (var img in images)
+            int instanceId = cellGo.GetInstanceID();
+            if (!cellImageCache.TryGetValue(instanceId, out Image targetImg) || targetImg == null)
             {
-                if (img == null || img.gameObject == null) continue;
-                if (img.gameObject.name != "ImgCover") continue;
-
-                if (img.sprite != coverSprite)
+                // GetComponentsInChildren 대신 Direct Child Find로 1회만 단일 컴포넌트 탐색
+                Transform coverTransform = cellGo.transform.Find("ImgCover");
+                if (coverTransform != null)
                 {
-                    img.sprite = coverSprite;
-                    MelonLogger.Msg($"[Cover] 곡 셀 ImgCover 커스텀 커버 스프라이트 교체 완료: uid='{uid}'");
+                    targetImg = coverTransform.GetComponent<Image>();
                 }
-                return;
+                
+                // Fallback: 자식 탐색 실패 시 1회만 Single GetComponentInChildren
+                if (targetImg == null)
+                {
+                    targetImg = cellGo.GetComponentInChildren<Image>();
+                }
+
+                if (targetImg != null)
+                {
+                    cellImageCache[instanceId] = targetImg;
+                }
+            }
+
+            if (targetImg != null && targetImg.sprite != coverSprite)
+            {
+                targetImg.sprite = coverSprite;
+                MelonLogger.Msg($"⚡ [Cover.Fast] 곡 셀 ImgCover 커버 스프라이트 초고속 교체 완료: uid='{uid}'");
             }
         }
     }
