@@ -260,7 +260,7 @@ namespace muse_dash_test
         public static bool ShouldApplyCustomChartForSelection(string uid, bool isExperimentModeActive)
         {
             var decision = DecideCustomChartForSelection(uid, isExperimentModeActive);
-            MelonLogger.Msg($"[HwaResourceManager.Debug] ShouldApplyCustomChartForSelection: uid={uid ?? "(null)"}, isExperimentModeActive={isExperimentModeActive}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
+            MelonLogger.Msg($"🧪 [ExperimentMode.Decision] 곡 선택 주입 판정: uid='{uid ?? "(null)"}', experimentMode={isExperimentModeActive}, isVirtual={decision.IsVirtualSong}, isHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail='{decision.Description}'");
             return decision.ShouldApply;
         }
 
