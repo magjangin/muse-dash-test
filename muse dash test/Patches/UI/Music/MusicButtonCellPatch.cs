@@ -39,7 +39,7 @@ namespace muse_dash_test
         }
     }
 
-    // MusicButtonCell.InitMusicCell 후킹 - 스크롤 뷰 갱신 폭발 스파이크 방지를 위해 수동 UI 오버라이드 비활성화
+    // MusicButtonCell.InitMusicCell 후킹 - 텍스트 탐색 오버헤드는 제거하되 cover.png 이미지 주입 로직은 유지합니다.
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.InitMusicCell), new Type[] { typeof(MusicInfo), typeof(int) })]
     public class MusicButtonCell_InitMusicCell_Patch
     {
@@ -51,9 +51,39 @@ namespace muse_dash_test
 
         public static void Postfix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
         {
-            // 렉 주범인 InitMusicCell 수동 GetComponentsInChildren 순회 및 덮어쓰기 로직을 전면 차단합니다.
-            // 이미 MusicInfo.GetLocal 및 DBMusicTag.GetMusicInfoFromAll 패치로 
-            // 게임 본체가 아기상어 / 화영왕 등 커스텀 텍스트를 내장 바인딩으로 가져옵니다.
+            try
+            {
+                if (__instance == null || initMusicInfo == null) return;
+                if (!CustomContentIds.IsVirtualSong(initMusicInfo.uid)) return;
+
+                // 곡 폴더의 cover.png를 셀의 ImgCover에 경량 주입
+                ApplyCustomCover(__instance.gameObject, initMusicInfo.uid);
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"MusicButtonCell.InitMusicCell Postfix 예외: {ex}");
+            }
+        }
+
+        private static void ApplyCustomCover(GameObject cellGo, string uid)
+        {
+            if (cellGo == null) return;
+            if (!CoverImageManager.TryGetCoverSprite(uid, out var coverSprite) || coverSprite == null) return;
+
+            var images = cellGo.GetComponentsInChildren<Image>(true);
+            if (images == null) return;
+
+            foreach (var img in images)
+            {
+                if (img == null || img.gameObject == null) continue;
+                if (img.gameObject.name != "ImgCover") continue;
+
+                if (img.sprite != coverSprite)
+                {
+                    img.sprite = coverSprite;
+                }
+                return;
+            }
         }
     }
 
