@@ -10,12 +10,12 @@ public class PnlPreparation_OnEnable_Patch
     {
         try
         {
-            // 2. 가상 곡 메뉴 BGM / 미리듣기 음악 전환
-            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-            if (CustomContentIds.IsVirtualSong(selectedUid))
-            {
-                HwaMenuBgmController.TriggerMenuBgmChange(selectedUid);
-            }
+            // 2. 가상 곡 메뉴 BGM / 미리듣기 음악 전환 (테스트용 비활성화)
+            // string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            // if (CustomContentIds.IsVirtualSong(selectedUid))
+            // {
+            //     HwaMenuBgmController.TriggerMenuBgmChange(selectedUid);
+            // }
 
             // 3. 커스텀 레코드(점수/달성도%) UI 덮어쓰기
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlPreparation(__instance);
