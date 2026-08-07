@@ -12,8 +12,7 @@
 DBStageInfo.SetRuntimeMusicData 호출됨: ...
 실험 노트 추가: ...
 실험 차트 적용 완료: ...
-PnlStage.ChangeFinalMusic: 곡 이름=..., 음악 클립=..., 아티스트 이름=...
-PnlPreparation.GameStart: 곡 이름=..., 음악 클립=..., 아티스트 이름=...
+MusicInfo.GetLocal Patch 가상 곡 로컬 라이브러리 가로채기 성공: ...
 Il2Cpp.Boss.InitBossObject: 변경 적용 -> name=..., scene=...
 ```
 
@@ -28,9 +27,8 @@ Il2Cpp.Boss.InitBossObject: 변경 적용 -> name=..., scene=...
 | `DBStageInfo.SetRuntimeMusicData 호출됨` | 게임이 런타임 차트 데이터를 만들었습니다. |
 | `실험 노트 추가` | `ExperimentNotes`의 항목이 실제 `MusicData`로 들어갔습니다. |
 | `실험 차트 적용 완료` | 원본 리스트를 실험 리스트로 재구성했습니다. |
-| `PnlStage.ChangeMusic` | 곡 선택이 바뀐 직후입니다. 클립은 아직 이전 값일 수 있습니다. |
-| `PnlStage.ChangeFinalMusic` | 최종 곡 변경 후라 곡 정보가 더 믿을 만합니다. |
-| `PnlPreparation.GameStart` | 준비 화면에서 게임 시작 직후입니다. |
+| `MusicInfo.GetLocal Patch 가상 곡 가로채기` | 게임 DB 레벨에서 가상 곡 정보(제목, 아티스트)를 가로채 반환했습니다. |
+| `[Cover.Fast]` | 곡 셀 `ImgCover` 스프라이트가 초고속 0-Allocation으로 교체되었습니다. |
 | `Boss.InitBossObject 호출` | 실제 보스 오브젝트 초기화가 시작됐습니다. |
 | `Boss.InitBossObject: 변경 적용` | `BossRewriteRules`가 매칭되어 보스 이름/씬이 바뀌었습니다. |
 
@@ -204,29 +202,15 @@ private const bool EnableSongTitleExperiment = true;
 
 확인할 점:
 
-- `PnlStage.Start` 로그가 찍히는지
-- `PnlStage.ChangeFinalMusic` 로그가 찍히는지
-- `PnlPreparation.GameStart` 로그가 찍히는지
-- 텍스트가 다른 자식 오브젝트명으로 숨어 있는지
+- `MusicInfo.GetLocal Patch` 로그가 찍히는지
+- `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` 로그가 찍히는지
+- `CustomPlaySession.RememberMusicSelection` 로그가 찍히는지
 
-곡 선택 화면과 준비 화면은 서로 다른 UI 구조를 쓸 수 있습니다. 한 화면에서는 바뀌고 다른 화면에서는 안 바뀌면 그 화면의 텍스트 오브젝트 후보 이름을 추가해야 할 수 있습니다.
-
-후보 이름 배열:
-
-```csharp
-TitleTextObjectNames
-ArtistTextObjectNames
-LevelDesignerLabelTextObjectNames
-LevelDesignerNameTextObjectNames
-```
+곡 선택 화면과 준비 화면의 텍스트는 원본 유니티 UI 텍스트 컴포넌트에 수동 바인딩하지 않고, 게임 내 `MusicInfo.GetLocal` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` DB 조회 레벨에서 일괄 핫스왑되므로 UI 스크롤 및 전환 시 렌더링 렉이 발생하지 않습니다.
 
 ## 음악 클립 이름이 이상할 때
 
-`PnlStage.ChangeMusic` 직후에는 클립이 이전 곡 또는 메뉴 BGM처럼 보일 수 있습니다. 클립 이름은 아래 로그를 더 신뢰합니다.
-
-- `PnlStage.ChangeFinalMusic`
-- `PnlPreparation.GameStart`
-- `PnlPreparation.OnBattleStart`
+선택된 가상 곡(`1999-*`)의 미리듣기 음악 및 준비 화면 BGM은 `HwaMenuBgmController`가 핫스왑하여 연동합니다.
 
 오디오 클립 탐색은 두 경로를 사용합니다.
 

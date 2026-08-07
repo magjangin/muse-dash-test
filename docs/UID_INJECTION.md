@@ -22,7 +22,7 @@
 **최신 실험 결론**
 - `DBMusicTag.GetShowStageUidByIndex`에서 `0-0 -> 1999-0`처럼 반환 UID를 바꾸는 실험은 호출 지점 확인에는 유용했지만, 실제 `MusicInfo` 조회 결과까지 바꾸지는 못했습니다.
 - `DBMusicTag.GetMusicInfoFromShowMusicUids` 관찰 결과, `MusicInfo.cover`/`coverName`은 읽고 쓸 수 있으며 커버 후보를 바꾸는 실험도 가능합니다. 다만 이것은 기존 `MusicInfo` 인스턴스를 꾸미는 것이지 새 UID 등록을 완료하는 것은 아닙니다.
-- `PnlStage`/`PnlPreparation` 텍스트는 UI 컴포넌트 레벨에서 보강 패치로 덮어쓸 수 있습니다. 이 역시 표시 보정이며, 새 곡 등록의 대체재가 아닙니다.
+- `MusicInfo.GetLocal` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` 패치를 통해 게임 DB 조회 시점에 곡 제목과 아티스트 텍스트가 네이티브 수동 바인딩 없이 깔끔하게 로컬라이제이션 가로채기로 처리됩니다.
 - 현재 구현은 `m_AllMusicInfo`에 가상 곡을 등록한 뒤 `GetMusicInfoFromAll("1999-0")` 역조회로 동일 UID의 `MusicInfo`가 반환되는 것까지 검증합니다.
 - 남은 검증 범위는 곡 선택, 준비 화면, 플레이 진입, 결과 저장 차단까지 전체 흐름이 같은 UID를 일관되게 바라보는지 확인하는 것입니다.
 
