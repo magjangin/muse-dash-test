@@ -26,6 +26,7 @@ namespace muse_dash_test
                     string uid = musicInfo != null ? musicInfo.uid : "(null)";
                     CustomPlaySession.Current.LastClickedMusicUid = uid;
                     CustomPlaySession.Current.RememberMusicSelection(uid);
+                    MelonLogger.Msg($"[MusicButtonCell.OnButtonClicked] Prefix: uid='{uid}'");
                 }
             }
             catch (Exception ex)
@@ -39,7 +40,7 @@ namespace muse_dash_test
         }
     }
 
-    // MusicButtonCell.InitMusicCell 후킹 - 텍스트 탐색 오버헤드는 제거하되 cover.png 이미지 주입 로직은 유지합니다.
+    // MusicButtonCell.InitMusicCell 후킹 - 커버 주입 및 로깅 복구
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.InitMusicCell), new Type[] { typeof(MusicInfo), typeof(int) })]
     public class MusicButtonCell_InitMusicCell_Patch
     {
@@ -47,6 +48,17 @@ namespace muse_dash_test
 
         public static void Prefix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
         {
+            try
+            {
+                if (initMusicInfo != null)
+                {
+                    MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Prefix: uid='{initMusicInfo.uid}', name='{initMusicInfo.name}', tabIndex={tabIndex}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"MusicButtonCell.InitMusicCell Prefix 예외: {ex}");
+            }
         }
 
         public static void Postfix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
@@ -54,9 +66,13 @@ namespace muse_dash_test
             try
             {
                 if (__instance == null || initMusicInfo == null) return;
-                if (!CustomContentIds.IsVirtualSong(initMusicInfo.uid)) return;
 
-                // 곡 폴더의 cover.png를 셀의 ImgCover에 경량 주입
+                bool isVirtual = CustomContentIds.IsVirtualSong(initMusicInfo.uid);
+                MelonLogger.Msg($"[MusicButtonCell.InitMusicCell] Postfix: uid='{initMusicInfo.uid}', isVirtual={isVirtual}");
+
+                if (!isVirtual) return;
+
+                // 곡 폴더의 cover.png를 셀의 ImgCover에 주입
                 ApplyCustomCover(__instance.gameObject, initMusicInfo.uid);
             }
             catch (Exception ex)
@@ -81,6 +97,7 @@ namespace muse_dash_test
                 if (img.sprite != coverSprite)
                 {
                     img.sprite = coverSprite;
+                    MelonLogger.Msg($"[Cover] 곡 셀 ImgCover 커스텀 커버 스프라이트 교체 완료: uid='{uid}'");
                 }
                 return;
             }
@@ -138,6 +155,7 @@ namespace muse_dash_test
 
                 cache[uid] = spr;
                 sprite = spr;
+                MelonLogger.Msg($"[Cover] cover.png 파일 로드 성공: uid='{uid}', path='{coverPath}'");
                 return true;
             }
             catch (Exception ex)
