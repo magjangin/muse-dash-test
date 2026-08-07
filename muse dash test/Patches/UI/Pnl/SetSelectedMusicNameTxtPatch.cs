@@ -91,7 +91,8 @@ namespace muse_dash_test
     {
         private static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance)
         {
-            SetSelectedMusicNameTxtPatchHelper.Apply(__instance, "OnEnable");
+            // 테스트를 위해 OnEnable 시점 텍스트 적용 끄기
+            // SetSelectedMusicNameTxtPatchHelper.Apply(__instance, "OnEnable");
         }
     }
 }
