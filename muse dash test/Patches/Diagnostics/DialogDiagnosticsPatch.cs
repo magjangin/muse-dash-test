@@ -308,30 +308,6 @@ namespace muse_dash_test
 }
 
 // =====================================================================
-// DialogMasterControl.OnInvokeDialog 런타임 훅
-// 실제 게임 플레이 중 대사가 호출될 때마다 내용을 실시간 로깅합니다.
-// =====================================================================
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.DialogMasterControl), "OnInvokeDialog")]
-public static class DialogMasterControl_OnInvokeDialog_Patch
-{
-    public static void Prefix(Il2Cpp.DialogMasterControl __instance, GameDialogArgs args)
-    {
-        try
-        {
-            string lang = "(unknown)";
-            try { lang = __instance.language ?? "(null)"; } catch { /* 접근 실패 */ }
-
-            MelonLogger.Msg($"[DialogRuntime] OnInvokeDialog 호출: lang={lang}");
-            muse_dash_test.DialogDiagnostics.LogGameDialogArgs("[DialogRuntime]", args);
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Warning($"[DialogRuntime] OnInvokeDialog 로깅 실패: {ex.Message}");
-        }
-    }
-}
-
-// =====================================================================
 // DBStageInfo.SetDialogArgs 훅
 // 대사 데이터가 실제로 채워지는 시점에서 딕셔너리 내용을 덤프합니다.
 // SetRuntimeMusicData 시점에서는 아직 null이므로, 이 훅이 핵심입니다.
