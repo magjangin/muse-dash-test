@@ -315,10 +315,7 @@ public static partial class PnlStagePatchHelper
                 if (text == t) { isExp = true; break; }
 
             bool previous = CustomPlaySession.Current.IsExperimentModeActive;
-            if (isExp != previous)
-            {
-                CustomPlaySession.Current.IsExperimentModeActive = isExp;
-            }
+            CustomPlaySession.Current.IsExperimentModeActive = false; // 테스트를 위한 강제 false 설정
 
             MelonLogger.Msg($"[PnlStage.ExperimentMode] title='{text}', detected={isExp}, previous={previous}, current={CustomPlaySession.Current.IsExperimentModeActive}");
         }

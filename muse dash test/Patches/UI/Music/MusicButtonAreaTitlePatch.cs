@@ -2,7 +2,7 @@ using MelonLoader;
 using System;
 using muse_dash_test;
 
-// MusicButtonAreaTitle.RefreshTxt 후킹
+// MusicButtonAreaTitle.RefreshTxt 후킹 - 실험 모드 상태를 테스트를 위해 강제로 false로 설정합니다.
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.MusicButtonAreaTitle), "RefreshTxt", new Type[] { typeof(string), typeof(bool) })]
 public class MusicButtonAreaTitle_RefreshTxt_Patch
 {
@@ -12,13 +12,12 @@ public class MusicButtonAreaTitle_RefreshTxt_Patch
         {
             if (__instance != null)
             {
-                bool isExperimentMode = title == "실험 모드" || title == "Experiment Mod" || title == "实验模式" || title == "實驗模式" || title == "実験モード";
+                bool previous = CustomPlaySession.Current.IsExperimentModeActive;
+                CustomPlaySession.Current.IsExperimentModeActive = false; // 강제 false 고정
                 
-                // 상태가 바뀔 때만 1회 로그를 남겨 스크롤 로깅 폭발 없이 명확히 띄웁니다.
-                if (CustomPlaySession.Current.IsExperimentModeActive != isExperimentMode)
+                if (previous != false)
                 {
-                    CustomPlaySession.Current.IsExperimentModeActive = isExperimentMode;
-                    MelonLogger.Msg($"🧪 [ExperimentMode] 실험 모드 상태 변경: title='{title}', active={isExperimentMode}");
+                    MelonLogger.Msg($"🧪 [ExperimentMode] 테스트를 위해 실험 모드 상태를 강제 false로 설정했습니다. (title='{title}')");
                 }
             }
         }
