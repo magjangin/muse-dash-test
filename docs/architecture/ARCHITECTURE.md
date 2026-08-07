@@ -1,7 +1,7 @@
 # 유지보수 지도
 
 이 문서는 `muse-dash-custom-chart`를 처음 보는 사람이나 AI가 어디부터 읽어야 하는지 빠르게 파악하기 위한 지도입니다.
-자세한 파일별 설명은 `docs/CODE_REFERENCE.md`, 사용법은 `docs/CUSTOM_CHART_GUIDE.md`, 로그 해석은 `docs/LOGGING_AND_TROUBLESHOOTING.md`를 봅니다.
+자세한 파일별 설명은 `docs/architecture/CODE_REFERENCE.md`, 사용법은 `docs/custom_charts/CUSTOM_CHART_GUIDE.md`, 로그 해석은 `docs/guides/LOGGING_AND_TROUBLESHOOTING.md`를 봅니다.
 
 ---
 
@@ -163,11 +163,12 @@ FeatureGuard, PatchHealthCheck, GameBindings 구조는 유지한다.
 
 | 필요 | 문서 |
 | --- | --- |
-| 전체 지도 | `docs/ARCHITECTURE.md` |
-| 파일별 상세 설명 | `docs/CODE_REFERENCE.md` |
-| 커스텀 곡 제작법 | `docs/CUSTOM_CHART_GUIDE.md` |
-| BMS 규칙 | `docs/BMS_PARSING.md` |
-| 로그/문제 해결 | `docs/LOGGING_AND_TROUBLESHOOTING.md` |
-| UID/태그 주입 | `docs/UID_INJECTION.md`, `docs/CAST_AND_CUSTOM_TAG_GUIDE.md` |
-| 보스/씬 연출 | `docs/BOSS_EXPERIMENTS.md`, `docs/SCENE_BACKGROUND_SWAP.md` |
+| 전체 지도 | `docs/architecture/ARCHITECTURE.md` |
+| 파일별 상세 설명 | `docs/architecture/CODE_REFERENCE.md` |
+| 시스템 설계 명세 | `docs/architecture/MOD_SYSTEM_BLUEPRINT.md` |
+| 커스텀 곡 제작법 | `docs/custom_charts/CUSTOM_CHART_GUIDE.md` |
+| BMS 규칙 | `docs/custom_charts/BMS_PARSING.md` |
+| 로그/문제 해결 | `docs/guides/LOGGING_AND_TROUBLESHOOTING.md` |
+| UID/태그 주입 | `docs/tags_and_uids/UID_INJECTION.md`, `docs/tags_and_uids/CAST_AND_CUSTOM_TAG_GUIDE.md` |
+| 보스/씬 연출 | `docs/custom_charts/BOSS_EXPERIMENTS.md`, `docs/custom_charts/SCENE_BACKGROUND_SWAP.md` |
 
