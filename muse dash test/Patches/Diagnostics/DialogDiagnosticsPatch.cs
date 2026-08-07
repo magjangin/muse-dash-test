@@ -330,3 +330,83 @@ public static class DialogMasterControl_OnInvokeDialog_Patch
         }
     }
 }
+
+// =====================================================================
+// DBStageInfo.SetDialogArgs 훅
+// 대사 데이터가 실제로 채워지는 시점에서 딕셔너리 내용을 덤프합니다.
+// SetRuntimeMusicData 시점에서는 아직 null이므로, 이 훅이 핵심입니다.
+// =====================================================================
+[HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.Database.DBStageInfo), "SetDialogArgs")]
+public static class DBStageInfo_SetDialogArgs_Patch
+{
+    public static void Postfix(
+        Il2CppAssets.Scripts.Database.DBStageInfo __instance,
+        Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Collections.Generic.List<GameDialogArgs>> dialogArgs,
+        bool isRefresh)
+    {
+        try
+        {
+            MelonLogger.Msg($"[DialogDump] === SetDialogArgs 호출됨: isRefresh={isRefresh} ===");
+
+            // dialogArgs 파라미터 직접 덤프
+            if (dialogArgs == null)
+            {
+                MelonLogger.Msg("[DialogDump] SetDialogArgs: dialogArgs 파라미터 = null");
+            }
+            else
+            {
+                int keyCount = dialogArgs.Count;
+                MelonLogger.Msg($"[DialogDump] SetDialogArgs: dialogArgs 파라미터 ({keyCount}개 씬):");
+
+                var enumerator = dialogArgs.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    var pair = enumerator.Current;
+                    string sceneKey = pair.Key ?? "(null)";
+                    var argsList = pair.Value;
+
+                    if (argsList == null)
+                    {
+                        MelonLogger.Msg($"[DialogDump]   씬='{sceneKey}': (null list)");
+                        continue;
+                    }
+
+                    MelonLogger.Msg($"[DialogDump]   씬='{sceneKey}': {argsList.Count}개 대사");
+                    for (int i = 0; i < argsList.Count; i++)
+                    {
+                        muse_dash_test.DialogDiagnostics.LogGameDialogArgs($"    [{i}]", argsList[i]);
+                    }
+                }
+                enumerator.Dispose();
+            }
+
+            // Postfix이므로 sceneDialogEvents/sceneDialogDictionary가 이제 채워져 있을 수 있음
+            muse_dash_test.DialogDiagnostics.DumpAllDialogData(__instance);
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Warning($"[DialogDump] SetDialogArgs 로깅 실패: {ex.Message}");
+        }
+    }
+}
+
+// =====================================================================
+// DBStageInfo.DialogDataToDic 훅
+// sceneDialogEvents → sceneDialogDictionary 재구성 시점 캡처.
+// =====================================================================
+[HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.Database.DBStageInfo), "DialogDataToDic")]
+public static class DBStageInfo_DialogDataToDic_Patch
+{
+    public static void Postfix(Il2CppAssets.Scripts.Database.DBStageInfo __instance)
+    {
+        try
+        {
+            MelonLogger.Msg("[DialogDump] === DialogDataToDic 완료 → sceneDialogDictionary 덤프 ===");
+            muse_dash_test.DialogDiagnostics.DumpAllDialogData(__instance);
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Warning($"[DialogDump] DialogDataToDic 로깅 실패: {ex.Message}");
+        }
+    }
+}
