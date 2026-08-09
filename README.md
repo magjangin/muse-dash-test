@@ -55,7 +55,7 @@
 | **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (`music.ogg`)** | ✅ 완료 |
 | **로컬 `cover.png` 기반 커스텀 곡 셀/디스크 앨범 아트 주입** | ✅ 완료 |
 | **가상 곡 플레이 기록(정확도·스코어·최대 콤보·풀콤보) 로컬 JSON 저장 및 결과/기록 카드 표시** | ✅ 완료 |
-| **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](file:///H:/source/repos/muse%20dash%20test/docs/tags_and_uids/DISCORD_RICH_PRESENCE.md)) |
+| **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](docs/tags_and_uids/DISCORD_RICH_PRESENCE.md)) |
 
 
 ---
@@ -73,6 +73,7 @@
 * **완료**: 로컬 `cover.png` 파일 디코딩 및 UID별 캐싱을 통한 커스텀 곡 셀/디스크 앨범 아트 동적 주입
 * **완료**: 가상 곡 플레이 데이터(정확도·스코어·최대 콤보·풀콤보)를 순정 세이브 손상 없이 로컬 전용 JSON(`record/{uid}_{난이도}.json`)으로 기록하고 결과창·기록 카드·곡 선택 화면에 표시 (등급/랭크 이미지 표시는 보류)
 * **진행 예정**: BMS 특정 채널 이벤트를 감지해 배경 블러, Fever 트리거 강제 작동 등 시네마틱 카메라/HUD 연출 확장
+* **보류**: 커스텀 곡 대사(Dialog) 주입 — 동작하는 프로토타입까지 검증했으나 우선순위 조정으로 본체에서 제거했습니다. 훅 지점, 실측 스타일 값, 알려진 파싱 함정까지 [DIALOG_INJECTION.md](docs/future/DIALOG_INJECTION.md)에 보존해 두었습니다.
 
 
 ### DLC 메타데이터 정리의 목적
@@ -88,107 +89,57 @@
 ## 📂 Directory Structure (폴더 구조)
 
 ```text
-├── muse dash test/           # C# 모드 프로젝트 폴더
-│   ├── Patches/              # Harmony 런타임 패치 클래스들
-│   │   ├── APModPatch.cs     # 올 퍼펙트 배너 제어 및 인게임 폰트 캐싱 [NEW]
-│   │   ├── Database/         # 런타임 차트 및 세이브 데이터 관련 패치
-│   │   │   ├── Stage/        # 인메모리 차트 수명 주기 제어 및 로더
-│   │   │   │   ├── DBStageInfoPatch.cs
-│   │   │   │   ├── DBStageInfoExperimentChart.cs
-│   │   │   │   ├── DBStageInfoExperimentChart.Helpers.cs
-│   │   │   │   └── DBStageInfoSetStageInfoPatch.cs
-│   │   │   ├── Skill/        # 캐릭터 스킬 및 오토플레이 제어
-│   │   │   │   └── DBSkillPatch.cs
-│   │   │   └── Save/         # 세이브 가상 데이터 클렌징 (오염 방지) [NEW]
-│   │   │       └── SaveDataManagerPatch.cs
-│   │   ├── Battle/           # 인게임 배틀 제어 및 연출
-│   │   │   ├── Mechanics/    # 오토플레이, 피버 차단, 보스 런타임 스왑
-│   │   │   │   ├── AutoPlayPatch.cs
-│   │   │   │   ├── BossPatch.cs
-│   │   │   │   └── ChangeFeverValuePatch.cs
-│   │   │   └── UI/           # 배틀 스크린 영상 재생 및 진행바 은폐
-│   │   │       ├── PnlBattleGameStartPatch.cs
-│   │   │       ├── ProgressBarPatch.cs
-│   │   │       └── StageBattleComponentPatch.cs
-│   │   ├── UI/               # UI 정보 변조 및 커스텀 가상 앨범
-│   │   │   ├── Common/       # 공용 메타데이터 추출 및 래핑
-│   │   │   │   ├── PnlMusicUtils.cs
-│   │   │   │   ├── PnlMusicUtils.Helpers.cs
-│   │   │   │   ├── PnlStagePatchHelper.cs
-│   │   │   │   ├── PnlStagePatchHelper.TextDebug.cs
-│   │   │   │   ├── Hwa/          # Hwa 리소스 및 오디오 동기화 제어 [NEW]
-│   │   │   │   │   ├── HwaResourceManager.cs
-│   │   │   │   │   ├── HwaSyncManager.cs
-│   │   │   │   │   ├── HwaMenuBgmController.cs
-│   │   │   │   │   ├── HwaChartDiagnostics.cs
-│   │   │   │   │   └── HwaManifestLoader.cs
-│   │   │   │   ├── Wrappers/    # Il2Cpp 데이터 강타입 래퍼 [NEW]
-│   │   │   │   │   ├── AlbumsInfoWrapper.cs
-│   │   │   │   │   ├── Il2CppWrapperBase.cs
-│   │   │   │   │   └── MusicInfoWrapper.cs
-│   │   │   │   ├── Reflection/  # 고성능 리플렉션 [NEW]
-│   │   │   │   │   └── ModReflection.cs
-│   │   │   │   ├── Diagnostics/ # 음악 정보 덤프 및 진단 [NEW]
-│   │   │   │   │   ├── PnlMusicUtils.Diagnostics.cs
-│   │   │   │   │   └── PnlMusicUtils.Log.cs
-│   │   │   │   └── Search/      # 곡 정보 정밀 통합 검색 [NEW]
-│   │   │   │       └── PnlStagePatchHelper.Search.cs
-│   │   │   ├── Stage/        # 곡 선택 화면 패치
-│   │   │   │   ├── Preparation/ # 준비 단계 변조
-│   │   │   │   │   └── PnlPreparationPatch.cs
-│   │   │   │   ├── Record/      # 기록 변조
-│   │   │   │   │   └── PnlRecordPatch.cs
-│   │   │   │   └── Selection/   # 곡 및 타이틀 선택 제어
-│   │   │   │       ├── PnlStagePatch.cs
-│   │   │   │       └── LongSongNameControllerPatch.cs
-│   │   │   ├── Custom/       # 커스텀 태그 및 체력바 개조
-│   │   │   │   ├── Tags/        # 동적 가상 앨범/태그 이식
-│   │   │   │   │   ├── CustomTagPatch.cs
-│   │   │   │   │   ├── CustomTagPatch.AlbumPatches.cs
-│   │   │   │   │   └── CustomTagRegistry.cs
-│   │   │   │   └── HpMod/       # 배틀 체력바 스타일러
-│   │   │   │       ├── HywStageManager.cs
-│   │   │   │       └── HywTextStyler.cs
-│   │   │   └── Music/        # 스크롤 뷰 동적 로딩 및 정렬
-│   │   │       ├── FancyScrollViewPatch.cs
-│   │   │       ├── MusicButtonCellPatch.cs
-│   │   │       └── PnlMusicTagPatch.cs
-│   │   ├── Diagnostics/      # 글로벌 시퀀스 메서드 트레이스
-│   │   │   └── UidMethodTracePatches.cs
-│   │   └── Scene/            # 씬 흐름 강제 제어
-│   │       ├── GameMusicScenePatch.cs
-│   │       └── SceneFlowPatch.cs
-│   ├── main.cs               # MelonLoader 진입점 (MelonMod)
-│   └── muse dash test.csproj # C# .NET 6.0 프로젝트 파일
+muse dash test/                      # 저장소 루트
+├── muse dash test/                  # C# 모드 프로젝트 (net6.0 → "muse dash custom chart.dll")
+│   ├── MainMod.cs                   # MelonLoader 진입점 (MelonMod)
+│   ├── Bms/                         # BMS 해석: 파서/렉서, 노트 매칭, WAV 파일명, 보스 스왑 플래너
+│   ├── Core/                        # 모드 전역: 세션 상태, 커스텀 UID 규약, 기록 저장, 기능 게이트
+│   ├── Integration/                 # 외부 연동: Discord Rich Presence, 실시간 스와퍼
+│   ├── Spine/                       # Spine 캐릭터 스킨 주입
+│   ├── Resources/                   # 임베디드 리소스 (tag_icon.png)
+│   ├── Properties/                  # AssemblyInfo
+│   └── Patches/                     # Harmony 런타임 패치
+│       ├── Battle/Mechanics/        # 오토플레이, 보스 런타임 스왑, 피버 차단
+│       ├── Battle/UI/               # ALL PERFECT 배너, 배틀 영상, 진행바, 체력 지점 설치
+│       ├── Common/                  # Il2Cpp 강타입 래퍼 및 고성능 리플렉션
+│       ├── Database/Save/           # 세이브 가상 데이터 클렌징 (오염 방지)
+│       ├── Database/Skill/          # 캐릭터 스킬 제어
+│       ├── Database/Stage/          # 인메모리 차트 수명 주기 및 BMS 차트 로더
+│       ├── Diagnostics/             # 오프셋/딜레이 훅, 패치 헬스체크, 메서드 트레이스
+│       ├── Fav/                     # 즐겨찾기
+│       ├── Hwa/                     # 커스텀 곡 리소스·매니페스트·BGM 핫스왑
+│       ├── Sandbox/                 # 오프라인 샌드박스 토글
+│       ├── Scene/                   # 씬 흐름 제어 및 트랜스폼 트래커
+│       ├── UI/Custom/               # 커스텀 태그, 체력바 개조, 입력 오버레이, 판정 바
+│       ├── UI/Menu/                 # 홈/메뉴 BGM 제어
+│       ├── UI/Music/                # 곡 셀, 스크롤 뷰, 태그, 음악 정보 덤프
+│       ├── UI/Pnl/                  # 곡 정보 통합 검색 헬퍼
+│       └── UI/Stage/                # 곡 선택·준비·기록·리포트 카드 화면
 │
-├── docs/                     # 카테고리별 기술 문서 모음
-│   ├── architecture/         # 아키텍처, 코드 레퍼런스, 시스템 블루프린트
-│   │   ├── ARCHITECTURE.md
-│   │   ├── CODE_REFERENCE.md
-│   │   ├── MOD_SYSTEM_BLUEPRINT.md
-│   │   └── ANALOGIES.md
-│   ├── guides/               # 빌드/모딩 종합 가이드 및 로그 트러블슈팅
-│   │   ├── MODDING.md
-│   │   ├── MODDING_MINDSET.md
-│   │   ├── OFFLINE_CUSTOM_SANDBOX_GUIDE.md
-│   │   └── LOGGING_AND_TROUBLESHOOTING.md
-│   ├── custom_charts/        # 차트/BMS/노트 스펙/보스/씬 연출 가이드
-│   │   ├── CUSTOM_CHART_GUIDE.md
-│   │   ├── BMS_PARSING.md
-│   │   ├── NOTE_EXPERIMENTS.md
-│   │   ├── BOSS_EXPERIMENTS.md
-│   │   └── SCENE_BACKGROUND_SWAP.md
-│   ├── tags_and_uids/        # 가상 앨범, 커스텀 태그, UID 주입 및 Rich Presence
-│   │   ├── UID_INJECTION.md
-│   │   ├── CAST_AND_CUSTOM_TAG_GUIDE.md
-│   │   ├── MD2_TAG_RETARGET_MAP.md
-│   │   └── DISCORD_RICH_PRESENCE.md
-│   └── future/               # 뮤즈대시 2 대비 포팅/리타게팅 연구
-│       └── MUSE_DASH_2_SPECULATIVE_GUIDE.md
+├── docs/                            # 카테고리별 기술 문서
+│   ├── architecture/                # ARCHITECTURE, CODE_REFERENCE, MOD_SYSTEM_BLUEPRINT, ANALOGIES
+│   ├── guides/                      # MODDING, MODDING_MINDSET, OFFLINE_CUSTOM_SANDBOX_GUIDE,
+│   │                                #   LOGGING_AND_TROUBLESHOOTING
+│   ├── custom_charts/               # CUSTOM_CHART_GUIDE, BMS_PARSING, NOTE_EXPERIMENTS,
+│   │                                #   BOSS_EXPERIMENTS, SCENE_BACKGROUND_SWAP
+│   ├── tags_and_uids/               # UID_INJECTION, CAST_AND_CUSTOM_TAG_GUIDE,
+│   │                                #   MD2_TAG_RETARGET_MAP, DISCORD_RICH_PRESENCE
+│   └── future/                      # MUSE_DASH_2_SPECULATIVE_GUIDE, DIALOG_INJECTION(보류 설계)
 │
-├── build.bat                 # MSBuild 자동 추적 및 모드 파일(DLL) 빌드/배포 스크립트
-└── README.md                 # 본 프로젝트 소개 파일
+├── scripts/                         # 타입/멤버 덤프 및 검색용 PowerShell 보조 스크립트
+├── scratch/                         # 일회성 조사 스크립트 (이후 .gitignore에 추가되어 신규 파일은 추적 안 됨)
+├── build.bat                        # MSBuild 자동 탐색 → 빌드 → Mods 배포 스크립트
+├── muse dash test.slnx              # 솔루션 파일
+├── AGENTS.md                        # 저장소 작업 규칙
+└── README.md                        # 본 문서
+
+# 로컬 전용(.gitignore 대상, 저장소에 없음)
+#   Decompiled/                      Il2CppInterop 생성 프록시 어셈블리를 디컴파일한 참조 자료
 ```
+
+> 폴더 단위 요약입니다. 파일 단위 목록은 문서가 금방 낡기 때문에 적지 않았습니다 —
+> 개별 파일과 훅 지점은 [MOD_SYSTEM_BLUEPRINT.md](docs/architecture/MOD_SYSTEM_BLUEPRINT.md)와
+> [CODE_REFERENCE.md](docs/architecture/CODE_REFERENCE.md)를 보세요.
 
 ---
 

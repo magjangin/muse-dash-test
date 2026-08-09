@@ -16,10 +16,10 @@ Muse Dash/
 
 가장 자주 보는 문서는 아래 문서들입니다.
 
-- [비유로 이해하는 모드 구조](ANALOGIES.md): 핵심 개념을 비유로 빠르게 잡기 (입문용)
-- [노트 실험](NOTE_EXPERIMENTS.md): 일반 노트, 공중 노트, 롱노트, 샌드백, 하트, 음표, 속도, dt 실험
-- [보스 실험](BOSS_EXPERIMENTS.md): 보스 액션 트리거와 실제 보스 프리팹 변경
-- [코드 파일별 레퍼런스](CODE_REFERENCE.md): 전체 C# 파일의 역할, 주요 클래스/메서드, 읽는 순서
+- [비유로 이해하는 모드 구조](../architecture/ANALOGIES.md): 핵심 개념을 비유로 빠르게 잡기 (입문용)
+- [노트 실험](../custom_charts/NOTE_EXPERIMENTS.md): 일반 노트, 공중 노트, 롱노트, 샌드백, 하트, 음표, 속도, dt 실험
+- [보스 실험](../custom_charts/BOSS_EXPERIMENTS.md): 보스 액션 트리거와 실제 보스 프리팹 변경
+- [코드 파일별 레퍼런스](../architecture/CODE_REFERENCE.md): 전체 C# 파일의 역할, 주요 클래스/메서드, 읽는 순서
 - [로그와 문제 해결](LOGGING_AND_TROUBLESHOOTING.md): 로그 해석, 노트/보스/UI가 안 될 때 확인 순서
 - 이 문서: 전체 파일 구조, 빌드, 로그 확인, 곡 제목/아티스트/레벨 디자이너 실험
 
@@ -27,7 +27,7 @@ Muse Dash/
 
 ## 🏗️ 1. 먼저 이해해야 하는 인게임 메커니즘 (Core Concepts)
 
-> 이 장의 개념들은 비유로 더 쉽게 잡을 수 있습니다 → [비유로 이해하는 모드 구조](ANALOGIES.md)
+> 이 장의 개념들은 비유로 더 쉽게 잡을 수 있습니다 → [비유로 이해하는 모드 구조](../architecture/ANALOGIES.md)
 
 ### 1.1 차트 데이터: 단일 타임라인 구조
 `MusicData`는 지상/공중 노트, 장애물, 보스 신호가 종류별로 나뉘어 담기지 않고, 모두 tick 순서로 한 리스트에 섞여 들어가는 단일 타임라인입니다. 게임은 음악이 흐르는 동안 이 리스트에서 순서대로 노트를 꺼내 화면에 띄웁니다.
@@ -93,7 +93,7 @@ Muse Dash/
 ---
 
 ### 3.2 🌟 올 퍼펙트 배너 오버레이
-곡이 끝나면 표시되는 기본 `FULL COMBO!` 낱개 글자 이미지 11개(`ImgF`, `ImgU` 등)를 비활성화하고, 그 자리에 직접 만든 `ALL PERFECT!` 배너를 표시하는 연출입니다. (비유 설명 → [ANALOGIES.md](ANALOGIES.md#41-올-퍼펙트-배너--기존-간판을-끄고-새-간판으로-교체-))
+곡이 끝나면 표시되는 기본 `FULL COMBO!` 낱개 글자 이미지 11개(`ImgF`, `ImgU` 등)를 비활성화하고, 그 자리에 직접 만든 `ALL PERFECT!` 배너를 표시하는 연출입니다. (비유 설명 → [ANALOGIES.md](../architecture/ANALOGIES.md#41-올-퍼펙트-배너--기존-간판을-끄고-새-간판으로-교체-))
 
 1. **판정 감시**: 판정 레코드(`TaskStageTarget.AddScore`)를 가로채 정확도가 100%인지 실시간 계산합니다.
 2. **시그니처 폰트 추출**: 게임 내 만화풍 폰트(`LuckiestGuy-Regular`)를 메모리에서 가로채 복사합니다.
@@ -102,7 +102,7 @@ Muse Dash/
 ---
 
 ### 3.3 🌟 커스텀 BGA
-VideoPlayer가 투사되는 Quad(`VideoBackgroundQuad`)를 카메라 앞에 고정 배치하고, 노트보다 뒤로 가도록 소팅 오더를 낮게 잡아 배경 영상으로 깔아줍니다. 카메라가 움직여도 영상은 화면을 꽉 채우고, 노트는 그 앞을 지나갑니다. (비유 설명 → [ANALOGIES.md](ANALOGIES.md#42-커스텀-bga--카메라-렌즈-앞에-고정한-스크린-))
+VideoPlayer가 투사되는 Quad(`VideoBackgroundQuad`)를 카메라 앞에 고정 배치하고, 노트보다 뒤로 가도록 소팅 오더를 낮게 잡아 배경 영상으로 깔아줍니다. 카메라가 움직여도 영상은 화면을 꽉 채우고, 노트는 그 앞을 지나갑니다. (비유 설명 → [ANALOGIES.md](../architecture/ANALOGIES.md#42-커스텀-bga--카메라-렌즈-앞에-고정한-스크린-))
 
 ---
 

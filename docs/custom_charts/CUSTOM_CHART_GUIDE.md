@@ -81,7 +81,7 @@ offset: -0.05123             // 판정 오프셋 (초 단위, 최대 소수점 7
 
 모드는 곡 폴더 내에서 파일명이 `chart.bms`, `main.bms`, `test.bms`인 것을 최우선으로 탐색하며, 없을 경우 첫 번째 발견된 `.bms` 파일을 파싱합니다.
 
-BMS 내의 `#WAVxx` 리소스 선언 규칙과 노트 타입 매핑의 핵심 요약은 다음과 같습니다 (상세 매핑은 [BMS 파싱 및 매핑 가이드](file:///h:/source/repos/muse%20dash%20test/docs/custom_charts/BMS_PARSING.md) 참조).
+BMS 내의 `#WAVxx` 리소스 선언 규칙과 노트 타입 매핑의 핵심 요약은 다음과 같습니다 (상세 매핑은 [BMS 파싱 및 매핑 가이드](../custom_charts/BMS_PARSING.md) 참조).
 
 ### WAV 파일명과 인게임 노트의 핵심 관계
 BMS 차트 프로그램(BMSE 등)에서 `#WAVxx` 영역에 지정할 파일명은 다음과 같은 명명법을 지킵니다:

@@ -3,13 +3,13 @@
 > 여기서 "제안 / 다음 단계 / 검증 예정"으로 적힌 내용은 현재 대부분 구현 완료되었습니다.
 > 실제 현행 등록 흐름은 `CustomTagRegistry`(가상 곡/앨범 주입) → `CustomPlaySession`(선택 상태 추적) →
 > `DBStageInfo.SetRuntimeMusicData`(차트 주입) 순서로 동작합니다.
-> 최신 구조는 [ARCHITECTURE.md](ARCHITECTURE.md)와 [CAST_AND_CUSTOM_TAG_GUIDE.md](CAST_AND_CUSTOM_TAG_GUIDE.md)를 참고하세요.
+> 최신 구조는 [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)와 [CAST_AND_CUSTOM_TAG_GUIDE.md](CAST_AND_CUSTOM_TAG_GUIDE.md)를 참고하세요.
 
 **개요**
 - 목적: 런타임에 커스텀 곡 UID(예: `1999-0`)를 데이터베이스에 등록하고 UI에 선택되도록 처리하는 절차를 정리합니다.
 
 **전제조건**
-- `CustomTagPatch.cs` 같은 파일로 앨범/태그를 먼저 주입해야 합니다. (참조: [muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs](muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs))
+- `CustomTagPatch.cs` 같은 파일로 앨범/태그를 먼저 주입해야 합니다. (참조: [muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs))
 - Il2Cpp 타입(예: `Il2CppAssets.Scripts.Database.MusicInfo`, `GlobalDataBase.dbMusic`, `GlobalDataBase.dbMusicTag`)에 접근 가능한 상태여야 합니다.
 
 **핵심 개념 요약**

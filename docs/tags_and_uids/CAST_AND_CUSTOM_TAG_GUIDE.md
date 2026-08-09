@@ -2,7 +2,7 @@
 
 이 문서는 뮤즈대시 모드의 **유니버설 래퍼 패턴(Universal Wrapper Pattern)**과, 이를 기반으로 한 **커스텀 태그(실험 모드) 및 가상 곡/앨범 동적 주입** 시스템의 구조를 설명합니다.
 
-> 비유로 먼저 큰 그림을 잡고 싶다면 → [비유로 이해하는 모드 구조](ANALOGIES.md)
+> 비유로 먼저 큰 그림을 잡고 싶다면 → [비유로 이해하는 모드 구조](../architecture/ANALOGIES.md)
 
 ---
 
@@ -25,14 +25,14 @@ graph TD
 
 ## 💎 2. 래퍼와 얇은 복제 (Wrapper & Clone)
 
-> 이 절의 개념을 비유로 보려면 → [통역사](ANALOGIES.md#21-유니버설-래퍼--통역사-) · [잘 되는 것 복사](ANALOGIES.md#22-얇은-복제--잘-되는-것을-복사한-뒤-이름표만-교체-) · [가격표 떼기](ANALOGIES.md#23-구매-정보-정리--복사된-가격표-떼기-)
+> 이 절의 개념을 비유로 보려면 → [통역사](../architecture/ANALOGIES.md#21-유니버설-래퍼--통역사-) · [잘 되는 것 복사](../architecture/ANALOGIES.md#22-얇은-복제--잘-되는-것을-복사한-뒤-이름표만-교체-) · [가격표 떼기](../architecture/ANALOGIES.md#23-구매-정보-정리--복사된-가격표-떼기-)
 
 ### 2.1 유니버설 래퍼 (Universal Wrapper)
 IL2CPP 네이티브 메모리 객체를 직접 다루면 게임 업데이트 때마다 필드 구조가 바뀌어 매번 코드를 고쳐야 합니다. 래퍼 계층(`Il2CppWrapperBase`)을 두면 모더는 C# 강타입 프로퍼티로 접근하고, 래퍼가 리플렉션으로 네이티브 값을 읽고 씁니다.
 
-* **[Il2CppWrapperBase.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/Il2CppWrapperBase.cs)**: 모든 래퍼의 베이스 클래스로, 리플렉션 조회를 담당합니다.
-* **[ModReflection.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/ModReflection.cs)**: 래퍼가 사용하는 필드 검색 모듈입니다. 개발사(PeroPeroGames)가 변수명 앞에 `m_`을 붙이거나 컴파일 과정에서 백킹 필드(`_k__BackingField`)로 이름이 바뀌어도, 대소문자를 무시하고 찾아내어 조회 실패로 인한 오류를 방지합니다.
-* **[MusicInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/MusicInfoWrapper.cs) & [AlbumsInfoWrapper.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Common/AlbumsInfoWrapper.cs)**: 각각 곡 정보(`MusicInfo`)와 앨범 정보(`AlbumsInfo`) 전용 래퍼입니다.
+* **[Il2CppWrapperBase.cs](../../muse%20dash%20test/Patches/Common/Il2CppWrapperBase.cs)**: 모든 래퍼의 베이스 클래스로, 리플렉션 조회를 담당합니다.
+* **[ModReflection.cs](../../muse%20dash%20test/Patches/Common/ModReflection.cs)**: 래퍼가 사용하는 필드 검색 모듈입니다. 개발사(PeroPeroGames)가 변수명 앞에 `m_`을 붙이거나 컴파일 과정에서 백킹 필드(`_k__BackingField`)로 이름이 바뀌어도, 대소문자를 무시하고 찾아내어 조회 실패로 인한 오류를 방지합니다.
+* **[MusicInfoWrapper.cs](../../muse%20dash%20test/Patches/Common/MusicInfoWrapper.cs) & [AlbumsInfoWrapper.cs](../../muse%20dash%20test/Patches/Common/AlbumsInfoWrapper.cs)**: 각각 곡 정보(`MusicInfo`)와 앨범 정보(`AlbumsInfo`) 전용 래퍼입니다.
 
 ---
 
@@ -53,7 +53,7 @@ IL2CPP 네이티브 메모리 객체를 직접 다루면 게임 업데이트 때
 
 ## 🏷️ 3. 커스텀 태그 및 가상 곡/앨범 동적 주입 (Custom Tag & Registry)
 
-[CustomTagRegistry.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 클래스는 커스텀 카테고리(실험 모드)를 동적으로 이식하는 일련의 시퀀스를 지휘합니다.
+[CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 클래스는 커스텀 카테고리(실험 모드)를 동적으로 이식하는 일련의 시퀀스를 지휘합니다.
 
 1. **태그 탭 생성**:
    태그 버튼이 인스턴스화되는 시점에 모드가 개입하여 아래 사양의 가상 태그를 등록합니다.
@@ -72,7 +72,7 @@ IL2CPP 네이티브 메모리 객체를 직접 다루면 게임 업데이트 때
 
 ## 🚨 4. 패치 헬스체크와 자동 덤프
 
-> 비유 설명 → [점검 센서](ANALOGIES.md#31-패치-헬스체크--켤-때마다-도는-점검-센서-)
+> 비유 설명 → [점검 센서](../architecture/ANALOGIES.md#31-패치-헬스체크--켤-때마다-도는-점검-센서-)
 
 게임 업데이트로 후킹 대상 메서드(`InitAlbumTagInfo`)의 시그니처나 위치가 바뀌면 패치가 실패해 모드가 멈출 수 있습니다. 이를 막기 위해 모드 로드 시점에 후킹 대상의 유효성을 자가 진단합니다.
 
@@ -84,7 +84,7 @@ IL2CPP 네이티브 메모리 객체를 직접 다루면 게임 업데이트 때
 ## 🛠️ 5. 확장 및 변형 개발자 가이드 (Developer Extension)
 
 ### 5.1 새로운 가상 곡을 추가하고 싶을 때
-[CustomTagRegistry.cs](file:///H:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 파일 내의 `RegisterAll` 메소드 중간 지점(가상 곡 주입부)에 다음과 같이 신규 가상 곡 호출을 한 줄 적어넣으시면 즉시 적용됩니다.
+[CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 파일 내의 `RegisterAll` 메소드 중간 지점(가상 곡 주입부)에 다음과 같이 신규 가상 곡 호출을 한 줄 적어넣으시면 즉시 적용됩니다.
 
 ```csharp
 // "1999-3" 가상 곡 신규 추가 예시

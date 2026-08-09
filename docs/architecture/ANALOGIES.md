@@ -4,7 +4,7 @@
 
 > 비유는 어디까지나 이해를 돕는 도구입니다. 문화권에 상관없이 통하는 보편적인 비유를 골랐고, 정확한 동작은 항상 "실제 의미" 항목과 코드를 기준으로 판단하세요.
 
-관련 기술 문서: [코드 레퍼런스](CODE_REFERENCE.md) · [모딩 가이드](MODDING.md) · [캐스트/커스텀 태그](CAST_AND_CUSTOM_TAG_GUIDE.md)
+관련 기술 문서: [코드 레퍼런스](CODE_REFERENCE.md) · [모딩 가이드](../guides/MODDING.md) · [캐스트/커스텀 태그](../tags_and_uids/CAST_AND_CUSTOM_TAG_GUIDE.md)
 
 ---
 
@@ -17,7 +17,7 @@
 
 판단에 쓰는 주요 필드: `noteData.type`, `pathway`, `uid`, `prefab_name`, `key_audio`, `configData.length`, `tick`/`dt`/`showTick`.
 
-→ [노트 실험](NOTE_EXPERIMENTS.md), [모딩 가이드 1장](MODDING.md)
+→ [노트 실험](../custom_charts/NOTE_EXPERIMENTS.md), [모딩 가이드 1장](../guides/MODDING.md)
 
 ### 1.2 리스트 갱신 ➡️ "방은 그대로, 가구만 교체" 🛋️
 > **비유**: 방(엔진이 들고 있는 참조 주소)에 놓인 가구를 바꾸고 싶을 때, 방을 통째로 부수고 새 방(새 List 객체)으로 옮기면 다른 관리자들이 옛 방을 계속 바라봐서 길을 잃습니다. 방의 골격은 그대로 두고 **안의 가구만 비우고 다시 채우는** 편이 안전합니다.
@@ -31,7 +31,7 @@
 
 **실제 의미**: `[0]`번 노트는 게임이 기준점으로 쓰므로 원본 그대로 두고, 실험 노트는 `[1]`번 슬롯부터 채우는 것이 이 모드의 표준 원칙입니다.
 
-→ [노트 실험](NOTE_EXPERIMENTS.md)
+→ [노트 실험](../custom_charts/NOTE_EXPERIMENTS.md)
 
 ---
 

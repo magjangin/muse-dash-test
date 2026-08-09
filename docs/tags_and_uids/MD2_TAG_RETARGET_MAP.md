@@ -41,7 +41,7 @@
 
 ## 📋 임무 A — 태그 탭 만들어 등록
 
-**파일**: [CustomTagPatch.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs), [CustomTagRegistry.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)
+**파일**: [CustomTagPatch.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs), [CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---------------|------------------------|------|----------------|------|--------------------------|
@@ -57,7 +57,7 @@
 | A10 | `DBConfigCustomTags.CustomTagInfo` | `tag_name`(Dict), `tag_picture`, `music_list` | 필드 | 다국어명 + 아이콘 경로 + 곡목록 | 🟡 | |
 | A11 | `AlbumDisplayMusic` | 생성자(`AlbumsInfo`), `AddRangeMusicUid(List<string>)` | 타입 | 태그 화면 곡 스크롤 데이터 | 🟡 | |
 
-> **다국어 주의** ([가이드 Phase 2 경고](MUSE_DASH_2_SPECULATIVE_GUIDE.md)): A10의 `tag_name` 딕셔너리 키(`Korean`, `English`, `Japanese`, `ChineseSimplified`, `ChineseTraditional`)가 MD2 언어 코드와 정확히 일치해야 탭 라벨이 빈 문자열로 안 뜸.
+> **다국어 주의** ([가이드 Phase 2 경고](../future/MUSE_DASH_2_SPECULATIVE_GUIDE.md)): A10의 `tag_name` 딕셔너리 키(`Korean`, `English`, `Japanese`, `ChineseSimplified`, `ChineseTraditional`)가 MD2 언어 코드와 정확히 일치해야 탭 라벨이 빈 문자열로 안 뜸.
 
 ---
 
@@ -128,7 +128,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 ## 📋 임무 B — 가상 곡/앨범을 DB에 심기
 
-**파일**: [CustomTagRegistrySupport.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/Support/CustomTagRegistrySupport.cs)
+**파일**: [CustomTagRegistrySupport.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/Support/CustomTagRegistrySupport.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---------------|----------|------|----------------|------|--------------------------|
@@ -144,13 +144,13 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | B10 | `dbMusicTag` | `GetMusicInfoFromAll(string)` | 호출 | 주입 후 검증 + 원본 곡 탐색 | 🟡 | |
 | B11 | (상품 메타) | `needPurchase`, `free`, `pay_ids`, `dlc` | 리플렉션 | **복제본에서만** DLC 식별자 제거 | 🟡 | |
 
-> **B11 경계 검증 필수**([가이드 Phase 2.1](MUSE_DASH_2_SPECULATIVE_GUIDE.md)): 이 정리 함수는 **새로 만든 커스텀 객체에만** 호출돼야 함. 원본/구매상태/DLC 소유권을 건드리는 게 아님. MD2 이식 시 호출 경계 반드시 재확인.
+> **B11 경계 검증 필수**([가이드 Phase 2.1](../future/MUSE_DASH_2_SPECULATIVE_GUIDE.md)): 이 정리 함수는 **새로 만든 커스텀 객체에만** 호출돼야 함. 원본/구매상태/DLC 소유권을 건드리는 게 아님. MD2 이식 시 호출 경계 반드시 재확인.
 
 ---
 
 ## 📋 임무 C — 조회 시 안 터지게 우회 (★게임이 죽지 않게 하는 안전망)
 
-**파일**: [CustomTagPatch.AlbumPatches.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs), [CustomTagPatch.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
+**파일**: [CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs), [CustomTagPatch.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---------------|----------|------|----------------|------|--------------------------|
@@ -165,7 +165,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 ## 📋 임무 D — 태그 아이콘 이미지 덮어쓰기 (🔴 MD2에서 가장 많이 깨질 곳)
 
-**파일**: [AlbumTagTogglePatch.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/AlbumTagTogglePatch.cs), [PnlMusicTagPatch.cs](../muse%20dash%20test/Patches/UI/Music/PnlMusicTagPatch.cs)
+**파일**: [AlbumTagTogglePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/AlbumTagTogglePatch.cs), [PnlMusicTagPatch.cs](../../muse%20dash%20test/Patches/UI/Music/PnlMusicTagPatch.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---------------|----------|------|----------------|------|--------------------------|
@@ -184,7 +184,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 1. **[임무 B·C 먼저]** 데이터 계층(🟡)은 구조가 비슷하니 ILSpy에서 `dbMusicTag` / `DBConfigAlbums` / `MusicInfo` 대응 타입을 찾아 위 표의 빈칸을 채운다. → 모드가 **컴파일되는 상태** 회복.
 2. **[임무 A]** `InitAlbumTagInfo` 대응 진입점(`Init...`, `AddAlbumTag...` 키워드)을 찾아 태그 등록 후크를 복원한다.
 3. **[임무 D 마지막]** 🔴 UI 부분은 Live2D 재설계를 감안해 **구조부터 다시 분석**한다. 아이콘 안 떠도 곡은 돌아가므로 우선순위 최하위.
-4. 각 칸을 채울 때마다 [CustomTagRegistry.cs](../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)의 디버그 로그(`[성공] m_AllMusicInfo 맵에...`, `[대성공] GetMusicInfoFromAll...`)로 단계별 검증.
+4. 각 칸을 채울 때마다 [CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)의 디버그 로그(`[성공] m_AllMusicInfo 맵에...`, `[대성공] GetMusicInfoFromAll...`)로 단계별 검증.
 
 > **요약**: 이 지도에서 🟡(데이터)는 "칸 채우기"로 끝나고, 🔴(UI 아이콘)만 진짜 재분석이 필요합니다. 즉 **"태그 전체를 다시 짠다"가 아니라 "아이콘 부분만 다시 분석 + 나머지는 이름 교체"** 가 현실적인 규모입니다.
 
@@ -192,7 +192,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 ## 📋 정확도 보정 및 결과 화면(AP) 연출 재타깃팅 지도
 
-**파일**: [APModPatch.cs](../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs)
+**파일**: [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
@@ -209,7 +209,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 ## 📋 체력바 커스텀 및 수치 변경 감지 재타깃팅 지도
 
-**파일**: [ChangeHealthValuePatch.cs](../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs), [HywStageManager.cs](../muse%20dash%20test/Patches/UI/Custom/HpMod/HywStageManager.cs)
+**파일**: [ChangeHealthValuePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs), [HywStageManager.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/HywStageManager.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
@@ -223,7 +223,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 ## 📋 세이브 데이터 정화(오염 방지) 재타깃팅 지도
 
-**파일**: [SaveDataManagerPatch.cs](../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs)
+**파일**: [SaveDataManagerPatch.cs](../../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs)
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
