@@ -18,6 +18,16 @@ using System.Collections.Generic;
     new Type[] { typeof(Il2CppSystem.Decimal) })]
 public class GameMusicScene_InitTimer_Patch
 {
+    private static bool EnableDebugLogs => false;
+
+    private static void LogDebug(string message)
+    {
+        if (EnableDebugLogs)
+        {
+            MelonLogger.Msg(message);
+        }
+    }
+
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance, Il2CppSystem.Decimal total)
     {
         try
@@ -27,14 +37,17 @@ public class GameMusicScene_InitTimer_Patch
                 return;
             }
 
-            int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
-            MelonLogger.Msg($"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}");
+            if (EnableDebugLogs)
+            {
+                int frame = 0;
+                try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
+                MelonLogger.Msg($"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}");
+            }
 
             string initialZz = ResolveInitialRenderZz();
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
             int changed = TransformSceneSegments(db != null ? db.musicList : null, initialZz);
-            MelonLogger.Msg($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형(initial={initialZz}): {changed}개");
+            LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형(initial={initialZz}): {changed}개");
         }
         catch (Exception ex) 
         { 
@@ -71,7 +84,7 @@ public class GameMusicScene_InitTimer_Patch
             catch (Exception) { }
         }
 
-        MelonLogger.Msg($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {FormatZzCounts(changedByOriginalZz)}");
+        LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {FormatZzCounts(changedByOriginalZz)}");
         return changedCount;
     }
 
@@ -93,7 +106,7 @@ public class GameMusicScene_InitTimer_Patch
         if (IsSceneToggleUid(uid))
         {
             string nextRenderZz = uid.Substring(4, 2);
-            MelonLogger.Msg($"[GameMusicScene.InitTimer] 씬 전환 구간 관찰: index={index}, uid={uid}, sceneInfo={nextRenderZz}, activeRenderZz={activeRenderZz}");
+            LogDebug($"[GameMusicScene.InitTimer] 씬 전환 구간 관찰: index={index}, uid={uid}, sceneInfo={nextRenderZz}, activeRenderZz={activeRenderZz}");
             return false;
         }
 
@@ -162,7 +175,7 @@ public class GameMusicScene_InitTimer_Patch
 
         // manifest에 씬 번호가 지정되지 않은 커스텀 곡의 기본 렌더 씬.
         // 07은 대부분의 곡에 존재하는 표준 배경 씬이라 안전한 기본값으로 사용한다.
-        MelonLogger.Msg($"[GameMusicScene.InitTimer] manifest scene 없음, 기본 렌더 씬 07 사용: uid={uid ?? "(null)"}");
+        LogDebug($"[GameMusicScene.InitTimer] manifest scene 없음, 기본 렌더 씬 07 사용: uid={uid ?? "(null)"}");
         return "07";
     }
 

@@ -11,6 +11,8 @@ namespace muse_dash_test
     public static class HwaSyncManager
     {
         private static float syncCooldownTimer = 0f;
+        private static float syncCheckTimer = 0f;
+        private const float SyncCheckInterval = 0.1f;
         private static AudioSource cachedBgmSource = null;
         private static VideoPlayer cachedBgaPlayer = null;
         private static bool isCacheInitialized = false;
@@ -19,6 +21,18 @@ namespace muse_dash_test
         {
             try
             {
+                if (syncCooldownTimer > 0f)
+                {
+                    syncCooldownTimer = Math.Max(0f, syncCooldownTimer - Time.deltaTime);
+                }
+
+                syncCheckTimer += Time.deltaTime;
+                if (syncCheckTimer < SyncCheckInterval)
+                {
+                    return;
+                }
+                syncCheckTimer = 0f;
+
                 var pnl = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
                 if (pnl != null && pnl.CurrentBattleUIComp != null)
                 {
@@ -27,11 +41,6 @@ namespace muse_dash_test
                     {
                         if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                         {
-                            if (syncCooldownTimer > 0f)
-                            {
-                                syncCooldownTimer -= Time.deltaTime;
-                            }
-
                             if (!isCacheInitialized)
                             {
                                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");

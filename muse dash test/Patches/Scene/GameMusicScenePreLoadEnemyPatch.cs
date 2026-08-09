@@ -8,11 +8,15 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "PreLoadEnemy")]
 public class GameMusicScene_PreLoadEnemy_Patch
 {
+    private static bool EnableDebugLogs => false;
+
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance)
     {
         try
         {
             if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+
+            if (!EnableDebugLogs) return;
 
             int frame = 0;
             try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
@@ -43,18 +47,24 @@ public class GameMusicScene_PreLoadEnemy_Patch
         {
             if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
-            int preloadCount = -1, objCtrlCount = -1, preloads1Count = -1;
-            try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch (Exception) { }
-            try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch (Exception) { }
-            try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch (Exception) { }
-            MelonLogger.Msg($"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}");
+            if (EnableDebugLogs)
+            {
+                int preloadCount = -1, objCtrlCount = -1, preloads1Count = -1;
+                try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch (Exception) { }
+                try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch (Exception) { }
+                try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch (Exception) { }
+                MelonLogger.Msg($"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}");
+            }
 
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
             int restored = SceneZzTransformTracker.RestoreIdentities(db != null ? db.musicList : null);
-            MelonLogger.Msg($"[PreLoadEnemy] POST BMS 정체 복구: restored={restored}, tracked={SceneZzTransformTracker.Count}, bmsOriginals={SceneZzTransformTracker.BmsOriginalCount}");
             int runtimeRestored = SceneZzTransformTracker.RestoreRuntimeObjects(__instance);
-            MelonLogger.Msg($"[PreLoadEnemy] POST 런타임 객체 BMS 정체 복구: restored={runtimeRestored}");
-            MelonLogger.Msg($"[PreLoadEnemy] POST 복구 후 musicList {Describe(db != null ? db.musicList : null)}");
+            if (EnableDebugLogs)
+            {
+                MelonLogger.Msg($"[PreLoadEnemy] POST BMS 정체 복구: restored={restored}, tracked={SceneZzTransformTracker.Count}, bmsOriginals={SceneZzTransformTracker.BmsOriginalCount}");
+                MelonLogger.Msg($"[PreLoadEnemy] POST 런타임 객체 BMS 정체 복구: restored={runtimeRestored}");
+                MelonLogger.Msg($"[PreLoadEnemy] POST 복구 후 musicList {Describe(db != null ? db.musicList : null)}");
+            }
         }
         catch (Exception ex) { MelonLogger.Error($"[PreLoadEnemy] Postfix 예외: {ex}"); }
     }

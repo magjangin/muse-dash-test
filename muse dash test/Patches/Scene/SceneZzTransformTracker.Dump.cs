@@ -23,6 +23,8 @@ namespace muse_dash_test
             }
         }
 
+        private static bool EnableRuntimeDiagnosticsDump => false;
+
         // 진단 덤프 시 한 프레임에서 처리할 작업량 상한. 이만큼 처리하면 다음 프레임으로 양보(yield)한다.
         private const int DumpListScanPerFrame = 200; // 리스트 인덱싱: 항목(인터롭 읽기) 수 기준
         private const int DumpNotesPerFrame = 40;      // 노트 덤프: 노트당 인터롭 읽기가 더 무거우므로 더 작게
@@ -41,6 +43,11 @@ namespace muse_dash_test
             restored += RestoreObjectList("objCtrls", SafeGet(() => scene.objCtrls));
             restored += RestoreObjectList("preloads", SafeGet(() => scene.preloads));
             restored += RestoreObjectList("preloads1", SafeGet(() => scene.preloads1));
+
+            if (!EnableRuntimeDiagnosticsDump)
+            {
+                return restored;
+            }
 
             // 진단 덤프는 대량의 IL2CPP 인터롭 읽기 + 대량 로그 출력을 동반하므로, 곡 시작 한 프레임에
             // 몰리면 히치(렉)를 유발한다. 코루틴으로 여러 프레임에 나눠 실행해 부하를 분산한다.

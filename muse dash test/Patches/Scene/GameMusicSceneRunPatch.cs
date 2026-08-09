@@ -5,11 +5,13 @@ using System;
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "Run")]
 public class GameMusicScene_Run_Patch
 {
+    private static bool EnableVerboseSceneDump => false;
     private static int _dumpCount;
     private static bool _musicDumped;
 
     public static void Postfix(Il2CppGameLogic.GameMusicScene __instance)
     {
+        if (!EnableVerboseSceneDump) return;
         try
         {
             if (__instance == null) return;
