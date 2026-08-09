@@ -40,6 +40,7 @@
 | [BOSS_EXPERIMENTS.md](experiments/BOSS_EXPERIMENTS.md) | 보스 액션 트리거와 보스 프리팹 교체 |
 | [SCENE_BACKGROUND_SWAP.md](experiments/SCENE_BACKGROUND_SWAP.md) | 배경만 바꾸고 노트 정체는 유지하는 씬 스왑 원리 |
 | [UID_INJECTION.md](experiments/UID_INJECTION.md) | 가상 곡 UID 등록 초기 설계·탐색 메모 |
+| [DIALOG_INJECTION.md](experiments/DIALOG_INJECTION.md) | 커스텀 곡 대사(Dialog) 주입 설계 및 실측 기록 (보류) |
 
 ## 🔮 muse-dash-2/ — 차기작 대비 분석
 
