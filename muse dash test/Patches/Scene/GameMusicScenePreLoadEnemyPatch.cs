@@ -8,7 +8,7 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "PreLoadEnemy")]
 public class GameMusicScene_PreLoadEnemy_Patch
 {
-    private static bool EnableDebugLogs => false;
+    private static bool EnableDebugLogs => true;
 
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance)
     {
@@ -28,14 +28,13 @@ public class GameMusicScene_PreLoadEnemy_Patch
             {
                 try { musicCount = db.musicList != null ? db.musicList.Count : -1; } catch (Exception) { }
                 try { oriCount = db.oriMusicList != null ? db.oriMusicList.Count : -1; } catch (Exception) { }
-                musicHead = Describe(db.musicList);
-                oriHead = Describe(db.oriMusicList);
+                musicHead = DescribeCompact(db.musicList);
+                oriHead = DescribeCompact(db.oriMusicList);
             }
 
             // 변형은 SetRuntimeMusicData(더 이른 시점)로 옮겼다. 여기선 그 결과만 확인한다.
-            MelonLogger.Msg($"[PreLoadEnemy] PRE frame={frame}: musicList.Count={musicCount}, oriMusicList.Count={oriCount}");
-            MelonLogger.Msg($"[PreLoadEnemy]   musicList    {musicHead}");
-            MelonLogger.Msg($"[PreLoadEnemy]   oriMusicList {oriHead}");
+            var summary = $"[PreLoadEnemy] PRE frame={frame}: musicList.Count={musicCount}, oriMusicList.Count={oriCount}\n[PreLoadEnemy]   musicList    {musicHead}\n[PreLoadEnemy]   oriMusicList {oriHead}";
+            SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Prefix", summary, 20);
         }
         catch (Exception ex) { MelonLogger.Error($"[PreLoadEnemy] Prefix 예외: {ex}"); }
     }
@@ -53,7 +52,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
                 try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch (Exception) { }
                 try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch (Exception) { }
                 try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch (Exception) { }
-                MelonLogger.Msg($"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}");
+                SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Postfix", $"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}", 20);
             }
 
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
@@ -61,16 +60,15 @@ public class GameMusicScene_PreLoadEnemy_Patch
             int runtimeRestored = SceneZzTransformTracker.RestoreRuntimeObjects(__instance);
             if (EnableDebugLogs)
             {
-                MelonLogger.Msg($"[PreLoadEnemy] POST BMS 정체 복구: restored={restored}, tracked={SceneZzTransformTracker.Count}, bmsOriginals={SceneZzTransformTracker.BmsOriginalCount}");
-                MelonLogger.Msg($"[PreLoadEnemy] POST 런타임 객체 BMS 정체 복구: restored={runtimeRestored}");
-                MelonLogger.Msg($"[PreLoadEnemy] POST 복구 후 musicList {Describe(db != null ? db.musicList : null)}");
+                var summary = $"[PreLoadEnemy] POST BMS 정체 복구: restored={restored}, tracked={SceneZzTransformTracker.Count}, bmsOriginals={SceneZzTransformTracker.BmsOriginalCount}\n[PreLoadEnemy] POST 런타임 객체 BMS 정체 복구: restored={runtimeRestored}\n[PreLoadEnemy] POST 복구 후 musicList {DescribeCompact(db != null ? db.musicList : null)}";
+                SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Postfix", summary, 20);
             }
         }
         catch (Exception ex) { MelonLogger.Error($"[PreLoadEnemy] Postfix 예외: {ex}"); }
     }
 
     // 리스트 전체를 스캔: uid zz(앞2자리) 프리픽스 분포 + 첫 non-null uid 몇 개.
-    private static string Describe(Il2CppSystem.Collections.Generic.List<Il2CppGameLogic.MusicData> list)
+    private static string DescribeCompact(Il2CppSystem.Collections.Generic.List<Il2CppGameLogic.MusicData> list)
     {
         try
         {
@@ -85,7 +83,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
                 if (string.IsNullOrEmpty(uid)) { nullCount++; continue; }
                 string zz = uid.Length >= 2 ? uid.Substring(0, 2) : uid;
                 hist[zz] = hist.TryGetValue(zz, out int c) ? c + 1 : 1;
-                if (firstNonNull.Count < 6) firstNonNull.Add(uid);
+                if (firstNonNull.Count < 4) firstNonNull.Add(uid);
             }
             var sb = new System.Text.StringBuilder();
             sb.Append($"nullUid={nullCount}, zz분포={{");

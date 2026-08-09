@@ -1,13 +1,16 @@
 using MelonLoader;
+using muse_dash_test;
 using System;
 
 // Il2CppGameLogic.GameMusicScene.Run() 후킹 — 씬 슬롯 컬렉션과 musicList 상태를 관찰용으로 덤프한다.
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "Run")]
 public class GameMusicScene_Run_Patch
 {
-    private static bool EnableVerboseSceneDump => false;
+    private static bool EnableVerboseSceneDump => true;
     private static int _dumpCount;
     private static bool _musicDumped;
+    private static int _lastDumpFrame;
+    private const int DumpIntervalFrames = 30;
 
     public static void Postfix(Il2CppGameLogic.GameMusicScene __instance)
     {
@@ -15,11 +18,17 @@ public class GameMusicScene_Run_Patch
         try
         {
             if (__instance == null) return;
-            _dumpCount++;
 
             int frame = 0;
             try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
-            MelonLogger.Msg($"[GameMusicScene.Run] === dump #{_dumpCount}, frame={frame} ===");
+            if (_dumpCount > 0 && frame - _lastDumpFrame < DumpIntervalFrames)
+            {
+                return;
+            }
+
+            _lastDumpFrame = frame;
+            _dumpCount++;
+            SceneDiagnosticLogger.Log("GameMusicScene.Run", $"[GameMusicScene.Run] === dump #{_dumpCount}, frame={frame} ===", DumpIntervalFrames);
 
             // 핵심 컬렉션 내용 덤프 ─ 현재 로드된 씬 슬롯의 실체를 본다.
             DumpKeyCollections(__instance);
@@ -77,8 +86,9 @@ public class GameMusicScene_Run_Patch
             var scenes = scene.scenes;
             if (scenes != null)
             {
-                MelonLogger.Msg($"[GameMusicScene.Run]   >> scenes (Count={scenes.Count}):");
-                for (int i = 0; i < scenes.Count; i++)
+                int sampleCount = Math.Min(scenes.Count, 8);
+                MelonLogger.Msg($"[GameMusicScene.Run]   >> scenes (Count={scenes.Count}, sample={sampleCount}):");
+                for (int i = 0; i < sampleCount; i++)
                 {
                     string name = "(null)";
                     try { name = scenes[i] != null ? scenes[i].name : "(null)"; } catch (Exception ex) { name = $"(예외:{ex.GetType().Name})"; }
@@ -94,11 +104,14 @@ public class GameMusicScene_Run_Patch
             var sa = scene.scenesAnimas;
             if (sa != null)
             {
-                MelonLogger.Msg($"[GameMusicScene.Run]   >> scenesAnimas keys (Count={sa.Count}):");
+                int sampleCount = Math.Min(sa.Count, 8);
+                MelonLogger.Msg($"[GameMusicScene.Run]   >> scenesAnimas keys (Count={sa.Count}, sample={sampleCount}):");
                 var e = sa.Keys.GetEnumerator();
-                while (e.MoveNext())
+                int logged = 0;
+                while (e.MoveNext() && logged < sampleCount)
                 {
                     MelonLogger.Msg($"[GameMusicScene.Run]        key='{e.Current}'");
+                    logged++;
                 }
             }
         }
@@ -110,11 +123,14 @@ public class GameMusicScene_Run_Patch
             var subs = scene.SceneSubCtrls;
             if (subs != null)
             {
-                MelonLogger.Msg($"[GameMusicScene.Run]   >> SceneSubCtrls keys (Count={subs.Count}):");
+                int sampleCount = Math.Min(subs.Count, 8);
+                MelonLogger.Msg($"[GameMusicScene.Run]   >> SceneSubCtrls keys (Count={subs.Count}, sample={sampleCount}):");
                 var e = subs.Keys.GetEnumerator();
-                while (e.MoveNext())
+                int logged = 0;
+                while (e.MoveNext() && logged < sampleCount)
                 {
                     MelonLogger.Msg($"[GameMusicScene.Run]        key={e.Current}");
+                    logged++;
                 }
             }
         }

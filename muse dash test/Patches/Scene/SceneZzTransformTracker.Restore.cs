@@ -40,7 +40,11 @@ namespace muse_dash_test
                 restored += RestoreObjectMusicData(item, 0, new HashSet<int>());
             }
 
-            MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[{string.Join(", ", itemTypes)}]");
+            if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
+            {
+                var preview = itemTypes.Count == 0 ? "(none)" : string.Join(", ", itemTypes);
+                MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[{preview}]");
+            }
             return restored;
         }
 

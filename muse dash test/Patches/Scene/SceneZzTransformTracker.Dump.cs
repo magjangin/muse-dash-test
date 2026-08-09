@@ -23,11 +23,11 @@ namespace muse_dash_test
             }
         }
 
-        private static bool EnableRuntimeDiagnosticsDump => false;
-
+        private static bool EnableRuntimeDiagnosticsDump => true;
+        
         // 진단 덤프 시 한 프레임에서 처리할 작업량 상한. 이만큼 처리하면 다음 프레임으로 양보(yield)한다.
-        private const int DumpListScanPerFrame = 200; // 리스트 인덱싱: 항목(인터롭 읽기) 수 기준
-        private const int DumpNotesPerFrame = 40;      // 노트 덤프: 노트당 인터롭 읽기가 더 무거우므로 더 작게
+        private const int DumpListScanPerFrame = 80;  // 리스트 인덱싱: 항목(인터롭 읽기) 수 기준
+        private const int DumpNotesPerFrame = 8;       // 노트 덤프: 노트당 인터롭 읽기가 더 무거우므로 더 작게
 
         // 현재 진행 중인 진단 덤프 코루틴 토큰. 씬 재진입 시 이전 덤프를 중단하는 데 사용한다.
         private static object _dumpCoroutine;

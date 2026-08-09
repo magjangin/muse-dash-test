@@ -169,7 +169,7 @@ namespace muse_dash_test
                 }
             }
 
-            MelonLogger.Msg($"[SceneZzTransformTracker] BMS 원본 UID 등록: count={BmsOriginalsByObjId.Count}, zz분포={FormatZzCounts(counts)}");
+            SceneDiagnosticLogger.Log("SceneZzTransformTracker.RegisterBms", $"[SceneZzTransformTracker] BMS 원본 UID 등록: count={BmsOriginalsByObjId.Count}, zz분포={FormatZzCounts(counts)}", 20);
         }
 
         /// <summary>
@@ -289,8 +289,8 @@ namespace muse_dash_test
                 }
             }
 
-            MelonLogger.Msg($"[SceneZzTransformTracker] 복구 UID zz분포: {FormatZzCounts(counts)}");
-            MelonLogger.Msg($"[SceneZzTransformTracker] 복구 완료: restored={restored}, byObjId={restoredByObjId}, byFallback={restoredByFallback}");
+            SceneDiagnosticLogger.Log("SceneZzTransformTracker.Restore", $"[SceneZzTransformTracker] 복구 UID zz분포: {FormatZzCounts(counts)}", 20);
+            SceneDiagnosticLogger.Log("SceneZzTransformTracker.Restore", $"[SceneZzTransformTracker] 복구 완료: restored={restored}, byObjId={restoredByObjId}, byFallback={restoredByFallback}", 20);
             return restored;
         }
     }

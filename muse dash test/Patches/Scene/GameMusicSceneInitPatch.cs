@@ -1,4 +1,5 @@
 using MelonLoader;
+using muse_dash_test;
 using System;
 using System.Collections.Generic;
 
@@ -18,14 +19,12 @@ using System.Collections.Generic;
     new Type[] { typeof(Il2CppSystem.Decimal) })]
 public class GameMusicScene_InitTimer_Patch
 {
-    private static bool EnableDebugLogs => false;
+    private static bool EnableDebugLogs => true;
 
     private static void LogDebug(string message)
     {
-        if (EnableDebugLogs)
-        {
-            MelonLogger.Msg(message);
-        }
+        if (!EnableDebugLogs) return;
+        SceneDiagnosticLogger.Log("GameMusicScene.InitTimer", message, 20);
     }
 
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance, Il2CppSystem.Decimal total)
@@ -41,7 +40,7 @@ public class GameMusicScene_InitTimer_Patch
             {
                 int frame = 0;
                 try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
-                MelonLogger.Msg($"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}");
+                SceneDiagnosticLogger.Log("GameMusicScene.InitTimer.Prefix", $"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}", 20);
             }
 
             string initialZz = ResolveInitialRenderZz();
@@ -229,7 +228,7 @@ public class GameMusicScene_InitSceneEvents_Patch
 
             int frame = 0;
             try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
-            MelonLogger.Msg($"[GameMusicScene.InitSceneEvents] PRE frame={frame}, curSceneName={SafeCurSceneName(__instance)}");
+            SceneDiagnosticLogger.Log("GameMusicScene.InitSceneEvents", $"[GameMusicScene.InitSceneEvents] PRE frame={frame}, curSceneName={SafeCurSceneName(__instance)}", 20);
         }
         catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.InitSceneEvents] Prefix 예외: {ex}"); }
     }
@@ -242,7 +241,7 @@ public class GameMusicScene_InitSceneEvents_Patch
 
             int sceneCount = -1;
             try { sceneCount = __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1; } catch (Exception) { }
-            MelonLogger.Msg($"[GameMusicScene.InitSceneEvents] POST scenes.Count={sceneCount}, curSceneName={SafeCurSceneName(__instance)}");
+            SceneDiagnosticLogger.Log("GameMusicScene.InitSceneEvents", $"[GameMusicScene.InitSceneEvents] POST scenes.Count={sceneCount}, curSceneName={SafeCurSceneName(__instance)}", 20);
         }
         catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.InitSceneEvents] Postfix 예외: {ex}"); }
     }
