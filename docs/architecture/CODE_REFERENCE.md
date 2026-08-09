@@ -71,7 +71,7 @@ MelonLoader 모드 진입점 클래스입니다.
   * **올 퍼펙트 달성 시**: 기본 출력되는 `"F-U-L-L C-O-M-B-O"` 알파벳 이미지들을 모두 비활성화하고, 새 `"CustomAPText"` GameObject를 추가해 그라데이션 색상과 외곽선이 적용된 **"ALL PERFECT !"** 텍스트를 대신 표시합니다.
 
 ### 📂 [Battle/Mechanics/AutoPlayPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs)
-* **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹하여 흐름을 모니터링합니다.
+* **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹해, 전달된 인자를 설정값(`InputOverlay.forceAutoPlay`)으로 덮어씁니다. 모드 로드 직후에는 항상 오토가 꺼진 상태로 시작하며(첫 설정 로드에서는 `config.txt`의 `오토플레이=true`를 무시), 게임 도중 `config.txt`를 저장하면 그때부터 파일 값이 그대로 적용됩니다.
 
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.

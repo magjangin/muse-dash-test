@@ -36,8 +36,14 @@ namespace muse_dash_test
 
         // 추가 설정 필드 (오토플레이 & 피버 차단 & 시네마)
         public static bool blockFever = false;
-        public static bool forceAutoPlay = true;
+        // 오토플레이는 모드가 로드될 때 항상 꺼진 상태로 시작합니다. config.txt에 '오토플레이=true'가
+        // 남아 있어도 이번 실행의 첫 로드에서는 무시합니다(아래 autoPlayFollowsConfig 참고).
+        public static bool forceAutoPlay = false;
         public static bool enableCinema = true;
+
+        // 첫 설정 로드가 끝나기 전까지는 파일의 '오토플레이' 값을 적용하지 않습니다.
+        // 첫 로드 이후 게임 도중 config.txt를 저장하면 그때부터는 파일 값을 그대로 따릅니다.
+        private static bool autoPlayFollowsConfig = false;
 
         private static string airColorName = "파랑";
         private static float airAlpha = 85f;
@@ -329,8 +335,18 @@ namespace muse_dash_test
                             barResponsive = ParseBool(val, key, barResponsive);
                             break;
                         case "오토플레이":
-                            forceAutoPlay = ParseBool(val, key, forceAutoPlay);
+                        {
+                            bool requestedAutoPlay = ParseBool(val, key, forceAutoPlay);
+                            if (autoPlayFollowsConfig)
+                            {
+                                forceAutoPlay = requestedAutoPlay;
+                            }
+                            else if (requestedAutoPlay)
+                            {
+                                MelonLogger.Msg("[InputOverlay] 모드 로드 직후의 첫 설정 로드이므로 '오토플레이=true'를 무시하고 오토를 끈 상태로 시작합니다. (게임 도중 config.txt를 저장하면 그때부터 설정값이 그대로 적용됩니다.)");
+                            }
                             break;
+                        }
                         case "피버충전금지":
                             blockFever = ParseBool(val, key, blockFever);
                             break;
@@ -339,6 +355,10 @@ namespace muse_dash_test
                             break;
                     }
                 }
+
+                // 첫 로드를 마쳤으므로, 이후의 config.txt 저장부터는 '오토플레이' 값을 그대로 반영합니다.
+                autoPlayFollowsConfig = true;
+
                 MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema})");
                 UpdateTextures();
             }

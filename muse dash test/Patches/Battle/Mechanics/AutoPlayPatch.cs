@@ -5,6 +5,9 @@ using Il2CppAssets.Scripts.Database;
 namespace muse_dash_test
 {
     // === 오토플레이 설정 파일 연동 패치 ===
+    // 게임이 SetAutoPlay를 호출할 때마다 인자를 InputOverlay.forceAutoPlay로 덮어씁니다.
+    // forceAutoPlay는 모드 로드 직후 항상 false이므로 오토는 꺼진 상태로 시작하며,
+    // 게임 도중 config.txt의 '오토플레이' 값을 저장하면 그때부터 그 값이 적용됩니다.
 
     [HarmonyLib.HarmonyPatch(typeof(DBSkill), "SetAutoPlay")]
     public class DBSkill_SetAutoPlay_Patch
