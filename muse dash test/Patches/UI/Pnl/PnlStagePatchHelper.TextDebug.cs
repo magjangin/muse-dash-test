@@ -302,6 +302,51 @@ public static partial class PnlStagePatchHelper
 
     private static readonly string[] ExperimentModeTitles = { "\uc2e4\ud5d8 \ubaa8\ub4dc", "Experiment Mod", "\u5b9e\u9a8c\u6a21\u5f0f", "\u5be6\u9a57\u6a21\u5f0f", "\u5b9f\u9a13\u30e2\u30fc\u30c9" };
 
+    public static bool IsExperimentModeTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return false;
+        }
+
+        string normalized = NormalizeExperimentModeTitle(title);
+        if (string.IsNullOrEmpty(normalized))
+        {
+            return false;
+        }
+
+        foreach (var candidate in ExperimentModeTitles)
+        {
+            if (NormalizeExperimentModeTitle(candidate) == normalized)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NormalizeExperimentModeTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return string.Empty;
+        }
+
+        var sb = new StringBuilder(title.Length);
+        foreach (char ch in title.Trim())
+        {
+            if (char.IsWhiteSpace(ch))
+            {
+                continue;
+            }
+
+            sb.Append(char.ToLowerInvariant(ch));
+        }
+
+        return sb.ToString();
+    }
+
     public static void SyncExperimentModeFromStage(PnlStage stage)
     {
         try
@@ -310,9 +355,7 @@ public static partial class PnlStagePatchHelper
             var titleText = stage.titleOwn;
             if (titleText == null) return;
             string text = titleText.text ?? string.Empty;
-            bool isExp = false;
-            foreach (var t in ExperimentModeTitles)
-                if (text == t) { isExp = true; break; }
+            bool isExp = IsExperimentModeTitle(text);
 
             bool previous = CustomPlaySession.Current.IsExperimentModeActive;
             if (isExp != previous)

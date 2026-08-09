@@ -12,7 +12,7 @@ public class MusicButtonAreaTitle_RefreshTxt_Patch
         {
             if (__instance != null)
             {
-                bool isExperimentMode = title == "실험 모드" || title == "Experiment Mod" || title == "实验模式" || title == "實驗模式" || title == "実験モード";
+                bool isExperimentMode = PnlStagePatchHelper.IsExperimentModeTitle(title);
                 CustomPlaySession.Current.IsExperimentModeActive = isExperimentMode;
                 MelonLogger.Msg($"[MusicButtonAreaTitle] title='{title ?? "(null)"}', isExperimentMode={isExperimentMode}");
             }
