@@ -15,7 +15,7 @@
   * 런타임 보스 초기화(`Boss.InitBossObject`)를 제어합니다.
   * 보스 액션 중 `out` 처리로 인해 Unity Game Object가 강제 비활성화(`SetActive(false)`)되어 발생하는 퇴장 상태를 자동으로 감지 및 극복하여, 원하는 시점에 완전히 다른 보스 프리팹을 실시간으로 교체 및 강제 활성화(`swap:[보스명]:[씬번호]`)하는 고난도 기믹을 제공합니다.
 
-* **Custom Tag & LocalALBUMInfo Resolution (커스텀 태그 및 로컬라이제이션 원본 DB 조회 결합) [v0.9.1]** ✅
+* **Custom Tag & LocalALBUMInfo Resolution (커스텀 태그 및 로컬라이제이션 원본 DB 조회 결합) [v0.9.2]** ✅
   * `MusicInfo.GetLocal(int language)` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(int index)` 훅을 연동하여 게임 엔진 본연의 로컬라이즈 DB 조회 시 커스텀 곡 제목과 아티스트명을 반환하도록 확장했습니다.
   * 이로써 언어팩 조회 경로가 원본 곡명을 되돌려 놓는 것을 차단합니다. 다만 `PnlStage.RefreshDiffUI` Postfix의 수동 덮어쓰기(`ApplyTagTitleForMusicInfo`) 경로는 **아직 제거되지 않았습니다** — UI 상단 곡 제목(`musicNameTitle`)/아티스트(`artistNameTitle`)가 훅만으로 스스로 렌더링되는지는 미검증 상태입니다. (→ [CAST_AND_CUSTOM_TAG_GUIDE.md](docs/architecture/CAST_AND_CUSTOM_TAG_GUIDE.md))
   * `MusicInfoWrapper`에 `music` 필드 래퍼 프로퍼티를 추가하고 에셋 키 참조를 차단했습니다.
@@ -51,8 +51,8 @@
 | 커스텀 태그(UID 1998) 동적 주입 | ✅ 완료 |
 | 커스텀 태그에 곡 바인딩 | ✅ 완료 |
 | `m_MaxAlbumUid` 성능 최적화 패치 | ✅ 완료 |
-| **`MusicInfo.GetLocal` & `DBConfigLocalALBUM` 로컬라이제이션 훅 (`LocalALBUMInfo` 반환)** | ✅ 완료 (v0.9.1) |
-| **`PnlStage.RefreshDiffUI` 원본 시점 곡 제목/아티스트 렌더링** | 🟡 부분 완료 (v0.9.1) — Postfix 수동 덮어쓰기 병행, 훅 단독 렌더링은 미검증 |
+| **`MusicInfo.GetLocal` & `DBConfigLocalALBUM` 로컬라이제이션 훅 (`LocalALBUMInfo` 반환)** | ✅ 완료 (v0.9.2) |
+| **`PnlStage.RefreshDiffUI` 원본 시점 곡 제목/아티스트 렌더링** | 🟡 부분 완료 (v0.9.2) — Postfix 수동 덮어쓰기 병행, 훅 단독 렌더링은 미검증 |
 | 곡 제목 실시간 변조 (`PnlStage`) | ✅ 완료 |
 | 아티스트명 실시간 변조 (`PnlStage`) | ✅ 완료 |
 | 준비 화면 텍스트 보강 변조 (`PnlPreparation`) | ✅ 완료 |

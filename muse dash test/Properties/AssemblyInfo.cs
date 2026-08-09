@@ -30,5 +30,5 @@ using System.Runtime.InteropServices;
 //      수정 버전
 //
 // MainMod.cs의 [MelonInfo] 버전과 항상 일치시킵니다.
-[assembly: AssemblyVersion("0.9.1.0")]
-[assembly: AssemblyFileVersion("0.9.1.0")]
+[assembly: AssemblyVersion("0.9.2.0")]
+[assembly: AssemblyFileVersion("0.9.2.0")]
