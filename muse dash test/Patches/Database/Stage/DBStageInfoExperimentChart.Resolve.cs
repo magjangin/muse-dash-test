@@ -81,16 +81,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static string ResolveKeyAudio(ExperimentNoteSpec spec, int noteType, string uid)
     {
         if (!string.IsNullOrEmpty(spec.KeyAudio)) return spec.KeyAudio;
-        
-        // 보스 동작 지시용 placeholder(type 0)는 키음이 없어야 합니다.
-        if (noteType == NoteTypes.Boss) return "";
 
-        // 실제 타격이 필요한 노드들의 기본 키음 설정 (type 4는 의미 미상이라 리터럴 유지)
-        if (noteType == NoteTypes.Normal || noteType == NoteTypes.Gear || noteType == NoteTypes.Long || noteType == 4 || noteType == NoteTypes.Sandbag) return "sfx_mezzo_1";
-        if (noteType == NoteTypes.Heart || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0002"))) return "sfx_hp";
-        if (noteType == NoteTypes.Blue || (!string.IsNullOrEmpty(uid) && uid.StartsWith("0003"))) return "sfx_score";
-        
-        if (!string.IsNullOrEmpty(spec.BossAction)) return "";
+        // 명시적으로 override하지 않는 한, 원본 noteData.key_audio를 그대로 유지한다.
+        // 이렇게 해야 실험 노트도 원래 키음 세팅을 유지할 수 있다.
         return null; // keep cloned value
     }
 
