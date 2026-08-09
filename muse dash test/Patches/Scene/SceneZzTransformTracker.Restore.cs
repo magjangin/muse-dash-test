@@ -279,6 +279,12 @@ namespace muse_dash_test
                 changed = true;
             }
 
+            if (!string.Equals(noteData.key_audio, original.KeyAudio, StringComparison.Ordinal))
+            {
+                noteData.key_audio = original.KeyAudio;
+                changed = true;
+            }
+
             note.noteData = noteData;
 
             if (note.configData != null)
@@ -305,11 +311,13 @@ namespace muse_dash_test
                 ConfigNoteUid = note.configData?.note_uid,
                 Scene = note.noteData.scene,
                 PrefabName = note.noteData.prefab_name,
+                KeyAudio = note.noteData.key_audio,
                 RenderUid = note.noteData.uid,
                 RenderMirrorUid = note.noteData.mirror_uid,
                 RenderNoteUid = note.noteData.noteUid,
                 RenderConfigNoteUid = note.configData?.note_uid,
-                RenderPrefabName = note.noteData.prefab_name
+                RenderPrefabName = note.noteData.prefab_name,
+                RenderKeyAudio = note.noteData.key_audio
             };
         }
 

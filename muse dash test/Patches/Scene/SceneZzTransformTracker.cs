@@ -30,6 +30,7 @@ namespace muse_dash_test
             public string ConfigNoteUid;
             public string Scene;
             public string PrefabName;
+            public string KeyAudio;
 
             // 변환을 적용한 렌더러용 식별 정보
             public string RenderUid;
@@ -37,6 +38,7 @@ namespace muse_dash_test
             public int RenderNoteUid;
             public string RenderConfigNoteUid;
             public string RenderPrefabName;
+            public string RenderKeyAudio;
         }
 
         // 오브젝트 고유 ID(objId) 기준 원본 식별자 매핑 정보
@@ -186,6 +188,7 @@ namespace muse_dash_test
             string renderConfigNoteUid = note.configData != null && IsSixDigitUid(note.configData.note_uid) && !string.IsNullOrEmpty(renderZz)
                 ? renderZz + note.configData.note_uid.Substring(2)
                 : note.configData?.note_uid;
+            string renderKeyAudio = note.noteData.key_audio;
 
             int renderNoteUid = note.noteData.noteUid;
             if (int.TryParse(renderUid, out int parsed))
@@ -201,6 +204,7 @@ namespace muse_dash_test
                 bmsOriginal.RenderNoteUid = renderNoteUid;
                 bmsOriginal.RenderConfigNoteUid = renderConfigNoteUid;
                 bmsOriginal.RenderPrefabName = renderPrefabName;
+                bmsOriginal.RenderKeyAudio = renderKeyAudio;
                 OriginalsByObjId[note.objId] = bmsOriginal;
                 captured = bmsOriginal;
             }
@@ -212,6 +216,7 @@ namespace muse_dash_test
                 captured.RenderNoteUid = renderNoteUid;
                 captured.RenderConfigNoteUid = renderConfigNoteUid;
                 captured.RenderPrefabName = renderPrefabName;
+                captured.RenderKeyAudio = renderKeyAudio;
                 OriginalsByObjId[note.objId] = captured;
             }
 
