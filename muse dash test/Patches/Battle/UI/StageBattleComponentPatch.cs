@@ -264,7 +264,10 @@ namespace muse_dash_test
         {
             MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Release 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
-            HwaBattleMediaController.StopMedia();
+            try { CustomPlaySession.Current.ResetApplyDecision(); }
+            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Release ResetApplyDecision 예외: {ex}"); }
+            try { HwaBattleMediaController.StopMedia(); }
+            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Release StopMedia 예외: {ex}"); }
         }
     }
 
@@ -275,7 +278,10 @@ namespace muse_dash_test
         {
             MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.GameRestart 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
-            HwaBattleMediaController.StopMedia();
+            try { CustomPlaySession.Current.ResetApplyDecision(); }
+            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] GameRestart ResetApplyDecision 예외: {ex}"); }
+            try { HwaBattleMediaController.StopMedia(); }
+            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] GameRestart StopMedia 예외: {ex}"); }
         }
     }
 }
