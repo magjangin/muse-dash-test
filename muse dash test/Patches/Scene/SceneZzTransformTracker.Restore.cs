@@ -240,24 +240,55 @@ namespace muse_dash_test
         private static bool RestoreMusicData(ref MusicData note)
         {
             if (note?.noteData == null) return false;
-            if (!OriginalsByObjId.TryGetValue(note.objId, out var original)) return false;
+            if (!TryResolveOriginalIdentity(note, out var original)) return false;
 
             var noteData = note.noteData;
-            noteData.uid = original.Uid;
-            noteData.mirror_uid = original.MirrorUid;
-            noteData.noteUid = original.NoteUid;
-            noteData.scene = original.Scene;
-            noteData.prefab_name = original.PrefabName;
+            bool changed = false;
+
+            if (!string.Equals(noteData.uid, original.Uid, StringComparison.Ordinal))
+            {
+                noteData.uid = original.Uid;
+                changed = true;
+            }
+
+            if (!string.Equals(noteData.mirror_uid, original.MirrorUid, StringComparison.Ordinal))
+            {
+                noteData.mirror_uid = original.MirrorUid;
+                changed = true;
+            }
+
+            if (noteData.noteUid != original.NoteUid)
+            {
+                noteData.noteUid = original.NoteUid;
+                changed = true;
+            }
+
+            if (!string.Equals(noteData.scene, original.Scene, StringComparison.Ordinal))
+            {
+                noteData.scene = original.Scene;
+                changed = true;
+            }
+
+            if (!string.Equals(noteData.prefab_name, original.PrefabName, StringComparison.Ordinal))
+            {
+                noteData.prefab_name = original.PrefabName;
+                changed = true;
+            }
+
             note.noteData = noteData;
 
             if (note.configData != null)
             {
                 var configData = note.configData;
-                configData.note_uid = original.ConfigNoteUid;
+                if (!string.Equals(configData.note_uid, original.ConfigNoteUid, StringComparison.Ordinal))
+                {
+                    configData.note_uid = original.ConfigNoteUid;
+                    changed = true;
+                }
                 note.configData = configData;
             }
 
-            return true;
+            return changed;
         }
 
         private static OriginalIdentity CaptureIdentity(MusicData note)

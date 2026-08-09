@@ -54,6 +54,62 @@ namespace muse_dash_test
         // 위 리스트 중복 등록 방지용 O(1) 집합(노트마다 List.Contains O(N) 스캔하던 것을 대체).
         private static readonly HashSet<string> SeenRenderPrefabNames = new HashSet<string>(StringComparer.Ordinal);
 
+        private static bool TryResolveOriginalIdentity(MusicData note, out OriginalIdentity original)
+        {
+            original = null;
+            if (note?.noteData == null) return false;
+
+            if (note.objId != 0 && OriginalsByObjId.TryGetValue(note.objId, out original)) return true;
+
+            var noteData = note.noteData;
+            if (TryResolveOriginalIdentityFromTextValue(noteData.uid, out original)) return true;
+            if (TryResolveOriginalIdentityFromTextValue(noteData.mirror_uid, out original)) return true;
+            if (TryResolveOriginalIdentityFromTextValue(noteData.prefab_name, out original)) return true;
+            if (note.configData != null && TryResolveOriginalIdentityFromTextValue(note.configData.note_uid, out original)) return true;
+            if (TryResolveOriginalIdentityFromNoteUid(noteData.noteUid, out original)) return true;
+
+            return false;
+        }
+
+        private static bool TryResolveOriginalIdentityFromTextValue(string value, out OriginalIdentity original)
+        {
+            original = null;
+            if (string.IsNullOrEmpty(value)) return false;
+
+            if (OriginalsByRenderUid.TryGetValue(value, out original)) return true;
+            if (OriginalsByRenderMirrorUid.TryGetValue(value, out original)) return true;
+            if (OriginalsByRenderConfigNoteUid.TryGetValue(value, out original)) return true;
+
+            foreach (var candidate in OriginalsWithRenderPrefabName)
+            {
+                if (!string.IsNullOrEmpty(candidate?.RenderPrefabName) && value.IndexOf(candidate.RenderPrefabName, StringComparison.Ordinal) >= 0)
+                {
+                    original = candidate;
+                    return true;
+                }
+            }
+
+            foreach (var candidate in OriginalsByRenderUid.Values)
+            {
+                if (!string.IsNullOrEmpty(candidate?.RenderUid) && value.IndexOf(candidate.RenderUid, StringComparison.Ordinal) >= 0)
+                {
+                    original = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveOriginalIdentityFromNoteUid(int noteUid, out OriginalIdentity original)
+        {
+            original = null;
+            if (noteUid == 0) return false;
+
+            if (OriginalsByRenderNoteUid.TryGetValue(noteUid, out original)) return true;
+            return false;
+        }
+
         public static int Count => OriginalsByObjId.Count;
         public static int BmsOriginalCount => BmsOriginalsByObjId.Count;
 
@@ -186,6 +242,8 @@ namespace muse_dash_test
             if (list == null || OriginalsByObjId.Count == 0) return 0;
 
             int restored = 0;
+            int restoredByObjId = 0;
+            int restoredByFallback = 0;
             var counts = new SortedDictionary<string, int>();
             for (int i = 0; i < list.Count; i++)
             {
@@ -193,30 +251,22 @@ namespace muse_dash_test
                 {
                     var note = list[i];
                     if (note?.noteData == null) continue;
-                    if (!OriginalsByObjId.TryGetValue(note.objId, out var original)) continue;
+                    if (!TryResolveOriginalIdentity(note, out var original)) continue;
 
-                    var noteData = note.noteData;
-                    noteData.uid = original.Uid;
-                    CountZz(counts, original.Uid);
-                    noteData.mirror_uid = original.MirrorUid;
-                    noteData.noteUid = original.NoteUid;
-                    noteData.scene = original.Scene;
-                    noteData.prefab_name = original.PrefabName;
-
-                    if (note.configData != null)
+                    bool resolvedByObjId = note.objId != 0 && OriginalsByObjId.TryGetValue(note.objId, out var objIdOriginal) && ReferenceEquals(objIdOriginal, original);
+                    if (resolvedByObjId)
                     {
-                        var configData = note.configData;
-                        configData.note_uid = original.ConfigNoteUid;
-                        note.configData = configData;
+                        restoredByObjId++;
+                    }
+                    else
+                    {
+                        restoredByFallback++;
                     }
 
-                    try
+                    bool restoredThisNote = RestoreMusicData(ref note);
+                    if (restoredThisNote)
                     {
-                        note.noteData = noteData;
-                    }
-                    catch (Exception)
-                    {
-                        // Ignored: IL2CPP 내부 C++ 객체 메모리 해제 등 대비
+                        CountZz(counts, original.Uid);
                     }
 
                     try
@@ -228,7 +278,10 @@ namespace muse_dash_test
                         // Ignored: 리스트 요소 변경 예외 무시
                     }
 
-                    restored++;
+                    if (restoredThisNote)
+                    {
+                        restored++;
+                    }
                 }
                 catch (Exception)
                 {
@@ -237,6 +290,7 @@ namespace muse_dash_test
             }
 
             MelonLogger.Msg($"[SceneZzTransformTracker] 복구 UID zz분포: {FormatZzCounts(counts)}");
+            MelonLogger.Msg($"[SceneZzTransformTracker] 복구 완료: restored={restored}, byObjId={restoredByObjId}, byFallback={restoredByFallback}");
             return restored;
         }
     }
