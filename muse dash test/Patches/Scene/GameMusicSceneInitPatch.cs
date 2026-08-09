@@ -83,7 +83,7 @@ public class GameMusicScene_InitTimer_Patch
             catch (Exception) { }
         }
 
-        LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {FormatZzCounts(changedByOriginalZz)}");
+        LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {ScenePatchHelpers.FormatZzCounts(changedByOriginalZz)}");
         return changedCount;
     }
 
@@ -99,7 +99,7 @@ public class GameMusicScene_InitTimer_Patch
         var nd = note.noteData;
         string uid = nd.uid;
 
-        if (!IsSixDigitUid(uid)) return false;
+        if (!ScenePatchHelpers.IsSixDigitUid(uid)) return false;
 
         // 씬 전환 토글 노트(0004xx) 처리
         if (IsSceneToggleUid(uid))
@@ -114,7 +114,7 @@ public class GameMusicScene_InitTimer_Patch
 
         string renderZz = activeRenderZz;
         if (muse_dash_test.SceneZzTransformTracker.TryGetBmsOriginalUid(note.objId, out string bmsOriginalUid)
-            && IsSixDigitUid(bmsOriginalUid))
+            && ScenePatchHelpers.IsSixDigitUid(bmsOriginalUid))
         {
             renderZz = bmsOriginalUid.Substring(0, 2);
         }
@@ -131,7 +131,7 @@ public class GameMusicScene_InitTimer_Patch
 
         // 추적 기록 및 카운트
         muse_dash_test.SceneZzTransformTracker.Record(note, newUid, renderPrefabName);
-        CountZz(changedByOriginalZz, fromZz);
+        ScenePatchHelpers.CountZz(changedByOriginalZz, fromZz);
 
         // il2cpp 필드 갱신 (독립 예외 격리)
         ApplyTransformedFields(note, fromZz, renderZz, newUid, renderPrefabName);
@@ -151,11 +151,11 @@ public class GameMusicScene_InitTimer_Patch
         var nd = note.noteData;
         nd.uid = newUid;
 
-        try { if (IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch (Exception) { }
+        try { if (ScenePatchHelpers.IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch (Exception) { }
         try { nd.scene = "scene_" + renderZz; } catch (Exception) { }
         try { nd.prefab_name = renderPrefabName; } catch (Exception) { }
         try { if (int.TryParse(newUid, out int parsedNoteUid)) nd.noteUid = parsedNoteUid; } catch (Exception) { }
-        try { if (note.configData != null && IsSixDigitUid(note.configData.note_uid) && note.configData.note_uid.StartsWith(fromZz)) note.configData.note_uid = renderZz + note.configData.note_uid.Substring(2); } catch (Exception) { }
+        try { if (note.configData != null && ScenePatchHelpers.IsSixDigitUid(note.configData.note_uid) && note.configData.note_uid.StartsWith(fromZz)) note.configData.note_uid = renderZz + note.configData.note_uid.Substring(2); } catch (Exception) { }
         try { note.noteData = nd; } catch (Exception) { }
     }
 
@@ -180,40 +180,7 @@ public class GameMusicScene_InitTimer_Patch
 
     private static bool IsSceneToggleUid(string uid)
     {
-        return IsSixDigitUid(uid) && uid.StartsWith("0004", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsSixDigitUid(string uid)
-    {
-        if (string.IsNullOrEmpty(uid) || uid.Length != 6) return false;
-        for (int i = 0; i < uid.Length; i++)
-        {
-            if (uid[i] < '0' || uid[i] > '9') return false;
-        }
-
-        return true;
-    }
-
-    private static void CountZz(SortedDictionary<string, int> counts, string zz)
-    {
-        if (string.IsNullOrEmpty(zz)) return;
-        counts[zz] = counts.TryGetValue(zz, out int count) ? count + 1 : 1;
-    }
-
-    private static string FormatZzCounts(SortedDictionary<string, int> counts)
-    {
-        if (counts == null || counts.Count == 0)
-        {
-            return "{}";
-        }
-
-        var parts = new List<string>();
-        foreach (var pair in counts)
-        {
-            parts.Add($"{pair.Key}:{pair.Value}");
-        }
-
-        return "{" + string.Join(", ", parts) + "}";
+        return ScenePatchHelpers.IsSixDigitUid(uid) && uid.StartsWith("0004", StringComparison.OrdinalIgnoreCase);
     }
 }
 

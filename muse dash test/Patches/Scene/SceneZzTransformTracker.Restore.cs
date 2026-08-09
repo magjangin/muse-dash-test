@@ -321,16 +321,6 @@ namespace muse_dash_test
             };
         }
 
-        private static bool IsSixDigitUid(string uid)
-        {
-            if (string.IsNullOrEmpty(uid) || uid.Length != 6) return false;
-            for (int i = 0; i < uid.Length; i++)
-            {
-                if (uid[i] < '0' || uid[i] > '9') return false;
-            }
-            return true;
-        }
-
         /// <summary>
         /// 탐색 가치가 있는 유니티 내부 IL2CPP 타입 객체인지 필터링합니다. (순환 스캔 최적화)
         /// </summary>

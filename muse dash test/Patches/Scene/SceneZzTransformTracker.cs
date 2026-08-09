@@ -163,7 +163,7 @@ namespace muse_dash_test
                     if (string.IsNullOrEmpty(note.noteData.uid)) continue;
 
                     BmsOriginalsByObjId[note.objId] = CaptureIdentity(note);
-                    CountZz(counts, note.noteData.uid);
+                    ScenePatchHelpers.CountZz(counts, note.noteData.uid);
                 }
                 catch (Exception)
                 {
@@ -171,7 +171,7 @@ namespace muse_dash_test
                 }
             }
 
-            SceneDiagnosticLogger.Log("SceneZzTransformTracker.RegisterBms", $"[SceneZzTransformTracker] BMS 원본 UID 등록: count={BmsOriginalsByObjId.Count}, zz분포={FormatZzCounts(counts)}", 20);
+            SceneDiagnosticLogger.Log("SceneZzTransformTracker.RegisterBms", $"[SceneZzTransformTracker] BMS 원본 UID 등록: count={BmsOriginalsByObjId.Count}, zz분포={ScenePatchHelpers.FormatZzCounts(counts)}", 20);
         }
 
         /// <summary>
@@ -181,11 +181,11 @@ namespace muse_dash_test
         {
             if (note?.noteData == null) return;
 
-            string renderZz = IsSixDigitUid(renderUid) ? renderUid.Substring(0, 2) : null;
-            string renderMirrorUid = IsSixDigitUid(note.noteData.mirror_uid) && !string.IsNullOrEmpty(renderZz)
+            string renderZz = ScenePatchHelpers.IsSixDigitUid(renderUid) ? renderUid.Substring(0, 2) : null;
+            string renderMirrorUid = ScenePatchHelpers.IsSixDigitUid(note.noteData.mirror_uid) && !string.IsNullOrEmpty(renderZz)
                 ? renderZz + note.noteData.mirror_uid.Substring(2)
                 : note.noteData.mirror_uid;
-            string renderConfigNoteUid = note.configData != null && IsSixDigitUid(note.configData.note_uid) && !string.IsNullOrEmpty(renderZz)
+            string renderConfigNoteUid = note.configData != null && ScenePatchHelpers.IsSixDigitUid(note.configData.note_uid) && !string.IsNullOrEmpty(renderZz)
                 ? renderZz + note.configData.note_uid.Substring(2)
                 : note.configData?.note_uid;
             string renderKeyAudio = note.noteData.key_audio;
@@ -271,7 +271,7 @@ namespace muse_dash_test
                     bool restoredThisNote = RestoreMusicData(ref note);
                     if (restoredThisNote)
                     {
-                        CountZz(counts, original.Uid);
+                        ScenePatchHelpers.CountZz(counts, original.Uid);
                     }
 
                     try
@@ -294,7 +294,7 @@ namespace muse_dash_test
                 }
             }
 
-            SceneDiagnosticLogger.Log("SceneZzTransformTracker.Restore", $"[SceneZzTransformTracker] 복구 UID zz분포: {FormatZzCounts(counts)}", 20);
+            SceneDiagnosticLogger.Log("SceneZzTransformTracker.Restore", $"[SceneZzTransformTracker] 복구 UID zz분포: {ScenePatchHelpers.FormatZzCounts(counts)}", 20);
             SceneDiagnosticLogger.Log("SceneZzTransformTracker.Restore", $"[SceneZzTransformTracker] 복구 완료: restored={restored}, byObjId={restoredByObjId}, byFallback={restoredByFallback}", 20);
             return restored;
         }
