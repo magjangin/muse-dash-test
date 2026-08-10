@@ -48,32 +48,6 @@ namespace muse_dash_test.Patches.UI.Welcome
         }
     }
 
-    [HarmonyPatch(typeof(Il2CppUI.Panels.PnlHotfix.PnlHotfix), "OnEnable")]
-    public static class PnlHotfix_OnEnable_Patch
-    {
-        public static void Postfix(Il2CppUI.Panels.PnlHotfix.PnlHotfix __instance)
-        {
-            try
-            {
-                if (__instance == null) return;
-
-                if (__instance.pnlNewVersionTip != null && __instance.pnlNewVersionTip.gameObject != null && __instance.pnlNewVersionTip.gameObject.activeSelf)
-                {
-                    __instance.pnlNewVersionTip.gameObject.SetActive(false);
-                }
-
-                if (__instance.ImgNewVersionCheck != null && __instance.ImgNewVersionCheck.gameObject != null && __instance.ImgNewVersionCheck.gameObject.activeSelf)
-                {
-                    __instance.ImgNewVersionCheck.gameObject.SetActive(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[UI.UpdateNotice] PnlHotfix 업데이트 팝업 비활성화 중 경고: {ex.Message}");
-            }
-        }
-    }
-
     public static class DisableUpdateNoticeHelper
     {
         public static void DisableUpdateTip(WelcomeSelect instance)
