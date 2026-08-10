@@ -10,21 +10,32 @@ namespace muse_dash_test
 {
     /// <summary>
     /// "save custom key/OFFLINE_SANDBOX.txt" 파일의 내용에 따라
-    /// 오프라인 샌드박스 패치를 동적으로 활성화/비활성화합니다.
+    /// 오프라인 샌드박스 및 세부 후킹 패치를 개별적으로 활성화/비활성화합니다.
     ///
-    /// 파일 내용:
-    ///   오프라인_샌드박스=활성화  →  패치 ON  (DLC 전체 허용, DLCVerify 바이패스)
-    ///   오프라인_샌드박스=비활성화 →  패치 OFF (원본 게임 로직 그대로)
+    /// 파일 내용 예시:
+    ///   오프라인_샌드박스=활성화 (마스터 스위치)
+    ///   스팀_BIsDlcInstalled=활성화
+    ///   스팀_DLCVerify=활성화
+    ///   콜라보_만료시각_2099=활성화
+    ///   특수DLC_IsFreeToGet=활성화
+    ///   콜라보_카운트다운_스킵=활성화
     /// </summary>
     public static class OfflineCustomSandbox
     {
         // ──────────────────────────────────────────────
-        // 경로 상수
+        // 경로 및 키 상수
         // ──────────────────────────────────────────────
         private const string FlagFileName = "OFFLINE_SANDBOX.txt";
-        private const string FlagKey      = "오프라인_샌드박스";
-        private const string ValueOn      = "활성화";
-        private const string ValueOff     = "비활성화";
+        
+        public const string KeyMaster               = "오프라인_샌드박스";
+        public const string KeyBIsDlcInstalled      = "스팀_BIsDlcInstalled";
+        public const string KeyDlcVerify            = "스팀_DLCVerify";
+        public const string KeyDlcUIExtension       = "콜라보_만료시각_2099";
+        public const string KeySpecialDlc           = "특수DLC_IsFreeToGet";
+        public const string KeyActiveTimeTimer      = "콜라보_카운트다운_스킵";
+
+        private const string ValueOn  = "활성화";
+        private const string ValueOff = "비활성화";
 
         private static string FlagFilePath =>
             Path.Combine(
@@ -33,41 +44,38 @@ namespace muse_dash_test
                 FlagFileName);
 
         // ──────────────────────────────────────────────
-        // 공개 상태
+        // 개별 후킹 토글 상태
         // ──────────────────────────────────────────────
-
-        /// <summary>현재 오프라인 샌드박스가 활성화 상태인지 여부</summary>
         public static bool IsEnabled { get; private set; } = false;
+        public static bool IsBIsDlcInstalledEnabled { get; private set; } = false;
+        public static bool IsDlcVerifyEnabled { get; private set; } = false;
+        public static bool IsDlcUIExtensionEnabled { get; private set; } = false;
+        public static bool IsSpecialDlcEnabled { get; private set; } = false;
+        public static bool IsActiveTimeTimerEnabled { get; private set; } = false;
 
         // ──────────────────────────────────────────────
-        // 초기화: 게임 시작 시 1회 호출
+        // 초기화 및 플래그 파일 읽기
         // ──────────────────────────────────────────────
         public static void Initialize()
         {
-            EnsureFlagFile();   // 파일이 없으면 기본값(비활성화)으로 생성
-            Reload();           // 파일을 읽어 IsEnabled 갱신
+            EnsureFlagFile();
+            Reload();
         }
 
-        // ──────────────────────────────────────────────
-        // 재로드: 런타임 중 언제든 호출해 상태를 갱신
-        // ──────────────────────────────────────────────
         public static void Reload()
         {
             try
             {
-                bool prev = IsEnabled;
-                IsEnabled = ReadFlag();
+                var flags = ReadFlags();
+                
+                IsEnabled                 = flags.GetValueOrDefault(KeyMaster, false);
+                IsBIsDlcInstalledEnabled  = flags.GetValueOrDefault(KeyBIsDlcInstalled, IsEnabled);
+                IsDlcVerifyEnabled        = flags.GetValueOrDefault(KeyDlcVerify, IsEnabled);
+                IsDlcUIExtensionEnabled   = flags.GetValueOrDefault(KeyDlcUIExtension, IsEnabled);
+                IsSpecialDlcEnabled       = flags.GetValueOrDefault(KeySpecialDlc, IsEnabled);
+                IsActiveTimeTimerEnabled  = flags.GetValueOrDefault(KeyActiveTimeTimer, IsEnabled);
 
-                if (IsEnabled != prev)
-                {
-                    MelonLogger.Msg(IsEnabled
-                        ? "[OfflineSandbox] ✅ 오프라인 샌드박스가 활성화되었습니다."
-                        : "[OfflineSandbox] ⛔ 오프라인 샌드박스가 비활성화되었습니다.");
-                }
-                else
-                {
-                    MelonLogger.Msg($"[OfflineSandbox] 현재 상태: {(IsEnabled ? "활성화" : "비활성화")}");
-                }
+                MelonLogger.Msg($"[OfflineSandbox] 마스터: {(IsEnabled ? "활성" : "비활성")} | BIsDlc: {(IsBIsDlcInstalledEnabled ? "ON" : "OFF")} | DLCVerify: {(IsDlcVerifyEnabled ? "ON" : "OFF")} | 콜라보2099: {(IsDlcUIExtensionEnabled ? "ON" : "OFF")} | 특수DLC: {(IsSpecialDlcEnabled ? "ON" : "OFF")} | 카운트다운스킵: {(IsActiveTimeTimerEnabled ? "ON" : "OFF")}");
             }
             catch (Exception ex)
             {
@@ -76,76 +84,58 @@ namespace muse_dash_test
             }
         }
 
-        // ──────────────────────────────────────────────
-        // 플래그 켜기 / 끄기 (코드에서 직접 제어)
-        // ──────────────────────────────────────────────
-        public static void Enable()  => WriteFlag(true);
-        public static void Disable() => WriteFlag(false);
-
-        public static void Toggle()
+        private static Dictionary<string, bool> ReadFlags()
         {
-            Reload();           // 파일의 최신 상태를 먼저 읽고
-            WriteFlag(!IsEnabled);
-        }
+            var dict = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-        // ──────────────────────────────────────────────
-        // 내부 유틸
-        // ──────────────────────────────────────────────
-        private static bool ReadFlag()
-        {
             if (!File.Exists(FlagFilePath))
-            {
-                MelonLogger.Warning($"[OfflineSandbox] 플래그 파일 없음 → 비활성화 처리: {FlagFilePath}");
-                return false;
-            }
+                return dict;
 
             foreach (string rawLine in File.ReadAllLines(FlagFilePath, System.Text.Encoding.UTF8))
             {
                 string line = rawLine.Trim();
-                if (line.StartsWith(FlagKey + "="))
+                if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith("//"))
+                    continue;
+
+                int eqIdx = line.IndexOf('=');
+                if (eqIdx > 0)
                 {
-                    string val = line.Substring((FlagKey + "=").Length).Trim();
-                    return val.Equals(ValueOn, StringComparison.OrdinalIgnoreCase);
+                    string key = line.Substring(0, eqIdx).Trim();
+                    string val = line.Substring(eqIdx + 1).Trim();
+                    dict[key] = val.Equals(ValueOn, StringComparison.OrdinalIgnoreCase);
                 }
             }
 
-            MelonLogger.Warning($"[OfflineSandbox] '{FlagKey}' 키를 찾지 못했습니다 → 비활성화 처리");
-            return false;
-        }
-
-        private static void WriteFlag(bool enable)
-        {
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(FlagFilePath)!);
-                File.WriteAllText(FlagFilePath,
-                    $"{FlagKey}={( enable ? ValueOn : ValueOff )}\n",
-                    System.Text.Encoding.UTF8);
-
-                IsEnabled = enable;
-                MelonLogger.Msg(enable
-                    ? "[OfflineSandbox] ✅ 플래그 파일 → 활성화로 저장되었습니다."
-                    : "[OfflineSandbox] ⛔ 플래그 파일 → 비활성화로 저장되었습니다.");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[OfflineSandbox] 플래그 파일 쓰기 실패: {ex.Message}");
-            }
+            return dict;
         }
 
         private static void EnsureFlagFile()
         {
             if (!File.Exists(FlagFilePath))
             {
-                MelonLogger.Msg($"[OfflineSandbox] 플래그 파일이 없어 기본값(비활성화)으로 생성합니다: {FlagFilePath}");
-                WriteFlag(false);
+                MelonLogger.Msg($"[OfflineSandbox] 플래그 파일이 없어 기본 세분화 파일로 생성합니다: {FlagFilePath}");
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(FlagFilePath)!);
+                    string defaultContent = 
+                        $"{KeyMaster}={ValueOff}\n" +
+                        $"{KeyBIsDlcInstalled}={ValueOff}\n" +
+                        $"{KeyDlcVerify}={ValueOff}\n" +
+                        $"{KeyDlcUIExtension}={ValueOff}\n" +
+                        $"{KeySpecialDlc}={ValueOff}\n" +
+                        $"{KeyActiveTimeTimer}={ValueOff}\n";
+                    File.WriteAllText(FlagFilePath, defaultContent, System.Text.Encoding.UTF8);
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Error($"[OfflineSandbox] 플래그 파일 기본 생성 실패: {ex.Message}");
+                }
             }
         }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Harmony 패치: BIsDlcInstalled
-    //   → IsEnabled=true 일 때만 모든 DLC를 허용
     // ──────────────────────────────────────────────────────────────────────────
     [HarmonyPatch(typeof(SteamApps), nameof(SteamApps.BIsDlcInstalled))]
     public class OfflineCustomSandboxPatch
@@ -154,12 +144,12 @@ namespace muse_dash_test
 
         static bool Prefix(ref bool __result, AppId_t appID)
         {
-            if (!OfflineCustomSandbox.IsEnabled)
+            if (!OfflineCustomSandbox.IsBIsDlcInstalledEnabled)
                 return true; // 원본 로직 실행
 
             if (loggedDLCs.Add(appID.m_AppId))
             {
-                MelonLogger.Msg($"[OfflineSandbox] DLC {appID.m_AppId} → 오프라인 샌드박스 허용");
+                MelonLogger.Msg($"[OfflineSandbox] DLC {appID.m_AppId} → BIsDlcInstalled 허용");
             }
 
             __result = true;
@@ -169,17 +159,16 @@ namespace muse_dash_test
 
     // ──────────────────────────────────────────────────────────────────────────
     // Harmony 패치: DLCVerify
-    //   → IsEnabled=true 일 때만 검증 바이패스
     // ──────────────────────────────────────────────────────────────────────────
     [HarmonyPatch(typeof(SteamManager), nameof(SteamManager.DLCVerify))]
     public class OfflineVerifyPatch
     {
         static bool Prefix(SteamManager __instance)
         {
-            if (!OfflineCustomSandbox.IsEnabled)
+            if (!OfflineCustomSandbox.IsDlcVerifyEnabled)
                 return true; // 원본 로직 실행
 
-            MelonLogger.Msg("[OfflineSandbox] DLCVerify 바이패스 (오프라인 샌드박스 활성 중)");
+            MelonLogger.Msg("[OfflineSandbox] DLCVerify 바이패스 활성화");
             __instance.m_DoSomething1 = true;
             __instance.m_DoSomething3 = true;
             return true;

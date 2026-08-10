@@ -10,13 +10,7 @@ namespace muse_dash_test
 {
     /// <summary>
     /// 콜라보 팩(명일방주, 미쿠, 린/렌 등) 및 특수 DLC의 소유권/만료 시각을 
-    /// 오프라인 샌드박스 플래그(OfflineCustomSandbox.IsEnabled)에 맞춰 
-    /// 오버라이드 및 바이패스하는 패치 모듈입니다.
-    /// 
-    /// DlcUIExtensionInfo.get_dlcEndTime()은 Il2Cpp Field Accessor이므로 direct patch 시 
-    /// [WARNING] field accessor, it can't be patched 경고가 발생합니다.
-    /// 따라서 DBConfigDlcUIExtension.Deserialize Postfix 시점에 list의 모든 DlcUIExtensionInfo.dlcEndTime 
-    /// 필드를 2099년으로 직접 데이터 변경(Data Mutation)하여 경고를 100% 제거하고 완벽 지원합니다.
+    /// 세부 샌드박스 플래그(OfflineCustomSandbox)에 맞춰 개별적으로 조작하는 패치 모듈입니다.
     /// </summary>
     public static class OfflineCollabSandbox
     {
@@ -55,14 +49,14 @@ namespace muse_dash_test
 
         // ──────────────────────────────────────────────────────────────────────────
         // 1. DBConfigDlcUIExtension - 콜라보 DLC 만료 시각(dlcEndTime) 2099년 데이터 오버라이드
-        //    (Field Accessor direct patch 경고 원인 100% 방지)
+        //    (토글 키: 콜라보_만료시각_2099)
         // ──────────────────────────────────────────────────────────────────────────
         [HarmonyPatch(typeof(DBConfigDlcUIExtension), nameof(DBConfigDlcUIExtension.Deserialize))]
         public static class DBConfigDlcUIExtensionPatch
         {
             static void Postfix(DBConfigDlcUIExtension __instance)
             {
-                if (!OfflineCustomSandbox.IsEnabled)
+                if (!OfflineCustomSandbox.IsDlcUIExtensionEnabled)
                     return;
 
                 try
@@ -83,7 +77,7 @@ namespace muse_dash_test
                         }
                     }
 
-                    MelonLogger.Msg($"[OfflineCollab] DBConfigDlcUIExtension {updatedCount}개 콜라보 팩 만료 시각 -> 2099-12-31 고정 완료 (Field Accessor 경고 소멸)");
+                    MelonLogger.Msg($"[OfflineCollab] DBConfigDlcUIExtension {updatedCount}개 콜라보 팩 만료 시각 -> 2099-12-31 고정 완료");
                 }
                 catch (Exception ex)
                 {
@@ -94,6 +88,7 @@ namespace muse_dash_test
 
         // ──────────────────────────────────────────────────────────────────────────
         // 2. SpecialDLCManager - 특수 DLC / 콜라보 획득 조건(IsFreeToGet) 강제 허용
+        //    (토글 키: 특수DLC_IsFreeToGet)
         // ──────────────────────────────────────────────────────────────────────────
         public static class SpecialDLCManagerPatch
         {
@@ -120,7 +115,7 @@ namespace muse_dash_test
 
                 static bool Prefix(ref bool __result)
                 {
-                    if (!OfflineCustomSandbox.IsEnabled)
+                    if (!OfflineCustomSandbox.IsSpecialDlcEnabled)
                         return true;
 
                     MelonLogger.Msg("[OfflineCollab] SpecialDLCManager.IsFreeToGet -> 강제 true 허용");
@@ -132,6 +127,7 @@ namespace muse_dash_test
 
         // ──────────────────────────────────────────────────────────────────────────
         // 3. DLCInfoActiveTime 계열 - 카운트다운 타이머 & 락 UI 갱신 스킵
+        //    (토글 키: 콜라보_카운트다운_스킵)
         // ──────────────────────────────────────────────────────────────────────────
         public static class DLCInfoActiveTimePatch
         {
@@ -174,7 +170,7 @@ namespace muse_dash_test
 
                 static bool Prefix()
                 {
-                    if (!OfflineCustomSandbox.IsEnabled)
+                    if (!OfflineCustomSandbox.IsActiveTimeTimerEnabled)
                         return true;
 
                     return false;
