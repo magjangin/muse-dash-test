@@ -4,6 +4,7 @@ using System;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
+using Il2CppAssets.Scripts.Database;
 
 namespace muse_dash_test
 {
@@ -12,8 +13,10 @@ namespace muse_dash_test
     /// 오프라인 샌드박스 플래그(OfflineCustomSandbox.IsEnabled)에 맞춰 
     /// 오버라이드 및 바이패스하는 패치 모듈입니다.
     /// 
-    /// - C# System.DateTime 대신 Il2CppSystem.DateTime 호환 타입 사용
-    /// - TargetMethods가 없을 경우 Harmony PatchAll 불발을 방지하는 Prepare 검증 적용
+    /// DlcUIExtensionInfo.get_dlcEndTime()은 Il2Cpp Field Accessor이므로 direct patch 시 
+    /// [WARNING] field accessor, it can't be patched 경고가 발생합니다.
+    /// 따라서 DBConfigDlcUIExtension.Deserialize Postfix 시점에 list의 모든 DlcUIExtensionInfo.dlcEndTime 
+    /// 필드를 2099년으로 직접 데이터 변경(Data Mutation)하여 경고를 100% 제거하고 완벽 지원합니다.
     /// </summary>
     public static class OfflineCollabSandbox
     {
@@ -51,43 +54,40 @@ namespace muse_dash_test
         }
 
         // ──────────────────────────────────────────────────────────────────────────
-        // 1. DlcUIExtensionInfo - 콜라보 DLC 만료 시각(dlcEndTime) 2099년 오버라이드
+        // 1. DBConfigDlcUIExtension - 콜라보 DLC 만료 시각(dlcEndTime) 2099년 데이터 오버라이드
+        //    (Field Accessor direct patch 경고 원인 100% 방지)
         // ──────────────────────────────────────────────────────────────────────────
-        public static class DlcUIExtensionInfoPatch
+        [HarmonyPatch(typeof(DBConfigDlcUIExtension), nameof(DBConfigDlcUIExtension.Deserialize))]
+        public static class DBConfigDlcUIExtensionPatch
         {
-            [HarmonyPatch]
-            public class GetDlcEndTimePatch
+            static void Postfix(DBConfigDlcUIExtension __instance)
             {
-                static bool Prepare()
+                if (!OfflineCustomSandbox.IsEnabled)
+                    return;
+
+                try
                 {
-                    return TargetMethod() != null;
+                    var list = __instance.list;
+                    if (list == null) return;
+
+                    var futureTime = new Il2CppSystem.DateTime(2099, 12, 31, 23, 59, 59);
+                    int updatedCount = 0;
+
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        var info = list[i];
+                        if (info != null)
+                        {
+                            info.dlcEndTime = futureTime;
+                            updatedCount++;
+                        }
+                    }
+
+                    MelonLogger.Msg($"[OfflineCollab] DBConfigDlcUIExtension {updatedCount}개 콜라보 팩 만료 시각 -> 2099-12-31 고정 완료 (Field Accessor 경고 소멸)");
                 }
-
-                static MethodBase TargetMethod()
+                catch (Exception ex)
                 {
-                    Type type = FindIl2CppType(
-                        "Il2CppAssets.Scripts.Database.DlcUIExtensionInfo",
-                        "Assets.Scripts.Database.DlcUIExtensionInfo",
-                        "Il2Cpp.DlcUIExtensionInfo",
-                        "DlcUIExtensionInfo"
-                    );
-                    if (type == null) return null;
-
-                    return AccessTools.PropertyGetter(type, "dlcEndTime") 
-                        ?? AccessTools.PropertyGetter(type, "getDlcEndTime")
-                        ?? AccessTools.Method(type, "get_dlcEndTime")
-                        ?? AccessTools.Method(type, "get_getDlcEndTime");
-                }
-
-                // C# System.DateTime 대신 Il2Cpp 런타임 호환 Il2CppSystem.DateTime 사용
-                static bool Prefix(ref Il2CppSystem.DateTime __result)
-                {
-                    if (!OfflineCustomSandbox.IsEnabled)
-                        return true;
-
-                    // 2099-12-31 23:59:59 Il2CppSystem.DateTime 객체 생성 및 리턴
-                    __result = new Il2CppSystem.DateTime(2099, 12, 31, 23, 59, 59);
-                    return false;
+                    MelonLogger.Error($"[OfflineCollab] DBConfigDlcUIExtension 데이터 패치 실패: {ex.Message}");
                 }
             }
         }
@@ -148,7 +148,6 @@ namespace muse_dash_test
             {
                 static bool Prepare()
                 {
-                    // TargetMethods()에서 찾은 대상 메서드가 최소 1개 이상일 때만 패치를 활성화 (Undefined target method 에러 방지)
                     var methods = GetResolvedMethods();
                     return methods != null && methods.Count > 0;
                 }
