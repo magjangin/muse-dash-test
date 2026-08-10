@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using Il2CppAssets.Scripts.Helpers;
 using Il2CppAssets.Scripts.UI;
 using Il2CppAssets.Scripts.UI.Panels;
 using MelonLoader;
@@ -8,74 +9,150 @@ using UnityEngine;
 namespace muse_dash_test.Patches.UI.Welcome
 {
     /// <summary>
-    /// 타이틀 화면, 설정(PnlOptions) 등 전역 UI에 표시되는 "업데이트 요청!" 배지 및 신규 버전 알림 UI를 자동으로 숨기는 패치입니다.
-    /// 보존판(Archive) 환경에서 최신 서버 버전과 차이가 발생해도 타이틀 및 설정 화면이 깔끔하게 유지되도록 합니다.
+    /// 타이틀 화면, 설정(OptionSelect) 및 전역 버전 점검 엔진(VersionHelper)을 후킹하여
+    /// 로직상 게임이 최신 상태(업데이트 불필요)로 판정되도록 처리하고 알림 UI를 완전 차단하는 패치입니다.
     /// </summary>
-    [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.OnGetRecommendVersion))]
-    public static class WelcomeSelect_OnGetRecommendVersion_Patch
+    public static class DisableUpdateNoticePatch
     {
-        public static bool Prefix(ref bool isRecommendVersionReleased)
-        {
-            // 신규 권장 버전 출시 여부를 강제로 false로 설정하여 업데이트 알림 생성을 차단합니다.
-            isRecommendVersionReleased = false;
-            return true;
-        }
-    }
+        // -------------------------------------------------------------
+        // 1. 버전 관리 로직 엔진 (VersionHelper) 후킹
+        // -------------------------------------------------------------
 
-    [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.OnEnable))]
-    public static class WelcomeSelect_OnEnable_Patch
-    {
-        public static void Postfix(WelcomeSelect __instance)
+        /// <summary>
+        /// 업데이트가 필요한지 판단하는 로직 메서드를 후킹하여 강제로 false(업데이트 불필요)를 반환합니다.
+        /// </summary>
+        [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.CheckNeedUpdate))]
+        public static class VersionHelper_CheckNeedUpdate_Patch
         {
-            DisableUpdateNoticeHelper.DisableUpdateTip(__instance);
+            public static bool Prefix(ref bool __result)
+            {
+                __result = false;
+                return false; // 원본 실행 건너뛰기
+            }
         }
-    }
 
-    [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.Start))]
-    public static class WelcomeSelect_Start_Patch
-    {
-        public static void Postfix(WelcomeSelect __instance)
+        /// <summary>
+        /// 서버 네트워크 버전 체크 요청을 인터셉트하여 s_NeedUpdateValue를 false로 갱신하고 콜백에 false를 전달합니다.
+        /// </summary>
+        [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.CheckVersion))]
+        public static class VersionHelper_CheckVersion_Patch
         {
-            DisableUpdateNoticeHelper.DisableUpdateTip(__instance);
+            public static bool Prefix(Il2CppSystem.Action<bool> callback)
+            {
+                try
+                {
+                    VersionHelper.s_NeedUpdateValue = false;
+                    callback?.Invoke(false);
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Warning($"[UI.UpdateNotice] VersionHelper.CheckVersion 콜백 처리 중 경고: {ex.Message}");
+                }
+                return false; // 원본 네트워크 요청 생략
+            }
         }
-    }
 
-    [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.AdjustWelcomeUI))]
-    public static class WelcomeSelect_AdjustWelcomeUI_Patch
-    {
-        public static void Postfix(WelcomeSelect __instance)
+        /// <summary>
+        /// 업데이트 안내 팝업 및 팁 표시 로직을 차단합니다.
+        /// </summary>
+        [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.CheckUpdateStateAndShowConfirm))]
+        public static class VersionHelper_CheckUpdateStateAndShowConfirm_Patch
         {
-            DisableUpdateNoticeHelper.DisableUpdateTip(__instance);
+            public static bool Prefix() => false;
         }
-    }
 
-    /// <summary>
-    /// 설정(PnlOptions) 및 기타 UI에 부착되는 전역 추천 버전 컨트롤러(RecommendVersionController) 비활성화 패치
-    /// </summary>
-    [HarmonyPatch(typeof(RecommendVersionController), nameof(RecommendVersionController.OnEnable))]
-    public static class RecommendVersionController_OnEnable_Patch
-    {
-        public static void Postfix(RecommendVersionController __instance)
+        [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.ShowUpdateTip))]
+        public static class VersionHelper_ShowUpdateTip_Patch
         {
-            DisableUpdateNoticeHelper.DisableRecommendVersionController(__instance);
+            public static bool Prefix() => false;
         }
-    }
 
-    [HarmonyPatch(typeof(RecommendVersionController), nameof(RecommendVersionController.Awake))]
-    public static class RecommendVersionController_Awake_Patch
-    {
-        public static void Postfix(RecommendVersionController __instance)
+        [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.ShowUpdateConfirmPopup))]
+        public static class VersionHelper_ShowUpdateConfirmPopup_Patch
         {
-            DisableUpdateNoticeHelper.DisableRecommendVersionController(__instance);
+            public static bool Prefix() => false;
         }
-    }
 
-    [HarmonyPatch(typeof(RecommendVersionController), nameof(RecommendVersionController.Init))]
-    public static class RecommendVersionController_Init_Patch
-    {
-        public static void Postfix(RecommendVersionController __instance)
+        // -------------------------------------------------------------
+        // 2. 패널별 버전 수신 핸들러 (WelcomeSelect, OptionSelect) 후킹
+        // -------------------------------------------------------------
+
+        [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.OnGetRecommendVersion))]
+        public static class WelcomeSelect_OnGetRecommendVersion_Patch
         {
-            DisableUpdateNoticeHelper.DisableRecommendVersionController(__instance);
+            public static bool Prefix(ref bool isRecommendVersionReleased)
+            {
+                isRecommendVersionReleased = false;
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.OnEnable))]
+        public static class WelcomeSelect_OnEnable_Patch
+        {
+            public static void Postfix(WelcomeSelect __instance)
+            {
+                DisableUpdateNoticeHelper.DisableUpdateTip(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.Start))]
+        public static class WelcomeSelect_Start_Patch
+        {
+            public static void Postfix(WelcomeSelect __instance)
+            {
+                DisableUpdateNoticeHelper.DisableUpdateTip(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(WelcomeSelect), nameof(WelcomeSelect.AdjustWelcomeUI))]
+        public static class WelcomeSelect_AdjustWelcomeUI_Patch
+        {
+            public static void Postfix(WelcomeSelect __instance)
+            {
+                DisableUpdateNoticeHelper.DisableUpdateTip(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(Il2Cpp.OptionSelect), nameof(Il2Cpp.OptionSelect.OnGetRecommendVersion))]
+        public static class OptionSelect_OnGetRecommendVersion_Patch
+        {
+            public static bool Prefix(ref bool showRecommendSign)
+            {
+                showRecommendSign = false;
+                return true;
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 3. UI 컨트롤러 (RecommendVersionController) 비활성화
+        // -------------------------------------------------------------
+
+        [HarmonyPatch(typeof(RecommendVersionController), nameof(RecommendVersionController.OnEnable))]
+        public static class RecommendVersionController_OnEnable_Patch
+        {
+            public static void Postfix(RecommendVersionController __instance)
+            {
+                DisableUpdateNoticeHelper.DisableRecommendVersionController(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(RecommendVersionController), nameof(RecommendVersionController.Awake))]
+        public static class RecommendVersionController_Awake_Patch
+        {
+            public static void Postfix(RecommendVersionController __instance)
+            {
+                DisableUpdateNoticeHelper.DisableRecommendVersionController(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(RecommendVersionController), nameof(RecommendVersionController.Init))]
+        public static class RecommendVersionController_Init_Patch
+        {
+            public static void Postfix(RecommendVersionController __instance)
+            {
+                DisableUpdateNoticeHelper.DisableRecommendVersionController(__instance);
+            }
         }
     }
 
