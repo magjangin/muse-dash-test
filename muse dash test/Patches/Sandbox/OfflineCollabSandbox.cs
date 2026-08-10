@@ -10,7 +10,8 @@ namespace muse_dash_test
 {
     /// <summary>
     /// 콜라보 팩(명일방주, 미쿠, 린/렌 등) 및 특수 DLC의 소유권/만료 시각을 
-    /// 세부 샌드박스 플래그(OfflineCustomSandbox)에 맞춰 개별적으로 조작하는 패치 모듈입니다.
+    /// 오프라인 샌드박스 플래그(OfflineCustomSandbox.IsEnabled)에 맞춰 
+    /// 오버라이드 및 바이패스하는 패치 모듈입니다.
     /// </summary>
     public static class OfflineCollabSandbox
     {
@@ -49,14 +50,13 @@ namespace muse_dash_test
 
         // ──────────────────────────────────────────────────────────────────────────
         // 1. DBConfigDlcUIExtension - 콜라보 DLC 만료 시각(dlcEndTime) 2099년 데이터 오버라이드
-        //    (토글 키: 콜라보_만료시각_2099)
         // ──────────────────────────────────────────────────────────────────────────
         [HarmonyPatch(typeof(DBConfigDlcUIExtension), nameof(DBConfigDlcUIExtension.Deserialize))]
         public static class DBConfigDlcUIExtensionPatch
         {
             static void Postfix(DBConfigDlcUIExtension __instance)
             {
-                if (!OfflineCustomSandbox.IsDlcUIExtensionEnabled)
+                if (!OfflineCustomSandbox.IsEnabled)
                     return;
 
                 try
@@ -88,7 +88,6 @@ namespace muse_dash_test
 
         // ──────────────────────────────────────────────────────────────────────────
         // 2. SpecialDLCManager - 특수 DLC / 콜라보 획득 조건(IsFreeToGet) 강제 허용
-        //    (토글 키: 특수DLC_IsFreeToGet)
         // ──────────────────────────────────────────────────────────────────────────
         public static class SpecialDLCManagerPatch
         {
@@ -115,7 +114,7 @@ namespace muse_dash_test
 
                 static bool Prefix(ref bool __result)
                 {
-                    if (!OfflineCustomSandbox.IsSpecialDlcEnabled)
+                    if (!OfflineCustomSandbox.IsEnabled)
                         return true;
 
                     MelonLogger.Msg("[OfflineCollab] SpecialDLCManager.IsFreeToGet -> 강제 true 허용");
@@ -127,7 +126,6 @@ namespace muse_dash_test
 
         // ──────────────────────────────────────────────────────────────────────────
         // 3. DLCInfoActiveTime 계열 - 카운트다운 타이머 & 락 UI 갱신 스킵
-        //    (토글 키: 콜라보_카운트다운_스킵)
         // ──────────────────────────────────────────────────────────────────────────
         public static class DLCInfoActiveTimePatch
         {
@@ -170,7 +168,7 @@ namespace muse_dash_test
 
                 static bool Prefix()
                 {
-                    if (!OfflineCustomSandbox.IsActiveTimeTimerEnabled)
+                    if (!OfflineCustomSandbox.IsEnabled)
                         return true;
 
                     return false;
