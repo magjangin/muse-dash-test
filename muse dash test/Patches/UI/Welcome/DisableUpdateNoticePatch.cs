@@ -27,6 +27,7 @@ namespace muse_dash_test.Patches.UI.Welcome
             public static bool Prefix(ref bool __result)
             {
                 __result = false;
+                MelonLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.CheckNeedUpdate() 호출 감지 ➔ 강제로 false(업데이트 불필요) 반환!");
                 return false; // 원본 실행 건너뛰기
             }
         }
@@ -42,6 +43,7 @@ namespace muse_dash_test.Patches.UI.Welcome
                 try
                 {
                     VersionHelper.s_NeedUpdateValue = false;
+                    MelonLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.CheckVersion() 호출 감지 ➔ 네트워크 서버 요청 차단 및 s_NeedUpdateValue=false 갱신!");
                     callback?.Invoke(false);
                 }
                 catch (Exception ex)
@@ -58,19 +60,31 @@ namespace muse_dash_test.Patches.UI.Welcome
         [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.CheckUpdateStateAndShowConfirm))]
         public static class VersionHelper_CheckUpdateStateAndShowConfirm_Patch
         {
-            public static bool Prefix() => false;
+            public static bool Prefix()
+            {
+                MelonLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.CheckUpdateStateAndShowConfirm() 호출 차단!");
+                return false;
+            }
         }
 
         [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.ShowUpdateTip))]
         public static class VersionHelper_ShowUpdateTip_Patch
         {
-            public static bool Prefix() => false;
+            public static bool Prefix()
+            {
+                MelonLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.ShowUpdateTip() 호출 차단!");
+                return false;
+            }
         }
 
         [HarmonyPatch(typeof(VersionHelper), nameof(VersionHelper.ShowUpdateConfirmPopup))]
         public static class VersionHelper_ShowUpdateConfirmPopup_Patch
         {
-            public static bool Prefix() => false;
+            public static bool Prefix()
+            {
+                MelonLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.ShowUpdateConfirmPopup() 호출 차단!");
+                return false;
+            }
         }
 
         // -------------------------------------------------------------
@@ -83,6 +97,7 @@ namespace muse_dash_test.Patches.UI.Welcome
             public static bool Prefix(ref bool isRecommendVersionReleased)
             {
                 isRecommendVersionReleased = false;
+                MelonLogger.Msg("[UI.UpdateNotice] 🛡️ WelcomeSelect.OnGetRecommendVersion() 호출 감지 ➔ isRecommendVersionReleased = false 전달!");
                 return true;
             }
         }
@@ -120,6 +135,7 @@ namespace muse_dash_test.Patches.UI.Welcome
             public static bool Prefix(ref bool showRecommendSign)
             {
                 showRecommendSign = false;
+                MelonLogger.Msg("[UI.UpdateNotice] 🛡️ OptionSelect.OnGetRecommendVersion() 호출 감지 ➔ showRecommendSign = false 전달!");
                 return true;
             }
         }
