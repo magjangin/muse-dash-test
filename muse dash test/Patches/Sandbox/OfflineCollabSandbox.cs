@@ -3,6 +3,7 @@ using HarmonyLib;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace muse_dash_test
 {
@@ -10,13 +11,14 @@ namespace muse_dash_test
     /// 콜라보 팩(명일방주, 미쿠, 린/렌 등) 및 특수 DLC의 소유권/만료 시각을 
     /// 오프라인 샌드박스 플래그(OfflineCustomSandbox.IsEnabled)에 맞춰 
     /// 오버라이드 및 바이패스하는 패치 모듈입니다.
-    /// Harmony AccessTools.TypeByName의 전역 어셈블리 스캔 경고(노란줄)를 방지하기 위해 
-    /// 타깃 어셈블리 direct lookup 방식으로 타입을 탐색합니다.
+    /// 
+    /// - C# System.DateTime 대신 Il2CppSystem.DateTime 호환 타입 사용
+    /// - TargetMethods가 없을 경우 Harmony PatchAll 불발을 방지하는 Prepare 검증 적용
     /// </summary>
     public static class OfflineCollabSandbox
     {
         // ──────────────────────────────────────────────────────────────────────────
-        // 안전한 Il2Cpp 타입 탐색 헬퍼 (Harmony 전역 스캔 경고/노란줄 방지)
+        // 안전한 Il2Cpp 타입 탐색 헬퍼
         // ──────────────────────────────────────────────────────────────────────────
         private static readonly Dictionary<string, Type> TypeCache = new Dictionary<string, Type>();
 
@@ -27,7 +29,6 @@ namespace muse_dash_test
                 if (TypeCache.TryGetValue(name, out var cachedType))
                     return cachedType;
 
-                // 1. AppDomain 어셈블리 direct lookup (Assembly-CSharp 관련 우선)
                 foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
                 {
                     string asmName = asm.FullName;
@@ -65,10 +66,10 @@ namespace muse_dash_test
                 static MethodBase TargetMethod()
                 {
                     Type type = FindIl2CppType(
-                        "Il2Cpp.DlcUIExtensionInfo",
-                        "DlcUIExtensionInfo",
                         "Il2CppAssets.Scripts.Database.DlcUIExtensionInfo",
-                        "Assets.Scripts.Database.DlcUIExtensionInfo"
+                        "Assets.Scripts.Database.DlcUIExtensionInfo",
+                        "Il2Cpp.DlcUIExtensionInfo",
+                        "DlcUIExtensionInfo"
                     );
                     if (type == null) return null;
 
@@ -78,12 +79,14 @@ namespace muse_dash_test
                         ?? AccessTools.Method(type, "get_getDlcEndTime");
                 }
 
-                static bool Prefix(ref DateTime __result)
+                // C# System.DateTime 대신 Il2Cpp 런타임 호환 Il2CppSystem.DateTime 사용
+                static bool Prefix(ref Il2CppSystem.DateTime __result)
                 {
                     if (!OfflineCustomSandbox.IsEnabled)
                         return true;
 
-                    __result = new DateTime(2099, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+                    // 2099-12-31 23:59:59 Il2CppSystem.DateTime 객체 생성 및 리턴
+                    __result = new Il2CppSystem.DateTime(2099, 12, 31, 23, 59, 59);
                     return false;
                 }
             }
@@ -105,10 +108,10 @@ namespace muse_dash_test
                 static MethodBase TargetMethod()
                 {
                     Type type = FindIl2CppType(
-                        "Il2Cpp.SpecialDLCManager",
-                        "SpecialDLCManager",
                         "Il2CppAssets.Scripts.UI.Panels.SpecialDLCManager",
-                        "Assets.Scripts.UI.Panels.SpecialDLCManager"
+                        "Assets.Scripts.UI.Panels.SpecialDLCManager",
+                        "Il2Cpp.SpecialDLCManager",
+                        "SpecialDLCManager"
                     );
                     if (type == null) return null;
 
@@ -134,16 +137,23 @@ namespace muse_dash_test
         {
             private static readonly string[][] CandidateTypeGroups = new string[][]
             {
-                new string[] { "Il2Cpp.DLCInfoActiveTime", "DLCInfoActiveTime", "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTime" },
-                new string[] { "Il2Cpp.DLCInfoActiveTimeArknights", "DLCInfoActiveTimeArknights", "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTimeArknights" },
-                new string[] { "Il2Cpp.DLCInfoActiveTimeMiku", "DLCInfoActiveTimeMiku", "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTimeMiku" },
-                new string[] { "Il2Cpp.DLCInfoActiveTimeRinLen", "DLCInfoActiveTimeRinLen", "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTimeRinLen" }
+                new string[] { "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTime", "Assets.Scripts.UI.Panels.DLCInfoActiveTime", "Il2Cpp.DLCInfoActiveTime", "DLCInfoActiveTime" },
+                new string[] { "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTimeArknights", "Assets.Scripts.UI.Panels.DLCInfoActiveTimeArknights", "Il2Cpp.DLCInfoActiveTimeArknights", "DLCInfoActiveTimeArknights" },
+                new string[] { "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTimeMiku", "Assets.Scripts.UI.Panels.DLCInfoActiveTimeMiku", "Il2Cpp.DLCInfoActiveTimeMiku", "DLCInfoActiveTimeMiku" },
+                new string[] { "Il2CppAssets.Scripts.UI.Panels.DLCInfoActiveTimeRinLen", "Assets.Scripts.UI.Panels.DLCInfoActiveTimeRinLen", "Il2Cpp.DLCInfoActiveTimeRinLen", "DLCInfoActiveTimeRinLen" }
             };
 
             [HarmonyPatch]
             public class AutoRefreshCountdownPatch
             {
-                static IEnumerable<MethodBase> TargetMethods()
+                static bool Prepare()
+                {
+                    // TargetMethods()에서 찾은 대상 메서드가 최소 1개 이상일 때만 패치를 활성화 (Undefined target method 에러 방지)
+                    var methods = GetResolvedMethods();
+                    return methods != null && methods.Count > 0;
+                }
+
+                private static List<MethodBase> GetResolvedMethods()
                 {
                     var targets = new List<MethodBase>();
                     foreach (var candidates in CandidateTypeGroups)
@@ -156,6 +166,11 @@ namespace muse_dash_test
                         }
                     }
                     return targets;
+                }
+
+                static IEnumerable<MethodBase> TargetMethods()
+                {
+                    return GetResolvedMethods();
                 }
 
                 static bool Prefix()
