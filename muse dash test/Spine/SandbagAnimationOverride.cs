@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Il2Cpp;
 using Il2CppSpine;
@@ -94,6 +94,15 @@ namespace muse_dash_test
         /// <summary>구간 유지를 위해 막아낸 애니메이션 변경 횟수. 구간 종료 시 한 번만 보고합니다.</summary>
         private static int suppressedCount;
 
+        /// <summary>
+        /// 시작 신호에서 건 애니메이션의 TrackEntry.
+        ///
+        /// 타격 단위 변경을 막을 때 호출자에게 돌려줄 반환값으로 씁니다. 재생 중인 것을
+        /// <c>AnimationState.GetCurrent(0)</c> 로 조회해 보려 했지만 계속 null 이 나와서
+        /// 차단이 한 번도 걸리지 않았습니다(2026-08-11). 조회하는 대신 우리가 건 엔트리를 들고 있습니다.
+        /// </summary>
+        private static TrackEntry heldEntry;
+
         /// <summary>연타 구간 안이면 true. 이 구간에서만 원본 호출을 중복 제거 없이 기록합니다.</summary>
         public static bool InMultiHit => inMultiHit;
 
@@ -123,11 +132,14 @@ namespace muse_dash_test
                         swappingAnimation = true;
                         try
                         {
-                            sac.SetAnimation(HoldAnimation, true);
-                            MelonLogger.Msg($"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 을(를) 반복 재생으로 걸고 유지합니다.");
+                            heldEntry = sac.SetAnimation(HoldAnimation, true);
+                            MelonLogger.Msg(heldEntry != null
+                                ? $"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 을(를) 반복 재생으로 걸고 유지합니다."
+                                : $"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 을(를) 걸었지만 TrackEntry 가 null 이라 유지하지 못합니다.");
                         }
                         catch (Exception ex)
                         {
+                            heldEntry = null;
                             MelonLogger.Warning($"[샌드백실험] 시작 애니메이션 적용 실패: {ex.Message}");
                         }
                         finally
@@ -161,6 +173,7 @@ namespace muse_dash_test
                     }
 
                     suppressedCount = 0;
+                    heldEntry = null;
                     return true;
                 }
 
@@ -209,20 +222,13 @@ namespace muse_dash_test
                 // 지금 재생 중인 엔트리를 대신 넘깁니다. 그걸 얻지 못하면 막지 않습니다.
                 if (animationName == HoldAnimation) return true;
 
-                try
-                {
-                    var current = sac.skeletonAnimation.AnimationState.GetCurrent(0);
-                    if (current == null) return true;
+                // 시작에서 우리가 건 엔트리를 그대로 돌려줍니다. 이것을 확보하지 못했다면
+                // 유지할 근거가 없으므로 막지 않고 원본을 통과시킵니다.
+                if (heldEntry == null) return true;
 
-                    result = current;
-                    suppressedCount++;
-                    return false;
-                }
-                catch (Exception ex)
-                {
-                    MelonLogger.Warning($"[샌드백실험] 유지 실패, 원본 변경을 허용합니다: {ex.Message}");
-                    return true;
-                }
+                result = heldEntry;
+                suppressedCount++;
+                return false;
             }
 
             if (!AnimationSwapEnabled) return true;
@@ -253,6 +259,7 @@ namespace muse_dash_test
             redirecting = false;
             swappingAnimation = false;
             suppressedCount = 0;
+            heldEntry = null;
         }
     }
 
