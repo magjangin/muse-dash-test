@@ -67,9 +67,9 @@ namespace muse_dash_test
         {
             public Il2Cpp.LongPressController Note;
             public Transform NoteTransform;
-            public Transform Target;      // 실제로 오프셋을 쓰는 대상(부모 래퍼, 없으면 노트 자신)
+            public Transform Target;      // 실제로 오프셋을 쓰는 대상
             public Vector3 TargetBase;    // 오프셋을 더하기 전 원래 좌표
-            public bool TargetIsWrapper;
+            public string TargetKind;     // 어느 층을 잡았는지(로그용)
             public int Id;
             public bool Verbose;
             public int NextLogFrame;
@@ -106,7 +106,7 @@ namespace muse_dash_test
             Transform noteTransform = SafeTransform(ctrl);
             if (noteTransform == null) return;
 
-            Transform target = ResolveOffsetTarget(noteTransform, out bool isWrapper);
+            Transform target = ResolveOffsetTarget(noteTransform, out string targetKind);
             if (target == null) return;
 
             // 같은 래퍼를 이미 다른 항목이 잡고 있으면(오브젝트 풀 재사용) 먼저 정리합니다.
@@ -127,7 +127,7 @@ namespace muse_dash_test
                 NoteTransform = noteTransform,
                 Target = target,
                 TargetBase = target.localPosition,
-                TargetIsWrapper = isWrapper,
+                TargetKind = targetKind,
                 Id = noteSeq,
                 Verbose = noteSeq <= MaxLoggedNotes,
                 NextLogFrame = Time.frameCount,
@@ -137,7 +137,7 @@ namespace muse_dash_test
             if (entry.Verbose)
             {
                 MelonLogger.Msg(
-                    $"[LongNoteTrajectory] #{entry.Id} 추적 시작: target='{target.name}'({(isWrapper ? "부모 래퍼" : "노트 자신")}), " +
+                    $"[LongNoteTrajectory] #{entry.Id} 추적 시작: target='{target.name}'({targetKind}), " +
                     $"base=({entry.TargetBase.x:0.###},{entry.TargetBase.y:0.###}), shape={Shape}, amp={Amplitude:0.##}, " +
                     $"pathway={SafePathway(md)}, uid={SafeUid(md)}");
             }
@@ -223,12 +223,16 @@ namespace muse_dash_test
             if (entry.Verbose && frame >= entry.NextLogFrame)
             {
                 entry.NextLogFrame = frame + LogIntervalFrames;
-                float actualY;
-                try { actualY = noteTransform.position.y; } catch { actualY = float.NaN; }
+
+                // y 체인을 통째로 찍습니다. 게임이 어느 층의 y를 되돌리는지 한 번의 관찰로 판별하기 위함입니다.
+                float noteWorldY = SafeY(() => noteTransform.position.y);
+                float targetLocalY = SafeY(() => target.localPosition.y);
+                float targetWorldY = SafeY(() => target.position.y);
 
                 MelonLogger.Msg(
-                    $"[LongNoteTrajectory] #{entry.Id} frame={frame}: x={x:0.###}, 진행도={progress:0.###}, " +
-                    $"오프셋={offset:0.###}, 노트실제y={actualY:0.###}");
+                    $"[LongNoteTrajectory] #{entry.Id}({entry.TargetKind}) frame={frame}: x={x:0.###}, " +
+                    $"진행도={progress:0.###}, 오프셋={offset:0.###} | 노트world y={noteWorldY:0.###}, " +
+                    $"대상local y={targetLocalY:0.###}(기대 {entry.TargetBase.y + offset:0.###}), 대상world y={targetWorldY:0.###}");
             }
 
             return true;
@@ -276,29 +280,59 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 오프셋을 쓸 대상을 고릅니다. 부모가 이 노트만 담는 래퍼로 보이면 부모를,
-        /// 아니면(여러 노트를 담는 공용 컨테이너 등) 노트 자신을 씁니다.
+        /// 오프셋을 쓸 대상을 고릅니다.
+        /// <para><b>왜 몸통 노드가 1순위인가:</b> 공중 롱노트는 게임이 노트 오브젝트의 <c>transform.position</c>(월드)을
+        /// 매 프레임 직접 씁니다. 그래서 노트 자신은 물론 부모 래퍼를 올려도 상쇄되어 화면상 y가 그대로였습니다
+        /// (관측: 오프셋 0.999를 줬는데 노트 월드 y는 -0.099 유지). 게임이 쓰는 노드보다 한 단계 아래,
+        /// 실제 그림이 달린 <c>*_renderer(Clone)</c> 자식을 움직이면 그 위에서 무엇을 쓰든 영향받지 않습니다.</para>
         /// </summary>
-        private static Transform ResolveOffsetTarget(Transform noteTransform, out bool isWrapper)
+        private static Transform ResolveOffsetTarget(Transform noteTransform, out string kind)
         {
-            isWrapper = false;
+            Transform body = FindBodyNode(noteTransform);
+            if (body != null)
+            {
+                kind = "몸통 노드";
+                return body;
+            }
+
             try
             {
                 Transform parent = noteTransform.parent;
-                if (parent == null) return noteTransform;
 
                 // SceneObjectController처럼 씬 전체가 매달린 노드를 움직이면 화면이 통째로 흔들립니다.
-                if (parent.childCount > MaxWrapperChildren) return noteTransform;
-                if (parent.parent == null) return noteTransform;
+                if (parent != null && parent.parent != null && parent.childCount <= MaxWrapperChildren)
+                {
+                    kind = "부모 래퍼";
+                    return parent;
+                }
+            }
+            catch { }
 
-                isWrapper = true;
-                return parent;
-            }
-            catch
+            kind = "노트 자신";
+            return noteTransform;
+        }
+
+        /// <summary>
+        /// 노트 아래에서 그림이 달린 노드를 찾습니다.
+        /// 계층 덤프 기준 <c>{zz}02_{road|air}_renderer(Clone)</c> 한 개가 몸통 막대와 머리/꼬리 마커를 모두 담고 있습니다.
+        /// </summary>
+        private static Transform FindBodyNode(Transform noteTransform)
+        {
+            try
             {
-                isWrapper = false;
-                return noteTransform;
+                for (int i = 0; i < noteTransform.childCount; i++)
+                {
+                    Transform child = noteTransform.GetChild(i);
+                    if (child == null) continue;
+                    if (child.name.IndexOf("renderer", StringComparison.OrdinalIgnoreCase) >= 0) return child;
+                }
+
+                // 이름 규칙이 바뀌었을 때를 위한 폴백: 자식이 하나뿐이면 그게 그림 노드입니다.
+                if (noteTransform.childCount == 1) return noteTransform.GetChild(0);
             }
+            catch { }
+
+            return null;
         }
 
         /// <summary>대상 좌표를 원래대로 되돌립니다(오브젝트 풀 재사용 대비).</summary>
@@ -361,6 +395,13 @@ namespace muse_dash_test
             {
                 return null;
             }
+        }
+
+        /// <summary>파괴된 Transform 접근으로 로그가 예외를 던지지 않게 감쌉니다.</summary>
+        private static float SafeY(Func<float> read)
+        {
+            try { return read(); }
+            catch { return float.NaN; }
         }
 
         private static string SafeUid(Il2CppGameLogic.MusicData md)
