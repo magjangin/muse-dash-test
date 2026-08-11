@@ -1,6 +1,7 @@
 using System;
 using MelonLoader;
 using Il2Cpp;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace muse_dash_test
 {
@@ -141,8 +142,18 @@ namespace muse_dash_test
     /// 노트 사라짐 이벤트 핸들러. 고스트 노트면 건너뜁니다.
     /// private 메서드지만 파라미터가 전부 참조 타입이고 byref/out이 없어, 과거 크래시 조합
     /// (private + out 구조체)과는 다릅니다. Prefix에서 파라미터를 아예 받지 않아 바인딩 위험도 없앴습니다.
+    ///
+    /// 인자 타입을 반드시 명시해야 합니다. Il2CppInterop이 같은 이름으로 두 개를 만들어 두기 때문에
+    /// (`Il2CppReferenceArray&lt;Object&gt;` 실제 메서드 + `params Object[]` 편의 오버로드)
+    /// 이름만 주면 `AmbiguousMatchException`으로 패치 등록이 실패합니다.
     /// </summary>
-    [HarmonyLib.HarmonyPatch(typeof(SpineActionController), "OnNoteDisappear")]
+    [HarmonyLib.HarmonyPatch(typeof(SpineActionController), "OnNoteDisappear",
+        new Type[]
+        {
+            typeof(Il2CppSystem.Object),
+            typeof(Il2CppSystem.Object),
+            typeof(Il2CppReferenceArray<Il2CppSystem.Object>)
+        })]
     public class SpineActionController_OnNoteDisappear_GhostNote_Patch
     {
         public static bool Prefix(SpineActionController __instance)
