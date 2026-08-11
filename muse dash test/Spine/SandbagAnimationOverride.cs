@@ -133,9 +133,20 @@ namespace muse_dash_test
                         try
                         {
                             heldEntry = sac.SetAnimation(HoldAnimation, true);
-                            MelonLogger.Msg(heldEntry != null
-                                ? $"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 을(를) 반복 재생으로 걸고 유지합니다."
-                                : $"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 을(를) 걸었지만 TrackEntry 가 null 이라 유지하지 못합니다.");
+
+                            if (heldEntry == null)
+                            {
+                                MelonLogger.Msg($"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 을(를) 걸었지만 TrackEntry 가 null 이라 유지하지 못합니다.");
+                            }
+                            else
+                            {
+                                // isLoop 인자를 넘겼는데도 한 번 재생하고 멈췄습니다(2026-08-11).
+                                // 게임 래퍼가 그 인자를 스파인까지 전달하지 않는 것으로 보여, 엔트리에 직접 겁니다.
+                                heldEntry.loop = true;
+
+                                MelonLogger.Msg($"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 유지 시작 "
+                                    + $"(Loop={heldEntry.Loop}, 길이={DescribeDuration(heldEntry)})");
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -249,6 +260,24 @@ namespace muse_dash_test
             finally
             {
                 swappingAnimation = false;
+            }
+        }
+
+        /// <summary>
+        /// 유지 중인 애니메이션의 길이를 사람이 읽을 수 있게 돌려줍니다.
+        /// 연타 구간(약 1.4초)보다 짧으면 반복이 필요하고, 길면 애초에 반복이 무의미하므로
+        /// 판단 근거로 로그에 남깁니다.
+        /// </summary>
+        private static string DescribeDuration(TrackEntry entry)
+        {
+            try
+            {
+                var animation = entry.Animation;
+                return animation != null ? $"{animation.Duration:0.###}초" : "(알 수 없음)";
+            }
+            catch (Exception)
+            {
+                return "(조회 실패)";
             }
         }
 
