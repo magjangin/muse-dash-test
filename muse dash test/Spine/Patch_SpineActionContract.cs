@@ -200,6 +200,56 @@ namespace muse_dash_test
         /// <summary>이미 기록한 (출처, 키) 조합. 같은 키가 매 프레임 반복돼도 한 번만 남깁니다.</summary>
         private static readonly HashSet<string> SeenDemand = new HashSet<string>();
 
+        /// <summary>지금 샌드백 연타 구간 안인지. 이 구간에서만 중복 제거 없이 기록합니다.</summary>
+        public static bool InMultiHit { get; private set; }
+
+        private static float _lastAnimTime;
+        private static string _currentMultiHitAnim = "double_hit_1";
+        private const float MultiHitAnimInterval = 0.15f; // 150ms 간격으로 교체하여 끊김 없이 매끄럽게 재생
+
+        /// <summary>
+        /// 연타 구간에서 애니메이션이 1프레임만에 뜩뜩 끊기지 않도록 150ms 간격으로
+        /// "double_hit_1"과 "double_hit_2"를 매끄럽게 교체합니다.
+        /// </summary>
+        public static string GetMultiHitAnimation()
+        {
+            float now = UnityEngine.Time.time;
+            if (now - _lastAnimTime >= MultiHitAnimInterval)
+            {
+                _lastAnimTime = now;
+                _currentMultiHitAnim = (_currentMultiHitAnim == "double_hit_1") ? "double_hit_2" : "double_hit_1";
+            }
+            return _currentMultiHitAnim;
+        }
+
+        /// <summary>
+        /// 액션 키를 보고 연타 구간의 경계를 추적합니다.
+        /// 두 마커 키는 actionData 에 정의가 없어 애니메이션을 재생하지 않는 순수 신호입니다.
+        /// </summary>
+        public static void TrackMultiHitWindow(string actionKey)
+        {
+            if (actionKey == MultiHitStartKey)
+            {
+                InMultiHit = true;
+                _lastAnimTime = 0f;
+                _currentMultiHitAnim = "double_hit_1";
+                MelonLogger.Msg("[샌드백원본] 연타 구간 진입 — double_hit_1 / double_hit_2 매끄러운 교체 재생을 적용합니다.");
+            }
+            else if (actionKey == MultiHitEndKey)
+            {
+                InMultiHit = false;
+                MelonLogger.Msg("[샌드백원본] 연타 구간 종료.");
+            }
+        }
+
+        /// <summary>씬을 벗어날 때 구간 상태가 남아 있지 않도록 초기화합니다.</summary>
+        public static void ResetWindow()
+        {
+            InMultiHit = false;
+            _lastAnimTime = 0f;
+            _currentMultiHitAnim = "double_hit_1";
+        }
+
         /// <summary>기록 순서를 보존한 수요 목록. 파일에 등장 순서대로 씁니다.</summary>
         private static readonly List<string> DemandLines = new List<string>();
 
@@ -237,47 +287,6 @@ namespace muse_dash_test
         /// <summary>샌드백 연타 구간의 시작/종료를 알리는 상태 마커 키.</summary>
         private const string MultiHitStartKey = "char_multihit_start";
         private const string MultiHitEndKey = "char_multihit_end";
-
-        /// <summary>지금 샌드백 연타 구간 안인지. 이 구간에서만 중복 제거 없이 기록합니다.</summary>
-        public static bool InMultiHit { get; private set; }
-
-        /// <summary>연타(샌드백) 구간 내 복선 애니메이션 교체용 토글 상태입니다.</summary>
-        private static bool _doubleHitState;
-
-        /// <summary>
-        /// 연타 구간에서 호출될 때마다 "double_hit_1"과 "double_hit_2"를 번갈아 반환합니다.
-        /// </summary>
-        public static string GetNextDoubleHitAnimation()
-        {
-            _doubleHitState = !_doubleHitState;
-            return _doubleHitState ? "double_hit_1" : "double_hit_2";
-        }
-
-        /// <summary>
-        /// 액션 키를 보고 연타 구간의 경계를 추적합니다.
-        /// 두 마커 키는 actionData 에 정의가 없어 애니메이션을 재생하지 않는 순수 신호입니다.
-        /// </summary>
-        public static void TrackMultiHitWindow(string actionKey)
-        {
-            if (actionKey == MultiHitStartKey)
-            {
-                InMultiHit = true;
-                _doubleHitState = false;
-                MelonLogger.Msg("[샌드백원본] 연타 구간 진입 — 원본 호출 기록 및 double_hit_1 / double_hit_2 번갈아 교체를 적용합니다.");
-            }
-            else if (actionKey == MultiHitEndKey)
-            {
-                InMultiHit = false;
-                MelonLogger.Msg("[샌드백원본] 연타 구간 종료.");
-            }
-        }
-
-        /// <summary>씬을 벗어날 때 구간 상태가 남아 있지 않도록 초기화합니다.</summary>
-        public static void ResetWindow()
-        {
-            InMultiHit = false;
-            _doubleHitState = false;
-        }
 
         /// <summary>
         /// 중복 제거 없이 호출을 그대로 남깁니다. 샌드백 연타 구간처럼 "같은 키가 몇 번, 어떤 간격으로
@@ -414,9 +423,16 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
     internal static class Patch_SpineContract_SetAnimation
     {
-        public static void Prefix(SpineActionController __instance, string n)
+        public static void Prefix(SpineActionController __instance, ref string n)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
+
+            // 샌드백/연타 구간 (char_multihit_start ~ char_multihit_end) 진입 시
+            // 150ms 타이밍 게이트를 적용하여 1프레임 뜩뜩 끊김 없이 "double_hit_1"과 "double_hit_2"를 매끄럽게 교체합니다.
+            if (SpineActionContract.InMultiHit)
+            {
+                n = SpineActionContract.GetMultiHitAnimation();
+            }
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
@@ -433,7 +449,7 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static void Prefix(SpineActionController __instance, string actionKey)
+        public static void Prefix(SpineActionController __instance, ref string actionKey)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
 
@@ -441,6 +457,12 @@ namespace muse_dash_test
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
 
             SpineActionContract.TrackMultiHitWindow(actionKey);
+
+            // 샌드백/연타 구간 진입 시 공중으로 붕 뜨지 않고 바닥(지상) 위치를 유지하도록 "char_bighit"으로 가로챕니다.
+            if (SpineActionContract.InMultiHit && (actionKey == "char_jumphit" || actionKey == "char_atk_p" || actionKey == "char_hit"))
+            {
+                actionKey = "char_bighit";
+            }
 
             // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
             if (SpineActionContract.InMultiHit)
