@@ -225,10 +225,30 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.OnControllerStart))]
     internal static class Patch_SpineActionContract_Supply
     {
-        public static bool Prepare() => true;
+        /// <summary>
+        /// 진입 확인용 카운터. 같은 메서드에 붙은 기존 Inject Postfix 는 도는데 이 Postfix 만
+        /// 아무 흔적을 남기지 않는 상황이라(2026-08-11), 우선 실행 여부부터 확정합니다.
+        /// 노트 오브젝트까지 수백 번 불리므로 앞쪽 몇 번만 찍고 멈춥니다.
+        /// </summary>
+        private static int entryLogBudget = 8;
 
         public static void Postfix(SpineActionController __instance)
         {
+            if (entryLogBudget > 0)
+            {
+                entryLogBudget--;
+                string probeName;
+                try
+                {
+                    probeName = __instance != null ? __instance.gameObject.name : "(instance null)";
+                }
+                catch (Exception ex)
+                {
+                    probeName = $"(이름 읽기 실패: {ex.Message})";
+                }
+                MelonLogger.Msg($"[SpineContract.Entry] Postfix 진입 — obj=\"{probeName}\"");
+            }
+
             try
             {
                 SpineActionContract.DumpSupply(__instance);
