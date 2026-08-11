@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using HarmonyLib;
 using Il2Cpp;
+using Il2CppAssets.Scripts.GameCore.Managers;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -193,6 +195,96 @@ namespace muse_dash_test
             }
         }
 
+        // ───────────────────────────────── 수요 ─────────────────────────────────
+
+        /// <summary>이미 기록한 (출처, 키) 조합. 같은 키가 매 프레임 반복돼도 한 번만 남깁니다.</summary>
+        private static readonly HashSet<string> SeenDemand = new HashSet<string>();
+
+        /// <summary>기록 순서를 보존한 수요 목록. 파일에 등장 순서대로 씁니다.</summary>
+        private static readonly List<string> DemandLines = new List<string>();
+
+        /// <summary>훅이 실제로 도는지 1회만 확인 로그를 남깁니다(등록만 되고 실행 안 되는 사례가 있었음).</summary>
+        private static readonly HashSet<string> AliveHooks = new HashSet<string>();
+
+        /// <summary>
+        /// 게임이 요청한 액션 키/애니메이션 이름을 누적합니다.
+        /// 새 항목일 때만 로그와 파일을 갱신하므로 매 프레임 디스크를 때리지 않습니다.
+        /// </summary>
+        public static void RecordDemand(string source, string key, string objName)
+        {
+            try
+            {
+                if (AliveHooks.Add(source))
+                {
+                    MelonLogger.Msg($"[SpineContract.Hook] \"{source}\" 훅 살아있음");
+                }
+
+                if (string.IsNullOrEmpty(key)) key = "(null)";
+
+                string entry = $"{source,-22} \"{key}\"" + (string.IsNullOrEmpty(objName) ? "" : $"   ← {objName}");
+                if (!SeenDemand.Add(entry)) return;
+
+                DemandLines.Add(entry);
+                MelonLogger.Msg($"[SpineContract.수요] {entry}");
+                FlushDemand();
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[SpineContract] 수요 기록 예외: {ex.Message}");
+            }
+        }
+
+        /// <summary>배틀 캐릭터에서 온 호출인지 판별합니다. 노트/적 오브젝트의 잡음을 걸러냅니다.</summary>
+        public static bool IsBattleObject(SpineActionController sac)
+        {
+            try
+            {
+                if (sac == null) return false;
+                string n = sac.gameObject.name;
+                return !string.IsNullOrEmpty(n)
+                    && n.IndexOf(TargetNameFragment, StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>배틀 오브젝트 이름을 안전하게 읽습니다.</summary>
+        public static string SafeName(SpineActionController sac)
+        {
+            try
+            {
+                return sac != null ? sac.gameObject.name : "(null)";
+            }
+            catch (Exception)
+            {
+                return "(이름 실패)";
+            }
+        }
+
+        /// <summary>누적된 수요 목록을 등장 순서대로 파일에 씁니다.</summary>
+        private static void FlushDemand()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("# 스파인 액션 계약서 — 수요 측");
+            sb.AppendLine("# 게임이 실제로 요청한 액션 키와 애니메이션 이름입니다. 처음 등장한 순서대로 기록됩니다.");
+            sb.AppendLine("#");
+            sb.AppendLine("#   PlayByKey            : 게임이 부르는 액션 키");
+            sb.AppendLine("#   SetAnimation         : 스파인에 최종적으로 넘어간 애니메이션 이름");
+            sb.AppendLine("#   AttacksWithoutExchg  : 공격 디스패처가 넘긴 액션 키 (result/id 포함)");
+            sb.AppendLine($"#");
+            sb.AppendLine($"# 갱신 시각 : {DateTime.Now:yyyy-MM-dd HH:mm:ss}   총 {DemandLines.Count}건");
+            sb.AppendLine();
+
+            foreach (var line in DemandLines)
+            {
+                sb.AppendLine("  " + line);
+            }
+
+            WriteFile("_요청된_액션_키.txt", sb.ToString());
+        }
+
         /// <summary>Il2Cpp 문자열 배열을 사람이 읽을 수 있게 이어 붙입니다.</summary>
         private static string JoinStrings(Il2CppStringArray array)
         {
@@ -251,7 +343,47 @@ namespace muse_dash_test
         }
     }
 
-    // 이 프로브에는 전용 [HarmonyPatch] 클래스가 없습니다.
+    /// <summary>
+    /// 스파인에 최종적으로 넘어간 애니메이션 이름을 기록합니다.
+    /// 액션 키가 아니라 실제 재생되는 이름이라, 매핑 결과를 그대로 관측할 수 있습니다.
+    /// Prefix 인 이유: 존재하지 않는 애니메이션을 요청해 실패하더라도 "요청했다"는 사실은 남겨야 합니다.
+    /// </summary>
+    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
+    internal static class Patch_SpineContract_SetAnimation
+    {
+        public static void Prefix(SpineActionController __instance, string n)
+        {
+            if (!SpineActionContract.IsBattleObject(__instance)) return;
+            SpineActionContract.RecordDemand("SetAnimation", n, SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    /// <summary>게임이 부르는 액션 키를 기록합니다(매핑 이전 단계).</summary>
+    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
+    internal static class Patch_SpineContract_PlayByKey
+    {
+        public static void Prefix(SpineActionController __instance, string actionKey)
+        {
+            if (!SpineActionContract.IsBattleObject(__instance)) return;
+            SpineActionContract.RecordDemand("PlayByKey", actionKey, SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    /// <summary>
+    /// 공격 디스패처. 판정 결과(result)와 노트 id 까지 같이 넘어오므로
+    /// "어떤 노트를 어떻게 쳤을 때 어떤 액션 키가 나가는가"를 직접 볼 수 있습니다.
+    /// 샌드백(멀티히트) 타격이 어느 키로 가는지 확인하는 지점입니다.
+    /// </summary>
+    [HarmonyPatch(typeof(AbstractGirlManager), nameof(AbstractGirlManager.AttacksWithoutExchange))]
+    internal static class Patch_SpineContract_Attacks
+    {
+        public static void Prefix(uint result, string actKey, int id)
+        {
+            SpineActionContract.RecordDemand("AttacksWithoutExchg", $"{actKey} (result={result}, id={id})", null);
+        }
+    }
+
+    // 공급 측 덤프에는 전용 [HarmonyPatch] 클래스가 없습니다.
     //
     // SpineActionController.OnControllerStart 에 패치를 붙여 봤지만 Postfix 가 한 번도 실행되지
     // 않았습니다. 진입 즉시 무조건 찍는 로그조차 나오지 않았고, 등록과 대상 해석은 정상이었습니다
