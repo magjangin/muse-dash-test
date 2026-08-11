@@ -63,6 +63,39 @@ namespace muse_dash_test
             return false;
         }
 
+        /// <summary>노트 오브젝트 컨트롤러 쪽 판정. 같은 3단계를 씁니다.</summary>
+        internal static bool IsGhostNoteObject(BaseEnemyObjectController controller, out string detail)
+        {
+            detail = "(판정 불가)";
+            if (controller == null) return false;
+
+            try
+            {
+                var note = controller.m_MusicData?.noteData;
+                if (note != null)
+                {
+                    string uid = note.uid;
+                    uint type = note.type;
+                    detail = $"uid={uid ?? "(null)"}, type={type}";
+
+                    if (type == GhostType) return true;
+                    if (IsGhostUid(uid)) return true;
+                    return false;
+                }
+            }
+            catch (Exception) { }
+
+            try
+            {
+                string name = controller.gameObject != null ? controller.gameObject.name : null;
+                detail = $"musicData 없음, name={name ?? "(null)"}";
+                if (name != null && name.Length >= 6 && IsGhostUid(name.Substring(0, 6))) return true;
+            }
+            catch (Exception) { }
+
+            return false;
+        }
+
         private static bool IsGhostUid(string uid)
         {
             if (uid == null || uid.Length < 6) return false;
@@ -110,6 +143,64 @@ namespace muse_dash_test
                 sb.Append($"{entry.Key}={entry.Value}");
             }
             MelonLogger.Msg($"[GhostNote.FadeBlock] 누적 차단: {sb}");
+        }
+    }
+
+    /// <summary>
+    /// 노트 오브젝트 쪽 사라짐 처리. `SpineActionController` 두 후보가 모두 침묵해서 추가한 세 번째 후보입니다.
+    /// 이름이 같은 오버로드가 둘이라(실제 메서드 + params 편의 오버로드) 인자 타입을 반드시 못박아야 합니다.
+    /// </summary>
+    [HarmonyLib.HarmonyPatch(typeof(BaseEnemyObjectController), "NoteDisappearLogic",
+        new Type[]
+        {
+            typeof(Il2CppSystem.Object),
+            typeof(Il2CppSystem.Object),
+            typeof(Il2CppReferenceArray<Il2CppSystem.Object>)
+        })]
+    public class BaseEnemyObjectController_NoteDisappearLogic_GhostNote_Patch
+    {
+        public static bool Prefix(BaseEnemyObjectController __instance)
+        {
+            try
+            {
+                if (!InputOverlay.showGhostNotes) return true;
+
+                bool isGhost = GhostNoteIdentity.IsGhostNoteObject(__instance, out string detail);
+                GhostFadeBlockStats.Observe("NoteDisappearLogic", detail, isGhost);
+                if (!isGhost) return true;
+
+                GhostFadeBlockStats.Blocked("NoteDisappearLogic");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[BaseEnemyObjectController.NoteDisappearLogic.Prefix] 고스트 사라짐 차단 중 예외 발생: {ex}");
+                return true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 관찰 전용. 페이드가 C# 알파 호출이 아니라 Spine 애니메이션(액션 키)일 가능성을 확인합니다.
+    /// 고스트 노트에 어떤 액션 키가 재생되는지만 남기고 값은 바꾸지 않습니다.
+    /// `public` + `string`/`bool` 조합이라 이 프로젝트에서 안전이 확인된 훅 모양입니다.
+    /// </summary>
+    [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
+    public class SpineActionController_PlayByKey_GhostNoteProbe_Patch
+    {
+        public static void Prefix(SpineActionController __instance, string actionKey)
+        {
+            try
+            {
+                if (!InputOverlay.showGhostNotes) return;
+                if (!GhostNoteIdentity.IsGhost(__instance, out string detail)) return;
+
+                GhostFadeBlockStats.Observe("PlayByKey", $"actionKey={actionKey ?? "(null)"}, {detail}", true);
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[SpineActionController.PlayByKey.Prefix] 액션 키 관찰 중 예외 발생: {ex}");
+            }
         }
     }
 
