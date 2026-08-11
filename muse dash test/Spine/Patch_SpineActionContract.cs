@@ -260,6 +260,11 @@ namespace muse_dash_test
             return "GeneralGirlManager";
         }
 
+        public static string SafeName(AbstractGirlManager manager)
+        {
+            return manager != null ? manager.GetType().Name : "AbstractGirlManager";
+        }
+
         public static string SafeName(SpineActionController sac)
         {
             return SafeName((UnityEngine.Component)sac);
@@ -389,6 +394,42 @@ namespace muse_dash_test
         public static void Prefix(GeneralGirlManager __instance)
         {
             SpineActionContract.RecordDemand("HitNothingAnim", "PlayRandomHitNothingAnim", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.Hurt))]
+    internal static class Patch_GeneralGirl_Hurt
+    {
+        public static void Prefix(GeneralGirlManager __instance)
+        {
+            SpineActionContract.RecordDemand("GirlManager.Hurt", "Hurt", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.Dead))]
+    internal static class Patch_GeneralGirl_Dead
+    {
+        public static void Prefix(GeneralGirlManager __instance)
+        {
+            SpineActionContract.RecordDemand("GirlManager.Dead", "Dead", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(AbstractGirlManager), nameof(AbstractGirlManager.PlayPressMusic))]
+    internal static class Patch_AbstractGirl_PlayPressMusic
+    {
+        public static void Prefix(AbstractGirlManager __instance)
+        {
+            SpineActionContract.RecordDemand("GirlManager.PlayPressMusic", "PlayPressMusic", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(AbstractGirlManager), nameof(AbstractGirlManager.BeMissed), new Type[] { })]
+    internal static class Patch_AbstractGirl_BeMissed
+    {
+        public static void Prefix(AbstractGirlManager __instance)
+        {
+            SpineActionContract.RecordDemand("GirlManager.BeMissed", "BeMissed", SpineActionContract.SafeName(__instance));
         }
     }
 
