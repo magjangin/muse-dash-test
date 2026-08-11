@@ -37,7 +37,19 @@ namespace muse_dash_test
         public static Color RibbonColor = new Color(0.2f, 1f, 0.7f, 0.9f);
 
         /// <summary>리본을 구성할 점 개수. 많을수록 매끄럽지만 매 프레임 갱신 비용이 늘어납니다.</summary>
-        private const int RibbonPoints = 24;
+        private const int MaxRibbonPoints = 24;
+
+        /// <summary>리본 최소 점 개수.</summary>
+        private const int MinRibbonPoints = 4;
+
+        /// <summary>
+        /// 리본 두께(월드 단위). 0 이하면 원본 막대의 bounds 높이를 씁니다.
+        /// <para>자동값은 과대평가됩니다. 원본 막대 스프라이트의 bounds에는 글로우/투명 여백이 포함돼
+        /// 실측 1.18이 나왔는데, 이는 마디 길이(0.107)의 11배라 마디마다 만들어지는 사각형이 서로 파고듭니다.
+        /// 방향이 꺾이는 지점에서 안쪽은 겹치고 바깥쪽은 벌어져, 좌표는 이어져 있는데 화면에서는 몸통이
+        /// 머리와 끝을 못 잇는 것처럼 보였습니다.</para>
+        /// </summary>
+        public static float RibbonWidth = 0.45f;
 
         /// <summary>리본 상태 진단 로그 간격(프레임).</summary>
         private const int RibbonLogIntervalFrames = 10;
@@ -66,6 +78,7 @@ namespace muse_dash_test
             public bool Verbose;
             public int Id;
             public int NextLogFrame;
+            public int PointCount;
 
             // 게임이 우리가 끈/켠 상태를 되돌린 횟수. 깜빡임 원인 판별용입니다.
             public int LineReEnabledCount;
@@ -107,7 +120,11 @@ namespace muse_dash_test
                 state.HeadMarkerBaseY = state.HeadMarker != null ? state.HeadMarker.localPosition.y : 0f;
                 state.TailMarkerBaseY = state.TailMarker.localPosition.y;
 
-                state.Line = EnsureLineRenderer(noteTransform, state.OriginalBody);
+                float span = state.TailMarker.localPosition.x * state.BodyScaleX;
+                float width = ResolveWidth(state.OriginalBody);
+                state.PointCount = ResolvePointCount(span, width);
+
+                state.Line = EnsureLineRenderer(noteTransform, state.OriginalBody, width, state.PointCount);
                 if (state.Line == null)
                 {
                     if (verbose) MelonLogger.Msg($"[LongNoteTrajectory] #{id} 리본 준비 실패: LineRenderer를 만들지 못했습니다. Rigid로 진행합니다.");
@@ -127,8 +144,8 @@ namespace muse_dash_test
                 {
                     MelonLogger.Msg(
                         $"[LongNoteTrajectory] #{id} 리본 부착: 몸통local y={state.BodyLocalY:0.###}, 몸통scaleX={state.BodyScaleX:0.###}, " +
-                        $"꼬리local x={state.TailMarker.localPosition.x:0.###}, " +
-                        $"길이(월드)={state.TailMarker.localPosition.x * state.BodyScaleX:0.###}, " +
+                        $"길이(월드)={span:0.###}, 두께={width:0.###}(자동값 {AutoWidth(state.OriginalBody):0.###}), " +
+                        $"점수={state.PointCount}, 마디={(state.PointCount > 1 ? span / (state.PointCount - 1) : span):0.###}, " +
                         $"원본막대={(state.OriginalBody != null ? "숨김" : "없음")}");
                 }
 
@@ -156,9 +173,10 @@ namespace muse_dash_test
                 float tailLocalX = state.TailMarker.localPosition.x;
                 float tailWorldSpan = tailLocalX * state.BodyScaleX;
 
-                for (int i = 0; i < RibbonPoints; i++)
+                int pointCount = state.PointCount;
+                for (int i = 0; i < pointCount; i++)
                 {
-                    float t = RibbonPoints > 1 ? i / (float)(RibbonPoints - 1) : 0f;
+                    float t = pointCount > 1 ? i / (float)(pointCount - 1) : 0f;
                     float pointWorldX = noteWorldX + tailWorldSpan * t;
                     float y = state.BodyLocalY + Offset(Progress(pointWorldX));
 
@@ -251,7 +269,7 @@ namespace muse_dash_test
         /// 노트 루트 아래에 리본용 LineRenderer를 준비합니다.
         /// 노트는 파괴되지 않고 풀로 돌아가므로, 이미 만들어 둔 것이 있으면 그대로 재사용합니다.
         /// </summary>
-        private static LineRenderer EnsureLineRenderer(Transform noteTransform, SpriteRenderer bodySprite)
+        private static LineRenderer EnsureLineRenderer(Transform noteTransform, SpriteRenderer bodySprite, float width, int pointCount)
         {
             Transform existing = noteTransform.Find(RibbonObjectName);
             if (existing != null)
@@ -259,7 +277,7 @@ namespace muse_dash_test
                 LineRenderer cached = existing.GetComponent<LineRenderer>();
                 if (cached != null)
                 {
-                    ConfigureLineRenderer(cached, bodySprite);
+                    ConfigureLineRenderer(cached, bodySprite, width, pointCount);
                     return cached;
                 }
             }
@@ -271,8 +289,38 @@ namespace muse_dash_test
             go.transform.localScale = Vector3.one;
 
             LineRenderer line = go.AddComponent<LineRenderer>();
-            ConfigureLineRenderer(line, bodySprite);
+            ConfigureLineRenderer(line, bodySprite, width, pointCount);
             return line;
+        }
+
+        /// <summary>원본 막대에서 읽어낸 두께(참고값). bounds에 글로우/여백이 포함돼 과대평가되는 경향이 있습니다.</summary>
+        private static float AutoWidth(SpriteRenderer bodySprite)
+        {
+            try
+            {
+                float height = bodySprite != null ? bodySprite.bounds.size.y : 0f;
+                return height > 0.01f ? height : FallbackRibbonWidth;
+            }
+            catch
+            {
+                return FallbackRibbonWidth;
+            }
+        }
+
+        private static float ResolveWidth(SpriteRenderer bodySprite)
+        {
+            return RibbonWidth > 0f ? RibbonWidth : AutoWidth(bodySprite);
+        }
+
+        /// <summary>
+        /// 마디가 두께보다 훨씬 짧아지지 않도록 점 개수를 정합니다.
+        /// 짧은 마디에 굵은 폭이 걸리면 사각형들이 서로 파고들어, 꺾이는 지점에서 몸통이 끊겨 보입니다.
+        /// </summary>
+        private static int ResolvePointCount(float span, float width)
+        {
+            float minSegment = Mathf.Max(width * 0.5f, 0.05f);
+            int count = Mathf.RoundToInt(Mathf.Abs(span) / minSegment) + 1;
+            return Mathf.Clamp(count, MinRibbonPoints, MaxRibbonPoints);
         }
 
         /// <summary>
@@ -432,26 +480,25 @@ namespace muse_dash_test
             = new System.Collections.Generic.Dictionary<long, Material>();
 
         /// <summary>리본이 원본 막대와 같은 재질·두께·정렬 순서로 보이도록 맞춥니다.</summary>
-        private static void ConfigureLineRenderer(LineRenderer line, SpriteRenderer bodySprite)
+        private static void ConfigureLineRenderer(LineRenderer line, SpriteRenderer bodySprite, float width, int pointCount)
         {
             line.useWorldSpace = false;
-            line.positionCount = RibbonPoints;
-            line.numCapVertices = 2;
-            line.numCornerVertices = 2;
+            line.positionCount = pointCount;
+
+            // 코너/캡 보조 정점은 굵은 폭에서 서로 겹쳐 뒤집히므로 쓰지 않습니다.
+            line.numCapVertices = 0;
+            line.numCornerVertices = 0;
             line.textureMode = LineTextureMode.Stretch;
-            line.alignment = LineAlignment.View;
+
+            // 2D 고정 카메라라 View 빌보딩이 필요 없습니다. XY 평면에 고정하는 쪽이 지오메트리가 안정적입니다.
+            line.alignment = LineAlignment.TransformZ;
             line.receiveShadows = false;
             line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-            float width = FallbackRibbonWidth;
             if (bodySprite != null)
             {
                 try
                 {
-                    // 원본 막대의 화면상 두께를 그대로 씁니다.
-                    float bodyHeight = bodySprite.bounds.size.y;
-                    if (bodyHeight > 0.01f) width = bodyHeight;
-
                     Material material = GetRibbonMaterial(bodySprite);
                     if (material != null) line.sharedMaterial = material;
 
