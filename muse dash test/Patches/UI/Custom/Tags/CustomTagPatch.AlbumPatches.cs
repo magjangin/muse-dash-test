@@ -66,6 +66,35 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// 가상 곡의 소속 앨범 UID를 커스텀 앨범('1999-0')으로 답합니다.
+        ///
+        /// <para><c>albumIndex</c>와 마찬가지로 getter 전용 프로퍼티라 값을 써 넣을 수 없어,
+        /// 지금까지 숙주의 'music_package_0'을 그대로 돌려주고 있었습니다.
+        /// 팩 이름 라벨이 <c>albumIndex</c>를 1999로 고쳐 준 뒤에도 여전히 0을 물어본 이유가 이것으로 보입니다 —
+        /// 인덱스를 이 UID에서 되찾아 오면(<c>GetAlbumIndexByUid("music_package_0")</c>) 0이 나옵니다.</para>
+        /// </summary>
+        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.albumUidName), MethodType.Getter)]
+        internal class MusicInfo_albumUidName_Patch
+        {
+            private static bool _logged;
+
+            private static bool Prefix(MusicInfo __instance, ref string __result)
+            {
+                if (__instance == null) return true;
+                if (!CustomContentIds.IsVirtualSong(__instance.uid)) return true;
+
+                __result = CustomTagRegistry.AlbumUidString;
+
+                if (!_logged)
+                {
+                    _logged = true;
+                    MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 앨범 UID 응답: uid={__instance.uid} → '{__result}' (이 로그는 1회만 표시됩니다)");
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 가상 곡의 앨범 인덱스를 1999(<see cref="CustomTagRegistry.TagUid"/>)로 답합니다.
         ///
         /// <para><b>왜 필드에 쓰지 않고 getter를 가로채나</b> — <c>MusicInfo.albumIndex</c>는 인터롭에

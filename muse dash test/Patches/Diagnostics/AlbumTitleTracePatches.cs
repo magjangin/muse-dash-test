@@ -74,6 +74,38 @@ namespace muse_dash_test
         }
     }
 
+    /// <summary>라벨이 물어보는 인덱스 0이 어디서 나오는지. 이 조회가 그 앞 고리로 의심됩니다.</summary>
+    [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumIndexByUid))]
+    internal static class DBConfigAlbums_GetAlbumIndexByUid_Trace
+    {
+        private static void Postfix(string uid, int __result)
+        {
+            try
+            {
+                if (!AlbumTitleTrace.ShouldTrace()) return;
+                MelonLogger.Msg($"{AlbumTitleTrace.Tag} GetAlbumIndexByUid('{uid ?? "(null)"}') → {__result}");
+            }
+            catch (Exception ex) { MelonLogger.Error($"{AlbumTitleTrace.Tag} 인덱스 조회 추적 예외: {ex.Message}"); }
+        }
+    }
+
+    [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumsInfoByUid))]
+    internal static class DBConfigAlbums_GetAlbumsInfoByUid_Trace
+    {
+        private static void Postfix(string uid, DBConfigAlbums.AlbumsInfo __result)
+        {
+            try
+            {
+                if (!AlbumTitleTrace.ShouldTrace()) return;
+
+                string title = "(null)";
+                if (__result != null) title = new AlbumsInfoWrapper(__result).title ?? "(null)";
+                MelonLogger.Msg($"{AlbumTitleTrace.Tag} GetAlbumsInfoByUid('{uid ?? "(null)"}') → title='{title}'");
+            }
+            catch (Exception ex) { MelonLogger.Error($"{AlbumTitleTrace.Tag} 앨범 조회 추적 예외: {ex.Message}"); }
+        }
+    }
+
     [HarmonyPatch(typeof(LongSongNameController), nameof(LongSongNameController.RefreshText), new Type[] { typeof(string) })]
     internal static class LongSongNameController_RefreshText_Trace
     {
