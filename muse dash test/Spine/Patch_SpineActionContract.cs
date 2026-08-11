@@ -95,31 +95,35 @@ namespace muse_dash_test
             MelonLogger.Msg($"[SpineContract] 공급 덤프 완료: {objName}");
         }
 
+        private static readonly HashSet<string> ModifiedObjects = new HashSet<string>();
+
         /// <summary>
-        /// 샌드백(연타) 타격 도중 애니메이션이 4회 재생 후 멈추거나 굳지 않도록
-        /// char_jumphit 및 char_bighit 액션의 isEndLoop 값을 true로 설정하여 연속 펀치를 보장합니다.
+        /// 샌드백(연타) 타격 시 "double_hit_1"과 "double_hit_2"(복선 타격 모션)가
+        /// 1과 2번이 번갈아 교체 재생되도록 actionData 매핑을 재설정합니다.
         /// </summary>
         public static void EnableMultiHitLoop(SpineActionController sac)
         {
             if (sac == null || sac.actionData == null) return;
             try
             {
+                string objName = sac.gameObject.name;
+                if (!ModifiedObjects.Add(objName)) return;
+
                 foreach (var data in sac.actionData)
                 {
                     if (data == null) continue;
                     if (data.name == "char_jumphit" || data.name == "char_bighit")
                     {
-                        if (!data.isEndLoop)
-                        {
-                            data.isEndLoop = true;
-                            MelonLogger.Msg($"[SpineContract] {sac.gameObject.name}: {data.name} actionData.isEndLoop -> true (연타 연속 펀치 보장)");
-                        }
+                        data.actionIdx = new Il2CppStringArray(new string[] { "double_hit_1", "double_hit_2" });
+                        data.isEndLoop = true;
+                        data.isRandomSequence = true;
+                        MelonLogger.Msg($"[SpineContract] {objName}: {data.name} actionIdx -> [double_hit_1, double_hit_2] 교차 및 반복 설정 완료!");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[SpineContract] isEndLoop 설정 예외: {ex.Message}");
+                MelonLogger.Warning($"[SpineContract] actionData 오버라이드 예외: {ex.Message}");
             }
         }
 
