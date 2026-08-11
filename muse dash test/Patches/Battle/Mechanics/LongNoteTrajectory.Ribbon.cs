@@ -18,12 +18,10 @@ namespace muse_dash_test
         public static bool HideOriginalBody = true;
 
         /// <summary>
-        /// 리본에 원본 막대의 스프라이트 텍스처를 입힐지.
-        /// <para>false면 <see cref="RibbonColor"/> 단색으로 그립니다. 띠가 별에 안 붙어 보일 때
-        /// 지오메트리 문제인지 텍스처(아틀라스 UV) 문제인지 가르는 용도입니다. 단색인데도 어긋나면 지오메트리,
-        /// 단색은 정확히 별을 잇는데 텍스처만 이상하면 UV 매핑 문제입니다.</para>
+        /// 리본에 원본 막대의 스프라이트 텍스처를 입힐지. false면 <see cref="RibbonColor"/> 단색으로 그립니다.
+        /// <para>텍스처를 못 잘라내면 자동으로 단색으로 떨어집니다.</para>
         /// </summary>
-        public static bool UseSpriteTexture = false;
+        public static bool UseSpriteTexture = true;
 
         /// <summary>단색 모드에서 쓸 리본 색. 게임 원본과 헷갈리지 않게 눈에 띄는 색을 기본으로 둡니다.</summary>
         public static Color RibbonColor = new Color(0.2f, 1f, 0.7f, 0.9f);
@@ -281,7 +279,8 @@ namespace muse_dash_test
             Material source = bodySprite.sharedMaterial;
             if (source == null) return null;
 
-            int key = source.GetInstanceID();
+            // 지상/공중처럼 재질은 같고 스프라이트만 다른 경우가 있어 둘을 합쳐 캐시 키로 씁니다.
+            long key = ((long)source.GetInstanceID() << 32) ^ (uint)(bodySprite.sprite != null ? bodySprite.sprite.GetInstanceID() : 0);
             if (ribbonMaterials.TryGetValue(key, out Material cached) && cached != null) return cached;
 
             Material material;
@@ -289,23 +288,18 @@ namespace muse_dash_test
             {
                 material = new Material(source);
 
-                if (!UseSpriteTexture)
-                {
-                    // 단색 모드: 텍스처를 비우면 셰이더가 흰색으로 채우고, 정점 색(RibbonColor)이 곱해집니다.
-                    material.mainTexture = null;
-                }
-                else
-                {
-                    Sprite sprite = bodySprite.sprite;
-                    Texture2D texture = sprite != null ? sprite.texture : null;
+                // 텍스처를 비우면 셰이더가 흰색으로 채우고 정점 색(RibbonColor)이 곱해집니다.
+                // 잘라내기에 실패했을 때도 이 상태로 남아 단색 리본이 됩니다.
+                material.mainTexture = null;
 
-                    if (texture != null && texture.width > 0 && texture.height > 0)
+                if (UseSpriteTexture)
+                {
+                    Texture2D cropped = GetCroppedSpriteTexture(bodySprite.sprite);
+                    if (cropped != null)
                     {
-                        material.mainTexture = texture;
-
-                        Rect rect = sprite.textureRect;
-                        material.SetTextureScale("_MainTex", new Vector2(rect.width / texture.width, rect.height / texture.height));
-                        material.SetTextureOffset("_MainTex", new Vector2(rect.x / texture.width, rect.y / texture.height));
+                        material.mainTexture = cropped;
+                        material.SetTextureScale("_MainTex", Vector2.one);
+                        material.SetTextureOffset("_MainTex", Vector2.zero);
                     }
                 }
             }
@@ -319,8 +313,77 @@ namespace muse_dash_test
             return material;
         }
 
-        private static readonly System.Collections.Generic.Dictionary<int, Material> ribbonMaterials
-            = new System.Collections.Generic.Dictionary<int, Material>();
+        /// <summary>
+        /// 스프라이트가 차지하는 아틀라스 영역만 잘라낸 텍스처를 만듭니다.
+        /// <para><b>왜 필요한가:</b> 아틀라스 텍스처를 그대로 물리고 타일링/오프셋(<c>_MainTex_ST</c>)으로 조각을
+        /// 지정하려 했지만, 스프라이트 셰이더는 UV를 그대로 통과시켜 ST를 무시합니다. 그래서 리본이 아틀라스
+        /// 전체를 늘려 그렸고 엉뚱한 조각이 보였습니다. 조각을 미리 잘라 두면 UV 0~1이 곧 막대가 되어
+        /// 셰이더 구현에 기대지 않아도 됩니다.</para>
+        /// <para>GPU 블릿 → ReadPixels 경로라 압축 포맷/블록 정렬 제약을 받지 않습니다.
+        /// 스프라이트당 한 번만 수행하고 캐시합니다.</para>
+        /// </summary>
+        private static Texture2D GetCroppedSpriteTexture(Sprite sprite)
+        {
+            if (sprite == null) return null;
+
+            Texture2D source = sprite.texture;
+            if (source == null || source.width <= 0 || source.height <= 0) return null;
+
+            int key = sprite.GetInstanceID();
+            if (croppedTextures.TryGetValue(key, out Texture2D cached)) return cached;
+
+            Texture2D result = null;
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture temporary = null;
+
+            try
+            {
+                Rect rect = sprite.textureRect;
+                int width = Mathf.RoundToInt(rect.width);
+                int height = Mathf.RoundToInt(rect.height);
+
+                if (width > 0 && height > 0)
+                {
+                    var scale = new Vector2(rect.width / source.width, rect.height / source.height);
+                    var offset = new Vector2(rect.x / source.width, rect.y / source.height);
+
+                    temporary = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+                    Graphics.Blit(source, temporary, scale, offset);
+
+                    RenderTexture.active = temporary;
+                    result = new Texture2D(width, height, TextureFormat.RGBA32, false)
+                    {
+                        wrapMode = TextureWrapMode.Clamp,
+                        filterMode = source.filterMode,
+                    };
+                    result.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
+                    result.Apply();
+
+                    MelonLogger.Msg(
+                        $"[LongNoteTrajectory] 리본 텍스처 잘라내기 완료: sprite='{sprite.name}', " +
+                        $"{width}x{height} (원본 {source.width}x{source.height}, rect={rect})");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Msg($"[LongNoteTrajectory] 리본 텍스처 잘라내기 실패({ex.GetType().Name}: {ex.Message}), 단색 리본으로 그립니다.");
+                result = null;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                if (temporary != null) RenderTexture.ReleaseTemporary(temporary);
+            }
+
+            croppedTextures[key] = result;
+            return result;
+        }
+
+        private static readonly System.Collections.Generic.Dictionary<int, Texture2D> croppedTextures
+            = new System.Collections.Generic.Dictionary<int, Texture2D>();
+
+        private static readonly System.Collections.Generic.Dictionary<long, Material> ribbonMaterials
+            = new System.Collections.Generic.Dictionary<long, Material>();
 
         /// <summary>리본이 원본 막대와 같은 재질·두께·정렬 순서로 보이도록 맞춥니다.</summary>
         private static void ConfigureLineRenderer(LineRenderer line, SpriteRenderer bodySprite)
