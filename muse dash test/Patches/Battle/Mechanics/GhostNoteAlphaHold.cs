@@ -4,48 +4,129 @@ using Il2Cpp;
 
 namespace muse_dash_test
 {
-    // === 고스트 노트 알파 조작 차단 ===
+    // === 고스트 노트 페이드 차단 ===
     //
-    // 알파를 담당하는 메서드는 `Il2Cpp.SpineActionController.SetAlpha(float alpha)` 하나입니다.
-    // 컴파일러가 만든 람다가 `→ float`/`(float)`, `→ Color`/`(Color)` 세 쌍이라
-    // 스켈레톤 알파와 머티리얼·렌더러 컬러를 DOTween으로 함께 트윈하는 지점입니다.
-    // 고스트 노트가 판정선 근처에서 사라지는 것은 이 호출의 결과이므로, 그 호출만 건너뜁니다.
+    // 알파를 만드는 후보가 둘입니다. 둘 다 `Il2Cpp.SpineActionController`에 있습니다.
+    //   1. `SetAlpha(float alpha)`                              - public. 람다가 float·Color·Color 세 쌍이라
+    //                                                             스켈레톤 알파 + 머티리얼/렌더러 컬러를 함께 트윈합니다.
+    //   2. `OnNoteDisappear(object, object, object[])`           - private. 노트 사라짐 이벤트 핸들러.
+    // 실측에서 1번은 고스트 노트에 대해 한 번도 불리지 않았으므로 2번을 함께 막습니다.
     //
-    // `public` + `float` 하나짜리 시그니처라 이 프로젝트에서 안전하다고 확인된 훅 모양입니다
-    // (virtual/private/byref 훅은 로그 없는 네이티브 크래시 전력이 있습니다).
+    // 고스트 판정은 세 단계로 폭을 넓혔습니다. `m_MusicData`가 비어 있는 컨트롤러도 있어서
+    // 그것만 보면 조용히 통과해 버립니다(1번이 침묵한 원인일 수 있음).
+    //   type == 4  →  UID xx == 17  →  GameObject 이름의 6자리 UID(`071701_road_nor_1(Clone)`)
     //
-    // 범위는 고스트 노트로만 좁힙니다. `SetAlpha`는 롱노트(`IsLongPressAlpha`)와 캐릭터 쪽에서도
-    // 쓰이므로 무조건 막으면 그쪽 연출이 깨집니다. `m_MusicData`가 없는 호출(캐릭터 등)은 그냥 통과시킵니다.
+    // 캐릭터/롱노트도 같은 메서드를 쓰므로 고스트로 확인되지 않은 호출은 반드시 통과시킵니다.
 
+    internal static class GhostNoteIdentity
+    {
+        private const uint GhostType = 4;
+        private const string GhostXx = "17";
+
+        /// <summary>고스트 노트인지 판정하고, 무엇을 근거로 판정했는지 함께 돌려줍니다.</summary>
+        internal static bool IsGhost(SpineActionController controller, out string detail)
+        {
+            detail = "(판정 불가)";
+            if (controller == null) return false;
+
+            // 1·2단계: 노트 데이터가 붙어 있으면 그걸 신뢰합니다.
+            try
+            {
+                var note = controller.m_MusicData?.noteData;
+                if (note != null)
+                {
+                    string uid = note.uid;
+                    uint type = note.type;
+                    detail = $"uid={uid ?? "(null)"}, type={type}";
+
+                    if (type == GhostType) return true;
+                    if (IsGhostUid(uid)) return true;
+                    return false;
+                }
+            }
+            catch (Exception) { }
+
+            // 3단계: 노트 데이터가 없으면 오브젝트 이름에서 UID를 읽습니다.
+            // 노트 프리팹 클론은 `071701_road_nor_1(Clone)` 꼴이라 앞 6자리가 UID입니다.
+            try
+            {
+                string name = controller.gameObject != null ? controller.gameObject.name : null;
+                detail = $"musicData 없음, name={name ?? "(null)"}";
+                if (name != null && name.Length >= 6 && IsGhostUid(name.Substring(0, 6)))
+                {
+                    return true;
+                }
+            }
+            catch (Exception) { }
+
+            return false;
+        }
+
+        private static bool IsGhostUid(string uid)
+        {
+            if (uid == null || uid.Length < 6) return false;
+            for (int i = 0; i < 6; i++)
+            {
+                if (!char.IsDigit(uid[i])) return false;
+            }
+            return uid.Substring(2, 2) == GhostXx;
+        }
+    }
+
+    /// <summary>차단 횟수와 관측 표본을 모아 로그로 남깁니다. 침묵이 생기지 않게 항상 뭔가는 남깁니다.</summary>
+    internal static class GhostFadeBlockStats
+    {
+        private static int observeBudget = 24;
+        private static readonly System.Collections.Generic.Dictionary<string, int> blockedBySource =
+            new System.Collections.Generic.Dictionary<string, int>();
+        private static DateTime lastSummaryTime = DateTime.MinValue;
+        private static bool pendingSummary;
+
+        /// <summary>고스트가 아니어도 호출 자체를 몇 번은 남깁니다. "안 불렸다"와 "필터에 걸렸다"를 구분하기 위함입니다.</summary>
+        internal static void Observe(string source, string detail, bool isGhost)
+        {
+            if (observeBudget <= 0) return;
+            observeBudget--;
+            MelonLogger.Msg($"[GhostNote.FadeBlock.Observe] {source} 호출 감지: 고스트={isGhost}, {detail}");
+        }
+
+        internal static void Blocked(string source)
+        {
+            blockedBySource.TryGetValue(source, out int n);
+            blockedBySource[source] = n + 1;
+            pendingSummary = true;
+
+            if ((DateTime.UtcNow - lastSummaryTime).TotalSeconds < 10.0) return;
+
+            lastSummaryTime = DateTime.UtcNow;
+            if (!pendingSummary) return;
+            pendingSummary = false;
+
+            var sb = new System.Text.StringBuilder();
+            foreach (var entry in blockedBySource)
+            {
+                if (sb.Length > 0) sb.Append(", ");
+                sb.Append($"{entry.Key}={entry.Value}");
+            }
+            MelonLogger.Msg($"[GhostNote.FadeBlock] 누적 차단: {sb}");
+        }
+    }
+
+    /// <summary>알파 트윈 진입점. 고스트 노트면 호출을 건너뜁니다.</summary>
     [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAlpha))]
     public class SpineActionController_SetAlpha_GhostNote_Patch
     {
-        /// <summary>고스트 노트임을 가리키는 NoteConfigData.type 값.</summary>
-        private const uint GhostType = 4;
-
-        /// <summary>고스트 노트를 가리키는 UID 중간 두 자리(zzxxyy의 xx).</summary>
-        private const string GhostXx = "17";
-
-        private static bool announced;
-        private static int blockedCount;
-        private static DateTime lastSummaryTime = DateTime.MinValue;
-
         public static bool Prefix(SpineActionController __instance, float alpha)
         {
             try
             {
                 if (!InputOverlay.showGhostNotes) return true;
-                if (!IsGhostNote(__instance, out string uid, out uint type)) return true;
 
-                blockedCount++;
-                if (!announced)
-                {
-                    announced = true;
-                    MelonLogger.Msg($"[GhostNote.AlphaHold] SetAlpha 차단 첫 적용: uid={uid}, type={type}, 요청 alpha={alpha:0.###} " +
-                                    $"→ 호출 건너뜀 (m_HasAlpha={SafeHasAlpha(__instance)})");
-                }
+                bool isGhost = GhostNoteIdentity.IsGhost(__instance, out string detail);
+                GhostFadeBlockStats.Observe("SetAlpha", $"alpha={alpha:0.###}, {detail}", isGhost);
+                if (!isGhost) return true;
 
-                LogSummaryIfDue();
+                GhostFadeBlockStats.Blocked("SetAlpha");
                 return false;
             }
             catch (Exception ex)
@@ -54,41 +135,34 @@ namespace muse_dash_test
                 return true;
             }
         }
+    }
 
-        /// <summary>
-        /// 이 컨트롤러가 물고 있는 노트가 고스트인지 판정합니다.
-        /// type(4)과 UID(xx=17) 어느 쪽으로든 걸리게 해서, 주입 경로에 따라 한쪽만 맞는 경우도 덮습니다.
-        /// </summary>
-        private static bool IsGhostNote(SpineActionController controller, out string uid, out uint type)
+    /// <summary>
+    /// 노트 사라짐 이벤트 핸들러. 고스트 노트면 건너뜁니다.
+    /// private 메서드지만 파라미터가 전부 참조 타입이고 byref/out이 없어, 과거 크래시 조합
+    /// (private + out 구조체)과는 다릅니다. Prefix에서 파라미터를 아예 받지 않아 바인딩 위험도 없앴습니다.
+    /// </summary>
+    [HarmonyLib.HarmonyPatch(typeof(SpineActionController), "OnNoteDisappear")]
+    public class SpineActionController_OnNoteDisappear_GhostNote_Patch
+    {
+        public static bool Prefix(SpineActionController __instance)
         {
-            uid = null;
-            type = 0;
+            try
+            {
+                if (!InputOverlay.showGhostNotes) return true;
 
-            var md = controller.m_MusicData;
-            if (md == null) return false;
+                bool isGhost = GhostNoteIdentity.IsGhost(__instance, out string detail);
+                GhostFadeBlockStats.Observe("OnNoteDisappear", detail, isGhost);
+                if (!isGhost) return true;
 
-            var note = md.noteData;
-            if (note == null) return false;
-
-            uid = note.uid;
-            type = note.type;
-
-            if (type == GhostType) return true;
-            return uid != null && uid.Length == 6 && uid.Substring(2, 2) == GhostXx;
-        }
-
-        private static string SafeHasAlpha(SpineActionController controller)
-        {
-            try { return controller.m_HasAlpha.ToString(); }
-            catch (Exception) { return "(읽기 실패)"; }
-        }
-
-        private static void LogSummaryIfDue()
-        {
-            if ((DateTime.UtcNow - lastSummaryTime).TotalSeconds < 10.0) return;
-
-            lastSummaryTime = DateTime.UtcNow;
-            MelonLogger.Msg($"[GhostNote.AlphaHold] 누적 SetAlpha 차단 {blockedCount}회");
+                GhostFadeBlockStats.Blocked("OnNoteDisappear");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[SpineActionController.OnNoteDisappear.Prefix] 고스트 사라짐 차단 중 예외 발생: {ex}");
+                return true;
+            }
         }
     }
 }
