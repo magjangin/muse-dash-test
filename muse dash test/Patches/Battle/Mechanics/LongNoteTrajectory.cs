@@ -53,6 +53,16 @@ namespace muse_dash_test
         /// <summary>래퍼로 인정할 최대 자식 수. 이보다 많으면 여러 노트가 공유하는 컨테이너로 보고 건드리지 않습니다.</summary>
         private const int MaxWrapperChildren = 4;
 
+        /// <summary>
+        /// 노트가 비활성인 상태를 견디는 유예 프레임 수.
+        /// <para>관측: OnControllerStart 시점에 노트 GameObject는 아직 <c>active=False</c>이고 한두 프레임 뒤 활성화됩니다.
+        /// 첫 프레임의 비활성을 "사라짐"으로 처리하면 활성화가 늦은 노트(공중 롱노트에서 관측)를 통째로 놓칩니다.</para>
+        /// </summary>
+        private const int InactiveGraceFrames = 180;
+
+        /// <summary>판정선을 이만큼 지나면 추적을 끝냅니다(롱노트 꼬리 길이 여유 포함).</summary>
+        private const float ExitMargin = 4f;
+
         private sealed class Tracked
         {
             public Il2Cpp.LongPressController Note;
@@ -65,6 +75,8 @@ namespace muse_dash_test
             public int NextLogFrame;
             public float LastX;
             public float LastOffset;
+            public int InactiveFrames;
+            public string EndReason;
         }
 
         private static readonly List<Tracked> tracked = new List<Tracked>();
@@ -96,6 +108,17 @@ namespace muse_dash_test
 
             Transform target = ResolveOffsetTarget(noteTransform, out bool isWrapper);
             if (target == null) return;
+
+            // 같은 래퍼를 이미 다른 항목이 잡고 있으면(오브젝트 풀 재사용) 먼저 정리합니다.
+            // 두 항목이 한 좌표를 두고 다투면 노트가 떨리거나 오프셋이 누적됩니다.
+            for (int i = tracked.Count - 1; i >= 0; i--)
+            {
+                if (tracked[i].Target != target) continue;
+
+                tracked[i].EndReason = "래퍼 재사용";
+                RestoreBase(tracked[i]);
+                tracked.RemoveAt(i);
+            }
 
             noteSeq++;
             var entry = new Tracked
@@ -145,31 +168,52 @@ namespace muse_dash_test
         {
             Transform noteTransform = entry.NoteTransform;
             Transform target = entry.Target;
-            if (noteTransform == null || target == null) return false;
+            if (noteTransform == null || target == null)
+            {
+                entry.EndReason = "오브젝트 소멸";
+                return false;
+            }
 
+            bool active;
             float x;
             try
             {
-                if (!noteTransform.gameObject.activeInHierarchy) return false;
+                active = noteTransform.gameObject.activeInHierarchy;
                 x = noteTransform.position.x;
             }
             catch
             {
+                entry.EndReason = "접근 불가";
+                return false;
+            }
+
+            if (!active)
+            {
+                // 등장 직후(아직 활성화 전)이거나 풀에 반납된 뒤입니다. 둘 다 여기로 들어오므로
+                // 바로 버리지 않고 유예를 둡니다. 보이지 않는 동안은 오프셋 0으로 눕혀 둡니다.
+                entry.InactiveFrames++;
+                SetOffset(entry, 0f);
+
+                if (entry.InactiveFrames <= InactiveGraceFrames) return true;
+
+                entry.EndReason = "비활성 유예 초과";
+                return false;
+            }
+
+            entry.InactiveFrames = 0;
+
+            if (x < HitX - ExitMargin)
+            {
+                entry.EndReason = "판정선 통과";
                 return false;
             }
 
             float progress = Progress(x);
             float offset = Offset(progress);
 
-            try
+            if (!SetOffset(entry, offset))
             {
-                target.localPosition = new Vector3(
-                    entry.TargetBase.x,
-                    entry.TargetBase.y + offset,
-                    entry.TargetBase.z);
-            }
-            catch
-            {
+                entry.EndReason = "좌표 쓰기 실패";
                 return false;
             }
 
@@ -188,6 +232,24 @@ namespace muse_dash_test
             }
 
             return true;
+        }
+
+        /// <summary>대상 좌표에 오프셋을 적용합니다.</summary>
+        private static bool SetOffset(Tracked entry, float offset)
+        {
+            try
+            {
+                entry.Target.localPosition = new Vector3(
+                    entry.TargetBase.x,
+                    entry.TargetBase.y + offset,
+                    entry.TargetBase.z);
+                entry.LastOffset = offset;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>등장 x → 판정 x 구간의 진행도(0~1).</summary>
@@ -252,8 +314,9 @@ namespace muse_dash_test
             if (entry.Verbose)
             {
                 MelonLogger.Msg(
-                    $"[LongNoteTrajectory] #{entry.Id} 추적 종료: 마지막 x={entry.LastX:0.###}, " +
-                    $"마지막 오프셋={entry.LastOffset:0.###} (HitX 보정 참고값)");
+                    $"[LongNoteTrajectory] #{entry.Id} 추적 종료({entry.EndReason ?? "정리"}): " +
+                    $"마지막 x={entry.LastX:0.###}, 마지막 오프셋={entry.LastOffset:0.###}, " +
+                    $"비활성프레임={entry.InactiveFrames}");
             }
         }
 
