@@ -206,6 +206,9 @@ namespace muse_dash_test
 
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);
 
+            // 고스트 노트 진단: 후킹 없이 노트 렌더 컨트롤러 인스턴스를 0.5초마다 훑습니다.
+            FeatureGuard.Run("GhostNote.Probe", GhostNoteProbeScanner.Scan);
+
             // 1. 순정/실험 맵에 구애받지 않고 스테이지 상태를 지속적으로 모니터링합니다.
             FeatureGuard.Run("StageCheck", () =>
             {
