@@ -388,12 +388,39 @@ namespace muse_dash_test
         }
     }
 
+    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.InstanceGirl))]
+    internal static class Patch_GeneralGirl_InstanceGirl
+    {
+        public static void Prefix(GeneralGirlManager __instance)
+        {
+            SpineActionContract.RecordDemand("GeneralGirl.Instance", "InstanceGirl", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.Release))]
+    internal static class Patch_GeneralGirl_Release
+    {
+        public static void Prefix(GeneralGirlManager __instance)
+        {
+            SpineActionContract.RecordDemand("GeneralGirl.Release", "Release", SpineActionContract.SafeName(__instance));
+        }
+    }
+
     [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.PlayRandomHitNothingAnim))]
     internal static class Patch_GeneralGirl_PlayRandomHitNothingAnim
     {
         public static void Prefix(GeneralGirlManager __instance)
         {
             SpineActionContract.RecordDemand("HitNothingAnim", "PlayRandomHitNothingAnim", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.PlayLongEndAnimator))]
+    internal static class Patch_GeneralGirl_PlayLongEndAnimator
+    {
+        public static void Prefix(GeneralGirlManager __instance, bool isAir)
+        {
+            SpineActionContract.RecordDemand("GeneralGirl.LongEnd", $"isAir={isAir}", SpineActionContract.SafeName(__instance));
         }
     }
 
