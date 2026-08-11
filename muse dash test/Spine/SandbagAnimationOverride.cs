@@ -24,8 +24,12 @@ namespace muse_dash_test
     /// </summary>
     internal static class SandbagAnimationOverride
     {
-        /// <summary>실험 스위치. false 로 두면 원본 동작 그대로입니다.</summary>
-        public static bool Enabled = true;
+        /// <summary>
+        /// 키 대체 스위치. false 면 게임 원래 동작 그대로 둡니다.
+        /// 구간 추적(<see cref="InMultiHit"/>)은 이 값과 무관하게 항상 동작하므로,
+        /// 꺼둔 상태에서 연타 구간의 원본 호출 순서를 관측할 수 있습니다.
+        /// </summary>
+        public static bool Enabled = false;
 
         /// <summary>연타 구간의 시작/종료를 알리는 상태 마커 키.</summary>
         private const string MultiHitStartKey = "char_multihit_start";
@@ -46,6 +50,9 @@ namespace muse_dash_test
         /// <summary>지금 연타 구간 안인지.</summary>
         private static bool inMultiHit;
 
+        /// <summary>연타 구간 안이면 true. 이 구간에서만 원본 호출을 중복 제거 없이 기록합니다.</summary>
+        public static bool InMultiHit => inMultiHit;
+
         /// <summary>바꿔치기로 다시 호출할 때 자기 자신을 또 가로채지 않도록 하는 재진입 가드.</summary>
         private static bool redirecting;
 
@@ -55,24 +62,31 @@ namespace muse_dash_test
         /// <returns>원본 호출을 그대로 진행하면 true, 이미 대체 호출을 마쳤으면 false.</returns>
         public static bool HandlePlayByKey(SpineActionController sac, string actionKey, bool isOverride)
         {
-            if (!Enabled || redirecting || sac == null || string.IsNullOrEmpty(actionKey)) return true;
+            if (redirecting || sac == null || string.IsNullOrEmpty(actionKey)) return true;
 
             try
             {
+                // 구간 추적은 대체 스위치와 무관하게 항상 수행합니다. 꺼둔 상태에서도
+                // "연타 구간이 언제부터 언제까지인가"는 원본 관측에 필요한 정보입니다.
                 if (actionKey == MultiHitStartKey)
                 {
                     inMultiHit = true;
-                    MelonLogger.Msg("[샌드백실험] 연타 구간 진입 — 타격을 복선 애니메이션으로 대체합니다.");
+                    MelonLogger.Msg(Enabled
+                        ? "[샌드백실험] 연타 구간 진입 — 타격을 복선 애니메이션으로 대체합니다."
+                        : "[샌드백원본] 연타 구간 진입 — 대체는 꺼져 있고, 원본 호출을 전부 기록합니다.");
                     return true;
                 }
 
                 if (actionKey == MultiHitEndKey)
                 {
                     inMultiHit = false;
-                    MelonLogger.Msg("[샌드백실험] 연타 구간 종료 — 원래 애니메이션으로 복귀합니다.");
+                    MelonLogger.Msg(Enabled
+                        ? "[샌드백실험] 연타 구간 종료 — 원래 애니메이션으로 복귀합니다."
+                        : "[샌드백원본] 연타 구간 종료.");
                     return true;
                 }
 
+                if (!Enabled) return true;
                 if (!inMultiHit) return true;
                 if (Array.IndexOf(RedirectedKeys, actionKey) < 0) return true;
 

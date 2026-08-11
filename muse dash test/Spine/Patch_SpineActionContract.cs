@@ -234,6 +234,24 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>
+        /// 중복 제거 없이 호출을 그대로 남깁니다. 샌드백 연타 구간처럼 "같은 키가 몇 번, 어떤 간격으로
+        /// 반복되는가"가 정보인 구간에서만 씁니다. 곡 전체에 켜면 로그가 폭발하므로 구간 밖에서는
+        /// 호출하지 않습니다.
+        /// </summary>
+        public static void RecordRaw(string source, string key, string objName)
+        {
+            try
+            {
+                MelonLogger.Msg($"[샌드백원본] {source,-13} \"{key ?? "(null)"}\""
+                    + (string.IsNullOrEmpty(objName) ? "" : $"   ← {objName}"));
+            }
+            catch (Exception)
+            {
+                // 관측 실패가 게임 흐름을 막지 않도록 조용히 넘깁니다.
+            }
+        }
+
         /// <summary>배틀 캐릭터에서 온 호출인지 판별합니다. 노트/적 오브젝트의 잡음을 걸러냅니다.</summary>
         public static bool IsBattleObject(SpineActionController sac)
         {
@@ -354,7 +372,15 @@ namespace muse_dash_test
         public static void Prefix(SpineActionController __instance, string n)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
-            SpineActionContract.RecordDemand("SetAnimation", n, SpineActionContract.SafeName(__instance));
+
+            string objName = SpineActionContract.SafeName(__instance);
+            SpineActionContract.RecordDemand("SetAnimation", n, objName);
+
+            // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
+            if (SandbagAnimationOverride.InMultiHit)
+            {
+                SpineActionContract.RecordRaw("SetAnimation", n, objName);
+            }
         }
     }
 
@@ -370,7 +396,14 @@ namespace muse_dash_test
         {
             if (SpineActionContract.IsBattleObject(__instance))
             {
-                SpineActionContract.RecordDemand("PlayByKey", actionKey, SpineActionContract.SafeName(__instance));
+                string objName = SpineActionContract.SafeName(__instance);
+                SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
+
+                // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
+                if (SandbagAnimationOverride.InMultiHit)
+                {
+                    SpineActionContract.RecordRaw("PlayByKey", actionKey, objName);
+                }
             }
 
             return SandbagAnimationOverride.HandlePlayByKey(__instance, actionKey, isOverride);
