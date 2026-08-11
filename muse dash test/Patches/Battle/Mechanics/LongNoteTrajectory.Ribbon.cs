@@ -17,6 +17,17 @@ namespace muse_dash_test
         /// <summary>원본 직선 막대를 숨길지. 끄면 원본과 리본이 같이 보여 위치 비교에 쓸 수 있습니다.</summary>
         public static bool HideOriginalBody = true;
 
+        /// <summary>
+        /// 리본에 원본 막대의 스프라이트 텍스처를 입힐지.
+        /// <para>false면 <see cref="RibbonColor"/> 단색으로 그립니다. 띠가 별에 안 붙어 보일 때
+        /// 지오메트리 문제인지 텍스처(아틀라스 UV) 문제인지 가르는 용도입니다. 단색인데도 어긋나면 지오메트리,
+        /// 단색은 정확히 별을 잇는데 텍스처만 이상하면 UV 매핑 문제입니다.</para>
+        /// </summary>
+        public static bool UseSpriteTexture = false;
+
+        /// <summary>단색 모드에서 쓸 리본 색. 게임 원본과 헷갈리지 않게 눈에 띄는 색을 기본으로 둡니다.</summary>
+        public static Color RibbonColor = new Color(0.2f, 1f, 0.7f, 0.9f);
+
         /// <summary>리본을 구성할 점 개수. 많을수록 매끄럽지만 매 프레임 갱신 비용이 늘어납니다.</summary>
         private const int RibbonPoints = 24;
 
@@ -192,11 +203,22 @@ namespace muse_dash_test
 
             try
             {
-                Bounds bounds = state.Line.bounds;
+                // 리본 양 끝과 별(마커) 위치를 같은 월드 좌표계로 찍습니다.
+                // 두 쌍이 일치하면 지오메트리는 정확한 것이고, 화면에서 어긋나 보이는 원인은 텍스처(UV)입니다.
+                int last = state.Line.positionCount - 1;
+                Vector3 ribbonStart = state.Line.transform.TransformPoint(state.Line.GetPosition(0));
+                Vector3 ribbonEnd = state.Line.transform.TransformPoint(state.Line.GetPosition(last));
+
+                string headText = state.HeadMarker != null
+                    ? $"({state.HeadMarker.position.x:0.##},{state.HeadMarker.position.y:0.##})"
+                    : "(없음)";
+                Vector3 tail = state.TailMarker.position;
+
                 MelonLogger.Msg(
-                    $"[LongNoteTrajectory] #{state.Id} 리본 frame={frame}: enabled={lineWasEnabled}, 보임={state.Line.isVisible}, " +
-                    $"점수={state.Line.positionCount}, 길이={span:0.###}, 두께={state.Line.startWidth:0.###}, " +
-                    $"bounds center=({bounds.center.x:0.##},{bounds.center.y:0.##}) size=({bounds.size.x:0.##},{bounds.size.y:0.##}) | " +
+                    $"[LongNoteTrajectory] #{state.Id} 리본 frame={frame}: 보임={state.Line.isVisible}, " +
+                    $"점수={state.Line.positionCount}, 길이={span:0.###}, 두께={state.Line.startWidth:0.###} | " +
+                    $"리본끝 ({ribbonStart.x:0.##},{ribbonStart.y:0.##})→({ribbonEnd.x:0.##},{ribbonEnd.y:0.##}) vs " +
+                    $"별 머리{headText}→꼬리({tail.x:0.##},{tail.y:0.##}) | " +
                     $"원본막대 보임={bodyWasVisible}, 리본되살림={state.LineReEnabledCount}회, 원본재숨김={state.BodyReHiddenCount}회");
             }
             catch { }
@@ -266,16 +288,25 @@ namespace muse_dash_test
             try
             {
                 material = new Material(source);
-                Sprite sprite = bodySprite.sprite;
-                Texture2D texture = sprite != null ? sprite.texture : null;
 
-                if (texture != null && texture.width > 0 && texture.height > 0)
+                if (!UseSpriteTexture)
                 {
-                    material.mainTexture = texture;
+                    // 단색 모드: 텍스처를 비우면 셰이더가 흰색으로 채우고, 정점 색(RibbonColor)이 곱해집니다.
+                    material.mainTexture = null;
+                }
+                else
+                {
+                    Sprite sprite = bodySprite.sprite;
+                    Texture2D texture = sprite != null ? sprite.texture : null;
 
-                    Rect rect = sprite.textureRect;
-                    material.SetTextureScale("_MainTex", new Vector2(rect.width / texture.width, rect.height / texture.height));
-                    material.SetTextureOffset("_MainTex", new Vector2(rect.x / texture.width, rect.y / texture.height));
+                    if (texture != null && texture.width > 0 && texture.height > 0)
+                    {
+                        material.mainTexture = texture;
+
+                        Rect rect = sprite.textureRect;
+                        material.SetTextureScale("_MainTex", new Vector2(rect.width / texture.width, rect.height / texture.height));
+                        material.SetTextureOffset("_MainTex", new Vector2(rect.x / texture.width, rect.y / texture.height));
+                    }
                 }
             }
             catch (Exception ex)
@@ -323,8 +354,10 @@ namespace muse_dash_test
 
             line.startWidth = width;
             line.endWidth = width;
-            line.startColor = Color.white;
-            line.endColor = Color.white;
+
+            Color color = UseSpriteTexture ? Color.white : RibbonColor;
+            line.startColor = color;
+            line.endColor = color;
         }
 
         /// <summary>
