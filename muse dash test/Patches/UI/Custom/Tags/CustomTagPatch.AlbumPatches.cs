@@ -150,7 +150,12 @@ namespace muse_dash_test
 
             private static bool Prefix(int index, ref string __result)
             {
-                if (index != CustomTagRegistry.TagUid) return true;
+                // 게임이 넘기는 index는 두 가지입니다. 앨범의 전역 인덱스(1999)로 물어보는 호출자도 있고,
+                // '지금 선택된 태그 안에서 몇 번째 앨범이냐'로 물어보는 호출자도 있습니다.
+                // 후자가 팩 이름 라벨을 채우는 쪽인데, 커스텀 태그에는 앨범이 하나뿐이라 늘 0으로 옵니다.
+                // 그 0은 현지화 테이블에서는 첫 앨범('기본 패키지')을 가리켜서 엉뚱한 이름이 찍혔습니다.
+                bool ours = index == CustomTagRegistry.TagUid || IsCustomTagSelected();
+                if (!ours) return true;
 
                 __result = CustomTagRegistry.AlbumTitle;
 
@@ -160,6 +165,20 @@ namespace muse_dash_test
                     MelonLogger.Msg($"[CustomTagRegistry] 앨범 이름 현지화 응답: index={index} → '{__result}' (이 로그는 1회만 표시됩니다)");
                 }
                 return false;
+            }
+
+            /// <summary>커스텀 태그를 보고 있는 동안의 조회는 전부 우리 앨범입니다. 그 태그에는 앨범이 하나뿐입니다.</summary>
+            private static bool IsCustomTagSelected()
+            {
+                try
+                {
+                    var db = GlobalDataBase.dbMusicTag;
+                    return db != null && db.m_CurSelectedTagIndex == CustomTagRegistry.TagUid;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
             }
         }
 
