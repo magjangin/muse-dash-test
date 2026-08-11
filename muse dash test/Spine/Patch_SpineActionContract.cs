@@ -414,16 +414,9 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
     internal static class Patch_SpineContract_SetAnimation
     {
-        public static void Prefix(SpineActionController __instance, ref string n)
+        public static void Prefix(SpineActionController __instance, string n)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
-
-            // 샌드백/연타 구간 (char_multihit_start ~ char_multihit_end) 진입 시
-            // 애니메이션을 "double_hit_1" 과 "double_hit_2" 로 번갈아가며 교체합니다.
-            if (SpineActionContract.InMultiHit)
-            {
-                n = SpineActionContract.GetNextDoubleHitAnimation();
-            }
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
@@ -440,7 +433,7 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static void Prefix(SpineActionController __instance, ref string actionKey)
+        public static void Prefix(SpineActionController __instance, string actionKey)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
 
@@ -448,16 +441,6 @@ namespace muse_dash_test
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
 
             SpineActionContract.TrackMultiHitWindow(actionKey);
-
-            // 샌드백/연타 구간(InMultiHit) 진입 시:
-            // 타격 액션 키("char_jumphit", "char_atk_p", "char_hit" 등)가 들어오면
-            // 복선(동시치기) 전용 액션 키인 "char_bighit"으로 가로채어 변경합니다.
-            // "char_bighit"은 actionData 에 [ 22] name="char_bighit" → ["double_hit_1", "double_hit_2"] 로
-            // 정의된 정식 복선 액션으로, 지상 바닥 위치에서 붕 뜨지 않고 복선 포즈를 취합니다.
-            if (SpineActionContract.InMultiHit && (actionKey == "char_jumphit" || actionKey == "char_atk_p" || actionKey == "char_hit"))
-            {
-                actionKey = "char_bighit";
-            }
 
             // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
             if (SpineActionContract.InMultiHit)
