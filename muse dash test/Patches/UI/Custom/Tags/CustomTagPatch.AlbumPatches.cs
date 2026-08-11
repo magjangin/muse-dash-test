@@ -66,6 +66,40 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// 가상 곡의 앨범 인덱스를 1999(<see cref="CustomTagRegistry.TagUid"/>)로 답합니다.
+        ///
+        /// <para><b>왜 필드에 쓰지 않고 getter를 가로채나</b> — <c>MusicInfo.albumIndex</c>는 인터롭에
+        /// getter만 있는 계산 프로퍼티입니다(백킹 필드 없음). 그래서
+        /// <c>CustomTagRegistrySupport.SetAlbumMetadata</c>의 `SetValue(info, "albumIndex", 1999)`는
+        /// <c>silent: true</c>에 묻혀 조용히 실패해 왔고, 값은 숙주에서 물려받은 0으로 남아 있었습니다.
+        /// (<c>albumJsonIndex</c>가 2000이 아니라 1인 것도 같은 이유입니다.)</para>
+        ///
+        /// <para>실측(26-8-12 로그): 곡 정보 패널을 채우는 루틴이 곡 제목·아티스트를 현지화한 직후
+        /// <c>GetLocalTitleByIndex(albumIndex)</c>로 팩 이름을 가져오는데, 그 인덱스가 0이라
+        /// '기본 패키지'가 찍혔습니다. 같은 순간 1999로 물어본 다른 호출자는 '실험 앨범'을 제대로 받았습니다.</para>
+        /// </summary>
+        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.albumIndex), MethodType.Getter)]
+        internal class MusicInfo_albumIndex_Patch
+        {
+            private static bool _logged;
+
+            private static bool Prefix(MusicInfo __instance, ref int __result)
+            {
+                if (__instance == null) return true;
+                if (!CustomContentIds.IsVirtualSong(__instance.uid)) return true;
+
+                __result = CustomTagRegistry.TagUid;
+
+                if (!_logged)
+                {
+                    _logged = true;
+                    MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 앨범 인덱스 응답: uid={__instance.uid} → {__result} (이 로그는 1회만 표시됩니다)");
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 곡 선택 화면의 팩 이름(<c>ImgAlbumTittle</c>)은 <c>AlbumsInfo.title</c>이 아니라
         /// <b>인덱스로 현지화 테이블</b>을 조회해서 만듭니다. 커스텀 앨범은 그 테이블에 행이 없어
         /// <c>GetLocalTitleByIndex(1999)</c>가 null을 돌려주고, 호출자가 인덱스 0으로 폴백해
