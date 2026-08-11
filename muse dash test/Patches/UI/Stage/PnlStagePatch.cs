@@ -40,7 +40,6 @@ public class PnlStage_OnEnable_Patch
         {
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.OnEnable", __instance);
-            PnlStagePatchHelper.ApplyAlbumTitle("PnlStage.OnEnable", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnEnable Postfix 예외: {ex}"); }
     }
@@ -58,7 +57,6 @@ public class PnlStage_ChangeMusic_Patch
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.ChangeMusic", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.ChangeMusic.Force", __instance);
-            PnlStagePatchHelper.ApplyAlbumTitle("PnlStage.ChangeMusic", __instance);
             PnlStagePatchHelper.LogButtons("PnlStage.ChangeMusic", __instance);
             MelonLogger.Msg($"[PnlStage.ChangeMusic] exit index={i}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, currentShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, currentExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
         }
@@ -75,7 +73,6 @@ public class PnlStage_ChangeFinalMusic_Patch
         try
         {
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.ChangeFinalMusic.Force", __instance);
-            PnlStagePatchHelper.ApplyAlbumTitle("PnlStage.ChangeFinalMusic", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeFinalMusic Postfix 예외: {ex}"); }
     }
@@ -91,7 +88,6 @@ public class PnlStage_RefreshTagTitle_Patch
         {
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.RefreshTagTitle", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.RefreshTagTitle.Force", __instance);
-            PnlStagePatchHelper.ApplyAlbumTitle("PnlStage.RefreshTagTitle", __instance);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshTagTitle Postfix 예외: {ex}"); }
     }
@@ -303,9 +299,6 @@ public class PnlStage_RefreshDiffUI_Patch
             string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}'" : "(null)";
             MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, argDetails=[{argDetails}], currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
-
-            // 아래 분기는 성공 시 곧바로 리턴하므로, 앨범 이름은 양쪽에 걸리도록 앞에서 손봅니다.
-            PnlStagePatchHelper.ApplyAlbumTitle("PnlStage.RefreshDiffUI", __instance);
 
             if (PnlStagePatchHelper.ApplyTagTitleForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
             {
