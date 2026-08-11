@@ -1,13 +1,12 @@
 using System;
-using System.Collections.Generic;
+using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
 
 namespace muse_dash_test
 {
     /// <summary>
-    /// 실험: 샌드백(멀티히트) 연타 중에만 캐릭터 타격 애니메이션을 다른 동작으로 바꿉니다.
-    /// 지상 연타는 복선 동작으로, 공중 연타는 공중 그레이트 동작으로 돌립니다.
+    /// 실험: 샌드백(멀티히트) 연타 중에만 캐릭터 타격 애니메이션을 복선 애니메이션으로 바꿉니다.
     ///
     /// 배경 — 2026-08-11 액션 계약서 실측으로 확인한 사실:
     ///   · 샌드백에는 전용 애니메이션이 없습니다. 게임은 연타 구간 동안 일반 노트와 똑같은
@@ -32,28 +31,17 @@ namespace muse_dash_test
         private const string MultiHitStartKey = "char_multihit_start";
         private const string MultiHitEndKey = "char_multihit_end";
 
-        /// <summary>
-        /// 연타 중 바꿔치기할 액션 키 (원본 → 대체).
-        ///
-        /// 경로(공중/지상)를 반드시 맞춰야 합니다. 게임 로직은 공중 샌드백이면 캐릭터를 띄운 채로
-        /// 두는데, 여기에 지상 동작을 재생하면 땅에 선 포즈가 공중에서 나와 어긋나 보입니다.
-        /// 실제로 공중 샌드백을 지상 <c>char_bighit</c> 으로 돌렸을 때 그 증상이 나왔습니다(2026-08-11).
-        ///
-        /// 경로 구분은 계약서의 <c>actionEventIdx</c> 로 확인했습니다 — 0 이면 공중 계열,
-        /// 4 면 지상 공격 계열입니다.
-        /// </summary>
-        private static readonly Dictionary<string, string> RedirectMap = new Dictionary<string, string>
+        /// <summary>연타 중 이 키들이 오면 복선 키로 바꿔치기합니다.</summary>
+        private static readonly string[] RedirectedKeys =
         {
-            // 공중(eventIdx 0) — 공중 동작끼리 교체합니다.
-            //   char_jumphit → air_hit_perfect_*  를  char_jumphit_great → air_hit_great_*  로.
-            //   char_jumphit_great 는 그대로 두어 공중 연타 전체가 great 동작으로 통일됩니다.
-            { "char_jumphit", "char_jumphit_great" },
-
-            // 지상(eventIdx 4) — 복선 동작으로 교체합니다.
-            //   char_atk_p / char_atk_g → road_hit_*  를  char_bighit → double_hit_*  로.
-            { "char_atk_p", "char_bighit" },
-            { "char_atk_g", "char_bighit" },
+            "char_jumphit",        // 공중 샌드백 퍼펙트
+            "char_jumphit_great",  // 공중 샌드백 그레이트
+            "char_atk_p",          // 지상 샌드백 퍼펙트
+            "char_atk_g",          // 지상 샌드백 그레이트
         };
+
+        /// <summary>복선 액션 키. actionData 상 double_hit_1 / double_hit_2 로 매핑됩니다.</summary>
+        private const string DoubleNoteKey = "char_bighit";
 
         /// <summary>지금 연타 구간 안인지.</summary>
         private static bool inMultiHit;
@@ -86,19 +74,19 @@ namespace muse_dash_test
                 }
 
                 if (!inMultiHit) return true;
-                if (!RedirectMap.TryGetValue(actionKey, out string replacementKey)) return true;
+                if (Array.IndexOf(RedirectedKeys, actionKey) < 0) return true;
 
                 redirecting = true;
                 try
                 {
-                    sac.PlayByKey(replacementKey, isOverride);
+                    sac.PlayByKey(DoubleNoteKey, isOverride);
                 }
                 finally
                 {
                     redirecting = false;
                 }
 
-                MelonLogger.Msg($"[샌드백실험] \"{actionKey}\" → \"{replacementKey}\" 로 대체 재생");
+                MelonLogger.Msg($"[샌드백실험] \"{actionKey}\" → \"{DoubleNoteKey}\" 로 대체 재생");
                 return false;
             }
             catch (Exception ex)
