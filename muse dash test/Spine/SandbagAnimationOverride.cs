@@ -57,10 +57,22 @@ namespace muse_dash_test
         /// </summary>
         public static bool AnimationSwapEnabled = true;
 
-        /// <summary>연타 구간 안에서만 적용할 애니메이션 이름 교체표 (원본 → 대체).</summary>
+        /// <summary>
+        /// 연타 구간 안에서만 적용할 애니메이션 이름 교체표 (원본 → 대체).
+        ///
+        /// 퍼펙트 변형 네 개를 모두 복선 동작으로 돌립니다. 복선 액션(<c>char_bighit</c>)이
+        /// <c>double_hit_1</c>/<c>double_hit_2</c> 두 개를 무작위로 돌려쓰므로, 여기서도 번갈아
+        /// 배정해 연타가 한 동작만 반복하는 것처럼 보이지 않게 했습니다.
+        ///
+        /// 그레이트 변형(<c>air_hit_great_*</c>)은 손대지 않습니다. 퍼펙트일 때만 복선 동작이
+        /// 나오므로 판정에 따라 모습이 갈립니다.
+        /// </summary>
         private static readonly Dictionary<string, string> AnimationSwapMap = new Dictionary<string, string>
         {
             { "air_hit_perfect_1", "double_hit_1" },
+            { "air_hit_perfect_2", "double_hit_2" },
+            { "air_hit_perfect_3", "double_hit_1" },
+            { "air_hit_perfect_4", "double_hit_2" },
         };
 
         /// <summary>지금 연타 구간 안인지.</summary>
