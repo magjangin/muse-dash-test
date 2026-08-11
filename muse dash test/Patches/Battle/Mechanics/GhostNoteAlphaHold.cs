@@ -122,6 +122,9 @@ namespace muse_dash_test
             // 덮어쓰기 전에 원본을 찍어 둡니다. 한 번 덮으면 SkeletonData가 공유 데이터라 원본을 다시 볼 수 없습니다.
             GhostNoteAlphaDiagnostics.DumpOriginal(controller, data, animation, animationName);
 
+            // 컬러 타임라인의 rgb는 텍스처에 곱하는 값이라, 실제로 보이는 색은 텍스처를 봐야 압니다.
+            GhostNoteTextureProbe.Dump(controller);
+
             var timelines = animation.timelines;
             // ExposedList는 인덱서가 없습니다. 내부 배열(Items)이 Count보다 클 수 있어 둘 다 봅니다.
             var items = timelines != null ? timelines.Items : null;
