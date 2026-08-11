@@ -6,6 +6,7 @@ using HarmonyLib;
 using Il2Cpp;
 using Il2CppAssets.Scripts.GameCore.Managers;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2CppSpine;
 using MelonLoader;
 using MelonLoader.Utils;
 
@@ -369,9 +370,9 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
     internal static class Patch_SpineContract_SetAnimation
     {
-        public static void Prefix(SpineActionController __instance, string n)
+        public static bool Prefix(SpineActionController __instance, string n, bool isLoop, ref TrackEntry __result)
         {
-            if (!SpineActionContract.IsBattleObject(__instance)) return;
+            if (!SpineActionContract.IsBattleObject(__instance)) return true;
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
@@ -381,6 +382,8 @@ namespace muse_dash_test
             {
                 SpineActionContract.RecordRaw("SetAnimation", n, objName);
             }
+
+            return SandbagAnimationOverride.HandleSetAnimation(__instance, n, isLoop, ref __result);
         }
     }
 

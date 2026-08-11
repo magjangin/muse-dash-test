@@ -1,6 +1,7 @@
 using System;
-using HarmonyLib;
+using System.Collections.Generic;
 using Il2Cpp;
+using Il2CppSpine;
 using MelonLoader;
 
 namespace muse_dash_test
@@ -47,8 +48,26 @@ namespace muse_dash_test
         /// <summary>복선 액션 키. actionData 상 double_hit_1 / double_hit_2 로 매핑됩니다.</summary>
         private const string DoubleNoteKey = "char_bighit";
 
+        /// <summary>
+        /// 애니메이션 이름 단위 교체 스위치.
+        ///
+        /// 키(<c>char_jumphit</c>)를 통째로 돌리면 연타 전체가 한 동작으로 덮여서 과합니다.
+        /// 대신 연타 중 무작위로 뽑히는 <c>air_hit_perfect_1~4</c> 중 하나만 바꾸면,
+        /// 평소 모습은 유지한 채 그 하나가 뽑힐 때만 다른 동작이 섞여 들어갑니다.
+        /// </summary>
+        public static bool AnimationSwapEnabled = true;
+
+        /// <summary>연타 구간 안에서만 적용할 애니메이션 이름 교체표 (원본 → 대체).</summary>
+        private static readonly Dictionary<string, string> AnimationSwapMap = new Dictionary<string, string>
+        {
+            { "air_hit_perfect_1", "double_hit_1" },
+        };
+
         /// <summary>지금 연타 구간 안인지.</summary>
         private static bool inMultiHit;
+
+        /// <summary>애니메이션 교체로 다시 호출할 때 자기 자신을 또 가로채지 않도록 하는 가드.</summary>
+        private static bool swappingAnimation;
 
         /// <summary>연타 구간 안이면 true. 이 구간에서만 원본 호출을 중복 제거 없이 기록합니다.</summary>
         public static bool InMultiHit => inMultiHit;
@@ -111,11 +130,44 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>
+        /// 연타 구간 안에서 특정 애니메이션 이름을 다른 이름으로 갈아끼웁니다.
+        ///
+        /// 원본을 건너뛰고 대체 이름으로 다시 호출합니다. 호출자가 반환된 TrackEntry 로
+        /// 후속 처리를 할 수 있으므로 <paramref name="result"/> 에 대체 호출의 결과를 넣어 줍니다.
+        /// 대체 호출이 실패하면 아무것도 바꾸지 않고 원본을 그대로 진행시킵니다.
+        /// </summary>
+        /// <returns>원본 호출을 진행하면 true, 대체 호출을 마쳤으면 false.</returns>
+        public static bool HandleSetAnimation(SpineActionController sac, string animationName, bool isLoop, ref TrackEntry result)
+        {
+            if (!AnimationSwapEnabled || swappingAnimation || !inMultiHit) return true;
+            if (sac == null || string.IsNullOrEmpty(animationName)) return true;
+            if (!AnimationSwapMap.TryGetValue(animationName, out string replacement)) return true;
+
+            swappingAnimation = true;
+            try
+            {
+                result = sac.SetAnimation(replacement, isLoop);
+                MelonLogger.Msg($"[샌드백실험] 애니메이션 \"{animationName}\" → \"{replacement}\" 로 교체");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[샌드백실험] 애니메이션 교체 실패, 원본을 유지합니다: {ex.Message}");
+                return true;
+            }
+            finally
+            {
+                swappingAnimation = false;
+            }
+        }
+
         /// <summary>스테이지를 벗어날 때 구간 상태가 남아 있지 않도록 초기화합니다.</summary>
         public static void Reset()
         {
             inMultiHit = false;
             redirecting = false;
+            swappingAnimation = false;
         }
     }
 
