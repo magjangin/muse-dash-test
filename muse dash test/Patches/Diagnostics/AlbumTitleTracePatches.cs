@@ -200,6 +200,25 @@ namespace muse_dash_test
         }
     }
 
+    /// <summary>
+    /// 화면에 뜨는 팩 이름은 여기서 나옵니다. <c>AlbumsInfo.title</c>은 'Default Music'인데 화면은 '기본 패키지'였으니,
+    /// 라벨은 title을 그대로 쓰지 않고 <b>인덱스로 현지화 테이블을 한 번 더</b> 조회합니다.
+    /// 넘어오는 index가 커스텀 앨범의 1999인지, 아니면 폴백된 0인지가 고치는 위치를 가릅니다.
+    /// </summary>
+    [HarmonyPatch(typeof(DBConfigLocalAlbums), nameof(DBConfigLocalAlbums.GetLocalTitleByIndex))]
+    internal static class DBConfigLocalAlbums_GetLocalTitleByIndex_Trace
+    {
+        private static void Postfix(int index, string __result)
+        {
+            try
+            {
+                if (!AlbumTitleTrace.ShouldTrace()) return;
+                MelonLogger.Msg($"{AlbumTitleTrace.Tag} ★ GetLocalTitleByIndex({index}) → '{__result ?? "(null)"}'");
+            }
+            catch (Exception ex) { MelonLogger.Error($"{AlbumTitleTrace.Tag} GetLocalTitleByIndex 추적 예외: {ex.Message}"); }
+        }
+    }
+
     [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumJsonIndexByUid))]
     internal static class DBConfigAlbums_GetAlbumJsonIndexByUid_Trace
     {
