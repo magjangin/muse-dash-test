@@ -35,6 +35,61 @@ namespace muse_dash_test
             }
         }
 
+        private static bool _dumped;
+
+        /// <summary>
+        /// 라벨이 채워지는 그 순간, 0을 들고 있을 만한 상태값을 통째로 훑습니다.
+        /// 인덱스가 조회에서 나오지 않는다는 건 확인됐으니(그 사이 <c>GetAlbumIndexByUid</c>가 안 불림),
+        /// 남은 후보는 어딘가에 저장돼 있는 값입니다. 이름과 값을 한 줄로 뽑아 0인 것을 찾습니다.
+        /// </summary>
+        internal static void DumpIndexCandidates()
+        {
+            if (_dumped) return;
+            _dumped = true;
+
+            DumpIntFields("PnlStage", UnityEngine.Object.FindObjectOfType<Il2CppAssets.Scripts.UI.Panels.PnlStage>());
+            DumpIntFields("dbMusicTag", GlobalDataBase.dbMusicTag);
+        }
+
+        private static void DumpIntFields(string label, object target)
+        {
+            try
+            {
+                if (target == null)
+                {
+                    MelonLogger.Msg($"{Tag}   {label}: (없음)");
+                    return;
+                }
+
+                var parts = new System.Collections.Generic.List<string>();
+                var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+                          | System.Reflection.BindingFlags.Instance;
+
+                foreach (var field in target.GetType().GetFields(flags))
+                {
+                    if (field.FieldType != typeof(int)) continue;
+
+                    try { parts.Add($"{field.Name}={field.GetValue(target)}"); }
+                    catch (Exception) { }
+                }
+
+                foreach (var property in target.GetType().GetProperties(flags))
+                {
+                    if (property.PropertyType != typeof(int)) continue;
+                    if (!property.CanRead || property.GetIndexParameters().Length > 0) continue;
+
+                    try { parts.Add($"{property.Name}={property.GetValue(target)}"); }
+                    catch (Exception) { }
+                }
+
+                MelonLogger.Msg($"{Tag}   {label} int 후보: {(parts.Count > 0 ? string.Join(", ", parts) : "(없음)")}");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Msg($"{Tag}   {label} 훑기 실패: {ex.Message}");
+            }
+        }
+
         internal static string PathOf(Component component)
         {
             try
@@ -119,6 +174,7 @@ namespace muse_dash_test
                 if (path.IndexOf("Album", StringComparison.OrdinalIgnoreCase) < 0) return;
 
                 MelonLogger.Msg($"{AlbumTitleTrace.Tag} 라벨에 꽂힘: '{txt ?? "(null)"}' ← {path}");
+                AlbumTitleTrace.DumpIndexCandidates();
             }
             catch (Exception ex) { MelonLogger.Error($"{AlbumTitleTrace.Tag} 라벨 추적 예외: {ex.Message}"); }
         }
