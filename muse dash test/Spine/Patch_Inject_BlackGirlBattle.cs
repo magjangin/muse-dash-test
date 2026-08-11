@@ -57,6 +57,10 @@ namespace muse_dash_test
         static void Postfix(SpineActionController __instance, int idx, int curScene)
         {
             InjectHelper.TryInject(__instance);
+
+            // 액션 계약서 프로브(읽기 전용). 주입 직후라 커스텀 스켈레톤의 애니메이션 목록이 잡힙니다.
+            // 아래 OnControllerStart 쪽에도 같은 호출이 있지만, 이름 단위로 1회만 덤프하므로 중복되지 않습니다.
+            SpineActionContract.DumpSupply(__instance);
         }
     }
 

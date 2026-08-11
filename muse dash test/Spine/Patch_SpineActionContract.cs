@@ -222,9 +222,14 @@ namespace muse_dash_test
     }
 
     // 이 프로브에는 전용 [HarmonyPatch] 클래스가 없습니다.
-    // SpineActionController.OnControllerStart 에는 Patch_Inject_OnControllerStart 가 이미 붙어 있는데,
-    // 같은 메서드에 두 번째 패치 클래스를 붙였더니 등록·대상 해석은 정상인데도(PatchHealth 통과)
-    // Postfix 가 한 번도 실행되지 않았습니다. 진입 즉시 무조건 찍는 로그조차 나오지 않았습니다(2026-08-11).
-    // 그래서 별도 클래스를 두지 않고, 이미 도는 것이 확인된 Patch_Inject_OnControllerStart 의
-    // Postfix 안에서 DumpSupply 를 호출합니다.
+    //
+    // SpineActionController.OnControllerStart 에 패치를 붙여 봤지만 Postfix 가 한 번도 실행되지
+    // 않았습니다. 진입 즉시 무조건 찍는 로그조차 나오지 않았고, 등록과 대상 해석은 정상이었습니다
+    // (PatchHealth 통과). 배틀 오브젝트에서는 OnControllerStart 자체가 호출되지 않는 것으로 보입니다
+    // — 스킨 주입도 Init 훅에서만 이루어지고 있었습니다(2026-08-11).
+    //
+    // 판별 근거: Awake 프로브는 3개 오브젝트(ghost/battle/shadow)를 잡는데 주입 로그는 2회뿐입니다.
+    // Init 과 OnControllerStart 두 훅이 모두 돌았다면 대상 오브젝트당 2회씩 찍혔어야 합니다.
+    //
+    // 그래서 별도 클래스를 두지 않고 Patch_Inject_Init 의 Postfix 에서 DumpSupply 를 호출합니다.
 }
