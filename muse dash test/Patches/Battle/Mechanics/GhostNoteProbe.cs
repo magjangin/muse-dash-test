@@ -102,8 +102,10 @@ namespace muse_dash_test
     internal static class GhostNoteProbeScanner
     {
         private const float ScanIntervalSeconds = 0.5f;
+        private const float HeartbeatSeconds = 10f;
 
         private static float lastScanTime;
+        private static float lastHeartbeatTime;
         private static int lastInstanceCount = -1;
 
         internal static void Scan()
@@ -111,18 +113,31 @@ namespace muse_dash_test
             if (Time.unscaledTime - lastScanTime < ScanIntervalSeconds) return;
             lastScanTime = Time.unscaledTime;
 
-            var found = UnityEngine.Object.FindObjectsOfType(Il2CppType.Of<NoteVisibleController>());
-            if (found == null) return;
+            // FindObjectsOfType은 비활성 오브젝트를 건너뜁니다. 노트는 풀링돼서 대기 중엔 꺼져 있으므로
+            // 그걸로는 0만 나옵니다. FindObjectsOfTypeAll은 비활성까지 포함해 훑습니다.
+            var normal = Resources.FindObjectsOfTypeAll(Il2CppType.Of<NoteVisibleController>());
+            var longPress = Resources.FindObjectsOfTypeAll(
+                Il2CppType.Of<Il2CppAssets.Scripts.GameCore.GameObjectLogics.GameObjectControl.LongPressNoteVisibleController>());
 
-            if (found.Length != lastInstanceCount)
+            int normalCount = normal == null ? 0 : normal.Length;
+            int longPressCount = longPress == null ? 0 : longPress.Length;
+
+            // 값이 바뀔 때 남기되, 10초마다 한 번은 무조건 남깁니다.
+            // 그래야 "계속 0"과 "스캐너가 죽음"이 구분됩니다.
+            bool changed = normalCount != lastInstanceCount;
+            bool heartbeat = Time.unscaledTime - lastHeartbeatTime >= HeartbeatSeconds;
+            if (changed || heartbeat)
             {
-                lastInstanceCount = found.Length;
-                MelonLogger.Msg($"[GhostNote.Probe] 씬에 살아 있는 렌더 컨트롤러 인스턴스 수: {found.Length}");
+                lastInstanceCount = normalCount;
+                lastHeartbeatTime = Time.unscaledTime;
+                MelonLogger.Msg($"[GhostNote.Probe] 렌더 컨트롤러 인스턴스 수(비활성 포함): 일반={normalCount}, 롱노트={longPressCount}");
             }
 
-            for (int i = 0; i < found.Length; i++)
+            if (normal == null) return;
+
+            for (int i = 0; i < normal.Length; i++)
             {
-                var obj = found[i];
+                var obj = normal[i];
                 if (obj == null) continue;
 
                 GhostNoteProbeStats.Report(obj.TryCast<NoteVisibleController>(), "씬 스캔");
