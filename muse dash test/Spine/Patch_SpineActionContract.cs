@@ -366,9 +366,9 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.OnControllerAttacked))]
     internal static class Patch_GirlAction_OnControllerAttacked
     {
-        public static void Prefix(GirlActionController __instance, int idx, bool isDouble)
+        public static void Prefix(GirlActionController __instance, int result, bool isDeaded)
         {
-            SpineActionContract.RecordDemand("GirlAction.Attacked", $"idx={idx}, isDouble={isDouble}", SpineActionContract.SafeName(__instance));
+            SpineActionContract.RecordDemand("GirlAction.Attacked", $"result={result}, isDeaded={isDeaded}", SpineActionContract.SafeName(__instance));
         }
     }
 
@@ -393,9 +393,9 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.JumpAttack))]
     internal static class Patch_GirlAction_JumpAttack
     {
-        public static void Prefix(GirlActionController __instance, string actKey, string animName, uint result, int id)
+        public static void Prefix(GirlActionController __instance, string atkName, uint result, int id)
         {
-            SpineActionContract.RecordDemand("GirlAction.JumpAttack", $"{actKey}, anim={animName} (result={result}, id={id})", SpineActionContract.SafeName(__instance));
+            SpineActionContract.RecordDemand("GirlAction.JumpAttack", $"{atkName} (result={result}, id={id})", SpineActionContract.SafeName(__instance));
         }
     }
 
