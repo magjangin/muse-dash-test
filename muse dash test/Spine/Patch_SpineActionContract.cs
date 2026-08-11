@@ -450,12 +450,13 @@ namespace muse_dash_test
             SpineActionContract.TrackMultiHitWindow(actionKey);
 
             // 샌드백/연타 구간(InMultiHit) 진입 시:
-            // "char_jumphit"(점프 타격) 요청이 오면 "char_hit"(지상 타격)으로 가로채어 변경합니다.
-            // 이렇게 하면 캐릭터가 공중으로 붕 뜨지 않고 바닥(지상) 위치를 유지하며,
-            // 점프 타격에 의한 카메라 진동/흔들림 현상도 방지됩니다.
-            if (SpineActionContract.InMultiHit && actionKey == "char_jumphit")
+            // 타격 액션 키("char_jumphit", "char_atk_p", "char_hit" 등)가 들어오면
+            // 복선(동시치기) 전용 액션 키인 "char_bighit"으로 가로채어 변경합니다.
+            // "char_bighit"은 actionData 에 [ 22] name="char_bighit" → ["double_hit_1", "double_hit_2"] 로
+            // 정의된 정식 복선 액션으로, 지상 바닥 위치에서 붕 뜨지 않고 복선 포즈를 취합니다.
+            if (SpineActionContract.InMultiHit && (actionKey == "char_jumphit" || actionKey == "char_atk_p" || actionKey == "char_hit"))
             {
-                actionKey = "char_hit";
+                actionKey = "char_bighit";
             }
 
             // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
