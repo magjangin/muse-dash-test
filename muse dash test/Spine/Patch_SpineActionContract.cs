@@ -358,14 +358,22 @@ namespace muse_dash_test
         }
     }
 
-    /// <summary>게임이 부르는 액션 키를 기록합니다(매핑 이전 단계).</summary>
+    /// <summary>
+    /// 게임이 부르는 액션 키를 기록하고(매핑 이전 단계), 샌드백 실험의 키 대체도 함께 처리합니다.
+    /// 같은 메서드에 패치 클래스를 둘 붙이지 않으려고 한 곳에 모았습니다
+    /// (양쪽이 모두 실행되는지 확인된 바 없음 — <see cref="SandbagAnimationOverride"/> 주석 참고).
+    /// </summary>
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static void Prefix(SpineActionController __instance, string actionKey)
+        public static bool Prefix(SpineActionController __instance, string actionKey, bool isOverride)
         {
-            if (!SpineActionContract.IsBattleObject(__instance)) return;
-            SpineActionContract.RecordDemand("PlayByKey", actionKey, SpineActionContract.SafeName(__instance));
+            if (SpineActionContract.IsBattleObject(__instance))
+            {
+                SpineActionContract.RecordDemand("PlayByKey", actionKey, SpineActionContract.SafeName(__instance));
+            }
+
+            return SandbagAnimationOverride.HandlePlayByKey(__instance, actionKey, isOverride);
         }
     }
 

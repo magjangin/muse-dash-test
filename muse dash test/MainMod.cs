@@ -181,6 +181,8 @@ namespace muse_dash_test
 
             FeatureGuard.Run("Scene.ResetInputOverlay", InputOverlay.ResetCache);
             FeatureGuard.Run("Scene.ResetHitPoint", ExperimentHitPointInstaller.Reset);
+            // 연타 도중 곡을 빠져나가면 구간 플래그가 켜진 채 남아 다음 곡까지 영향을 줍니다.
+            FeatureGuard.Run("Scene.ResetSandbagOverride", SandbagAnimationOverride.Reset);
         }
 
         public override void OnUpdate()
