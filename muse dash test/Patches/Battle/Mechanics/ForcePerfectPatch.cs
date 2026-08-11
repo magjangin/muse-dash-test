@@ -39,6 +39,14 @@ namespace muse_dash_test
 
         internal static bool Enabled => InputOverlay.forcePerfect;
 
+        private static int aggregateCalls;
+
+        /// <summary>집계 진입점(TaskStageTarget.SetPlayResult)이 실제로 몇 번 불렸는지 셉니다.</summary>
+        internal static void CountAggregateCall()
+        {
+            aggregateCalls++;
+        }
+
         /// <summary>
         /// Perfect로 승격할 판정인지 판단합니다. 실제 "타격 판정"인 Miss/Cool/Great만 대상입니다.
         /// None(아직 판정 전), JumpOver(톱니 회피), Fever는 종류가 다른 결과이므로 건드리면
@@ -98,7 +106,7 @@ namespace muse_dash_test
 
             MelonLogger.Msg($"[ForcePerfect] 누적 승격 현황: Miss={promotedByOrigin[(int)TaskResult.Miss]}, " +
                             $"Cool={promotedByOrigin[(int)TaskResult.Cool]}, Great={promotedByOrigin[(int)TaskResult.Great]} " +
-                            $"| 훅별: {sources}");
+                            $"| 훅별: {sources} | 집계 진입 호출 {aggregateCalls}회, 미스 등록 {MissRegistration.RegisteredCount}회");
         }
 
         internal static string Describe(uint result)
@@ -153,6 +161,10 @@ namespace muse_dash_test
             {
                 if (!ForcePerfectState.Enabled) return;
 
+                // 승격 여부와 무관하게 호출 횟수를 셉니다. 안 친 노트가 이 경로를 타지 않는다는
+                // 관찰을 계속 검증하기 위한 대조군입니다.
+                ForcePerfectState.CountAggregateCall();
+
                 uint original = result;
                 if (!ForcePerfectState.ShouldPromote(original)) return;
 
@@ -181,6 +193,14 @@ namespace muse_dash_test
 
                 result = (byte)ForcePerfectState.Perfect;
                 ForcePerfectState.Record("BattleEnemyManager.SetPlayResult", idx, original);
+
+                // 안 친 노트는 집계 진입점(TaskStageTarget.SetPlayResult)을 아예 거치지 않아
+                // 카운터가 오르지 않습니다. 그대로 두면 결과창이 "나머지"로 계산해 MISS로 표시하므로
+                // 여기서 한 번 대신 등록해 줍니다.
+                if (original == (uint)TaskResult.Miss)
+                {
+                    MissRegistration.RegisterAsPerfect(idx);
+                }
             }
             catch (Exception ex)
             {

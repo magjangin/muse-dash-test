@@ -126,6 +126,57 @@ namespace muse_dash_test
     }
 
     /// <summary>
+    /// 안 친 노트를 집계에 "퍼펙트로 처리된 노트"로 등록합니다.
+    ///
+    /// 실측: 안 친 노트는 <c>BattleEnemyManager.SetPlayResult</c>만 거치고
+    /// <c>TaskStageTarget.SetPlayResult</c>는 아예 호출되지 않습니다. 그래서 노트별 저장값은
+    /// Prefect로 바뀌어도 카운터(m_PerfectResult)는 그대로고, 결과창은 그 노트를 "판정되지 않은 나머지"로
+    /// 계산해 MISS로 표시합니다(총 노트 412 - Perfect 189 = MISS 223).
+    /// 따라서 집계 진입점을 우리가 대신 한 번 호출해 줍니다.
+    /// </summary>
+    internal static class MissRegistration
+    {
+        private static bool reentrant;
+        private static int registered;
+        private static bool announced;
+
+        internal static void RegisterAsPerfect(int idx)
+        {
+            if (reentrant) return;
+
+            try
+            {
+                var target = muse_dash_test.Patches.VictoryDataCache.ActiveTarget;
+                if (target == null)
+                {
+                    target = Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.instance;
+                }
+                if (target == null) return;
+
+                reentrant = true;
+                target.SetPlayResult(idx, ForcePerfectState.Perfect);
+                registered++;
+
+                if (!announced)
+                {
+                    announced = true;
+                    MelonLogger.Msg($"[ForcePerfect.MissRegistration] 안 친 노트를 집계에 퍼펙트로 첫 등록: idx={idx}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[ForcePerfect.MissRegistration] 집계 등록 중 예외 발생: {ex}");
+            }
+            finally
+            {
+                reentrant = false;
+            }
+        }
+
+        internal static int RegisteredCount => registered;
+    }
+
+    /// <summary>
     /// 미스 반응의 시작점. 프레임 표식을 남긴 뒤 원본 실행 자체를 건너뜁니다.
     /// 체력은 여기서 안 깎이지만 MISS 연출이 여기서 나오는 것으로 보여, 연출까지 함께 잠재웁니다.
     /// </summary>
