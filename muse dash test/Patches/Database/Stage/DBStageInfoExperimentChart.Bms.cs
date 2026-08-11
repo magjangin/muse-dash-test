@@ -164,18 +164,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                             $"prefab={(string.IsNullOrEmpty(spec.PrefabName) ? "(자동생성)" : spec.PrefabName)}, pathway={spec.Pathway}, " +
                             $"keyAudio={spec.KeyAudio}, tick={note.Tick}, time={note.Time:0.###}, dt={spec.Dt}");
 
-            // 고스트 노트가 판정선 근처에서 사라지지 않게 만드는 지점입니다.
-            //
-            // 실측: 프리팹이 일반 노트(`071701_road_nor_1`)로 굴러가는데도 페이드가 걸렸습니다.
-            // 즉 페이드는 프리팹에 붙은 컴포넌트가 아니라 type=4(고스트)를 보고 게임이 겁니다.
-            // 그래서 UID와 프리팹(=외형)은 그대로 두고 type만 일반 노트로 낮춥니다.
-            // 알파는 NoteConfigData/MusicData에 아예 없는 값이라, 이 레이어에서 쓸 수 있는 손잡이는 type뿐입니다.
-            if (muse_dash_test.InputOverlay.showGhostNotes)
-            {
-                spec.NoteType = NoteTypes.Normal;
-                MelonLogger.Msg($"[ExperimentChart.Bms.Ghost] 고스트노트보이기=true → type {NoteTypes.Ghost} -> {NoteTypes.Normal} 하향 " +
-                                $"(uid={spec.Uid}, prefab={(string.IsNullOrEmpty(spec.PrefabName) ? "(자동생성)" : spec.PrefabName)} 유지)");
-            }
+            // 페이드는 여기서 손대지 않습니다. 알파를 담당하는 메서드가 따로 있습니다 —
+            // Il2Cpp.SpineActionController.SetAlpha(float). 고스트 노트의 페이드는 그 호출을
+            // 막는 쪽이 정확하므로 type/프리팹은 원본 그대로 둡니다. (GhostNoteAlphaHold 참고)
         }
 
         return spec;
