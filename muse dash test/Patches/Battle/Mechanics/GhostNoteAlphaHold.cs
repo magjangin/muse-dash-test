@@ -182,21 +182,32 @@ namespace muse_dash_test
 
     /// <summary>
     /// 페이드의 실체는 C# 알파 호출이 아니라 Spine 애니메이션이었습니다.
-    /// 계약서상 고스트 노트의 `in` 액션은 `in_nor_44` 하나로 풀리고, 노트가 날아오는 1.5초 동안
-    /// 재생되는 것이 그것뿐입니다. 알파를 깎는 주체가 이 애니메이션입니다.
+    /// 고스트 노트의 `in` 액션은 `in_nor_44` 하나로 풀리고, 날아오는 1.5초 동안 재생되는 것이 그것뿐입니다.
     ///
-    /// 그래서 `in`이 재생된 직후 페이드가 없는 애니메이션으로 덮어씁니다. 같은 스켈레톤이 갖고 있는
-    /// 6개 중 어떤 액션 키에도 물려 있지 않은 `standby`가 후보입니다(나머지는 in 변형 3종과 out 2종).
-    /// 스켈레톤·프리팹·UID·type을 전부 건드리지 않으므로 외형은 그대로입니다.
+    /// 애니메이션을 통째로 바꾸면 안 됩니다 — `standby`로 교체해 보니 노트가 화면 중앙에 멈췄습니다.
+    /// 즉 비행 이동도 같은 애니메이션이 갖고 있습니다. 그래서 애니메이션은 그대로 재생시키고
+    /// 그 안의 **컬러 타임라인 알파 키만 1로 덮어씁니다**. 이동·스케일·회전 타임라인은 손대지 않으므로
+    /// 등장 모션은 원본 그대로고 투명해지는 것만 사라집니다.
+    ///
+    /// SkeletonData는 같은 에셋을 쓰는 모든 노트가 공유하므로 애니메이션당 한 번만 손봅니다.
     /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     public class SpineActionController_PlayByKey_GhostNote_Patch
     {
-        /// <summary>노트가 날아오는 동안 재생되는 액션 키. 이 키의 애니메이션이 알파를 깎습니다.</summary>
+        /// <summary>노트가 날아오는 동안 재생되는 액션 키.</summary>
         private const string FlightActionKey = "in";
 
-        /// <summary>페이드가 없을 것으로 보이는 대체 애니메이션. 안 맞으면 in_nor_33 / in_nor_38로 바꿔봅니다.</summary>
-        private const string ReplacementAnimation = "standby";
+        /// <summary>Spine ColorTimeline 프레임 한 칸의 float 개수: time, r, g, b, a.</summary>
+        private const int ColorEntries = 5;
+
+        /// <summary>Spine TwoColorTimeline 프레임 한 칸: time, r, g, b, a, r2, g2, b2.</summary>
+        private const int TwoColorEntries = 8;
+
+        /// <summary>프레임 한 칸에서 알파가 놓인 위치.</summary>
+        private const int AlphaOffset = 4;
+
+        private static readonly System.Collections.Generic.HashSet<string> patchedAnimations =
+            new System.Collections.Generic.HashSet<string>();
 
         public static void Postfix(SpineActionController __instance, string actionKey)
         {
@@ -206,20 +217,86 @@ namespace muse_dash_test
                 if (!GhostNoteIdentity.IsGhost(__instance, out string detail)) return;
 
                 GhostFadeBlockStats.Observe("PlayByKey", $"actionKey={actionKey ?? "(null)"}, {detail}", true);
-
-                // 계약서는 오브젝트 이름 단위로 1회만 파일을 쓰므로 매번 불러도 부담이 없습니다.
                 SpineActionContract.DumpSupplyForce(__instance);
 
                 if (!string.Equals(actionKey, FlightActionKey, StringComparison.Ordinal)) return;
 
-                // 원본 in이 깔린 직후에 덮어써야 트랙이 확정됩니다. 루프로 걸어 끝까지 유지시킵니다.
-                __instance.SetAnimation(ReplacementAnimation, true);
-                GhostFadeBlockStats.Blocked($"PlayByKey({FlightActionKey}→{ReplacementAnimation})");
+                StripAlphaFromCurrentAnimation(__instance);
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[SpineActionController.PlayByKey.Postfix] 고스트 애니메이션 교체 중 예외 발생: {ex}");
+                MelonLogger.Error($"[SpineActionController.PlayByKey.Postfix] 고스트 알파 타임라인 처리 중 예외 발생: {ex}");
             }
+        }
+
+        /// <summary>지금 재생 중인 애니메이션에서 컬러 타임라인의 알파 키를 전부 1로 만듭니다.</summary>
+        private static void StripAlphaFromCurrentAnimation(SpineActionController controller)
+        {
+            var skeletonAnimation = controller.skeletonAnimation;
+            if (skeletonAnimation == null) return;
+
+            var skeleton = skeletonAnimation.skeleton;
+            var data = skeleton != null ? skeleton.Data : null;
+            if (data == null) return;
+
+            string animationName = controller.currentAnimationName;
+            if (string.IsNullOrEmpty(animationName)) return;
+            if (!patchedAnimations.Add(animationName)) return;
+
+            var animation = data.FindAnimation(animationName);
+            if (animation == null)
+            {
+                MelonLogger.Msg($"[GhostNote.AlphaTimeline] 애니메이션을 찾지 못했습니다: {animationName}");
+                return;
+            }
+
+            var timelines = animation.timelines;
+            // ExposedList는 인덱서가 없습니다. 내부 배열(Items)이 Count보다 클 수 있어 둘 다 봅니다.
+            var items = timelines != null ? timelines.Items : null;
+            int count = timelines == null ? 0 : timelines.Count;
+            if (items != null && count > items.Length) count = items.Length;
+
+            int colorTimelines = 0;
+            int alphaKeys = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                var timeline = items[i];
+                if (timeline == null) continue;
+
+                var color = timeline.TryCast<Il2CppSpine.ColorTimeline>();
+                if (color != null)
+                {
+                    colorTimelines++;
+                    alphaKeys += ForceOpaque(color.frames, ColorEntries);
+                    continue;
+                }
+
+                var twoColor = timeline.TryCast<Il2CppSpine.TwoColorTimeline>();
+                if (twoColor != null)
+                {
+                    colorTimelines++;
+                    alphaKeys += ForceOpaque(twoColor.frames, TwoColorEntries);
+                }
+            }
+
+            MelonLogger.Msg($"[GhostNote.AlphaTimeline] '{animationName}' 처리 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
+                            $"알파 키 {alphaKeys}개를 1로 고정 (이동/스케일 타임라인은 그대로)");
+        }
+
+        /// <summary>프레임 배열에서 알파 자리만 1로 덮어쓰고, 바꾼 키 개수를 돌려줍니다.</summary>
+        private static int ForceOpaque(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<float> frames, int entries)
+        {
+            if (frames == null) return 0;
+
+            int changed = 0;
+            for (int i = AlphaOffset; i < frames.Length; i += entries)
+            {
+                if (frames[i] >= 0.999f) continue;
+                frames[i] = 1f;
+                changed++;
+            }
+            return changed;
         }
     }
 
