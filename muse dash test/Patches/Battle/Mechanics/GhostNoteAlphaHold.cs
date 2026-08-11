@@ -31,11 +31,16 @@ namespace muse_dash_test
         /// <summary>노트는 1.5초 내외를 날아가므로 20Hz면 등장 직후에 바로 잡힙니다.</summary>
         private const float ScanIntervalSeconds = 0.05f;
 
+        /// <summary>고스트 노트임을 가리키는 NoteConfigData.type 값.</summary>
+        private const uint GhostType = 4;
+
         private static float lastScanTime;
         private static int heldCount;
         private static int killedTweenCount;
         private static bool announced;
         private static DateTime lastSummaryTime = DateTime.MinValue;
+        private static float lastHeartbeatTime;
+        private static int sampleBudget = 24;
 
         internal static void HoldAlpha()
         {
@@ -43,17 +48,21 @@ namespace muse_dash_test
             if (Time.unscaledTime - lastScanTime < ScanIntervalSeconds) return;
             lastScanTime = Time.unscaledTime;
 
-            // 화면에 있는(활성) 노트만 대상입니다. 풀에서 대기 중인 비활성 노트는 아직 알파가 의미 없습니다.
-            var found = UnityEngine.Object.FindObjectsOfType(Il2CppType.Of<NoteObjectController>());
-            if (found == null) return;
+            // 비활성(풀 대기)까지 포함해 훑습니다. 활성만 보는 FindObjectsOfType으로는
+            // 풀링된 노트를 놓칩니다(set_NoteMData 프로브에서 확인된 함정).
+            var found = Resources.FindObjectsOfTypeAll(Il2CppType.Of<NoteObjectController>());
+            int total = found == null ? 0 : found.Length;
+            int ghostCount = 0;
 
-            for (int i = 0; i < found.Length; i++)
+            for (int i = 0; i < total; i++)
             {
                 try
                 {
                     var controller = found[i]?.TryCast<NoteObjectController>();
                     if (controller == null || !IsGhostNote(controller)) continue;
 
+                    ghostCount++;
+                    SampleGhostState(controller);
                     KillFadeTween(controller);
                     ForceOpaque(controller.m_SkeletonAnimation);
                 }
@@ -63,17 +72,88 @@ namespace muse_dash_test
                 }
             }
 
+            LogHeartbeatIfDue(total, ghostCount);
             LogSummaryIfDue();
         }
 
+        /// <summary>
+        /// UID(xx=17) 또는 type(4) 어느 쪽으로든 고스트로 판정합니다.
+        /// 실측에서 프리팹이 일반 노트(`_road_nor_1`)로 굴러가는데도 사라졌으므로,
+        /// 페이드가 프리팹이 아니라 type에서 나올 가능성을 함께 덮습니다.
+        /// </summary>
         private static bool IsGhostNote(NoteObjectController controller)
         {
             var md = controller.m_MusicData;
             if (md == null) return false;
 
             var note = md.noteData;
-            string uid = note == null ? null : note.uid;
+            if (note == null) return false;
+
+            if (note.type == GhostType) return true;
+
+            string uid = note.uid;
             return uid != null && uid.Length == 6 && uid.Substring(2, 2) == GhostXx;
+        }
+
+        /// <summary>
+        /// "사라진다"의 정체를 가리기 위한 상태 표본입니다. 알파가 깎이는 것인지,
+        /// 오브젝트가 비활성화되는 것인지, 렌더러가 꺼지는 것인지가 여기서 갈립니다.
+        /// </summary>
+        private static void SampleGhostState(NoteObjectController controller)
+        {
+            if (sampleBudget <= 0) return;
+            sampleBudget--;
+
+            string uid = "(null)";
+            uint type = 0;
+            try
+            {
+                var note = controller.m_MusicData?.noteData;
+                if (note != null) { uid = note.uid ?? "(null)"; type = note.type; }
+            }
+            catch (Exception) { }
+
+            string alpha = "(스켈레톤 없음)";
+            try
+            {
+                var sk = controller.m_SkeletonAnimation;
+                if (sk != null && sk.skeleton != null) alpha = sk.skeleton.A.ToString("0.###");
+            }
+            catch (Exception) { }
+
+            int exCount = -1;
+            bool hasTweener = false;
+            try
+            {
+                var ex = controller.m_ExNoteControllers;
+                exCount = ex == null ? -1 : ex.Count;
+                for (int i = 0; i < (ex == null ? 0 : ex.Count); i++)
+                {
+                    var visible = ex[i]?.TryCast<NoteVisibleController>();
+                    if (visible != null && visible.m_NoteTweener != null) hasTweener = true;
+                }
+            }
+            catch (Exception) { }
+
+            bool activeSelf = false, activeInHierarchy = false;
+            try
+            {
+                var go = controller.gameObject;
+                if (go != null) { activeSelf = go.activeSelf; activeInHierarchy = go.activeInHierarchy; }
+            }
+            catch (Exception) { }
+
+            MelonLogger.Msg($"[GhostNote.AlphaHold.Sample] uid={uid}, type={type}, alpha={alpha}, exControllers={exCount}, " +
+                            $"fadeTweener={hasTweener}, activeSelf={activeSelf}, activeInHierarchy={activeInHierarchy}, showTick={controller.m_ShowTick}");
+        }
+
+        private static void LogHeartbeatIfDue(int total, int ghostCount)
+        {
+            if (Time.unscaledTime - lastHeartbeatTime < 2f) return;
+            lastHeartbeatTime = Time.unscaledTime;
+
+            MelonLogger.Msg($"[GhostNote.AlphaHold] 스캔: 노트 컨트롤러 {total}개, 그중 고스트 {ghostCount}개 " +
+                            $"(누적 알파 복구 {heldCount}, 트윈 제거 {killedTweenCount})");
         }
 
         /// <summary>
