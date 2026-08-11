@@ -63,6 +63,14 @@ namespace muse_dash_test
                 return RestoreMusicData(ref direct) ? 1 : 0;
             }
 
+            // preloads1은 List<List<GameObject>> 형태입니다. 일반 중첩 탐색에서는
+            // Il2CppSystem.*을 차단하므로, 인덱스 컬렉션은 명시적으로 펼쳐서 내부
+            // GameObject까지 전달합니다.
+            if (TryRestoreIndexedCollection(obj, depth, inspectedObjects, out int collectionRestored))
+            {
+                return collectionRestored;
+            }
+
             int restored = 0;
             var type = obj.GetType();
 
@@ -131,6 +139,36 @@ namespace muse_dash_test
             }
 
             return restored;
+        }
+
+        private static bool TryRestoreIndexedCollection(
+            object obj,
+            int depth,
+            HashSet<int> inspectedObjects,
+            out int restored)
+        {
+            restored = 0;
+            var type = obj.GetType();
+            var countProp = GetCountProperty(type);
+            var itemProp = GetItemProperty(type);
+            if (countProp == null || itemProp == null) return false;
+
+            try
+            {
+                int count = (int)countProp.GetValue(obj);
+                var indexArgs = new object[1];
+                for (int i = 0; i < count; i++)
+                {
+                    indexArgs[0] = i;
+                    object item = itemProp.GetValue(obj, indexArgs);
+                    restored += RestoreObjectMusicData(item, depth + 1, inspectedObjects);
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private static bool TryRestoreScalarField(object obj, FieldInfo field, object value)
