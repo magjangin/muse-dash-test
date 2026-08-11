@@ -35,6 +35,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         new ExperimentNoteSpec { Label = "보스1 등장", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 15.0, BossAction = "in" },
         new ExperimentNoteSpec { Label = "보스1 퇴장", Uid = "050102", NoteType = 0, Pathway = 0, StartTick = 22.0, BossAction = "out" },
 
+        // 롱노트 궤적 프로브(LongNoteTrajectoryProbe) 관찰용 롱노트입니다. 관찰이 끝나면 주석 처리하세요.
+        new ExperimentNoteSpec { Label = "궤적 프로브용 롱노트", Uid = "050201", NoteType = 3, Pathway = 0, IsLong = true, StartTick = 20.0, Length = 1.6 },
+
 
         // 원하는 실험은 아래 예시를 복사해서 주석을 해제하세요.
         // new ExperimentNoteSpec { Label = "지상 일반 8개", Uid = "051001", NoteType = 1, Pathway = 0, StartTick = 15.0, Count = 8, Interval = 0.25 },
