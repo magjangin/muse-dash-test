@@ -41,6 +41,10 @@ namespace muse_dash_test
         public static bool forceAutoPlay = false;
         public static bool enableCinema = true;
 
+        // 판정 강제(올 퍼펙트) 설정. 오토플레이와 무관하게, 입력은 사람이 그대로 하고
+        // 게임에 "기록되는 판정"만 Perfect로 승격시킵니다. (<see cref="ForcePerfectState"/>)
+        public static bool forcePerfect = false;
+
         // 첫 설정 로드가 끝나기 전까지는 파일의 '오토플레이' 값을 적용하지 않습니다.
         // 첫 로드 이후 게임 도중 config.txt를 저장하면 그때부터는 파일 값을 그대로 따릅니다.
         private static bool autoPlayFollowsConfig = false;
@@ -149,6 +153,9 @@ namespace muse_dash_test
                 sb.AppendLine();
                 sb.AppendLine("# 시네마(BGA 동영상) 재생 설정");
                 sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
+                sb.AppendLine();
+                sb.AppendLine("# 판정 강제(올 퍼펙트) 설정 - 오토플레이가 아니라 '기록되는 판정'만 Perfect로 승격합니다.");
+                sb.AppendLine($"강제퍼펙트={forcePerfect.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 MelonLogger.Msg($"[InputOverlay] 기본 설정 파일(config.txt)을 새로 생성했습니다: {configPath}");
@@ -208,8 +215,9 @@ namespace muse_dash_test
                 bool hasAutoPlay = text.Contains("오토플레이");
                 bool hasBlockFever = text.Contains("피버충전금지");
                 bool hasCinema = text.Contains("시네마");
+                bool hasForcePerfect = text.Contains("강제퍼펙트");
 
-                if (!hasAutoPlay || !hasBlockFever || !hasCinema)
+                if (!hasAutoPlay || !hasBlockFever || !hasCinema || !hasForcePerfect)
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine();
@@ -227,9 +235,13 @@ namespace muse_dash_test
                     {
                         sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
                     }
+                    if (!hasForcePerfect)
+                    {
+                        sb.AppendLine($"강제퍼펙트={forcePerfect.ToString().ToLower()}");
+                    }
 
                     File.AppendAllText(configPath, sb.ToString(), new UTF8Encoding(true));
-                    MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목(오토플레이/피버/시네마)을 자동 추가했습니다.");
+                    MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목(오토플레이/피버/시네마/강제퍼펙트)을 자동 추가했습니다.");
                 }
             }
             catch (Exception ex)
@@ -353,13 +365,23 @@ namespace muse_dash_test
                         case "시네마":
                             enableCinema = ParseBool(val, key, enableCinema);
                             break;
+                        case "강제퍼펙트":
+                        {
+                            bool previous = forcePerfect;
+                            forcePerfect = ParseBool(val, key, forcePerfect);
+                            if (previous != forcePerfect)
+                            {
+                                ForcePerfectState.OnSettingChanged(forcePerfect);
+                            }
+                            break;
+                        }
                     }
                 }
 
                 // 첫 로드를 마쳤으므로, 이후의 config.txt 저장부터는 '오토플레이' 값을 그대로 반영합니다.
                 autoPlayFollowsConfig = true;
 
-                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema})");
+                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect})");
                 UpdateTextures();
             }
             catch (Exception ex)

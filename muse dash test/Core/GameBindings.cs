@@ -23,6 +23,18 @@ namespace muse_dash_test
             public const string GetTrueAccuracy = "GetTrueAccuracy";
             public const string GetTrueAccuracyNew = "GetTrueAccuracyNew";
             public const string IsFullCombo = "IsFullCombo";
+
+            /// <summary>SetPlayResult(int idx, uint result, bool isMulEnd) — 판정 결과 집계 진입점.</summary>
+            public const string SetPlayResult = "SetPlayResult";
+            public const string AddMiss = "AddMiss";
+            public const string TriggerNoteMiss = "TriggerNoteMiss";
+        }
+
+        /// <summary>Il2CppAssets.Scripts.GameCore.HostComponent.BattleEnemyManager — 노트별 판정 결과 저장소.</summary>
+        public static class BattleEnemyManager
+        {
+            /// <summary>SetPlayResult(int idx, byte result, bool isMulStart, bool isMulEnd, bool isLeft).</summary>
+            public const string SetPlayResult = "SetPlayResult";
         }
 
         /// <summary>Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager — 인게임 풀콤보/승리 2D 배너.</summary>
