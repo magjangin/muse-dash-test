@@ -9,10 +9,14 @@ namespace muse_dash_test
     // 오토플레이(DBSkill.SetAutoPlay)와는 완전히 별개입니다. 입력은 그대로 사람이 하고,
     // 노트를 실제로 치는 타이밍도 그대로이며, "기록되는 판정 값"만 바뀝니다.
     //
-    // 판정 값이 지나가는 두 지점을 모두 덮어씁니다.
-    //   - TaskStageTarget.SetPlayResult(int idx, uint result, bool isMulEnd)                : 판정 집계(Perfect/Great/Miss 카운터) 쪽
-    //   - BattleEnemyManager.SetPlayResult(int idx, byte result, bool, bool, bool)          : 노트별 결과 저장 쪽
-    // 두 경로가 서로를 호출하더라도 같은 값을 두 번 쓰는 것뿐이라 부작용은 없습니다.
+    // 판정 값을 상류에서 한 번, 하류에서 두 번 덮어씁니다.
+    //   - GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)         : [상류] 터치 판정 산출 직후.
+    //       여기서 바꾸면 판정 표시(ShowPlayResult), 캐릭터 액션(GirlActionController.Attack(actKey, result)),
+    //       집계까지 전부 같은 값을 보게 되므로 "화면엔 GREAT, 기록만 Perfect"가 생기지 않습니다.
+    //   - TaskStageTarget.SetPlayResult(int idx, uint result, bool isMulEnd)                : [하류] 판정 집계(Perfect/Great/Miss 카운터) 쪽
+    //   - BattleEnemyManager.SetPlayResult(int idx, byte result, bool, bool, bool)          : [하류] 노트별 결과 저장 쪽
+    // 하류 두 개는 TouchResult를 거치지 않는 경로(완전 미스, 롱노트 종료 등)를 위한 안전망입니다.
+    // 상류에서 이미 승격된 값이 내려오면 하류 패치는 조건에 걸리지 않아 그냥 통과합니다.
 
     /// <summary>
     /// 판정 승격 규칙과 적용 통계를 담는 공용 상태입니다.
@@ -25,6 +29,10 @@ namespace muse_dash_test
         private const double SummaryIntervalSeconds = 10.0;
 
         private static readonly int[] promotedByOrigin = new int[7];
+        // 어느 훅에서 승격이 일어났는지 셉니다. 상류(TouchResult)만 카운트가 오르면 화면 표시까지
+        // 함께 바뀐 것이고, 하류(SetPlayResult) 카운트가 오르면 상류를 거치지 않은 경로가 있다는 뜻입니다.
+        private static readonly System.Collections.Generic.Dictionary<string, int> promotedBySource =
+            new System.Collections.Generic.Dictionary<string, int>();
         private static DateTime lastSummaryTime = DateTime.MinValue;
         private static bool pendingSummary;
         private static bool announced;
@@ -49,6 +57,8 @@ namespace muse_dash_test
             {
                 promotedByOrigin[original]++;
             }
+            promotedBySource.TryGetValue(source, out int sourceCount);
+            promotedBySource[source] = sourceCount + 1;
             pendingSummary = true;
 
             if (!announced)
@@ -79,8 +89,16 @@ namespace muse_dash_test
             if (!pendingSummary) return;
             pendingSummary = false;
 
+            var sources = new System.Text.StringBuilder();
+            foreach (var entry in promotedBySource)
+            {
+                if (sources.Length > 0) sources.Append(", ");
+                sources.Append($"{entry.Key}={entry.Value}");
+            }
+
             MelonLogger.Msg($"[ForcePerfect] 누적 승격 현황: Miss={promotedByOrigin[(int)TaskResult.Miss]}, " +
-                            $"Cool={promotedByOrigin[(int)TaskResult.Cool]}, Great={promotedByOrigin[(int)TaskResult.Great]}");
+                            $"Cool={promotedByOrigin[(int)TaskResult.Cool]}, Great={promotedByOrigin[(int)TaskResult.Great]} " +
+                            $"| 훅별: {sources}");
         }
 
         internal static string Describe(uint result)
@@ -99,7 +117,33 @@ namespace muse_dash_test
         }
     }
 
-    /// <summary>판정 집계 진입점에서 결과 값을 Perfect로 덮어씁니다.</summary>
+    /// <summary>
+    /// 터치 판정이 산출된 직후, 화면 표시·캐릭터 액션·집계로 흩어지기 전에 결과 값을 Perfect로 덮어씁니다.
+    /// 인게임 판정 표시까지 Perfect로 바꾸는 것은 이 지점입니다.
+    /// </summary>
+    [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameTouchPlay), GameBindings.GameTouchPlay.TouchResult)]
+    public class GameTouchPlay_TouchResult_ForcePerfect_Patch
+    {
+        public static void Prefix(int idx, ref byte resultCode)
+        {
+            try
+            {
+                if (!ForcePerfectState.Enabled) return;
+
+                uint original = resultCode;
+                if (!ForcePerfectState.ShouldPromote(original)) return;
+
+                resultCode = (byte)ForcePerfectState.Perfect;
+                ForcePerfectState.Record("GameTouchPlay.TouchResult", idx, original);
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[GameTouchPlay.TouchResult.Prefix] 판정 강제 중 예외 발생: {ex}");
+            }
+        }
+    }
+
+    /// <summary>판정 집계 진입점에서 결과 값을 Perfect로 덮어씁니다. (상류를 거치지 않은 경로용 안전망)</summary>
     [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.SetPlayResult)]
     public class TaskStageTarget_SetPlayResult_ForcePerfect_Patch
     {

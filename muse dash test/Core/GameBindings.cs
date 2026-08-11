@@ -37,6 +37,13 @@ namespace muse_dash_test
             public const string SetPlayResult = "SetPlayResult";
         }
 
+        /// <summary>Il2CppGameLogic.GameTouchPlay — 터치 판정 산출 지점(화면 표시·애니메이션·집계의 상류).</summary>
+        public static class GameTouchPlay
+        {
+            /// <summary>TouchResult(int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill).</summary>
+            public const string TouchResult = "TouchResult";
+        }
+
         /// <summary>Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager — 인게임 풀콤보/승리 2D 배너.</summary>
         public static class PnlVictory2dManager
         {
