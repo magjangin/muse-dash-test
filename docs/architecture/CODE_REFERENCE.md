@@ -90,11 +90,16 @@ MelonLoader 모드 진입점 클래스입니다.
 * **검증된 오답 두 가지**: `GameMissPlay.MissCube`는 이 경로가 **아닙니다**(미스 3회 동안 호출 1회·미스 성립 0회). `GameGlobal.MISS_NO_CHECK_TICK`(원본 `-5`)을 `999999`로 밀어도 미스는 동일하게 발생합니다.
 
 ### 📂 [Battle/Mechanics/GhostNoteAlphaHold.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/GhostNoteAlphaHold.cs)
-고스트 노트(UID `zzxxyy`의 `xx=17`, type 4)가 판정선에 가까워질수록 알파가 깎여 사라지는 것을 막습니다. `config.txt`의 `고스트노트보이기`로 켜고 끄며 기본값은 `true`입니다. **프리팹을 갈아끼우지 않으므로 고스트 고유 외형은 그대로 유지됩니다.**
+고스트 노트(UID `zzxxyy`의 `xx=17`, type 4)가 판정선에 가까워질수록 사라지는 것을 막습니다. `config.txt`의 `고스트노트보이기`로 켜고 끄며 기본값은 `true`입니다. 스켈레톤·프리팹·UID·type을 전부 건드리지 않아 **고스트 고유 외형이 그대로 유지됩니다.**
 
-* **후킹하지 않습니다.** 페이드를 만드는 `NormalNoteVisibleController`의 `OnAppear`/`Init`/`OnUpdate`가 전부 `virtual`이고(이 프로젝트에서 virtual/private 훅은 로그 없는 네이티브 크래시 전력), 유일한 non-virtual public 지점인 `set_NoteMData`는 IL2CPP가 인라인해 훅이 아예 돌지 않았습니다. 그래서 `MainMod.OnUpdate`에서 20Hz로 살아 있는 노트 오브젝트(`BaseEnemyObjectController`)를 훑습니다.
-* **처리 순서가 중요합니다**: ① `m_ExNoteControllers`에서 `NormalNoteVisibleController`를 찾아 `m_NoteTweener`를 `Kill()` → ② `m_SkeletonAnimation.skeleton.A`를 `1`로 복구. 트윈을 죽이지 않고 알파만 밀면 매 프레임 서로 덮어써 깜빡입니다.
-* **알파는 노트 데이터에 없습니다.** `NoteConfigData`/`MusicData` 어디에도 알파·투명도 필드가 없어 BMS 주입이나 런타임 zz 복구 시점에는 손댈 수단이 없습니다. 런타임 컴포넌트 문제입니다.
+* **원인은 C# 코드가 아니라 Spine 애니메이션 데이터입니다.** 액션 계약서상 고스트 노트의 액션은 세 개뿐이고(`in`→`in_nor_44`, `note_out_g`→`out_g`, `note_out_p`→`out_p`), 비행 1.5초(`dt=1.48`) 동안 재생되는 것은 `in_nor_44` 하나입니다. 그 애니메이션이 알파를 깎습니다.
+* **`SpineActionController.PlayByKey`(Postfix)** 에서 `in`이 재생된 직후, 현재 애니메이션의 타임라인을 훑어 `ColorTimeline`/`TwoColorTimeline`의 **알파 키만 `1`로 덮어씁니다**(`frames`는 `[time,r,g,b,a]` 5칸 단위, TwoColor는 8칸). 이동·스케일·회전 타임라인은 손대지 않으므로 등장 모션은 원본 그대로입니다. 실측: 타임라인 89개 중 컬러 8개, 알파 키 24개.
+* `SkeletonData`는 같은 에셋을 쓰는 모든 노트가 공유하므로 애니메이션 이름당 1회만 처리합니다.
+* **막다른 길 기록**(같은 곳을 다시 파지 않기 위해):
+  * `SetAlpha(float)`, `SpineActionController.OnNoteDisappear`, `BaseEnemyObjectController.NoteDisappearLogic` — 셋 다 고스트 노트에 대해 **한 번도 호출되지 않았습니다.**
+  * 애니메이션을 `standby`로 통째 교체하면 노트가 화면 중앙에 멈춥니다. **비행 이동도 `in_nor_44`가 갖고 있습니다.**
+  * 알파·투명도 필드는 `NoteConfigData`/`MusicData` 어디에도 없어 BMS 주입이나 zz 복구 레이어에서는 손댈 수단이 없습니다.
+  * `OnNoteDisappear`/`NoteDisappearLogic`은 Il2CppInterop이 `params` 편의 오버로드를 함께 만들어 두므로, 이름만으로 패치하면 `AmbiguousMatchException`으로 패치 클래스 전체가 등록에서 빠집니다. 인자 타입을 못박아야 합니다.
 
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.
