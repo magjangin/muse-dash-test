@@ -14,8 +14,14 @@ namespace muse_dash_test
     /// </summary>
     public static partial class LongNoteTrajectory
     {
+        /// <summary>원본 직선 막대를 숨길지. 끄면 원본과 리본이 같이 보여 위치 비교에 쓸 수 있습니다.</summary>
+        public static bool HideOriginalBody = true;
+
         /// <summary>리본을 구성할 점 개수. 많을수록 매끄럽지만 매 프레임 갱신 비용이 늘어납니다.</summary>
         private const int RibbonPoints = 24;
+
+        /// <summary>리본 상태 진단 로그 간격(프레임).</summary>
+        private const int RibbonLogIntervalFrames = 10;
 
         /// <summary>모드가 만든 리본 오브젝트 이름. 오브젝트 풀 재사용 시 다시 찾아 쓰려고 고정합니다.</summary>
         private const string RibbonObjectName = "hwa_long_ribbon";
@@ -40,6 +46,11 @@ namespace muse_dash_test
             public float BodyScaleX;   // 몸통 노드의 x 스케일 (마커 local x → 월드 거리 환산용)
             public bool Verbose;
             public int Id;
+            public int NextLogFrame;
+
+            // 게임이 우리가 끈/켠 상태를 되돌린 횟수. 깜빡임 원인 판별용입니다.
+            public int LineReEnabledCount;
+            public int BodyReHiddenCount;
         }
 
         /// <summary>
@@ -87,10 +98,11 @@ namespace muse_dash_test
                 if (state.OriginalBody != null)
                 {
                     state.OriginalBodyWasEnabled = state.OriginalBody.enabled;
-                    state.OriginalBody.enabled = false;
+                    if (HideOriginalBody) state.OriginalBody.enabled = false;
                 }
 
                 state.Line.enabled = true;
+                state.NextLogFrame = Time.frameCount;
 
                 if (verbose)
                 {
@@ -117,6 +129,10 @@ namespace muse_dash_test
 
             try
             {
+                // 깜빡임 진단: 우리가 정해 둔 상태를 게임이 되돌렸는지 먼저 읽어 둡니다.
+                bool lineWasEnabled = state.Line.enabled;
+                bool bodyWasVisible = state.OriginalBody != null && state.OriginalBody.enabled;
+
                 // 꼬리는 SetLength로 늘어날 수 있으므로 매 프레임 현재 값을 읽습니다.
                 float tailLocalX = state.TailMarker.localPosition.x;
                 float tailWorldSpan = tailLocalX * state.BodyScaleX;
@@ -139,12 +155,51 @@ namespace muse_dash_test
 
                 SetMarkerY(state.TailMarker, state.TailMarkerBaseY + Offset(Progress(noteWorldX + tailWorldSpan)));
 
+                // 게임 쪽 로직(SetVisible, 투명도 코루틴 등)이 렌더러 상태를 되돌려도 매 프레임 다시 강제합니다.
+                if (!lineWasEnabled)
+                {
+                    state.Line.enabled = true;
+                    state.LineReEnabledCount++;
+                }
+
+                if (bodyWasVisible && HideOriginalBody)
+                {
+                    state.OriginalBody.enabled = false;
+                    state.BodyReHiddenCount++;
+                }
+
+                LogRibbonState(state, lineWasEnabled, bodyWasVisible, tailWorldSpan);
                 return true;
             }
             catch
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 깜빡임 원인 판별용 진단 로그입니다.
+        /// <para><c>보임</c>(Renderer.isVisible)이 false로 떨어지면 카메라 컬링, <c>되살아남</c> 카운트가 오르면
+        /// 게임 로직이 렌더러 상태를 되돌리는 것입니다. 둘은 대처가 다릅니다.</para>
+        /// </summary>
+        private static void LogRibbonState(RibbonState state, bool lineWasEnabled, bool bodyWasVisible, float span)
+        {
+            if (!state.Verbose) return;
+
+            int frame = Time.frameCount;
+            if (frame < state.NextLogFrame) return;
+            state.NextLogFrame = frame + RibbonLogIntervalFrames;
+
+            try
+            {
+                Bounds bounds = state.Line.bounds;
+                MelonLogger.Msg(
+                    $"[LongNoteTrajectory] #{state.Id} 리본 frame={frame}: enabled={lineWasEnabled}, 보임={state.Line.isVisible}, " +
+                    $"점수={state.Line.positionCount}, 길이={span:0.###}, 두께={state.Line.startWidth:0.###}, " +
+                    $"bounds center=({bounds.center.x:0.##},{bounds.center.y:0.##}) size=({bounds.size.x:0.##},{bounds.size.y:0.##}) | " +
+                    $"원본막대 보임={bodyWasVisible}, 리본되살림={state.LineReEnabledCount}회, 원본재숨김={state.BodyReHiddenCount}회");
+            }
+            catch { }
         }
 
         /// <summary>리본을 걷어내고 원본 막대를 되살립니다(오브젝트 풀 재사용 대비).</summary>
