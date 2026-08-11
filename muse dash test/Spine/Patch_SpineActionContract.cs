@@ -202,6 +202,7 @@ namespace muse_dash_test
         private static readonly HashSet<string> SeenDemand = new HashSet<string>();
         private static readonly List<string> DemandLines = new List<string>();
         private static readonly HashSet<string> AliveHooks = new HashSet<string>();
+        public static bool IsMultiHitActive = false;
 
         public static void ResetWindow()
         {
@@ -361,11 +362,29 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static void Prefix(SpineActionController __instance, string actionKey)
+        public static void Prefix(SpineActionController __instance, ref string actionKey)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
 
             string objName = SpineActionContract.SafeName(__instance);
+
+            if (actionKey == "char_multihit_start")
+            {
+                SpineActionContract.IsMultiHitActive = true;
+                MelonLogger.Msg($"[SpineContract.MultiHit] 샌드백 연타 구간 시작 ➔ char_bighit 치환 모드 ON");
+            }
+            else if (actionKey == "char_multihit_end")
+            {
+                SpineActionContract.IsMultiHitActive = false;
+                MelonLogger.Msg($"[SpineContract.MultiHit] 샌드백 연타 구간 종료 ➔ 치환 모드 OFF");
+            }
+
+            if (SpineActionContract.IsMultiHitActive && (actionKey == "char_jumphit" || actionKey == "char_atk_p"))
+            {
+                MelonLogger.Msg($"[SpineContract.Remap] {actionKey} ➔ char_bighit 치환 적용 (double_hit 펀치 모션 구동)");
+                actionKey = "char_bighit";
+            }
+
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
         }
     }
@@ -373,8 +392,12 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeletonAnim))]
     internal static class Patch_SpineContract_PlaySkeletonAnim
     {
-        public static void Prefix(string actionKey, int idx, bool isLoop)
+        public static void Prefix(ref string actionKey, int idx, bool isLoop)
         {
+            if (SpineActionContract.IsMultiHitActive && (actionKey == "char_jumphit" || actionKey == "char_atk_p"))
+            {
+                actionKey = "char_bighit";
+            }
             SpineActionContract.RecordDemand("PlaySkeletonAnim", $"actionKey={actionKey}, idx={idx}, isLoop={isLoop}", null);
         }
     }
@@ -382,8 +405,12 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeleton))]
     internal static class Patch_SpineContract_PlaySkeleton
     {
-        public static void Prefix(string actionKey, int idx)
+        public static void Prefix(ref string actionKey, int idx)
         {
+            if (SpineActionContract.IsMultiHitActive && (actionKey == "char_jumphit" || actionKey == "char_atk_p"))
+            {
+                actionKey = "char_bighit";
+            }
             SpineActionContract.RecordDemand("PlaySkeleton", $"actionKey={actionKey}, idx={idx}", null);
         }
     }
