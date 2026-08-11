@@ -201,8 +201,30 @@ namespace muse_dash_test
         private static readonly List<string> DemandLines = new List<string>();
         private static readonly HashSet<string> AliveHooks = new HashSet<string>();
 
+        private const string MultiHitStartKey = "char_multihit_start";
+        private const string MultiHitEndKey = "char_multihit_end";
+
+        /// <summary>지금 샌드백 연타 구간 안인지 판별합니다.</summary>
+        public static bool InMultiHit { get; private set; }
+
+        public static void TrackMultiHitWindow(string actionKey)
+        {
+            if (actionKey == MultiHitStartKey)
+            {
+                InMultiHit = true;
+                MelonLogger.Msg("[샌드백] 연타 구간 진입 — char_bighit (복선 액션) 치환 대기 중...");
+            }
+            else if (actionKey == MultiHitEndKey)
+            {
+                InMultiHit = false;
+                MelonLogger.Msg("[샌드백] 연타 구간 종료.");
+            }
+        }
+
         public static void ResetWindow()
         {
+            InMultiHit = false;
+            FlushDemand();
         }
 
         public static void RecordDemand(string source, string key, string objName)
@@ -221,7 +243,6 @@ namespace muse_dash_test
 
                 DemandLines.Add(entry);
                 MelonLogger.Msg($"[SpineContract.수요] {entry}");
-                FlushDemand();
             }
             catch (Exception ex)
             {
@@ -347,12 +368,24 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static void Prefix(SpineActionController __instance, string actionKey)
+        public static void Prefix(SpineActionController __instance, ref string actionKey)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
+
+            SpineActionContract.TrackMultiHitWindow(actionKey);
+
+            // 샌드백 연타 구간 진입 후 첫 PlayByKey 타격("char_jumphit" 등)이 올 때
+            // 단 1회 액션 키만 "char_bighit"(복선 액션)으로 치환합니다.
+            // 이렇게 하면 게임 내부 액션 플레이어가 char_bighit 버퍼를 획득하여
+            // SetAnimation 오버라이드 없이 double_hit_1 과 double_hit_2 를 지상에서 원본 속도로 재생합니다.
+            if (SpineActionContract.InMultiHit && (actionKey == "char_jumphit" || actionKey == "char_atk_p" || actionKey == "char_hit"))
+            {
+                MelonLogger.Msg($"[샌드백] {objName}: 액션 키 '{actionKey}' -> 'char_bighit' (복선) 1회 치환 완료");
+                actionKey = "char_bighit";
+            }
         }
     }
 
