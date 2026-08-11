@@ -67,6 +67,11 @@ namespace muse_dash_test
         static void Postfix(SpineActionController __instance)
         {
             InjectHelper.TryInject(__instance);
+
+            // 액션 계약서 프로브(읽기 전용). 같은 메서드에 별도 패치 클래스를 붙이면 그쪽 Postfix가
+            // 실행되지 않아서, 이미 도는 이 지점에 얹었습니다. 자세한 내용은 SpineActionContract 주석 참고.
+            // 주입 이후에 호출해야 커스텀 스켈레톤의 애니메이션 목록이 잡힙니다.
+            SpineActionContract.DumpSupply(__instance);
         }
     }
 }

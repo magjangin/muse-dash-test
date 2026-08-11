@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -56,18 +55,22 @@ namespace muse_dash_test
         /// </summary>
         public static void DumpSupply(SpineActionController sac)
         {
-            if (sac == null) return;
-
-            string objName;
+            // 스킨 주입 Postfix 안에서 호출되므로, 어떤 예외도 주입 경로로 새어 나가지 않게 전체를 감쌉니다.
             try
             {
-                objName = sac.gameObject.name;
+                DumpSupplyCore(sac);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return;
+                MelonLogger.Warning($"[SpineContract] 공급 덤프 예외: {ex.Message}");
             }
+        }
 
+        private static void DumpSupplyCore(SpineActionController sac)
+        {
+            if (sac == null) return;
+
+            string objName = sac.gameObject.name;
             if (string.IsNullOrEmpty(objName)) return;
             if (objName.IndexOf(TargetNameFragment, StringComparison.OrdinalIgnoreCase) < 0) return;
             if (!DumpedObjects.Add(objName)) return;
@@ -218,45 +221,10 @@ namespace muse_dash_test
         }
     }
 
-    /// <summary>
-    /// 배틀 오브젝트가 스테이지에 붙는 시점에 공급 목록을 덤프합니다.
-    /// (기존 스킨 주입 패치가 이미 검증한 훅 지점입니다.)
-    /// </summary>
-    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.OnControllerStart))]
-    internal static class Patch_SpineActionContract_Supply
-    {
-        /// <summary>
-        /// 진입 확인용 카운터. 같은 메서드에 붙은 기존 Inject Postfix 는 도는데 이 Postfix 만
-        /// 아무 흔적을 남기지 않는 상황이라(2026-08-11), 우선 실행 여부부터 확정합니다.
-        /// 노트 오브젝트까지 수백 번 불리므로 앞쪽 몇 번만 찍고 멈춥니다.
-        /// </summary>
-        private static int entryLogBudget = 8;
-
-        public static void Postfix(SpineActionController __instance)
-        {
-            if (entryLogBudget > 0)
-            {
-                entryLogBudget--;
-                string probeName;
-                try
-                {
-                    probeName = __instance != null ? __instance.gameObject.name : "(instance null)";
-                }
-                catch (Exception ex)
-                {
-                    probeName = $"(이름 읽기 실패: {ex.Message})";
-                }
-                MelonLogger.Msg($"[SpineContract.Entry] Postfix 진입 — obj=\"{probeName}\"");
-            }
-
-            try
-            {
-                SpineActionContract.DumpSupply(__instance);
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[SpineContract] 공급 덤프 예외: {ex.Message}");
-            }
-        }
-    }
+    // 이 프로브에는 전용 [HarmonyPatch] 클래스가 없습니다.
+    // SpineActionController.OnControllerStart 에는 Patch_Inject_OnControllerStart 가 이미 붙어 있는데,
+    // 같은 메서드에 두 번째 패치 클래스를 붙였더니 등록·대상 해석은 정상인데도(PatchHealth 통과)
+    // Postfix 가 한 번도 실행되지 않았습니다. 진입 즉시 무조건 찍는 로그조차 나오지 않았습니다(2026-08-11).
+    // 그래서 별도 클래스를 두지 않고, 이미 도는 것이 확인된 Patch_Inject_OnControllerStart 의
+    // Postfix 안에서 DumpSupply 를 호출합니다.
 }
