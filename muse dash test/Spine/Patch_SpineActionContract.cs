@@ -258,6 +258,11 @@ namespace muse_dash_test
             }
         }
 
+        public static string SafeName(GeneralGirlManager manager)
+        {
+            return "GeneralGirlManager";
+        }
+
         public static string SafeName(SpineActionController sac)
         {
             return SafeName((UnityEngine.Component)sac);
@@ -360,6 +365,15 @@ namespace muse_dash_test
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
+        }
+    }
+
+    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.PlayRandomHitNothingAnim))]
+    internal static class Patch_GeneralGirl_PlayRandomHitNothingAnim
+    {
+        public static void Prefix(GeneralGirlManager __instance)
+        {
+            SpineActionContract.RecordDemand("HitNothingAnim", "PlayRandomHitNothingAnim", SpineActionContract.SafeName(__instance));
         }
     }
 
