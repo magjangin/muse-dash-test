@@ -412,4 +412,67 @@ namespace muse_dash_test
             SpineActionContract.RecordDemand("MultiGirlAction.HitEnd", "End", SpineActionContract.SafeName(__instance));
         }
     }
+
+    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionAttack))]
+    internal static class Patch_MultiGirlAction_ActionAttack
+    {
+        public static void Prefix(MultiGirlActionController __instance, string actKey, uint result, int id)
+        {
+            SpineActionContract.RecordDemand("MultiGirlAction.Attack", $"{actKey} (result={result}, id={id})", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionEmptyAttack))]
+    internal static class Patch_MultiGirlAction_ActionEmptyAttack
+    {
+        public static void Prefix(MultiGirlActionController __instance, string actKey)
+        {
+            SpineActionContract.RecordDemand("MultiGirlAction.EmptyAtk", $"{actKey}", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionDoubleAttack))]
+    internal static class Patch_MultiGirlAction_ActionDoubleAttack
+    {
+        public static void Prefix(MultiGirlActionController __instance, string actKey, uint result)
+        {
+            SpineActionContract.RecordDemand("MultiGirlAction.DoubleAtk", $"{actKey} (result={result})", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateMultiHits))]
+    internal static class Patch_MultiGirlState_StateMultiHits
+    {
+        public static void Prefix(MultiGirlStateController __instance, int hitCounts)
+        {
+            SpineActionContract.RecordDemand("MultiGirlState.MultiHits", $"hitCounts={hitCounts}", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateMultiHitEnd))]
+    internal static class Patch_MultiGirlState_StateMultiHitEnd
+    {
+        public static void Prefix(MultiGirlStateController __instance)
+        {
+            SpineActionContract.RecordDemand("MultiGirlState.MultiHitEnd", "End", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateEmptyAttack))]
+    internal static class Patch_MultiGirlState_StateEmptyAttack
+    {
+        public static void Prefix(MultiGirlStateController __instance, string actionKey)
+        {
+            SpineActionContract.RecordDemand("MultiGirlState.EmptyAtk", $"{actionKey}", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateAttack))]
+    internal static class Patch_MultiGirlState_StateAttack
+    {
+        public static void Prefix(MultiGirlStateController __instance, string actKey, uint noteResult, int noteIdx)
+        {
+            SpineActionContract.RecordDemand("MultiGirlState.Attack", $"{actKey} (result={noteResult}, idx={noteIdx})", SpineActionContract.SafeName(__instance));
+        }
+    }
 }
