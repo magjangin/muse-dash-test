@@ -15,25 +15,23 @@ namespace muse_dash_test
     public static partial class LongNoteTrajectory
     {
         /// <summary>
-        /// 원본 직선 막대를 숨길지.
-        /// <para>지금은 진단을 위해 꺼 둡니다. 원본 막대와 리본을 같이 띄워야
-        /// "리본이 안 그려지는 것"과 "리본이 엉뚱하게 그려지는 것"을 눈으로 가를 수 있습니다.</para>
+        /// 원본 직선 막대를 숨길지. 곡선 리본이 대신 그려지므로 기본은 숨김입니다.
+        /// <para>끄면 원본 직선과 리본이 같이 보여 위치 비교에 쓸 수 있습니다.</para>
         /// </summary>
-        public static bool HideOriginalBody = false;
+        public static bool HideOriginalBody = true;
 
         /// <summary>
         /// 리본에 게임 원본 재질 대신 Unity 기본 스프라이트 재질을 쓸지.
-        /// <para>게임 셰이더가 LineRenderer의 정점 색을 무시하거나 투명하게 처리하면
-        /// 지오메트리가 멀쩡해도 화면에 아무것도 안 나옵니다. 기본 셰이더로 한 번 그려 보면
-        /// 그 경우인지 바로 판별됩니다.</para>
+        /// <para>원본 재질을 쓰면 게임 막대와 같은 발광/블렌딩이 걸려 이질감이 없습니다.
+        /// 원본 재질에서 리본이 안 보이는 문제가 생기면 이걸 켜서 기본 셰이더로 그려 보면 됩니다.</para>
         /// </summary>
-        public static bool UseFallbackShader = true;
+        public static bool UseFallbackShader = false;
 
         /// <summary>
         /// 리본에 원본 막대의 스프라이트 텍스처를 입힐지. false면 <see cref="RibbonColor"/> 단색으로 그립니다.
-        /// <para>지금은 진단을 위해 단색으로 둡니다. 원본 막대와 색이 겹치면 어느 쪽이 우리 것인지 알 수 없습니다.</para>
+        /// <para>텍스처를 못 잘라내면 자동으로 단색으로 떨어집니다.</para>
         /// </summary>
-        public static bool UseSpriteTexture = false;
+        public static bool UseSpriteTexture = true;
 
         /// <summary>단색 모드에서 쓸 리본 색. 게임 원본과 헷갈리지 않게 눈에 띄는 색을 기본으로 둡니다.</summary>
         public static Color RibbonColor = new Color(0.2f, 1f, 0.7f, 0.9f);
