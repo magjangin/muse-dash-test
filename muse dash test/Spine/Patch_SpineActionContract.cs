@@ -434,9 +434,9 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionDoubleAttack))]
     internal static class Patch_MultiGirlAction_ActionDoubleAttack
     {
-        public static void Prefix(MultiGirlActionController __instance, string actKey, uint result)
+        public static void Prefix(MultiGirlActionController __instance, string mainSpineActionState, uint result)
         {
-            SpineActionContract.RecordDemand("MultiGirlAction.DoubleAtk", $"{actKey} (result={result})", SpineActionContract.SafeName(__instance));
+            SpineActionContract.RecordDemand("MultiGirlAction.DoubleAtk", $"{mainSpineActionState} (result={result})", SpineActionContract.SafeName(__instance));
         }
     }
 
