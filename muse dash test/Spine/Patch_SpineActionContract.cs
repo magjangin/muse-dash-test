@@ -6,7 +6,6 @@ using HarmonyLib;
 using Il2Cpp;
 using Il2CppAssets.Scripts.GameCore.Managers;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppSpine;
 using MelonLoader;
 using MelonLoader.Utils;
 
@@ -235,6 +234,37 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>샌드백 연타 구간의 시작/종료를 알리는 상태 마커 키.</summary>
+        private const string MultiHitStartKey = "char_multihit_start";
+        private const string MultiHitEndKey = "char_multihit_end";
+
+        /// <summary>지금 샌드백 연타 구간 안인지. 이 구간에서만 중복 제거 없이 기록합니다.</summary>
+        public static bool InMultiHit { get; private set; }
+
+        /// <summary>
+        /// 액션 키를 보고 연타 구간의 경계를 추적합니다.
+        /// 두 마커 키는 actionData 에 정의가 없어 애니메이션을 재생하지 않는 순수 신호입니다.
+        /// </summary>
+        public static void TrackMultiHitWindow(string actionKey)
+        {
+            if (actionKey == MultiHitStartKey)
+            {
+                InMultiHit = true;
+                MelonLogger.Msg("[샌드백원본] 연타 구간 진입 — 원본 호출을 전부 기록합니다.");
+            }
+            else if (actionKey == MultiHitEndKey)
+            {
+                InMultiHit = false;
+                MelonLogger.Msg("[샌드백원본] 연타 구간 종료.");
+            }
+        }
+
+        /// <summary>씬을 벗어날 때 구간 상태가 남아 있지 않도록 초기화합니다.</summary>
+        public static void ResetWindow()
+        {
+            InMultiHit = false;
+        }
+
         /// <summary>
         /// 중복 제거 없이 호출을 그대로 남깁니다. 샌드백 연타 구간처럼 "같은 키가 몇 번, 어떤 간격으로
         /// 반복되는가"가 정보인 구간에서만 씁니다. 곡 전체에 켜면 로그가 폭발하므로 구간 밖에서는
@@ -370,46 +400,39 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
     internal static class Patch_SpineContract_SetAnimation
     {
-        public static bool Prefix(SpineActionController __instance, string n, bool isLoop, ref TrackEntry __result)
+        public static void Prefix(SpineActionController __instance, string n)
         {
-            if (!SpineActionContract.IsBattleObject(__instance)) return true;
+            if (!SpineActionContract.IsBattleObject(__instance)) return;
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
 
             // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
-            if (SandbagAnimationOverride.InMultiHit)
+            if (SpineActionContract.InMultiHit)
             {
                 SpineActionContract.RecordRaw("SetAnimation", n, objName);
             }
-
-            return SandbagAnimationOverride.HandleSetAnimation(__instance, n, isLoop, ref __result);
         }
     }
 
-    /// <summary>
-    /// 게임이 부르는 액션 키를 기록하고(매핑 이전 단계), 샌드백 실험의 키 대체도 함께 처리합니다.
-    /// 같은 메서드에 패치 클래스를 둘 붙이지 않으려고 한 곳에 모았습니다
-    /// (양쪽이 모두 실행되는지 확인된 바 없음 — <see cref="SandbagAnimationOverride"/> 주석 참고).
-    /// </summary>
+    /// <summary>게임이 부르는 액션 키를 기록합니다(매핑 이전 단계).</summary>
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static bool Prefix(SpineActionController __instance, string actionKey, bool isOverride)
+        public static void Prefix(SpineActionController __instance, string actionKey)
         {
-            if (SpineActionContract.IsBattleObject(__instance))
+            if (!SpineActionContract.IsBattleObject(__instance)) return;
+
+            string objName = SpineActionContract.SafeName(__instance);
+            SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
+
+            SpineActionContract.TrackMultiHitWindow(actionKey);
+
+            // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
+            if (SpineActionContract.InMultiHit)
             {
-                string objName = SpineActionContract.SafeName(__instance);
-                SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
-
-                // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
-                if (SandbagAnimationOverride.InMultiHit)
-                {
-                    SpineActionContract.RecordRaw("PlayByKey", actionKey, objName);
-                }
+                SpineActionContract.RecordRaw("PlayByKey", actionKey, objName);
             }
-
-            return SandbagAnimationOverride.HandlePlayByKey(__instance, actionKey, isOverride);
         }
     }
 
