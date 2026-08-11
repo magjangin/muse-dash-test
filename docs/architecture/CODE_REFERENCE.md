@@ -90,7 +90,9 @@ MelonLoader 모드 진입점 클래스입니다.
 * **검증된 오답 두 가지**: `GameMissPlay.MissCube`는 이 경로가 **아닙니다**(미스 3회 동안 호출 1회·미스 성립 0회). `GameGlobal.MISS_NO_CHECK_TICK`(원본 `-5`)을 `999999`로 밀어도 미스는 동일하게 발생합니다.
 
 ### 📂 [Battle/Mechanics/GhostNoteAlphaHold.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/GhostNoteAlphaHold.cs)
-고스트 노트(UID `zzxxyy`의 `xx=17`, type 4)가 판정선에 가까워질수록 사라지는 것을 막습니다. `config.txt`의 `고스트노트보이기`로 켜고 끄며 기본값은 `true`입니다. 스켈레톤·프리팹·UID·type을 전부 건드리지 않아 **고스트 고유 외형이 그대로 유지됩니다.**
+고스트 노트(UID `zzxxyy`의 `xx=17`, type 4)가 판정선에 가까워질수록 사라지는 것을 막습니다. 스켈레톤·프리팹·UID·type을 전부 건드리지 않아 **고스트 고유 외형이 그대로 유지됩니다.**
+
+켜고 끄는 곳이 둘입니다. **공식곡**은 `config.txt`의 `공식곡에서도 고스트 노트 보이기`(기본 `true`, 옛 이름 `고스트노트보이기`도 계속 읽히며 기존 파일은 새 문구로 자동 정리됩니다), **커스텀 곡**은 각자의 `hwa info.txt`에 적은 `커스텀 곡 고스트 노트 보이기`(안 적으면 전역 설정을 따름)입니다. `SkeletonData`가 프로세스 내내 공유되므로 **덮기 전 알파를 기억해 뒀다가 꺼진 곡에서는 되돌립니다** — 안 그러면 한 곡에서 켠 뒤로는 끈 곡에서도 계속 보입니다.
 
 * **원인은 C# 코드가 아니라 Spine 애니메이션 데이터입니다.** 액션 계약서상 고스트 노트의 액션은 세 개뿐이고(`in`→`in_nor_44`, `note_out_g`→`out_g`, `note_out_p`→`out_p`), 비행 1.5초(`dt=1.48`) 동안 재생되는 것은 `in_nor_44` 하나입니다. 그 애니메이션이 알파를 깎습니다.
 * **`SpineActionController.PlayByKey`(Postfix)** 에서 `in`이 재생된 직후, 현재 애니메이션의 타임라인을 훑어 `ColorTimeline`/`TwoColorTimeline`의 **알파 키만 `1`로 덮어씁니다**(`frames`는 `[time,r,g,b,a]` 5칸 단위, TwoColor는 8칸). 이동·스케일·회전 타임라인은 손대지 않으므로 등장 모션은 원본 그대로입니다. 실측: 타임라인 89개 중 컬러 8개, 알파 키 24개.

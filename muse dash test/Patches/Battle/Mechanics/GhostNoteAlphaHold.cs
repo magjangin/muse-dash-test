@@ -18,11 +18,44 @@ namespace muse_dash_test
     // 이 중 in_nor_44가 알파를 깎습니다. 그래서 `in`이 깔린 직후 그 애니메이션의 컬러 타임라인에서
     // 알파 키만 1로 덮어씁니다. 이동·스케일·회전 타임라인은 건드리지 않으므로 등장 모션은 원본 그대로입니다.
     //
+    // 켜고 끄는 곳이 둘입니다. 공식곡은 config.txt의 '공식곡에서도 고스트 노트 보이기',
+    // 커스텀 곡은 각자의 hwa info.txt에 적은 '커스텀 곡 고스트 노트 보이기'를 따릅니다.
+    // SkeletonData는 프로세스 내내 공유되므로 덮기 전 알파를 기억해 뒀다가, 꺼진 곡에서는 되돌립니다.
+    // 그러지 않으면 한 곡에서 켠 뒤로는 끈 곡에서도 계속 보이게 됩니다.
+    //
     // 확인된 막다른 길(같은 곳을 다시 파지 않기 위해 남깁니다):
     //   - SpineActionController.SetAlpha(float), SpineActionController.OnNoteDisappear,
     //     BaseEnemyObjectController.NoteDisappearLogic → 고스트 노트에 대해 한 번도 호출되지 않습니다.
     //   - 애니메이션을 standby로 통째 교체하면 노트가 화면 중앙에 멈춥니다. 비행 이동도 in_nor_44에 들어 있습니다.
     //   - 알파/투명도 필드는 NoteConfigData·MusicData 어디에도 없어 BMS 주입·zz 복구 레이어에서는 손댈 수 없습니다.
+
+    /// <summary>
+    /// 이 곡에서 고스트 노트를 보이게 할지 정합니다.
+    ///   커스텀 곡 → `hwa info.txt`의 '커스텀 곡 고스트 노트 보이기'
+    ///   공식곡     → `config.txt`의 '공식곡에서도 고스트 노트 보이기'
+    /// 커스텀 곡인데 그 줄이 없으면 전역 설정을 그대로 따릅니다.
+    /// </summary>
+    internal static class GhostNoteVisibility
+    {
+        internal static bool IsEnabledForCurrentSong()
+        {
+            try
+            {
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
+                if (!string.IsNullOrEmpty(uid) && CustomContentIds.IsVirtualSong(uid))
+                {
+                    var manifest = HwaResourceManager.GetManifest(uid);
+                    if (manifest != null && manifest.ShowGhostNotes.HasValue)
+                    {
+                        return manifest.ShowGhostNotes.Value;
+                    }
+                }
+            }
+            catch (Exception) { }
+
+            return InputOverlay.showGhostNotes;
+        }
+    }
 
     internal static class GhostNoteIdentity
     {
@@ -87,18 +120,25 @@ namespace muse_dash_test
         /// <summary>프레임 한 칸에서 알파가 놓인 위치.</summary>
         private const int AlphaOffset = 4;
 
-        /// <summary>SkeletonData는 같은 에셋을 쓰는 모든 노트가 공유하므로 애니메이션당 1회만 손봅니다.</summary>
-        private static readonly HashSet<string> patchedAnimations = new HashSet<string>();
+        /// <summary>
+        /// 애니메이션 이름 → 손대기 전의 알파 값들(타임라인 순서 → 키 순서로 평평하게).
+        /// `SkeletonData`는 프로세스 내내 공유되므로, 설정을 끄면 이 값으로 되돌려야 원래 페이드가 살아납니다.
+        /// </summary>
+        private static readonly Dictionary<string, float[]> originalAlphas = new Dictionary<string, float[]>();
+
+        /// <summary>애니메이션 이름 → 지금 불투명으로 덮인 상태인가. 상태가 같으면 아무것도 하지 않습니다.</summary>
+        private static readonly Dictionary<string, bool> opaqueAnimations = new Dictionary<string, bool>();
 
         public static void Postfix(SpineActionController __instance, string actionKey)
         {
             try
             {
-                if (!InputOverlay.showGhostNotes) return;
+                // 게이트 순서가 곧 성능입니다. PlayByKey는 캐릭터·모든 노트가 공유하는 뜨거운 경로라
+                // 대부분의 호출이 첫 줄에서 끝나야 합니다. 곡별 설정 조회는 진짜 고스트 노트일 때만 합니다.
                 if (!string.Equals(actionKey, FlightActionKey, StringComparison.Ordinal)) return;
                 if (!GhostNoteIdentity.IsGhost(__instance)) return;
 
-                StripAlphaFromCurrentAnimation(__instance);
+                ApplyToCurrentAnimation(__instance, GhostNoteVisibility.IsEnabledForCurrentSong());
             }
             catch (Exception ex)
             {
@@ -106,8 +146,8 @@ namespace muse_dash_test
             }
         }
 
-        /// <summary>지금 재생 중인 애니메이션에서 컬러 타임라인의 알파 키를 전부 1로 만듭니다.</summary>
-        private static void StripAlphaFromCurrentAnimation(SpineActionController controller)
+        /// <summary>지금 재생 중인 애니메이션의 알파 키를 설정에 맞춰 1로 덮거나 원본으로 되돌립니다.</summary>
+        private static void ApplyToCurrentAnimation(SpineActionController controller, bool opaque)
         {
             var skeleton = controller.skeletonAnimation != null ? controller.skeletonAnimation.skeleton : null;
             var data = skeleton != null ? skeleton.Data : null;
@@ -115,7 +155,16 @@ namespace muse_dash_test
 
             string animationName = controller.currentAnimationName;
             if (string.IsNullOrEmpty(animationName)) return;
-            if (!patchedAnimations.Add(animationName)) return;
+
+            // 이미 원하는 상태면 끝. 애니메이션당 한 번씩만 실제로 손댑니다.
+            if (opaqueAnimations.TryGetValue(animationName, out bool state) && state == opaque) return;
+
+            // 아직 한 번도 안 건드렸는데 "보이지 않게"라면, 데이터가 이미 원본이라 할 일이 없습니다.
+            if (!opaque && !originalAlphas.ContainsKey(animationName))
+            {
+                opaqueAnimations[animationName] = false;
+                return;
+            }
 
             var animation = data.FindAnimation(animationName);
             if (animation == null)
@@ -131,8 +180,13 @@ namespace muse_dash_test
             if (items == null) return;
             if (count > items.Length) count = items.Length;
 
+            // 첫 방문이면 원본 알파를 받아 적으면서 덮습니다. 되돌릴 때는 그 기록을 되짚습니다.
+            float[] original = originalAlphas.TryGetValue(animationName, out var saved) ? saved : null;
+            var capture = original == null ? new List<float>() : null;
+
             int colorTimelines = 0;
             int alphaKeys = 0;
+            int cursor = 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -143,7 +197,7 @@ namespace muse_dash_test
                 if (color != null)
                 {
                     colorTimelines++;
-                    alphaKeys += ForceOpaque(color.frames, ColorEntries);
+                    alphaKeys += WriteAlpha(color.frames, ColorEntries, opaque, original, capture, ref cursor);
                     continue;
                 }
 
@@ -151,24 +205,39 @@ namespace muse_dash_test
                 if (twoColor != null)
                 {
                     colorTimelines++;
-                    alphaKeys += ForceOpaque(twoColor.frames, TwoColorEntries);
+                    alphaKeys += WriteAlpha(twoColor.frames, TwoColorEntries, opaque, original, capture, ref cursor);
                 }
             }
 
-            MelonLogger.Msg($"[GhostNote.AlphaTimeline] '{animationName}' 처리 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
-                            $"알파 키 {alphaKeys}개를 1로 고정 (이동/스케일 타임라인은 그대로)");
+            if (capture != null) originalAlphas[animationName] = capture.ToArray();
+            opaqueAnimations[animationName] = opaque;
+
+            MelonLogger.Msg($"[GhostNote.AlphaTimeline] '{animationName}' {(opaque ? "고정" : "복원")} 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
+                            $"알파 키 {alphaKeys}개를 {(opaque ? "1로 고정" : "원본으로 되돌림")} (이동/스케일 타임라인은 그대로)");
         }
 
-        /// <summary>프레임 배열에서 알파 자리만 1로 덮어쓰고, 바꾼 키 개수를 돌려줍니다.</summary>
-        private static int ForceOpaque(Il2CppStructArray<float> frames, int entries)
+        /// <summary>
+        /// 프레임 배열의 알파 자리만 씁니다. <paramref name="opaque"/>면 1, 아니면 <paramref name="original"/>의 값으로.
+        /// <paramref name="capture"/>가 있으면 덮기 전 값을 순서대로 받아 적습니다. 바꾼 키 개수를 돌려줍니다.
+        /// </summary>
+        private static int WriteAlpha(Il2CppStructArray<float> frames, int entries, bool opaque,
+                                      float[] original, List<float> capture, ref int cursor)
         {
             if (frames == null) return 0;
 
             int changed = 0;
             for (int i = AlphaOffset; i < frames.Length; i += entries)
             {
-                if (frames[i] >= 0.999f) continue;
-                frames[i] = 1f;
+                float current = frames[i];
+                if (capture != null) capture.Add(current);
+
+                // 기록해 둔 원본이 모자라면(있을 수 없지만) 지금 값을 그대로 둡니다.
+                float target = opaque ? 1f
+                    : (original != null && cursor < original.Length ? original[cursor] : current);
+                cursor++;
+
+                if (current == target) continue;
+                frames[i] = target;
                 changed++;
             }
             return changed;

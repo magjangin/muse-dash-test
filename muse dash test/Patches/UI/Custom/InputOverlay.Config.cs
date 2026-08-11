@@ -45,9 +45,13 @@ namespace muse_dash_test
         // 게임에 "기록되는 판정"만 Perfect로 승격시킵니다. (<see cref="ForcePerfectState"/>)
         public static bool forcePerfect = false;
 
-        // 고스트 노트(UID xx=17)가 판정선 근처에서 사라지지 않도록 알파를 되돌립니다.
-        // 프리팹을 갈아끼우지 않으므로 고스트 고유 외형은 그대로 유지됩니다. (<see cref="GhostNoteAlphaHold"/>)
+        // 공식곡의 고스트 노트(UID xx=17)가 판정선 근처에서 사라지지 않도록 알파를 되돌립니다.
+        // 커스텀 곡은 이 값 대신 각자의 `hwa info.txt`에 적은 '커스텀 곡 고스트 노트 보이기'를 따릅니다.
         public static bool showGhostNotes = true;
+
+        // 스파인 액션 계약서(게임 루트의 'spine contract' 폴더) 덤프. 진단용이라 기본값은 꺼짐입니다.
+        // 켜면 배틀 캐릭터가 로드될 때 액션/애니메이션 목록이 txt로 떨어집니다. (<see cref="SpineActionContract"/>)
+        public static bool dumpSpineContract = false;
 
         // 첫 설정 로드가 끝나기 전까지는 파일의 '오토플레이' 값을 적용하지 않습니다.
         // 첫 로드 이후 게임 도중 config.txt를 저장하면 그때부터는 파일 값을 그대로 따릅니다.
@@ -98,6 +102,7 @@ namespace muse_dash_test
                     }
                     else
                     {
+                        MigrateRenamedKeys();
                         EnsureMissingKeysAdded();
                     }
                 }
@@ -117,6 +122,15 @@ namespace muse_dash_test
                 MelonLogger.Error($"[InputOverlay] 설정 감지 중 예외 발생: {ex.Message}");
             }
         }
+
+        /// <summary>config.txt에 적히는 문구. 읽을 때는 공백을 지우고 비교하므로 띄어쓰기는 사람 눈을 위한 것입니다.</summary>
+        private const string GhostNotesKeyText = "공식곡에서도 고스트 노트 보이기";
+        private const string SpineContractKeyText = "스파인 계약서 덤프";
+
+        /// <summary>공백을 지운 키. 옛 이름(`고스트노트보이기`)도 계속 받습니다.</summary>
+        private const string GhostNotesKey = "공식곡에서도고스트노트보이기";
+        private const string GhostNotesLegacyKey = "고스트노트보이기";
+        private const string SpineContractKey = "스파인계약서덤프";
 
         private static void SaveDefaultConfig()
         {
@@ -162,7 +176,11 @@ namespace muse_dash_test
                 sb.AppendLine($"강제퍼펙트={forcePerfect.ToString().ToLower()}");
                 sb.AppendLine();
                 sb.AppendLine("# 고스트 노트(xx=17)가 판정선 근처에서 사라지지 않게 알파를 유지합니다. 외형은 고스트 그대로입니다.");
-                sb.AppendLine($"고스트노트보이기={showGhostNotes.ToString().ToLower()}");
+                sb.AppendLine("# 커스텀 곡은 이 값 대신 각자의 'hwa info.txt'에 적은 '커스텀 곡 고스트 노트 보이기'를 따릅니다.");
+                sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}");
+                sb.AppendLine();
+                sb.AppendLine("# 스파인 액션 계약서 덤프. 켜면 게임 루트에 'spine contract' 폴더를 만들고 액션/애니메이션 목록을 txt로 남깁니다.");
+                sb.AppendLine($"{SpineContractKeyText}={dumpSpineContract.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 MelonLogger.Msg($"[InputOverlay] 기본 설정 파일(config.txt)을 새로 생성했습니다: {configPath}");
@@ -212,6 +230,46 @@ namespace muse_dash_test
             return utf8Text;
         }
 
+        /// <summary>
+        /// 이름만 바뀐 설정 항목을 기존 파일에서 새 문구로 갈아 끼웁니다(값은 그대로 둡니다).
+        /// 옛 이름도 계속 읽히지만, 파일에 보이는 문구가 지금 뜻과 맞아야 헷갈리지 않습니다.
+        /// </summary>
+        private static void MigrateRenamedKeys()
+        {
+            try
+            {
+                if (!File.Exists(configPath)) return;
+
+                string text = ReadConfigTextRobust();
+                if (string.IsNullOrEmpty(text)) return;
+                if (!text.Contains(GhostNotesLegacyKey + "=")) return;
+
+                string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                bool changed = false;
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string trimmed = lines[i].TrimStart();
+                    if (trimmed.StartsWith("#")) continue;
+                    if (!trimmed.StartsWith(GhostNotesLegacyKey + "=")) continue;
+
+                    string value = trimmed.Substring(GhostNotesLegacyKey.Length + 1).Trim();
+                    lines[i] = $"{GhostNotesKeyText}={value}";
+                    changed = true;
+                }
+
+                if (!changed) return;
+
+                File.WriteAllText(configPath, string.Join(Environment.NewLine, lines), new UTF8Encoding(true));
+                MelonLogger.Msg($"[InputOverlay] config.txt의 '{GhostNotesLegacyKey}' 항목을 '{GhostNotesKeyText}'로 이름만 바꿔 두었습니다(값은 그대로).");
+            }
+            catch (Exception ex)
+            {
+                hasFailedToWrite = true;
+                MelonLogger.Error($"[InputOverlay] 설정 항목 이름 정리 중 예외 발생 (쓰기 시도가 중단됩니다): {ex.Message}");
+            }
+        }
+
         private static void EnsureMissingKeysAdded()
         {
             try
@@ -223,9 +281,11 @@ namespace muse_dash_test
                 bool hasBlockFever = text.Contains("피버충전금지");
                 bool hasCinema = text.Contains("시네마");
                 bool hasForcePerfect = text.Contains("강제퍼펙트");
-                bool hasShowGhostNotes = text.Contains("고스트노트보이기");
+                // 옛 이름과 새 이름(띄어쓰기 포함) 둘 다 있는 것으로 칩니다. 이름만 바뀐 항목을 중복으로 덧붙이지 않으려고요.
+                bool hasShowGhostNotes = text.Contains(GhostNotesLegacyKey) || text.Contains("고스트 노트 보이기");
+                bool hasSpineContract = text.Contains(SpineContractKey) || text.Contains("스파인 계약서 덤프");
 
-                if (!hasAutoPlay || !hasBlockFever || !hasCinema || !hasForcePerfect || !hasShowGhostNotes)
+                if (!hasAutoPlay || !hasBlockFever || !hasCinema || !hasForcePerfect || !hasShowGhostNotes || !hasSpineContract)
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine();
@@ -249,11 +309,15 @@ namespace muse_dash_test
                     }
                     if (!hasShowGhostNotes)
                     {
-                        sb.AppendLine($"고스트노트보이기={showGhostNotes.ToString().ToLower()}");
+                        sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}");
+                    }
+                    if (!hasSpineContract)
+                    {
+                        sb.AppendLine($"{SpineContractKeyText}={dumpSpineContract.ToString().ToLower()}");
                     }
 
                     File.AppendAllText(configPath, sb.ToString(), new UTF8Encoding(true));
-                    MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목(오토플레이/피버/시네마/강제퍼펙트/고스트노트보이기)을 자동 추가했습니다.");
+                    MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목(오토플레이/피버/시네마/강제퍼펙트/고스트 노트/스파인 계약서)을 자동 추가했습니다.");
                 }
             }
             catch (Exception ex)
@@ -261,6 +325,19 @@ namespace muse_dash_test
                 hasFailedToWrite = true;
                 MelonLogger.Error($"[InputOverlay] 누락된 설정 추가 중 예외 발생 (쓰기 시도가 중단됩니다): {ex.Message}");
             }
+        }
+
+        /// <summary>키 비교용. 설정 파일에서는 띄어쓰기를 자유롭게 쓰게 두고, 코드에서는 붙여 쓴 이름 하나로 봅니다.</summary>
+        private static string StripSpaces(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+
+            var sb = new StringBuilder(text.Length);
+            foreach (char c in text)
+            {
+                if (!char.IsWhiteSpace(c)) sb.Append(c);
+            }
+            return sb.ToString();
         }
 
         private static void TryParseFloat(string val, ref float target)
@@ -297,9 +374,8 @@ namespace muse_dash_test
                     string key = trimmed.Substring(0, idx).Trim();
                     string val = trimmed.Substring(idx + 1).Trim();
 
-
-
-                    switch (key.ToLower())
+                    // 키의 띄어쓰기는 무시합니다. '공식곡에서도 고스트 노트 보이기'처럼 읽기 좋게 적어도 되게.
+                    switch (StripSpaces(key).ToLower())
                     {
                         case "키가로크기":
                             TryParseFloat(val, ref keyWidth);
@@ -377,8 +453,12 @@ namespace muse_dash_test
                         case "시네마":
                             enableCinema = ParseBool(val, key, enableCinema);
                             break;
-                        case "고스트노트보이기":
+                        case GhostNotesKey:
+                        case GhostNotesLegacyKey:
                             showGhostNotes = ParseBool(val, key, showGhostNotes);
+                            break;
+                        case SpineContractKey:
+                            dumpSpineContract = ParseBool(val, key, dumpSpineContract);
                             break;
                         case "강제퍼펙트":
                         {
@@ -396,7 +476,7 @@ namespace muse_dash_test
                 // 첫 로드를 마쳤으므로, 이후의 config.txt 저장부터는 '오토플레이' 값을 그대로 반영합니다.
                 autoPlayFollowsConfig = true;
 
-                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트보이기={showGhostNotes})");
+                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 공식곡고스트노트보이기={showGhostNotes}, 스파인계약서덤프={dumpSpineContract})");
                 UpdateTextures();
             }
             catch (Exception ex)

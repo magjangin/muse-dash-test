@@ -56,6 +56,7 @@ namespace muse_dash_test
 
         private static void DumpSupplyCore(SpineActionController sac, bool requireNameFragment)
         {
+            if (!InputOverlay.dumpSpineContract) return;
             if (sac == null) return;
 
             string objName = sac.gameObject.name;
@@ -195,8 +196,14 @@ namespace muse_dash_test
             return sb.ToString();
         }
 
+        /// <summary>
+        /// 계약서 파일을 씁니다. `config.txt`의 '스파인 계약서 덤프'가 꺼져 있으면 폴더도 만들지 않고 그냥 돌아갑니다.
+        /// 폴더 생성이 여기 한 곳뿐이라, 이 게이트가 곧 'spine contract' 폴더 생성 스위치입니다.
+        /// </summary>
         public static void WriteFile(string fileName, string content)
         {
+            if (!InputOverlay.dumpSpineContract) return;
+
             try
             {
                 Directory.CreateDirectory(ContractDirectory);

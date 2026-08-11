@@ -143,6 +143,8 @@ namespace muse_dash_test
             }
 
             string normalizedKey = NormalizeManifestKey(key);
+            // '노스트'는 '노트' 오타를 그대로 받아 주는 것입니다. 안내 문구를 그대로 복사해 쓰는 경우가 많아서요.
+            if (TryApplyBool(normalizedKey, value, v => manifest.ShowGhostNotes = v, "고스트노트보이기", "고스트보이기", "노트보이기", "노스트보이기", "ghostnote")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.Album = v, "가져올앨범", "앨범", "album")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.Uid = v, "uid")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.CustomArtist = v, "커스텀아티스트", "customartist", "customauthor")) return;
@@ -171,6 +173,13 @@ namespace muse_dash_test
         {
             if (!ContainsAny(normalizedKey, tokens)) return false;
             apply(TryParseNullableInt(value));
+            return true;
+        }
+
+        private static bool TryApplyBool(string normalizedKey, string value, Action<bool?> apply, params string[] tokens)
+        {
+            if (!ContainsAny(normalizedKey, tokens)) return false;
+            apply(TryParseNullableBool(value));
             return true;
         }
 
@@ -227,6 +236,36 @@ namespace muse_dash_test
             return null;
         }
 
+        /// <summary>'활성화/비활성화'를 우선으로, true/false·on/off·켜기/끄기·1/0도 받습니다. 못 읽으면 null(= 전역 설정 따름).</summary>
+        internal static bool? TryParseNullableBool(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null;
+
+            switch (NormalizeManifestKey(value))
+            {
+                case "활성화":
+                case "켜기":
+                case "켜짐":
+                case "true":
+                case "on":
+                case "yes":
+                case "1":
+                    return true;
+
+                case "비활성화":
+                case "끄기":
+                case "끔":
+                case "false":
+                case "off":
+                case "no":
+                case "0":
+                    return false;
+
+                default:
+                    return null;
+            }
+        }
+
         internal static double? TryParseNullableDouble(string value)
         {
             if (string.IsNullOrWhiteSpace(value) || value.Trim().Equals("null", StringComparison.OrdinalIgnoreCase))
@@ -264,7 +303,8 @@ namespace muse_dash_test
                 + ", diff4=" + (manifest.Difficulty4.HasValue ? manifest.Difficulty4.Value.ToString() : "(null)")
                 + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString() : "(null)")
                 + ", delay=" + (manifest.Delay.HasValue ? manifest.Delay.Value.ToString("F7") : "(null)")
-                + ", offset=" + (manifest.Offset.HasValue ? manifest.Offset.Value.ToString("F7") : "(null)");
+                + ", offset=" + (manifest.Offset.HasValue ? manifest.Offset.Value.ToString("F7") : "(null)")
+                + ", showGhostNotes=" + (manifest.ShowGhostNotes.HasValue ? manifest.ShowGhostNotes.Value.ToString() : "(null)");
         }
     }
 }
