@@ -18,6 +18,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         public const int Gear = 2;
         /// <summary>롱노트(홀드). start/middle/end 체인으로 전개됨.</summary>
         public const int Long = 3;
+        /// <summary>고스트 노트(UID xx=17). 렌더러 페이드를 동반합니다.</summary>
+        public const int Ghost = 4;
         /// <summary>하트(HP) 노트. 정확도 집계상 Hearts.</summary>
         public const int Heart = 6;
         /// <summary>블루(음표) 노트. 정확도 집계상 BlueNotes.</summary>

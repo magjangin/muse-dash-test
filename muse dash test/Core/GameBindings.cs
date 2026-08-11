@@ -25,19 +25,6 @@ namespace muse_dash_test
             public const string IsFullCombo = "IsFullCombo";
         }
 
-        /// <summary>
-        /// Il2CppAssets.Scripts.GameCore.GameObjectLogics.GameObjectControl.NormalNoteVisibleController
-        /// — 노트 렌더러 페이드(고스트 노트) 컨트롤러.
-        /// </summary>
-        public static class NormalNoteVisibleController
-        {
-            /// <summary>
-            /// NoteMData 자동 프로퍼티의 세터. non-virtual public이라 후킹이 안전합니다.
-            /// (OnAppear/Init은 virtual final이라 과거 크래시 전력이 있어 피합니다.)
-            /// </summary>
-            public const string SetNoteMData = "set_NoteMData";
-        }
-
         /// <summary>Il2CppGameLogic.GameTouchPlay — 터치 판정 산출 지점(화면 표시·애니메이션·집계의 상류).</summary>
         public static class GameTouchPlay
         {

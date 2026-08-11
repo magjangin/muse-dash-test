@@ -155,6 +155,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             MelonLogger.Msg($"[ExperimentChart.Bms.SceneToggle] uid={spec.Uid}, ibms_id={spec.IbmsId ?? "(none)"}, prefab={spec.PrefabName}, tick={note.Tick}, time={note.Time:0.###}");
         }
 
+        // 고스트 노트(xx=17, type 4)는 렌더러 페이드를 동반하는 유일한 계열이라 주입 시점 상태를 남깁니다.
+        // 원본 프리팹 규칙은 {uid}_{road/air}_{up/down}_1이며, yy가 그 변형(07/10/13/16)을 정합니다.
+        // PrefabName이 비어 있으면 이후 자동 생성 규칙을 타므로, 여기서 무엇이 확정됐는지가 중요합니다.
+        if (spec.NoteType == NoteTypes.Ghost)
+        {
+            MelonLogger.Msg($"[ExperimentChart.Bms.Ghost] uid={spec.Uid}, xx={UidCode.Xx(spec.Uid) ?? "(none)"}, yy={UidCode.Yy(spec.Uid) ?? "(none)"}, " +
+                            $"prefab={(string.IsNullOrEmpty(spec.PrefabName) ? "(자동생성)" : spec.PrefabName)}, pathway={spec.Pathway}, " +
+                            $"keyAudio={spec.KeyAudio}, tick={note.Tick}, time={note.Time:0.###}, dt={spec.Dt}");
+        }
+
         return spec;
     }
 

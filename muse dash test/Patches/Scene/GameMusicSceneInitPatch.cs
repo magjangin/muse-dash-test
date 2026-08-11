@@ -64,8 +64,9 @@ public class GameMusicScene_InitTimer_Patch
         int changedCount = 0;
         var changedByOriginalZz = new SortedDictionary<string, int>();
         string activeRenderZz = initialZz;
-        
+
         muse_dash_test.SceneZzTransformTracker.Clear();
+        loggedGhostUids.Clear();
 
         for (int i = 0; i < list.Count; i++)
         {
@@ -74,17 +75,45 @@ public class GameMusicScene_InitTimer_Patch
                 var note = list[i];
                 if (note == null || note.noteData == null) continue;
 
+                string beforeUid = note.noteData.uid;
+                string beforePrefab = note.noteData.prefab_name;
+
                 if (ProcessSingleNote(note, i, ref activeRenderZz, changedByOriginalZz))
                 {
                     list[i] = note;
                     changedCount++;
                 }
+
+                LogGhostNoteIfNeeded(note, beforeUid, beforePrefab);
             }
             catch (Exception) { }
         }
 
         LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {ScenePatchHelpers.FormatZzCounts(changedByOriginalZz)}");
         return changedCount;
+    }
+
+    private static readonly HashSet<string> loggedGhostUids = new HashSet<string>();
+
+    /// <summary>
+    /// 고스트 노트(xx=17)의 zz 변형 전후 상태를 UID당 한 번 남깁니다.
+    /// 이 계열만 렌더러 페이드를 동반하므로, 변형이 프리팹명을 어디로 옮겼는지가 페이드 성패를 가릅니다.
+    /// 원본 프리팹 규칙은 {uid}_{road/air}_{up/down}_1이며 yy가 그 변형(07/10/13/16)을 정합니다.
+    /// </summary>
+    private static void LogGhostNoteIfNeeded(Il2CppGameLogic.MusicData note, string beforeUid, string beforePrefab)
+    {
+        try
+        {
+            if (!ScenePatchHelpers.IsSixDigitUid(beforeUid)) return;
+            if (beforeUid.Substring(2, 2) != "17") return;
+            if (!loggedGhostUids.Add(beforeUid)) return;
+
+            var nd = note.noteData;
+            MelonLogger.Msg($"[GameMusicScene.InitTimer.Ghost] uid {beforeUid} -> {nd.uid ?? "(null)"}, " +
+                            $"prefab {beforePrefab ?? "(null)"} -> {nd.prefab_name ?? "(null)"}, scene={nd.scene ?? "(null)"}, " +
+                            $"type={nd.type}, pathway={nd.pathway}, tick={note.tick}, showTick={note.showTick}, dt={note.dt}");
+        }
+        catch (Exception) { }
     }
 
     /// <summary>
