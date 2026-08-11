@@ -5,6 +5,7 @@ using System.Text;
 using HarmonyLib;
 using Il2Cpp;
 using Il2CppAssets.Scripts.GameCore.Managers;
+using Il2CppGameCore.GameObjectLogics.GameObjectControl.MutiGirlController;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -245,16 +246,21 @@ namespace muse_dash_test
             }
         }
 
-        public static string SafeName(SpineActionController sac)
+        public static string SafeName(UnityEngine.Component comp)
         {
             try
             {
-                return sac != null ? sac.gameObject.name : "(null)";
+                return comp != null && comp.gameObject != null ? comp.gameObject.name : "(null)";
             }
             catch (Exception)
             {
                 return "(이름 실패)";
             }
+        }
+
+        public static string SafeName(SpineActionController sac)
+        {
+            return SafeName((UnityEngine.Component)sac);
         }
 
         private static void FlushDemand()
@@ -357,23 +363,57 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(AbstractGirlManager), nameof(AbstractGirlManager.AttacksWithoutExchange))]
-    internal static class Patch_SpineContract_Attacks
+    [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.OnControllerAttacked))]
+    internal static class Patch_GirlAction_OnControllerAttacked
     {
-        public static void Prefix(uint result, string actKey, int id)
+        public static void Prefix(GirlActionController __instance, int idx, bool isDouble)
         {
-            SpineActionContract.RecordDemand("AttacksWithoutExchg", $"{actKey} (result={result}, id={id})", null);
+            SpineActionContract.RecordDemand("GirlAction.Attacked", $"idx={idx}, isDouble={isDouble}", SpineActionContract.SafeName(__instance));
         }
     }
 
-    // 공급 측 덤프에는 전용 [HarmonyPatch] 클래스가 없습니다.
-    //
-    // SpineActionController.OnControllerStart 에 패치를 붙여 봤지만 Postfix 가 한 번도 실행되지
-    // 않았습니다. 진입 즉시 무조건 찍는 로그조차 나오지 않았고, 등록과 대상 해석은 정상이었습니다
-    // (PatchHealth 통과). 배틀 오브젝트에서는 OnControllerStart 자체가 호출되지 않는 것으로 보입니다
-    // — 스킨 주입도 Init 훅에서만 이루어지고 있었습니다(2026-08-11).
-    //
-    // 판별 근거: Awake 프로브는 3개 오브젝트(ghost/battle/shadow)를 잡는데 주입 로그는 2회뿐입니다.
-    // Init 과 OnControllerStart 두 훅이 모두 돌았다면 대상 오브젝트당 2회씩 찍혔어야 합니다.
-    //
+    [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.Attack))]
+    internal static class Patch_GirlAction_Attack
+    {
+        public static void Prefix(GirlActionController __instance, string actKey, uint result)
+        {
+            SpineActionContract.RecordDemand("GirlAction.Attack", $"{actKey} (result={result})", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.AttackQuick))]
+    internal static class Patch_GirlAction_AttackQuick
+    {
+        public static void Prefix(GirlActionController __instance, string actKey, uint result, int id)
+        {
+            SpineActionContract.RecordDemand("GirlAction.AttackQuick", $"{actKey} (result={result}, id={id})", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.JumpAttack))]
+    internal static class Patch_GirlAction_JumpAttack
+    {
+        public static void Prefix(GirlActionController __instance, string actKey, string animName, uint result, int id)
+        {
+            SpineActionContract.RecordDemand("GirlAction.JumpAttack", $"{actKey}, anim={animName} (result={result}, id={id})", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionMultiHits))]
+    internal static class Patch_MultiGirlAction_ActionMultiHits
+    {
+        public static void Prefix(MultiGirlActionController __instance, int hitCount)
+        {
+            SpineActionContract.RecordDemand("MultiGirlAction.Hits", $"hitCount={hitCount}", SpineActionContract.SafeName(__instance));
+        }
+    }
+
+    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionMultiHitEnd))]
+    internal static class Patch_MultiGirlAction_ActionMultiHitEnd
+    {
+        public static void Prefix(MultiGirlActionController __instance)
+        {
+            SpineActionContract.RecordDemand("MultiGirlAction.HitEnd", "End", SpineActionContract.SafeName(__instance));
+        }
+    }
 }
