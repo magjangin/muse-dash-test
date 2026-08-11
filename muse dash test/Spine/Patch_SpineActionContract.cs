@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using HarmonyLib;
 using Il2Cpp;
-using Il2CppAssets.Scripts.GameCore.Managers;
-using Il2CppGameCore.GameObjectLogics.GameObjectControl.MutiGirlController;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -13,24 +10,8 @@ using MelonLoader.Utils;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 스파인 "액션 계약서" 프로브 — 1단계(공급 측).
-    ///
-    /// 완전한 커스텀 캐릭터가 가능한지는 아래 세 목록을 맞대 보면 답이 나옵니다.
-    ///   1) 액션 정의   : 프리팹이 들고 있는 SkeletActionData 배열(<c>actionData</c>).
-    ///                    게임 액션 키(name)와 실제 애니메이션 참조(spineActionKeyIndex)의 매핑 레이어입니다.
-    ///   2) 실제 애니메이션 : 스파인 스켈레톤이 실제로 보유한 애니메이션 이름 목록.
-    ///   3) 수요        : 게임이 실제로 요청한 액션 키. ← 2단계에서 별도로 수집합니다.
-    ///
-    /// 1과 2를 나란히 보면 "게임이 부르는 이름"과 "스켈레톤이 가진 이름"이 같은지 다른지가 드러납니다.
-    /// 다르면 매핑 레이어가 실재한다는 뜻이라 커스텀 애니메이션 이름을 자유롭게 쓸 수 있습니다.
-    ///
-    /// 수요 수집(<c>TryGetSkeletActionData</c> 훅)은 이 파일에서 의도적으로 제외했습니다.
-    /// 해당 메서드는 private 이며 out 파라미터를 가지는데, IL2CPP 환경에서 이를 패치하자
-    /// 배틀 시작 직후 관리형 예외 없이 프로세스가 종료됐습니다(2026-08-11). 원인이 확정되기 전까지
-    /// 공급 측만 수집하고, 수요는 public·단순 시그니처 메서드로 따로 붙입니다.
-    ///
-    /// 이 프로브는 읽기 전용이며 게임 상태를 일절 바꾸지 않습니다.
-    /// 조사가 끝나면 이 파일은 삭제해도 무방합니다.
+    /// 스파인 "액션 계약서" 프로브 (공급 측 덤프 전용).
+    /// 배틀 캐릭터 로드 시 프리팹의 SkeletActionData 배열과 스켈레톤의 애니메이션 목록을 txt 파일로 덤프합니다.
     /// </summary>
     internal static class SpineActionContract
     {
@@ -38,28 +19,15 @@ namespace muse_dash_test
         public static readonly string ContractDirectory =
             Path.Combine(MelonEnvironment.GameRootDirectory, "spine contract");
 
-        /// <summary>
-        /// 덤프 대상을 가리는 이름 조각. 노트/적 오브젝트까지 포함하면 한 스테이지에 수백 개가 잡혀
-        /// 배틀 시작 시점에 파일 쓰기와 스켈레톤 조회가 몰리므로, 배틀 캐릭터만 남깁니다.
-        /// (기존 Patch_SkinNameProbe 와 같은 기준입니다.)
-        /// </summary>
         private const string TargetNameFragment = "battle";
-
-        /// <summary>공급 덤프는 GameObject 이름당 1회만 수행합니다(씬 재진입 시 중복 방지).</summary>
         private static readonly HashSet<string> DumpedObjects = new HashSet<string>();
-
-        /// <summary>파일 쓰기에 반복 실패할 때 로그가 폭발하지 않도록 1회만 알립니다.</summary>
         private static bool hasWarnedWriteFailure;
-
         private static readonly UTF8Encoding Utf8Bom = new UTF8Encoding(true);
 
-        /// <summary>
-        /// 배틀 캐릭터의 액션 정의 배열과 실제 스파인 애니메이션 목록을 파일로 덤프합니다.
-        /// 두 목록은 독립적으로 수집되어, 한쪽 수집이 실패해도 나머지는 기록됩니다.
-        /// </summary>
+        public static void ResetWindow() { }
+
         public static void DumpSupply(SpineActionController sac)
         {
-            // 스킨 주입 Postfix 안에서 호출되므로, 어떤 예외도 주입 경로로 새어 나가지 않게 전체를 감쌉니다.
             try
             {
                 DumpSupplyCore(sac);
@@ -94,10 +62,6 @@ namespace muse_dash_test
             MelonLogger.Msg($"[SpineContract] 공급 덤프 완료: {objName}");
         }
 
-        /// <summary>
-        /// 프리팹에 직렬화된 <c>SkeletActionData</c> 배열을 기록합니다.
-        /// 이 배열이 게임 액션 키와 실제 애니메이션 사이의 매핑 레이어입니다.
-        /// </summary>
         private static void AppendActionData(StringBuilder sb, SpineActionController sac)
         {
             sb.AppendLine("## [1] 액션 정의 (actionData: SkeletActionData[])");
@@ -123,8 +87,6 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    // actionIdx 가 이 액션이 실제로 재생하는 스파인 애니메이션 이름 목록입니다.
-                    // 게임 액션 키(name)와 애니메이션 이름을 잇는 매핑이 여기에 들어 있습니다.
                     sb.AppendLine($"  [{i,3}] name=\"{d.name}\" → [{JoinStrings(d.actionIdx)}]");
                     sb.AppendLine(
                         $"        spineActionKeyIndex={d.spineActionKeyIndex}" +
@@ -142,10 +104,6 @@ namespace muse_dash_test
             }
         }
 
-        /// <summary>
-        /// 스켈레톤이 실제로 보유한 애니메이션 이름을 기록합니다.
-        /// 커스텀 스켈레톤이 주입된 뒤라면 여기에 커스텀 애니메이션 이름이 나옵니다.
-        /// </summary>
         private static void AppendSkeletonAnimations(StringBuilder sb, SpineActionController sac)
         {
             sb.AppendLine("## [2] 실제 스파인 애니메이션 (SkeletonData.Animations)");
@@ -165,8 +123,6 @@ namespace muse_dash_test
                     return;
                 }
 
-                // 인자는 quiet 플래그입니다(로딩 실패 시 로그를 남기지 않음).
-                // CustomSkinInjector 가 이미 같은 호출로 스켈레톤을 확보하고 있어 경로 자체는 검증돼 있습니다.
                 var skeletonData = asset.GetSkeletonData(true);
                 if (skeletonData == null)
                 {
@@ -195,101 +151,6 @@ namespace muse_dash_test
             {
                 sb.AppendLine($"  (수집 실패: {ex.Message})");
             }
-        }
-
-        // ───────────────────────────────── 수요 ─────────────────────────────────
-
-        private static readonly HashSet<string> SeenDemand = new HashSet<string>();
-        private static readonly List<string> DemandLines = new List<string>();
-        private static readonly HashSet<string> AliveHooks = new HashSet<string>();
-        public static bool IsMultiHitActive = false;
-
-        public static void ResetWindow()
-        {
-        }
-
-        public static void RecordDemand(string source, string key, string objName)
-        {
-            try
-            {
-                if (AliveHooks.Add(source))
-                {
-                    MelonLogger.Msg($"[SpineContract.Hook] \"{source}\" 훅 살아있음");
-                }
-
-                if (string.IsNullOrEmpty(key)) key = "(null)";
-
-                string entry = $"{source,-22} \"{key}\"" + (string.IsNullOrEmpty(objName) ? "" : $"   ← {objName}");
-                DemandLines.Add(entry);
-                MelonLogger.Msg($"[SpineContract.LIVE] {entry}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[SpineContract] 수요 기록 예외: {ex.Message}");
-            }
-        }
-
-        public static bool IsBattleObject(SpineActionController sac)
-        {
-            try
-            {
-                if (sac == null) return false;
-                string n = sac.gameObject.name;
-                return !string.IsNullOrEmpty(n)
-                    && n.IndexOf(TargetNameFragment, StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public static string SafeName(UnityEngine.Component comp)
-        {
-            try
-            {
-                return comp != null && comp.gameObject != null ? comp.gameObject.name : "(null)";
-            }
-            catch (Exception)
-            {
-                return "(이름 실패)";
-            }
-        }
-
-        public static string SafeName(GeneralGirlManager manager)
-        {
-            return "GeneralGirlManager";
-        }
-
-        public static string SafeName(AbstractGirlManager manager)
-        {
-            return manager != null ? manager.GetType().Name : "AbstractGirlManager";
-        }
-
-        public static string SafeName(SpineActionController sac)
-        {
-            return SafeName((UnityEngine.Component)sac);
-        }
-
-        private static void FlushDemand()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("# 스파인 액션 계약서 — 수요 측");
-            sb.AppendLine("# 게임이 실제로 요청한 액션 키와 애니메이션 이름입니다. 처음 등장한 순서대로 기록됩니다.");
-            sb.AppendLine("#");
-            sb.AppendLine("#   PlayByKey            : 게임이 부르는 액션 키");
-            sb.AppendLine("#   SetAnimation         : 스파인에 최종적으로 넘어간 애니메이션 이름");
-            sb.AppendLine("#   AttacksWithoutExchg  : 공격 디스패처가 넘긴 액션 키 (result/id 포함)");
-            sb.AppendLine($"#");
-            sb.AppendLine($"# 갱신 시각 : {DateTime.Now:yyyy-MM-dd HH:mm:ss}   총 {DemandLines.Count}건");
-            sb.AppendLine();
-
-            foreach (var line in DemandLines)
-            {
-                sb.AppendLine("  " + line);
-            }
-
-            WriteFile("_요청된_액션_키.txt", sb.ToString());
         }
 
         private static string JoinStrings(Il2CppStringArray array)
@@ -344,227 +205,6 @@ namespace muse_dash_test
                 sb.Append(Array.IndexOf(invalid, c) >= 0 ? '_' : c);
             }
             return sb.ToString();
-        }
-    }
-
-    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
-    internal static class Patch_SpineContract_SetAnimation
-    {
-        public static void Prefix(SpineActionController __instance, string n)
-        {
-            if (!SpineActionContract.IsBattleObject(__instance)) return;
-
-            string objName = SpineActionContract.SafeName(__instance);
-            SpineActionContract.RecordDemand("SetAnimation", n, objName);
-        }
-    }
-
-    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
-    internal static class Patch_SpineContract_PlayByKey
-    {
-        public static void Prefix(SpineActionController __instance, ref string actionKey)
-        {
-            if (!SpineActionContract.IsBattleObject(__instance)) return;
-
-            string objName = SpineActionContract.SafeName(__instance);
-
-            if (actionKey == "char_multihit_start")
-            {
-                SpineActionContract.IsMultiHitActive = true;
-                MelonLogger.Msg($"[SpineContract.MultiHit] 샌드백 연타 구간 시작 ➔ char_bighit 치환 모드 ON");
-            }
-            else if (actionKey == "char_multihit_end")
-            {
-                SpineActionContract.IsMultiHitActive = false;
-                MelonLogger.Msg($"[SpineContract.MultiHit] 샌드백 연타 구간 종료 ➔ 치환 모드 OFF");
-            }
-
-            if (SpineActionContract.IsMultiHitActive && (actionKey == "char_jumphit" || actionKey == "char_atk_p"))
-            {
-                MelonLogger.Msg($"[SpineContract.Remap] {actionKey} ➔ char_bighit 치환 적용 (double_hit 펀치 모션 구동)");
-                actionKey = "char_bighit";
-            }
-
-            SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
-        }
-    }
-
-    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeletonAnim))]
-    internal static class Patch_SpineContract_PlaySkeletonAnim
-    {
-        public static void Prefix(ref string actionKey, int idx, bool isLoop)
-        {
-            if (SpineActionContract.IsMultiHitActive && (actionKey == "char_jumphit" || actionKey == "char_atk_p"))
-            {
-                actionKey = "char_bighit";
-            }
-            SpineActionContract.RecordDemand("PlaySkeletonAnim", $"actionKey={actionKey}, idx={idx}, isLoop={isLoop}", null);
-        }
-    }
-
-    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeleton))]
-    internal static class Patch_SpineContract_PlaySkeleton
-    {
-        public static void Prefix(ref string actionKey, int idx)
-        {
-            if (SpineActionContract.IsMultiHitActive && (actionKey == "char_jumphit" || actionKey == "char_atk_p"))
-            {
-                actionKey = "char_bighit";
-            }
-            SpineActionContract.RecordDemand("PlaySkeleton", $"actionKey={actionKey}, idx={idx}", null);
-        }
-    }
-
-    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.InstanceGirl))]
-    internal static class Patch_GeneralGirl_InstanceGirl
-    {
-        public static void Prefix(GeneralGirlManager __instance)
-        {
-            SpineActionContract.RecordDemand("GeneralGirl.Instance", "InstanceGirl", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.Release))]
-    internal static class Patch_GeneralGirl_Release
-    {
-        public static void Prefix(GeneralGirlManager __instance)
-        {
-            SpineActionContract.RecordDemand("GeneralGirl.Release", "Release", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.PlayRandomHitNothingAnim))]
-    internal static class Patch_GeneralGirl_PlayRandomHitNothingAnim
-    {
-        public static void Prefix(GeneralGirlManager __instance)
-        {
-            SpineActionContract.RecordDemand("HitNothingAnim", "PlayRandomHitNothingAnim", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.PlayLongEndAnimator))]
-    internal static class Patch_GeneralGirl_PlayLongEndAnimator
-    {
-        public static void Prefix(GeneralGirlManager __instance, bool isAir)
-        {
-            SpineActionContract.RecordDemand("GeneralGirl.LongEnd", $"isAir={isAir}", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.Hurt))]
-    internal static class Patch_GeneralGirl_Hurt
-    {
-        public static void Prefix(GeneralGirlManager __instance)
-        {
-            SpineActionContract.RecordDemand("GirlManager.Hurt", "Hurt", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(GeneralGirlManager), nameof(GeneralGirlManager.Dead))]
-    internal static class Patch_GeneralGirl_Dead
-    {
-        public static void Prefix(GeneralGirlManager __instance)
-        {
-            SpineActionContract.RecordDemand("GirlManager.Dead", "Dead", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.Attack))]
-    internal static class Patch_GirlAction_Attack
-    {
-        public static void Prefix(GirlActionController __instance, string actKey, uint result)
-        {
-            SpineActionContract.RecordDemand("GirlAction.Attack", $"{actKey} (result={result})", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.AttackQuick))]
-    internal static class Patch_GirlAction_AttackQuick
-    {
-        public static void Prefix(GirlActionController __instance, string actKey, uint result, int id)
-        {
-            SpineActionContract.RecordDemand("GirlAction.AttackQuick", $"{actKey} (result={result}, id={id})", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionMultiHits))]
-    internal static class Patch_MultiGirlAction_ActionMultiHits
-    {
-        public static void Prefix(MultiGirlActionController __instance, int hitCount)
-        {
-            SpineActionContract.RecordDemand("MultiGirlAction.Hits", $"hitCount={hitCount}", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionMultiHitEnd))]
-    internal static class Patch_MultiGirlAction_ActionMultiHitEnd
-    {
-        public static void Prefix(MultiGirlActionController __instance)
-        {
-            SpineActionContract.RecordDemand("MultiGirlAction.HitEnd", "End", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionAttack))]
-    internal static class Patch_MultiGirlAction_ActionAttack
-    {
-        public static void Prefix(MultiGirlActionController __instance, string actKey, uint result, int id)
-        {
-            SpineActionContract.RecordDemand("MultiGirlAction.Attack", $"{actKey} (result={result}, id={id})", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionEmptyAttack))]
-    internal static class Patch_MultiGirlAction_ActionEmptyAttack
-    {
-        public static void Prefix(MultiGirlActionController __instance, string actKey)
-        {
-            SpineActionContract.RecordDemand("MultiGirlAction.EmptyAtk", $"{actKey}", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlActionController), nameof(MultiGirlActionController.ActionDoubleAttack))]
-    internal static class Patch_MultiGirlAction_ActionDoubleAttack
-    {
-        public static void Prefix(MultiGirlActionController __instance, string mainSpineActionState, uint result)
-        {
-            SpineActionContract.RecordDemand("MultiGirlAction.DoubleAtk", $"{mainSpineActionState} (result={result})", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateMultiHits))]
-    internal static class Patch_MultiGirlState_StateMultiHits
-    {
-        public static void Prefix(MultiGirlStateController __instance, int hitCounts)
-        {
-            SpineActionContract.RecordDemand("MultiGirlState.MultiHits", $"hitCounts={hitCounts}", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateMultiHitEnd))]
-    internal static class Patch_MultiGirlState_StateMultiHitEnd
-    {
-        public static void Prefix(MultiGirlStateController __instance)
-        {
-            SpineActionContract.RecordDemand("MultiGirlState.MultiHitEnd", "End", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateEmptyAttack))]
-    internal static class Patch_MultiGirlState_StateEmptyAttack
-    {
-        public static void Prefix(MultiGirlStateController __instance, string actionKey)
-        {
-            SpineActionContract.RecordDemand("MultiGirlState.EmptyAtk", $"{actionKey}", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(MultiGirlStateController), nameof(MultiGirlStateController.StateAttack))]
-    internal static class Patch_MultiGirlState_StateAttack
-    {
-        public static void Prefix(MultiGirlStateController __instance, string actKey, uint noteResult, int noteIdx)
-        {
-            SpineActionContract.RecordDemand("MultiGirlState.Attack", $"{actKey} (result={noteResult}, idx={noteIdx})", SpineActionContract.SafeName(__instance));
         }
     }
 }
