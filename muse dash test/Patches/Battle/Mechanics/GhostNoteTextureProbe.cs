@@ -89,21 +89,40 @@ namespace muse_dash_test
             }
 
             string attachmentName = Safe(() => attachment.Name);
+
+            // 노트 부위는 RegionAttachment(사각 스프라이트)와 MeshAttachment(변형 가능한 메시)가 섞여 있습니다.
+            // 둘 다 RendererObject로 같은 AtlasRegion을 가리키므로, 틴트만 각자에서 읽고 이후는 똑같이 처리합니다.
+            Il2CppSystem.Object rendererObject = null;
+            string kind = null;
+            string tint = null;
+
             var region = attachment.TryCast<Il2CppSpine.RegionAttachment>();
-            if (region == null)
+            if (region != null)
             {
-                MelonLogger.Msg($"{Tag} 슬롯 #{index} \"{slotName}\" — 어태치먼트 \"{attachmentName}\"가 RegionAttachment가 아닙니다(메시일 수 있습니다).");
+                kind = "Region";
+                tint = $"({region.r:F3},{region.g:F3},{region.b:F3},{region.a:F3})";
+                rendererObject = Safe(() => region.RendererObject, null);
+            }
+            else
+            {
+                var mesh = attachment.TryCast<Il2CppSpine.MeshAttachment>();
+                if (mesh != null)
+                {
+                    kind = "Mesh";
+                    tint = $"({mesh.r:F3},{mesh.g:F3},{mesh.b:F3},{mesh.a:F3})";
+                    rendererObject = Safe(() => mesh.RendererObject, null);
+                }
+            }
+
+            if (kind == null)
+            {
+                MelonLogger.Msg($"{Tag} 슬롯 #{index} \"{slotName}\" — 어태치먼트 \"{attachmentName}\"는 Region도 Mesh도 아닙니다(그림이 없는 종류).");
                 return;
             }
 
-            MelonLogger.Msg($"{Tag} 슬롯 #{index} \"{slotName}\" ← 어태치먼트 \"{attachmentName}\" " +
-                            $"틴트 rgba=({region.r:F3},{region.g:F3},{region.b:F3},{region.a:F3}) " +
-                            $"크기 {region.width:F0}×{region.height:F0}");
+            MelonLogger.Msg($"{Tag} 슬롯 #{index} \"{slotName}\" ← {kind} 어태치먼트 \"{attachmentName}\" 틴트 rgba={tint}");
 
-            var atlasRegion = Safe(() => region.RendererObject != null
-                ? region.RendererObject.TryCast<Il2CppSpine.AtlasRegion>()
-                : null, null);
-
+            var atlasRegion = rendererObject != null ? rendererObject.TryCast<Il2CppSpine.AtlasRegion>() : null;
             if (atlasRegion == null)
             {
                 MelonLogger.Msg($"{Tag}    아틀라스 영역을 얻지 못했습니다.");
@@ -159,7 +178,7 @@ namespace muse_dash_test
             }
 
             int stride = Math.Max(1, pixels.Length / SampleBudget);
-            var weights = new Dictionary<int, float>();
+            var buckets = new Dictionary<int, ColorBucket>();
             float sumR = 0f, sumG = 0f, sumB = 0f, sumWeight = 0f;
             int solid = 0;
             int sampled = 0;
@@ -178,9 +197,17 @@ namespace muse_dash_test
                 sumB += pixel.b * pixel.a;
                 sumWeight += pixel.a;
 
+                // 칸으로 뭉쳐서 세되, 보고는 그 칸에 들어온 실제 픽셀의 평균으로 합니다(칸 중앙값은 최대 4/255 어긋납니다).
                 int key = Bucket(pixel.r) * ColorBuckets * ColorBuckets + Bucket(pixel.g) * ColorBuckets + Bucket(pixel.b);
-                weights.TryGetValue(key, out float w);
-                weights[key] = w + pixel.a;
+                if (!buckets.TryGetValue(key, out var bucket))
+                {
+                    bucket = new ColorBucket();
+                    buckets[key] = bucket;
+                }
+                bucket.Weight += pixel.a;
+                bucket.SumR += pixel.r * pixel.a;
+                bucket.SumG += pixel.g * pixel.a;
+                bucket.SumB += pixel.b * pixel.a;
             }
 
             if (solid == 0 || sumWeight <= 0f)
@@ -193,26 +220,35 @@ namespace muse_dash_test
             MelonLogger.Msg($"{Tag}    평균색 {Hex(avgR, avgG, avgB)} rgb=({avgR:F3},{avgG:F3},{avgB:F3}) " +
                             $"— 불투명 픽셀 {solid}/{sampled}개({solid * 100f / sampled:F1}%)" +
                             (stride > 1 ? $", {stride}픽셀마다 표본" : string.Empty));
-            MelonLogger.Msg($"{Tag}    대표색 {TopColorsText(weights, sumWeight)}");
+            MelonLogger.Msg($"{Tag}    대표색 {TopColorsText(buckets, sumWeight)}");
 
             WriteRegionPng(pixels, packedWidth, packedHeight, slotName);
         }
 
-        private static string TopColorsText(Dictionary<int, float> weights, float total)
+        private static string TopColorsText(Dictionary<int, ColorBucket> buckets, float total)
         {
-            var top = new List<KeyValuePair<int, float>>(weights);
-            top.Sort((a, b) => b.Value.CompareTo(a.Value));
+            var top = new List<ColorBucket>(buckets.Values);
+            top.Sort((a, b) => b.Weight.CompareTo(a.Weight));
 
             var parts = new List<string>();
             for (int i = 0; i < top.Count && i < TopColors; i++)
             {
-                int key = top[i].Key;
-                float r = Center(key / (ColorBuckets * ColorBuckets));
-                float g = Center(key / ColorBuckets % ColorBuckets);
-                float b = Center(key % ColorBuckets);
-                parts.Add($"{Hex(r, g, b)} {top[i].Value * 100f / total:F1}%");
+                var bucket = top[i];
+                float r = bucket.SumR / bucket.Weight;
+                float g = bucket.SumG / bucket.Weight;
+                float b = bucket.SumB / bucket.Weight;
+                parts.Add($"{Hex(r, g, b)} {bucket.Weight * 100f / total:F1}%");
             }
             return string.Join(", ", parts);
+        }
+
+        /// <summary>비슷한 색끼리 뭉쳐 세는 칸 하나. 합을 들고 있다가 마지막에 평균을 냅니다.</summary>
+        private sealed class ColorBucket
+        {
+            internal float Weight;
+            internal float SumR;
+            internal float SumG;
+            internal float SumB;
         }
 
         private static void WriteRegionPng(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<Color> pixels,
@@ -337,8 +373,6 @@ namespace muse_dash_test
             int bucket = (int)(Math.Max(0f, Math.Min(0.999f, value)) * ColorBuckets);
             return bucket < 0 ? 0 : (bucket >= ColorBuckets ? ColorBuckets - 1 : bucket);
         }
-
-        private static float Center(int bucket) => (bucket + 0.5f) / ColorBuckets;
 
         private static string Hex(float r, float g, float b) => $"#{Channel(r):X2}{Channel(g):X2}{Channel(b):X2}";
 
