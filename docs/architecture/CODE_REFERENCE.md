@@ -95,6 +95,7 @@ MelonLoader 모드 진입점 클래스입니다.
 * **원인은 C# 코드가 아니라 Spine 애니메이션 데이터입니다.** 액션 계약서상 고스트 노트의 액션은 세 개뿐이고(`in`→`in_nor_44`, `note_out_g`→`out_g`, `note_out_p`→`out_p`), 비행 1.5초(`dt=1.48`) 동안 재생되는 것은 `in_nor_44` 하나입니다. 그 애니메이션이 알파를 깎습니다.
 * **`SpineActionController.PlayByKey`(Postfix)** 에서 `in`이 재생된 직후, 현재 애니메이션의 타임라인을 훑어 `ColorTimeline`/`TwoColorTimeline`의 **알파 키만 `1`로 덮어씁니다**(`frames`는 `[time,r,g,b,a]` 5칸 단위, TwoColor는 8칸). 이동·스케일·회전 타임라인은 손대지 않으므로 등장 모션은 원본 그대로입니다. 실측: 타임라인 89개 중 컬러 8개, 알파 키 24개.
 * `SkeletonData`는 같은 에셋을 쓰는 모든 노트가 공유하므로 애니메이션 이름당 1회만 처리합니다.
+* **덮어쓰기 직전에 원본을 통째로 찍습니다**([GhostNoteAlphaHold.Diagnostics.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/GhostNoteAlphaHold.Diagnostics.cs)). 슬롯 이름·키별 `time,r,g,b,a`·커브 종류(linear/stepped/bezier)·알파가 내려가기 시작하는 시각, 그리고 `[time,r,g,b,a]` 해석이 맞는지 세 가지 검증(배열 길이 ÷ 5, 런타임 `FrameCount`와 대조, 시간열 단조증가+값 0~1)이 남습니다. 콘솔에는 요약과 알파가 실제로 내려가는 타임라인만, `raw float`까지 담은 전체 표는 게임 루트의 `spine contract/ghost_alpha_<애니메이션>.txt`에 씁니다. 덮어쓴 뒤에는 같은 배열을 다시 읽어 1로 남았는지 검증 한 줄을 더 찍습니다.
 * **막다른 길 기록**(같은 곳을 다시 파지 않기 위해):
   * `SetAlpha(float)`, `SpineActionController.OnNoteDisappear`, `BaseEnemyObjectController.NoteDisappearLogic` — 셋 다 고스트 노트에 대해 **한 번도 호출되지 않았습니다.**
   * 애니메이션을 `standby`로 통째 교체하면 노트가 화면 중앙에 멈춥니다. **비행 이동도 `in_nor_44`가 갖고 있습니다.**
