@@ -5,18 +5,18 @@ using Il2CppPeroPeroGames.GlobalDefines;
 namespace muse_dash_test
 {
     // === 판정 강제 퍼펙트 패치 (설정 파일 연동) ===
-    // config.txt의 '강제퍼펙트=true'이면 게임에 기록되는 판정 결과를 Perfect로 승격시킵니다.
-    // 오토플레이(DBSkill.SetAutoPlay)와는 완전히 별개입니다. 입력은 그대로 사람이 하고,
-    // 노트를 실제로 치는 타이밍도 그대로이며, "기록되는 판정 값"만 바뀝니다.
+    // config.txt의 '강제퍼펙트=true'이면 친 노트의 판정을 Perfect로 승격시킵니다.
+    // 오토플레이(DBSkill.SetAutoPlay)와는 완전히 별개입니다. 입력도 타이밍도 그대로 사람이 하고,
+    // 산출된 판정 값만 바뀝니다.
     //
-    // 판정 값을 상류에서 한 번, 하류에서 두 번 덮어씁니다.
-    //   - GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)         : [상류] 터치 판정 산출 직후.
-    //       여기서 바꾸면 판정 표시(ShowPlayResult), 캐릭터 액션(GirlActionController.Attack(actKey, result)),
-    //       집계까지 전부 같은 값을 보게 되므로 "화면엔 GREAT, 기록만 Perfect"가 생기지 않습니다.
-    //   - TaskStageTarget.SetPlayResult(int idx, uint result, bool isMulEnd)                : [하류] 판정 집계(Perfect/Great/Miss 카운터) 쪽
-    //   - BattleEnemyManager.SetPlayResult(int idx, byte result, bool, bool, bool)          : [하류] 노트별 결과 저장 쪽
-    // 하류 두 개는 TouchResult를 거치지 않는 경로(완전 미스, 롱노트 종료 등)를 위한 안전망입니다.
-    // 상류에서 이미 승격된 값이 내려오면 하류 패치는 조건에 걸리지 않아 그냥 통과합니다.
+    // 개입 지점은 하나입니다.
+    //   GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...) - 터치 판정 산출 직후.
+    //   이 값이 판정 표시(ShowPlayResult), 캐릭터 액션(GirlActionController.Attack(actKey, result)),
+    //   집계(TaskStageTarget)로 함께 흘러가므로 화면과 기록이 어긋나지 않습니다.
+    //
+    // 안 친 노트(미스)는 이 경로를 타지 않으므로 손대지 않습니다. 미스는 화면·체력·기록 모두
+    // 순정 그대로 동작합니다. (미스까지 다루려면 BattleEnemyManager.SetPlayResult 승격,
+    // 미스 페널티 차단, 집계 등록이 함께 필요하며 그 실험 기록은 git 히스토리에 남아 있습니다.)
 
     /// <summary>
     /// 판정 승격 규칙과 적용 통계를 담는 공용 상태입니다.
@@ -29,23 +29,12 @@ namespace muse_dash_test
         private const double SummaryIntervalSeconds = 10.0;
 
         private static readonly int[] promotedByOrigin = new int[7];
-        // 어느 훅에서 승격이 일어났는지 셉니다. 상류(TouchResult)만 카운트가 오르면 화면 표시까지
-        // 함께 바뀐 것이고, 하류(SetPlayResult) 카운트가 오르면 상류를 거치지 않은 경로가 있다는 뜻입니다.
-        private static readonly System.Collections.Generic.Dictionary<string, int> promotedBySource =
-            new System.Collections.Generic.Dictionary<string, int>();
+        private static int promotedTotal;
         private static DateTime lastSummaryTime = DateTime.MinValue;
         private static bool pendingSummary;
         private static bool announced;
 
         internal static bool Enabled => InputOverlay.forcePerfect;
-
-        private static int aggregateCalls;
-
-        /// <summary>집계 진입점(TaskStageTarget.SetPlayResult)이 실제로 몇 번 불렸는지 셉니다.</summary>
-        internal static void CountAggregateCall()
-        {
-            aggregateCalls++;
-        }
 
         /// <summary>
         /// Perfect로 승격할 판정인지 판단합니다. 실제 "타격 판정"인 Miss/Cool/Great만 대상입니다.
@@ -65,8 +54,7 @@ namespace muse_dash_test
             {
                 promotedByOrigin[original]++;
             }
-            promotedBySource.TryGetValue(source, out int sourceCount);
-            promotedBySource[source] = sourceCount + 1;
+            promotedTotal++;
             pendingSummary = true;
 
             if (!announced)
@@ -97,16 +85,9 @@ namespace muse_dash_test
             if (!pendingSummary) return;
             pendingSummary = false;
 
-            var sources = new System.Text.StringBuilder();
-            foreach (var entry in promotedBySource)
-            {
-                if (sources.Length > 0) sources.Append(", ");
-                sources.Append($"{entry.Key}={entry.Value}");
-            }
-
             MelonLogger.Msg($"[ForcePerfect] 누적 승격 현황: Miss={promotedByOrigin[(int)TaskResult.Miss]}, " +
                             $"Cool={promotedByOrigin[(int)TaskResult.Cool]}, Great={promotedByOrigin[(int)TaskResult.Great]} " +
-                            $"| 훅별: {sources} | 집계 진입 호출 {aggregateCalls}회, 미스 등록 {MissRegistration.RegisteredCount}회");
+                            $"| 훅별: GameTouchPlay.TouchResult={promotedTotal}");
         }
 
         internal static string Describe(uint result)
@@ -127,7 +108,6 @@ namespace muse_dash_test
 
     /// <summary>
     /// 터치 판정이 산출된 직후, 화면 표시·캐릭터 액션·집계로 흩어지기 전에 결과 값을 Perfect로 덮어씁니다.
-    /// 인게임 판정 표시까지 Perfect로 바꾸는 것은 이 지점입니다.
     /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameTouchPlay), GameBindings.GameTouchPlay.TouchResult)]
     public class GameTouchPlay_TouchResult_ForcePerfect_Patch
@@ -147,104 +127,6 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 MelonLogger.Error($"[GameTouchPlay.TouchResult.Prefix] 판정 강제 중 예외 발생: {ex}");
-            }
-        }
-    }
-
-    /// <summary>판정 집계 진입점에서 결과 값을 Perfect로 덮어씁니다. (상류를 거치지 않은 경로용 안전망)</summary>
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.SetPlayResult)]
-    public class TaskStageTarget_SetPlayResult_ForcePerfect_Patch
-    {
-        public static void Prefix(int idx, ref uint result)
-        {
-            try
-            {
-                if (!ForcePerfectState.Enabled) return;
-
-                // 승격 여부와 무관하게 호출 횟수를 셉니다. 안 친 노트가 이 경로를 타지 않는다는
-                // 관찰을 계속 검증하기 위한 대조군입니다.
-                ForcePerfectState.CountAggregateCall();
-
-                uint original = result;
-                if (!ForcePerfectState.ShouldPromote(original)) return;
-
-                result = ForcePerfectState.Perfect;
-                ForcePerfectState.Record("TaskStageTarget.SetPlayResult", idx, original);
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[TaskStageTarget.SetPlayResult.Prefix] 판정 강제 중 예외 발생: {ex}");
-            }
-        }
-    }
-
-    /// <summary>노트별 결과 저장소에서도 같은 값으로 덮어씁니다.</summary>
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.BattleEnemyManager), GameBindings.BattleEnemyManager.SetPlayResult)]
-    public class BattleEnemyManager_SetPlayResult_ForcePerfect_Patch
-    {
-        public static void Prefix(int idx, ref byte result)
-        {
-            try
-            {
-                if (!ForcePerfectState.Enabled) return;
-
-                uint original = result;
-                if (!ForcePerfectState.ShouldPromote(original)) return;
-
-                result = (byte)ForcePerfectState.Perfect;
-                ForcePerfectState.Record("BattleEnemyManager.SetPlayResult", idx, original);
-
-                // 안 친 노트는 집계 진입점(TaskStageTarget.SetPlayResult)을 아예 거치지 않아
-                // 카운터가 오르지 않습니다. 그대로 두면 결과창이 "나머지"로 계산해 MISS로 표시하므로
-                // 여기서 한 번 대신 등록해 줍니다.
-                if (original == (uint)TaskResult.Miss)
-                {
-                    MissRegistration.RegisterAsPerfect(idx);
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[BattleEnemyManager.SetPlayResult.Prefix] 판정 강제 중 예외 발생: {ex}");
-            }
-        }
-    }
-
-    // --- 아래 두 개는 관찰 전용(값 변경 없음) 프로브입니다 ---
-    // SetPlayResult를 덮어써도 Miss 카운터가 따로 올라가면 m_MissResult != 0 이 되어 AP 조건이 깨집니다.
-    // 강제퍼펙트가 켜진 동안에만 로그를 남겨, 미스 경로가 여전히 살아 있는지 한 판 돌려보면 알 수 있게 합니다.
-
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.AddMiss)]
-    public class TaskStageTarget_AddMiss_ForcePerfectProbe_Patch
-    {
-        public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, int value)
-        {
-            try
-            {
-                if (!ForcePerfectState.Enabled || __instance == null) return;
-                MelonLogger.Msg($"[ForcePerfect.Probe] AddMiss(value={value}) 호출됨 - 판정 강제와 별개로 미스 카운터가 올라갔습니다. " +
-                                $"m_MissResult={__instance.m_MissResult}, m_GreatResult={__instance.m_GreatResult}, m_MissCombo={__instance.m_MissCombo}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[TaskStageTarget.AddMiss.Postfix] 프로브 예외 발생: {ex}");
-            }
-        }
-    }
-
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.TriggerNoteMiss)]
-    public class TaskStageTarget_TriggerNoteMiss_ForcePerfectProbe_Patch
-    {
-        public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance)
-        {
-            try
-            {
-                if (!ForcePerfectState.Enabled || __instance == null) return;
-                MelonLogger.Msg($"[ForcePerfect.Probe] TriggerNoteMiss 호출됨 - 노트 미스 경로가 살아 있습니다. " +
-                                $"m_MissResult={__instance.m_MissResult}, m_MissCombo={__instance.m_MissCombo}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[TaskStageTarget.TriggerNoteMiss.Postfix] 프로브 예외 발생: {ex}");
             }
         }
     }

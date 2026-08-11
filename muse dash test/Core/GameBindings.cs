@@ -23,18 +23,6 @@ namespace muse_dash_test
             public const string GetTrueAccuracy = "GetTrueAccuracy";
             public const string GetTrueAccuracyNew = "GetTrueAccuracyNew";
             public const string IsFullCombo = "IsFullCombo";
-
-            /// <summary>SetPlayResult(int idx, uint result, bool isMulEnd) — 판정 결과 집계 진입점.</summary>
-            public const string SetPlayResult = "SetPlayResult";
-            public const string AddMiss = "AddMiss";
-            public const string TriggerNoteMiss = "TriggerNoteMiss";
-        }
-
-        /// <summary>Il2CppAssets.Scripts.GameCore.HostComponent.BattleEnemyManager — 노트별 판정 결과 저장소.</summary>
-        public static class BattleEnemyManager
-        {
-            /// <summary>SetPlayResult(int idx, byte result, bool isMulStart, bool isMulEnd, bool isLeft).</summary>
-            public const string SetPlayResult = "SetPlayResult";
         }
 
         /// <summary>Il2CppGameLogic.GameTouchPlay — 터치 판정 산출 지점(화면 표시·애니메이션·집계의 상류).</summary>
@@ -42,27 +30,6 @@ namespace muse_dash_test
         {
             /// <summary>TouchResult(int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill).</summary>
             public const string TouchResult = "TouchResult";
-        }
-
-        /// <summary>Il2CppFormulaBase.StageBattleComponent — 배틀 진행 제어.</summary>
-        public static class StageBattleComponent
-        {
-            public const string GameStart = "GameStart";
-        }
-
-        /// <summary>Il2CppGameLogic.GameMissPlay — 안 친 노트의 미스 처리 지점.</summary>
-        public static class GameMissPlay
-        {
-            /// <summary>MissCube(int idx, Il2CppSystem.Decimal currentTick) → 미스로 처리했는지 여부.</summary>
-            public const string MissCube = "MissCube";
-        }
-
-        /// <summary>Il2CppAssets.Scripts.GameCore.HostComponent.BattleRoleAttributeComponent — 플레이어 체력/피격.</summary>
-        public static class BattleRoleAttributeComponent
-        {
-            public const string Miss = "Miss";
-            /// <summary>Hurt(int hurtValue, bool isAir).</summary>
-            public const string Hurt = "Hurt";
         }
 
         /// <summary>Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager — 인게임 풀콤보/승리 2D 배너.</summary>

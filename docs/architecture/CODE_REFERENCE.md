@@ -74,28 +74,20 @@ MelonLoader 모드 진입점 클래스입니다.
 * **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹해, 전달된 인자를 설정값(`InputOverlay.forceAutoPlay`)으로 덮어씁니다. 모드 로드 직후에는 항상 오토가 꺼진 상태로 시작하며(첫 설정 로드에서는 `config.txt`의 `오토플레이=true`를 무시), 게임 도중 `config.txt`를 저장하면 그때부터 파일 값이 그대로 적용됩니다.
 
 ### 📂 [Battle/Mechanics/ForcePerfectPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.cs)
-`config.txt`의 `강제퍼펙트=true`일 때 **기록되는 판정 값만** Perfect로 승격시키는 패치입니다. 오토플레이(입력 대행)와는 무관하며, 노트 입력과 타이밍은 그대로 사람이 칩니다.
-* **`GameTouchPlay_TouchResult_ForcePerfect_Patch` (Prefix, 상류)**: 터치 판정이 산출된 직후인 `GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)`의 `resultCode`를 `TaskResult.Prefect`로 덮어씁니다. 이 값이 판정 표시(`GameTouchPlay.ShowPlayResult`), 캐릭터 액션(`GirlActionController.Attack(actKey, result)`), 집계로 함께 흘러가므로 **인게임 판정 표시까지 Perfect로 바뀝니다**.
-* **`TaskStageTarget_SetPlayResult_ForcePerfect_Patch` & `BattleEnemyManager_SetPlayResult_ForcePerfect_Patch` (Prefix, 하류 안전망)**: 집계 진입점(`TaskStageTarget.SetPlayResult(int idx, uint result, bool isMulEnd)`)과 노트별 결과 저장소(`BattleEnemyManager.SetPlayResult(int idx, byte result, ...)`)에도 같은 값을 씁니다. 완전 미스(`GameMissPlay.MissCube`)나 롱노트 종료처럼 `TouchResult`를 거치지 않는 경로를 잡기 위한 것이며, 상류에서 이미 승격된 값은 조건에 걸리지 않아 그대로 통과합니다.
-* **훅별 카운트 로그**: `[ForcePerfect] 누적 승격 현황: ... | 훅별: ...`에 어느 훅에서 승격이 일어났는지 함께 남습니다. 상류만 오르면 화면 표시까지 일치한 것이고, 하류 카운트가 오르면 `TouchResult`를 거치지 않는 경로가 남아 있다는 뜻입니다. 실측 결과 **친 노트(Great)는 전부 `TouchResult`, 안 친 노트(Miss)는 전부 `BattleEnemyManager.SetPlayResult`** 로 들어옵니다. 즉 안 친 노트는 기록만 승격되고 MISS 연출과 체력 감소는 그대로 남습니다.
-
-### 📂 [Battle/Mechanics/ForcePerfectPatch.MissPenalty.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.MissPenalty.cs)
-안 친 노트의 **미스 페널티(체력 감소)만** 무효화합니다. 실측으로 확인된 미스 처리 순서는 아래와 같으며 전부 같은 프레임 안에서 발생합니다.
-
-```
-TaskStageTarget.TriggerNoteMiss()           → 카운터 불변 (m_MissResult=0 유지)
-BattleRoleAttributeComponent.Miss()         → 체력 변화 없음 (연출/상태 처리로 추정)
-BattleRoleAttributeComponent.Hurt(-30, ...) → 실제 체력 감소 주체
-BattleEnemyManager.SetPlayResult(idx, Miss) → 강제퍼펙트가 Prefect로 승격
-```
-
-* **`BattleRoleAttributeComponent_Miss_MissPenalty_Patch` (Prefix)**: 체력을 건드리지 않으므로 막지 않고, 미스 반응이 시작된 프레임(`Time.frameCount`)만 표식으로 남깁니다.
-* **`BattleRoleAttributeComponent_Hurt_MissPenalty_Patch` (Prefix)**: 표식과 **같은 프레임**의 `Hurt`만 `hurtValue = 0`으로 만듭니다. 장애물 피격은 `Miss()` 없이 `Hurt`만 오므로 그대로 살아 있습니다 — 무적이 아니라 "미스 데미지만 0"입니다.
-* **검증된 오답 두 가지**(같은 실수를 반복하지 않기 위해 기록):
-  * `GameMissPlay.MissCube`는 이 경로가 **아닙니다**. 실측 세션에서 미스 3회가 나는 동안 `MissCube`는 1회 호출·미스 성립 0회였습니다.
-  * `GameGlobal.MISS_NO_CHECK_TICK`(원본 `-5`)을 `999999`로 밀어도 미스는 동일하게 발생했습니다. 이 경로는 해당 전역을 참조하지 않습니다.
+`config.txt`의 `강제퍼펙트=true`일 때 **친 노트의 판정을** Perfect로 승격시키는 패치입니다. 오토플레이(입력 대행)와는 무관하며, 노트 입력과 타이밍은 그대로 사람이 칩니다.
+* **`GameTouchPlay_TouchResult_ForcePerfect_Patch` (Prefix)**: 터치 판정이 산출된 직후인 `GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)`의 `resultCode`를 `TaskResult.Prefect`로 덮어씁니다. 이 값이 판정 표시(`GameTouchPlay.ShowPlayResult`), 캐릭터 액션(`GirlActionController.Attack(actKey, result)`), 집계로 함께 흘러가므로 **인게임 판정 표시와 기록이 어긋나지 않습니다**. 개입 지점은 이 하나뿐입니다.
 * **승격 대상 제한**: 타격 판정인 `Miss(1)`, `Cool(2)`, `Great(3)`만 `Prefect(4)`로 올립니다. `None(0)`(미판정), `JumpOver(5)`(톱니 회피), `Fever(6)`는 종류가 다른 결과이므로 그대로 두어야 정확도 분모와 톱니/피버 집계가 유지됩니다.
-* **`TaskStageTarget_AddMiss_ForcePerfectProbe_Patch` & `TriggerNoteMiss` 프로브 (Postfix, 관찰 전용)**: 값을 바꾸지 않고 로그만 남깁니다. 판정을 덮어써도 미스 카운터(`m_MissResult`, `m_MissCombo`)가 별도 경로로 올라가면 올 퍼펙트 조건이 깨지므로, 강제퍼펙트가 켜진 동안 해당 경로가 여전히 호출되는지 `[ForcePerfect.Probe]` 로그로 확인합니다.
+* **안 친 노트(미스)는 손대지 않습니다.** 미스는 화면·체력·기록 모두 순정 그대로입니다.
+
+#### 미스까지 다룰 때를 위한 실측 기록
+안 친 노트를 퍼펙트로 만들려는 시도에서 확인된 사실들입니다. 관련 코드는 되돌렸으므로(커밋 `59e92a3`까지) 다시 붙일 때 아래를 출발점으로 삼으면 됩니다.
+
+* **경로 분기**: 친 노트는 전부 `GameTouchPlay.TouchResult`, 안 친 노트는 전부 `BattleEnemyManager.SetPlayResult`로 들어옵니다. 안 친 노트는 집계 진입점(`TaskStageTarget.SetPlayResult`)을 **아예 거치지 않습니다**.
+* **결과창의 MISS는 파생값**입니다. 실측에서 `m_MissResult=0`인데도 결과창에 MISS 223이 떴고, 총 노트 412 − Perfect 189 = 223으로 정확히 일치했습니다. 즉 카운터에 잡히지 않은 노트가 전부 MISS로 표시됩니다.
+* **미스 처리 순서**(전부 같은 프레임): `TriggerNoteMiss()` → `BattleRoleAttributeComponent.Miss()`(체력 불변, MISS 연출 담당) → `Hurt(-30, isAir)`(실제 체력 감소) → `BattleEnemyManager.SetPlayResult(idx, Miss)`.
+* **`Hurt`는 값을 0으로 넘겨도 최소 1 데미지로 클램프**합니다. 막으려면 호출 자체를 건너뛰어야 합니다.
+* **미스 전부가 데미지를 주지는 않습니다**: 미스 223회 중 `Hurt`는 107회만 왔습니다(`BattleProperty.missHardTime` 무적 구간으로 추정).
+* **검증된 오답 두 가지**: `GameMissPlay.MissCube`는 이 경로가 **아닙니다**(미스 3회 동안 호출 1회·미스 성립 0회). `GameGlobal.MISS_NO_CHECK_TICK`(원본 `-5`)을 `999999`로 밀어도 미스는 동일하게 발생합니다.
 
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.
