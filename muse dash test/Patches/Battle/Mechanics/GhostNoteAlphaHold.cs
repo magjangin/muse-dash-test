@@ -121,12 +121,16 @@ namespace muse_dash_test
         private const int AlphaOffset = 4;
 
         /// <summary>
-        /// 애니메이션 이름 → 손대기 전의 알파 값들(타임라인 순서 → 키 순서로 평평하게).
+        /// 캐시 키 → 손대기 전의 알파 값들(타임라인 순서 → 키 순서로 평평하게).
         /// `SkeletonData`는 프로세스 내내 공유되므로, 설정을 끄면 이 값으로 되돌려야 원래 페이드가 살아납니다.
+        ///
+        /// <para><b>키에 스켈레톤을 포함해야 합니다.</b> 지상(`071701_road_nor_1`)과 공중(`071704_air_nor_1`) 고스트 노트는
+        /// 서로 다른 프리팹이라 `SkeletonData`도 따로인데, 애니메이션 이름은 같을 수 있습니다.
+        /// 이름만으로 키를 잡으면 먼저 처리된 쪽 때문에 나머지가 "이미 했다"고 건너뛰어집니다.</para>
         /// </summary>
         private static readonly Dictionary<string, float[]> originalAlphas = new Dictionary<string, float[]>();
 
-        /// <summary>애니메이션 이름 → 지금 불투명으로 덮인 상태인가. 상태가 같으면 아무것도 하지 않습니다.</summary>
+        /// <summary>캐시 키 → 지금 불투명으로 덮인 상태인가. 상태가 같으면 아무것도 하지 않습니다.</summary>
         private static readonly Dictionary<string, bool> opaqueAnimations = new Dictionary<string, bool>();
 
         public static void Postfix(SpineActionController __instance, string actionKey)
@@ -156,13 +160,15 @@ namespace muse_dash_test
             string animationName = controller.currentAnimationName;
             if (string.IsNullOrEmpty(animationName)) return;
 
-            // 이미 원하는 상태면 끝. 애니메이션당 한 번씩만 실제로 손댑니다.
-            if (opaqueAnimations.TryGetValue(animationName, out bool state) && state == opaque) return;
+            string cacheKey = SkeletonNameOf(controller, data) + "|" + animationName;
+
+            // 이미 원하는 상태면 끝. 스켈레톤+애니메이션 조합당 한 번씩만 실제로 손댑니다.
+            if (opaqueAnimations.TryGetValue(cacheKey, out bool state) && state == opaque) return;
 
             // 아직 한 번도 안 건드렸는데 "보이지 않게"라면, 데이터가 이미 원본이라 할 일이 없습니다.
-            if (!opaque && !originalAlphas.ContainsKey(animationName))
+            if (!opaque && !originalAlphas.ContainsKey(cacheKey))
             {
-                opaqueAnimations[animationName] = false;
+                opaqueAnimations[cacheKey] = false;
                 return;
             }
 
@@ -181,7 +187,7 @@ namespace muse_dash_test
             if (count > items.Length) count = items.Length;
 
             // 첫 방문이면 원본 알파를 받아 적으면서 덮습니다. 되돌릴 때는 그 기록을 되짚습니다.
-            float[] original = originalAlphas.TryGetValue(animationName, out var saved) ? saved : null;
+            float[] original = originalAlphas.TryGetValue(cacheKey, out var saved) ? saved : null;
             var capture = original == null ? new List<float>() : null;
 
             int colorTimelines = 0;
@@ -209,11 +215,41 @@ namespace muse_dash_test
                 }
             }
 
-            if (capture != null) originalAlphas[animationName] = capture.ToArray();
-            opaqueAnimations[animationName] = opaque;
+            if (capture != null) originalAlphas[cacheKey] = capture.ToArray();
+            opaqueAnimations[cacheKey] = opaque;
 
-            MelonLogger.Msg($"[GhostNote.AlphaTimeline] '{animationName}' {(opaque ? "고정" : "복원")} 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
+            MelonLogger.Msg($"[GhostNote.AlphaTimeline] {ObjectNameOf(controller)} '{cacheKey}' {(opaque ? "고정" : "복원")} 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
                             $"알파 키 {alphaKeys}개를 {(opaque ? "1로 고정" : "원본으로 되돌림")} (이동/스케일 타임라인은 그대로)");
+        }
+
+        /// <summary>
+        /// 캐시 키에 쓸 스켈레톤 이름. 지상·공중 고스트처럼 프리팹이 다르면 이 이름이 달라야
+        /// 서로를 덮어쓰지 않습니다. 셋 다 비면 오브젝트 이름으로 떨어집니다.
+        /// </summary>
+        private static string SkeletonNameOf(SpineActionController controller, Il2CppSpine.SkeletonData data)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(data.name)) return data.name;
+
+                var asset = controller.skeletonAnimation != null ? controller.skeletonAnimation.skeletonDataAsset : null;
+                if (asset != null && !string.IsNullOrEmpty(asset.name)) return asset.name;
+            }
+            catch (Exception) { }
+
+            return ObjectNameOf(controller);
+        }
+
+        private static string ObjectNameOf(SpineActionController controller)
+        {
+            try
+            {
+                return controller.gameObject != null ? controller.gameObject.name : "(이름 없음)";
+            }
+            catch (Exception)
+            {
+                return "(이름 없음)";
+            }
         }
 
         /// <summary>
