@@ -81,6 +81,10 @@ namespace muse_dash_test
                 LogSummary();
             }
             announced = false;
+
+            // 미스 판정 구간 덮어쓰기도 설정 상태에 맞춰 즉시 따라가게 합니다.
+            // (게임 도중 config.txt를 저장해 껐을 때 전역 값이 바뀐 채로 남지 않도록)
+            MissWindowOverride.Sync();
         }
 
         private static void LogSummary()

@@ -44,6 +44,12 @@ namespace muse_dash_test
             public const string TouchResult = "TouchResult";
         }
 
+        /// <summary>Il2CppFormulaBase.StageBattleComponent — 배틀 진행 제어.</summary>
+        public static class StageBattleComponent
+        {
+            public const string GameStart = "GameStart";
+        }
+
         /// <summary>Il2CppGameLogic.GameMissPlay — 안 친 노트의 미스 처리 지점.</summary>
         public static class GameMissPlay
         {
