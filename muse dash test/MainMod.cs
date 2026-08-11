@@ -206,6 +206,10 @@ namespace muse_dash_test
 
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);
 
+            // 강제퍼펙트가 켜진 동안 체력 변화를 감시합니다. 값이 바뀔 때만 로그가 남으며,
+            // 미스 프레임 밖에서 체력이 깎이면 그 주체를 찾기 위한 단서가 됩니다.
+            FeatureGuard.Run("ForcePerfect.HpWatch", MissPenaltyGate.WatchHp);
+
             // 1. 순정/실험 맵에 구애받지 않고 스테이지 상태를 지속적으로 모니터링합니다.
             FeatureGuard.Run("StageCheck", () =>
             {

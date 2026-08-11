@@ -40,6 +40,16 @@ namespace muse_dash_test
             return missFrame == Time.frameCount;
         }
 
+        private static int missSkippedCount;
+
+        /// <summary>미스 반응(Miss) 자체를 건너뛴 횟수. 연출이 실제로 잠잠해졌는지 대조용입니다.</summary>
+        internal static void RecordMissSkipped()
+        {
+            missSkippedCount++;
+            pendingSummary = true;
+            MaybeLogSummary();
+        }
+
         internal static void RecordBlocked(int hurtValue, int hp)
         {
             blockedCount++;
@@ -49,16 +59,20 @@ namespace muse_dash_test
             if (!announced)
             {
                 announced = true;
-                MelonLogger.Msg($"[ForcePerfect.MissPenalty] 미스 데미지 첫 차단: hurtValue={hurtValue} -> 0, HP={hp} 유지");
+                MelonLogger.Msg($"[ForcePerfect.MissPenalty] 미스 데미지 첫 차단: Hurt(hurtValue={hurtValue}) 호출 자체를 건너뜀, HP={hp} 유지");
             }
 
-            if ((DateTime.UtcNow - lastSummaryTime).TotalSeconds >= SummaryIntervalSeconds)
-            {
-                lastSummaryTime = DateTime.UtcNow;
-                if (!pendingSummary) return;
-                pendingSummary = false;
-                MelonLogger.Msg($"[ForcePerfect.MissPenalty] 누적 차단: {blockedCount}회, 지켜낸 체력 {blockedHpTotal}");
-            }
+            MaybeLogSummary();
+        }
+
+        private static void MaybeLogSummary()
+        {
+            if ((DateTime.UtcNow - lastSummaryTime).TotalSeconds < SummaryIntervalSeconds) return;
+
+            lastSummaryTime = DateTime.UtcNow;
+            if (!pendingSummary) return;
+            pendingSummary = false;
+            MelonLogger.Msg($"[ForcePerfect.MissPenalty] 누적 차단: 데미지 {blockedCount}회(지켜낸 체력 {blockedHpTotal}), 미스 반응 건너뜀 {missSkippedCount}회");
         }
 
         /// <summary>현재 체력을 안전하게 읽습니다. 전투 밖이면 -1을 돌려줍니다.</summary>
@@ -74,48 +88,91 @@ namespace muse_dash_test
                 return -1;
             }
         }
+
+        private static int lastWatchedHp = int.MinValue;
+
+        /// <summary>
+        /// 매 프레임 체력을 확인해 값이 바뀐 순간만 로그로 남깁니다.
+        /// Miss()/Hurt()를 모두 건너뛰었는데도 체력이 줄면, 깎는 주체가 그 둘이 아니라는 뜻이므로
+        /// 그 프레임이 미스 프레임인지 여부와 함께 기록해 범인을 좁힙니다.
+        /// </summary>
+        internal static void WatchHp()
+        {
+            if (!ForcePerfectState.Enabled)
+            {
+                lastWatchedHp = int.MinValue;
+                return;
+            }
+
+            int hp = CurrentHp();
+            if (hp < 0)
+            {
+                lastWatchedHp = int.MinValue;
+                return;
+            }
+
+            if (lastWatchedHp == int.MinValue)
+            {
+                lastWatchedHp = hp;
+                return;
+            }
+
+            if (hp == lastWatchedHp) return;
+
+            int delta = hp - lastWatchedHp;
+            MelonLogger.Msg($"[ForcePerfect.HpWatch] 체력 변화 감지: {lastWatchedHp} -> {hp} (delta={delta}, frame={Time.frameCount}, 미스프레임={IsMissFrame()}, 직전미스프레임={missFrame})");
+            lastWatchedHp = hp;
+        }
     }
 
     /// <summary>
-    /// 미스 반응의 시작점. 체력은 건드리지 않으므로 막지 않고, 프레임 표식만 남깁니다.
-    /// (MISS 연출이 여기서 나오는지는 아직 미확인이라 의도적으로 통과시킵니다.)
+    /// 미스 반응의 시작점. 프레임 표식을 남긴 뒤 원본 실행 자체를 건너뜁니다.
+    /// 체력은 여기서 안 깎이지만 MISS 연출이 여기서 나오는 것으로 보여, 연출까지 함께 잠재웁니다.
     /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.BattleRoleAttributeComponent), GameBindings.BattleRoleAttributeComponent.Miss)]
     public class BattleRoleAttributeComponent_Miss_MissPenalty_Patch
     {
-        public static void Prefix()
+        public static bool Prefix()
         {
             try
             {
-                if (!ForcePerfectState.Enabled) return;
+                if (!ForcePerfectState.Enabled) return true;
+
+                // 표식은 원본을 건너뛰더라도 반드시 먼저 남깁니다. 뒤따르는 Hurt를 가려내는 유일한 단서입니다.
                 MissPenaltyGate.MarkMissFrame();
+                MissPenaltyGate.RecordMissSkipped();
+                return false;
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[BattleRoleAttributeComponent.Miss.Prefix] 미스 프레임 표식 중 예외 발생: {ex}");
+                MelonLogger.Error($"[BattleRoleAttributeComponent.Miss.Prefix] 미스 반응 차단 중 예외 발생: {ex}");
+                return true;
             }
         }
     }
 
-    /// <summary>실제 데미지 지점. 미스와 같은 프레임일 때만 피해량을 0으로 만듭니다.</summary>
+    /// <summary>
+    /// 실제 데미지 지점. 미스와 같은 프레임이면 호출 자체를 건너뜁니다.
+    /// hurtValue=0으로만 두면 내부에서 최소 1 데미지로 클램프되는 정황이 있어(체력이 -1씩 감소),
+    /// 값을 고치는 대신 통째로 막습니다.
+    /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.BattleRoleAttributeComponent), GameBindings.BattleRoleAttributeComponent.Hurt)]
     public class BattleRoleAttributeComponent_Hurt_MissPenalty_Patch
     {
-        public static void Prefix(ref int hurtValue, bool isAir)
+        public static bool Prefix(int hurtValue, bool isAir)
         {
             try
             {
-                if (!ForcePerfectState.Enabled) return;
-                if (hurtValue == 0) return;
-                if (!MissPenaltyGate.IsMissFrame()) return; // 장애물 피격 등 미스와 무관한 데미지는 그대로 둡니다.
+                if (!ForcePerfectState.Enabled) return true;
+                if (!MissPenaltyGate.IsMissFrame()) return true; // 장애물 피격 등 미스와 무관한 데미지는 그대로 둡니다.
 
-                int original = hurtValue;
-                hurtValue = 0;
-                MissPenaltyGate.RecordBlocked(original, MissPenaltyGate.CurrentHp());
+                MissPenaltyGate.RecordBlocked(hurtValue, MissPenaltyGate.CurrentHp());
+                return false;
             }
             catch (Exception ex)
             {
                 MelonLogger.Error($"[BattleRoleAttributeComponent.Hurt.Prefix] 미스 데미지 차단 중 예외 발생: {ex}");
+                return true;
             }
         }
     }
