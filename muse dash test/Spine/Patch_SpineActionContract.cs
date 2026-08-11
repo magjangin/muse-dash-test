@@ -201,36 +201,8 @@ namespace muse_dash_test
         private static readonly List<string> DemandLines = new List<string>();
         private static readonly HashSet<string> AliveHooks = new HashSet<string>();
 
-        private const string MultiHitStartKey = "char_multihit_start";
-        private const string MultiHitEndKey = "char_multihit_end";
-
-        /// <summary>지금 샌드백 연타 구간 안인지 판별합니다.</summary>
-        public static bool InMultiHit { get; private set; }
-
-        /// <summary>연타 구간 중 첫 타격에서 char_bighit 액션 발동을 1회 수행했는지 여부.</summary>
-        public static bool HasPlayedMultiHitAction { get; set; }
-
-        public static void TrackMultiHitWindow(string actionKey)
-        {
-            if (actionKey == MultiHitStartKey)
-            {
-                InMultiHit = true;
-                HasPlayedMultiHitAction = false;
-                MelonLogger.Msg("[샌드백] 연타 구간 진입 — 첫 타격에서 char_bighit (복선) 1회 발동 후 후속 PlayByKey 억제 대기");
-            }
-            else if (actionKey == MultiHitEndKey)
-            {
-                InMultiHit = false;
-                HasPlayedMultiHitAction = false;
-                MelonLogger.Msg("[샌드백] 연타 구간 종료.");
-            }
-        }
-
         public static void ResetWindow()
         {
-            InMultiHit = false;
-            HasPlayedMultiHitAction = false;
-            FlushDemand();
         }
 
         public static void RecordDemand(string source, string key, string objName)
@@ -249,6 +221,7 @@ namespace muse_dash_test
 
                 DemandLines.Add(entry);
                 MelonLogger.Msg($"[SpineContract.수요] {entry}");
+                FlushDemand();
             }
             catch (Exception ex)
             {
@@ -330,7 +303,7 @@ namespace muse_dash_test
             return sb.ToString();
         }
 
-        private static void WriteFile(string fileName, string content)
+        public static void WriteFile(string fileName, string content)
         {
             try
             {
@@ -369,38 +342,61 @@ namespace muse_dash_test
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
         }
+
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var list = new List<CodeInstruction>(instructions);
+            var sb = new StringBuilder();
+            sb.AppendLine("# SpineActionController.SetAnimation IL 디컴파일 / 지시어 덤프");
+            sb.AppendLine($"# 덤프 시각: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"# 총 IL 지시어 수: {list.Count}");
+            sb.AppendLine();
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                var instr = list[i];
+                string labels = (instr.labels != null && instr.labels.Count > 0) ? $"  [Label: {string.Join(", ", instr.labels)}]" : "";
+                sb.AppendLine($"  [{i,4}] {instr.opcode,-16} {instr.operand}{labels}");
+            }
+
+            SpineActionContract.WriteFile("_SetAnimation_IL_dump.txt", sb.ToString());
+            MelonLogger.Msg($"[IL Transpiler] SpineActionController.SetAnimation IL 바이트코드 {list.Count}개 덤프 완료!");
+            return instructions;
+        }
     }
 
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static bool Prefix(SpineActionController __instance, ref string actionKey)
+        public static void Prefix(SpineActionController __instance, string actionKey)
         {
-            if (!SpineActionContract.IsBattleObject(__instance)) return true;
+            if (!SpineActionContract.IsBattleObject(__instance)) return;
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
+        }
 
-            SpineActionContract.TrackMultiHitWindow(actionKey);
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var list = new List<CodeInstruction>(instructions);
+            var sb = new StringBuilder();
+            sb.AppendLine("# SpineActionController.PlayByKey IL 디컴파일 / 지시어 덤프");
+            sb.AppendLine($"# 덤프 시각: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"# 총 IL 지시어 수: {list.Count}");
+            sb.AppendLine();
 
-            if (SpineActionContract.InMultiHit)
+            for (int i = 0; i < list.Count; i++)
             {
-                if (actionKey == "char_multihit_start" || actionKey == "char_multihit_end")
-                    return true;
-
-                if (!SpineActionContract.HasPlayedMultiHitAction)
-                {
-                    SpineActionContract.HasPlayedMultiHitAction = true;
-                    actionKey = "char_bighit";
-                    MelonLogger.Msg($"[샌드백] {objName}: 연타 시작 후 첫 타격 '{actionKey}' -> 'char_bighit' (복선) 1회 발동!");
-                    return true;
-                }
-
-                // 후속 15회 타격들에서 PlayByKey가 매 타격마다 실행되어 스파인 트랙을 리셋하는 현상 차단
-                return false;
+                var instr = list[i];
+                string labels = (instr.labels != null && instr.labels.Count > 0) ? $"  [Label: {string.Join(", ", instr.labels)}]" : "";
+                sb.AppendLine($"  [{i,4}] {instr.opcode,-16} {instr.operand}{labels}");
             }
 
-            return true;
+            SpineActionContract.WriteFile("_PlayByKey_IL_dump.txt", sb.ToString());
+            MelonLogger.Msg($"[IL Transpiler] SpineActionController.PlayByKey IL 바이트코드 {list.Count}개 덤프 완료!");
+            return instructions;
         }
     }
 
@@ -410,6 +406,28 @@ namespace muse_dash_test
         public static void Prefix(uint result, string actKey, int id)
         {
             SpineActionContract.RecordDemand("AttacksWithoutExchg", $"{actKey} (result={result}, id={id})", null);
+        }
+
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var list = new List<CodeInstruction>(instructions);
+            var sb = new StringBuilder();
+            sb.AppendLine("# AbstractGirlManager.AttacksWithoutExchange IL 디컴파일 / 지시어 덤프");
+            sb.AppendLine($"# 덤프 시각: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"# 총 IL 지시어 수: {list.Count}");
+            sb.AppendLine();
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                var instr = list[i];
+                string labels = (instr.labels != null && instr.labels.Count > 0) ? $"  [Label: {string.Join(", ", instr.labels)}]" : "";
+                sb.AppendLine($"  [{i,4}] {instr.opcode,-16} {instr.operand}{labels}");
+            }
+
+            SpineActionContract.WriteFile("_AttacksWithoutExchange_IL_dump.txt", sb.ToString());
+            MelonLogger.Msg($"[IL Transpiler] AbstractGirlManager.AttacksWithoutExchange IL 바이트코드 {list.Count}개 덤프 완료!");
+            return instructions;
         }
     }
 
