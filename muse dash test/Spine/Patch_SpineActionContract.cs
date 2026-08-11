@@ -342,28 +342,6 @@ namespace muse_dash_test
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
         }
-
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var list = new List<CodeInstruction>(instructions);
-            var sb = new StringBuilder();
-            sb.AppendLine("# SpineActionController.SetAnimation IL 디컴파일 / 지시어 덤프");
-            sb.AppendLine($"# 덤프 시각: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine($"# 총 IL 지시어 수: {list.Count}");
-            sb.AppendLine();
-
-            for (int i = 0; i < list.Count; i++)
-            {
-                var instr = list[i];
-                string labels = (instr.labels != null && instr.labels.Count > 0) ? $"  [Label: {string.Join(", ", instr.labels)}]" : "";
-                sb.AppendLine($"  [{i,4}] {instr.opcode,-16} {instr.operand}{labels}");
-            }
-
-            SpineActionContract.WriteFile("_SetAnimation_IL_dump.txt", sb.ToString());
-            MelonLogger.Msg($"[IL Transpiler] SpineActionController.SetAnimation IL 바이트코드 {list.Count}개 덤프 완료!");
-            return instructions;
-        }
     }
 
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
@@ -376,28 +354,6 @@ namespace muse_dash_test
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
         }
-
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var list = new List<CodeInstruction>(instructions);
-            var sb = new StringBuilder();
-            sb.AppendLine("# SpineActionController.PlayByKey IL 디컴파일 / 지시어 덤프");
-            sb.AppendLine($"# 덤프 시각: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine($"# 총 IL 지시어 수: {list.Count}");
-            sb.AppendLine();
-
-            for (int i = 0; i < list.Count; i++)
-            {
-                var instr = list[i];
-                string labels = (instr.labels != null && instr.labels.Count > 0) ? $"  [Label: {string.Join(", ", instr.labels)}]" : "";
-                sb.AppendLine($"  [{i,4}] {instr.opcode,-16} {instr.operand}{labels}");
-            }
-
-            SpineActionContract.WriteFile("_PlayByKey_IL_dump.txt", sb.ToString());
-            MelonLogger.Msg($"[IL Transpiler] SpineActionController.PlayByKey IL 바이트코드 {list.Count}개 덤프 완료!");
-            return instructions;
-        }
     }
 
     [HarmonyPatch(typeof(AbstractGirlManager), nameof(AbstractGirlManager.AttacksWithoutExchange))]
@@ -406,28 +362,6 @@ namespace muse_dash_test
         public static void Prefix(uint result, string actKey, int id)
         {
             SpineActionContract.RecordDemand("AttacksWithoutExchg", $"{actKey} (result={result}, id={id})", null);
-        }
-
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var list = new List<CodeInstruction>(instructions);
-            var sb = new StringBuilder();
-            sb.AppendLine("# AbstractGirlManager.AttacksWithoutExchange IL 디컴파일 / 지시어 덤프");
-            sb.AppendLine($"# 덤프 시각: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine($"# 총 IL 지시어 수: {list.Count}");
-            sb.AppendLine();
-
-            for (int i = 0; i < list.Count; i++)
-            {
-                var instr = list[i];
-                string labels = (instr.labels != null && instr.labels.Count > 0) ? $"  [Label: {string.Join(", ", instr.labels)}]" : "";
-                sb.AppendLine($"  [{i,4}] {instr.opcode,-16} {instr.operand}{labels}");
-            }
-
-            SpineActionContract.WriteFile("_AttacksWithoutExchange_IL_dump.txt", sb.ToString());
-            MelonLogger.Msg($"[IL Transpiler] AbstractGirlManager.AttacksWithoutExchange IL 바이트코드 {list.Count}개 덤프 완료!");
-            return instructions;
         }
     }
 
