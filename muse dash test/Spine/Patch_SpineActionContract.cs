@@ -219,11 +219,8 @@ namespace muse_dash_test
                 if (string.IsNullOrEmpty(key)) key = "(null)";
 
                 string entry = $"{source,-22} \"{key}\"" + (string.IsNullOrEmpty(objName) ? "" : $"   ← {objName}");
-                if (!SeenDemand.Add(entry)) return;
-
                 DemandLines.Add(entry);
-                MelonLogger.Msg($"[SpineContract.수요] {entry}");
-                FlushDemand();
+                MelonLogger.Msg($"[SpineContract.LIVE] {entry}");
             }
             catch (Exception ex)
             {
@@ -365,6 +362,24 @@ namespace muse_dash_test
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
+        }
+    }
+
+    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeletonAnim))]
+    internal static class Patch_SpineContract_PlaySkeletonAnim
+    {
+        public static void Prefix(string animName, int idx, bool loop)
+        {
+            SpineActionContract.RecordDemand("PlaySkeletonAnim", $"anim={animName}, idx={idx}, loop={loop}", null);
+        }
+    }
+
+    [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeleton))]
+    internal static class Patch_SpineContract_PlaySkeleton
+    {
+        public static void Prefix(string animName, int idx)
+        {
+            SpineActionContract.RecordDemand("PlaySkeleton", $"anim={animName}, idx={idx}", null);
         }
     }
 
