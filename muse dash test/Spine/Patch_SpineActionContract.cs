@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Il2Cpp;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MelonLoader;
 using MelonLoader.Utils;
 
@@ -118,11 +119,12 @@ namespace muse_dash_test
                         continue;
                     }
 
+                    // actionIdx 가 이 액션이 실제로 재생하는 스파인 애니메이션 이름 목록입니다.
+                    // 게임 액션 키(name)와 애니메이션 이름을 잇는 매핑이 여기에 들어 있습니다.
+                    sb.AppendLine($"  [{i,3}] name=\"{d.name}\" → [{JoinStrings(d.actionIdx)}]");
                     sb.AppendLine(
-                        $"  [{i,3}] name=\"{d.name}\"" +
-                        $" spineActionKeyIndex={d.spineActionKeyIndex}" +
-                        $" actionIdx={d.actionIdx}" +
-                        $" actionEventIdx={d.actionEventIdx}" +
+                        $"        spineActionKeyIndex={d.spineActionKeyIndex}" +
+                        $" actionEventIdx=[{JoinInts(d.actionEventIdx)}]" +
                         $" protectLevel={d.protectLevel}" +
                         $" isSelfProtect={d.isSelfProtect}" +
                         $" isEndLoop={d.isEndLoop}" +
@@ -189,6 +191,34 @@ namespace muse_dash_test
             {
                 sb.AppendLine($"  (수집 실패: {ex.Message})");
             }
+        }
+
+        /// <summary>Il2Cpp 문자열 배열을 사람이 읽을 수 있게 이어 붙입니다.</summary>
+        private static string JoinStrings(Il2CppStringArray array)
+        {
+            if (array == null) return "(null)";
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (i > 0) sb.Append(", ");
+                sb.Append('"').Append(array[i] ?? "(null)").Append('"');
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>Il2Cpp 정수 배열을 사람이 읽을 수 있게 이어 붙입니다.</summary>
+        private static string JoinInts(Il2CppStructArray<int> array)
+        {
+            if (array == null) return "(null)";
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (i > 0) sb.Append(", ");
+                sb.Append(array[i]);
+            }
+            return sb.ToString();
         }
 
         private static void WriteFile(string fileName, string content)
