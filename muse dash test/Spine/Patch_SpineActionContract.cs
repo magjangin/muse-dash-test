@@ -76,6 +76,9 @@ namespace muse_dash_test
             string objName = sac.gameObject.name;
             if (string.IsNullOrEmpty(objName)) return;
             if (objName.IndexOf(TargetNameFragment, StringComparison.OrdinalIgnoreCase) < 0) return;
+
+            EnableMultiHitLoop(sac);
+
             if (!DumpedObjects.Add(objName)) return;
 
             var sb = new StringBuilder();
@@ -90,6 +93,34 @@ namespace muse_dash_test
 
             WriteFile(MakeSafeFileName(objName) + ".txt", sb.ToString());
             MelonLogger.Msg($"[SpineContract] 공급 덤프 완료: {objName}");
+        }
+
+        /// <summary>
+        /// 샌드백(연타) 타격 도중 애니메이션이 4회 재생 후 멈추거나 굳지 않도록
+        /// char_jumphit 및 char_bighit 액션의 isEndLoop 값을 true로 설정하여 연속 펀치를 보장합니다.
+        /// </summary>
+        public static void EnableMultiHitLoop(SpineActionController sac)
+        {
+            if (sac == null || sac.actionData == null) return;
+            try
+            {
+                foreach (var data in sac.actionData)
+                {
+                    if (data == null) continue;
+                    if (data.name == "char_jumphit" || data.name == "char_bighit")
+                    {
+                        if (!data.isEndLoop)
+                        {
+                            data.isEndLoop = true;
+                            MelonLogger.Msg($"[SpineContract] {sac.gameObject.name}: {data.name} actionData.isEndLoop -> true (연타 연속 펀치 보장)");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[SpineContract] isEndLoop 설정 예외: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -350,6 +381,8 @@ namespace muse_dash_test
         public static void Prefix(SpineActionController __instance, string actionKey)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
+
+            SpineActionContract.EnableMultiHitLoop(__instance);
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
