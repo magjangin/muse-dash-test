@@ -241,6 +241,18 @@ namespace muse_dash_test
         /// <summary>지금 샌드백 연타 구간 안인지. 이 구간에서만 중복 제거 없이 기록합니다.</summary>
         public static bool InMultiHit { get; private set; }
 
+        /// <summary>연타(샌드백) 구간 내 복선 애니메이션 교체용 토글 상태입니다.</summary>
+        private static bool _doubleHitState;
+
+        /// <summary>
+        /// 연타 구간에서 호출될 때마다 "double_hit_1"과 "double_hit_2"를 번갈아 반환합니다.
+        /// </summary>
+        public static string GetNextDoubleHitAnimation()
+        {
+            _doubleHitState = !_doubleHitState;
+            return _doubleHitState ? "double_hit_1" : "double_hit_2";
+        }
+
         /// <summary>
         /// 액션 키를 보고 연타 구간의 경계를 추적합니다.
         /// 두 마커 키는 actionData 에 정의가 없어 애니메이션을 재생하지 않는 순수 신호입니다.
@@ -250,7 +262,8 @@ namespace muse_dash_test
             if (actionKey == MultiHitStartKey)
             {
                 InMultiHit = true;
-                MelonLogger.Msg("[샌드백원본] 연타 구간 진입 — 원본 호출을 전부 기록합니다.");
+                _doubleHitState = false;
+                MelonLogger.Msg("[샌드백원본] 연타 구간 진입 — 원본 호출 기록 및 double_hit_1 / double_hit_2 번갈아 교체를 적용합니다.");
             }
             else if (actionKey == MultiHitEndKey)
             {
@@ -263,6 +276,7 @@ namespace muse_dash_test
         public static void ResetWindow()
         {
             InMultiHit = false;
+            _doubleHitState = false;
         }
 
         /// <summary>
@@ -400,9 +414,16 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
     internal static class Patch_SpineContract_SetAnimation
     {
-        public static void Prefix(SpineActionController __instance, string n)
+        public static void Prefix(SpineActionController __instance, ref string n)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
+
+            // 샌드백/연타 구간 (char_multihit_start ~ char_multihit_end) 진입 시
+            // 애니메이션을 "double_hit_1" 과 "double_hit_2" 로 번갈아가며 교체합니다.
+            if (SpineActionContract.InMultiHit)
+            {
+                n = SpineActionContract.GetNextDoubleHitAnimation();
+            }
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
