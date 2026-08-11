@@ -20,8 +20,12 @@ namespace muse_dash_test
     /// </summary>
     public static partial class LongNoteTrajectoryProbe
     {
-        /// <summary>프로브 전체 on/off. 관찰이 끝나면 false로 두면 됩니다.</summary>
-        public static bool Enabled = true;
+        /// <summary>
+        /// 프로브 전체 on/off.
+        /// <para>관찰이 끝나 기본값을 false로 내렸습니다. 롱노트 계층이 바뀌었거나 궤적이 안 먹을 때
+        /// true로 올리면 조각 구조·좌표·계층 덤프를 다시 확인할 수 있습니다.</para>
+        /// </summary>
+        public static bool Enabled = false;
 
         /// <summary>
         /// 체인 머리 조각의 y를 한 번 올려 보고, 그 값이 다음 프레임까지 유지되는지 확인합니다.

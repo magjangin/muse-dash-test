@@ -15,7 +15,7 @@ namespace muse_dash_test
     /// <c>SceneObjectController / {prefab}{idx} / {prefab}(Clone){idx}</c> 구조라, 게임이 건드리는 자식 대신
     /// 가운데 래퍼를 움직이면 두 레인 모두에서 오프셋이 살아남습니다.</para>
     /// </summary>
-    public static class LongNoteTrajectory
+    public static partial class LongNoteTrajectory
     {
         /// <summary>기능 on/off.</summary>
         public static bool Enabled = true;
@@ -35,6 +35,9 @@ namespace muse_dash_test
         /// <summary>판정선 x. 여기서 오프셋이 0으로 돌아와 레인 높이에 정확히 안착합니다.</summary>
         public static float HitX = 0f;
 
+        /// <summary>몸통 처리 방식.</summary>
+        public static BodyMode Body = BodyMode.Curved;
+
         /// <summary>진행도-오프셋 곡선 종류.</summary>
         public enum TrajectoryShape
         {
@@ -42,6 +45,15 @@ namespace muse_dash_test
             Arc,
             /// <summary>진행 내내 물결. 판정선에서는 0으로 수렴합니다.</summary>
             Wave,
+        }
+
+        /// <summary>롱노트 몸통(막대)을 어떻게 처리할지.</summary>
+        public enum BodyMode
+        {
+            /// <summary>원본 막대를 그대로 두고 노트 전체를 곡선 위에 올립니다. 막대는 수평을 유지합니다.</summary>
+            Rigid,
+            /// <summary>원본 막대를 숨기고 머리~꼬리를 곡선 리본으로 다시 그립니다. 몸통이 실제로 휩니다.</summary>
+            Curved,
         }
 
         /// <summary>검증 로그를 남길 노트 수(로그 폭발 방지).</summary>
@@ -77,6 +89,9 @@ namespace muse_dash_test
             public float LastOffset;
             public int InactiveFrames;
             public string EndReason;
+
+            // ── Curved 모드 전용 ──
+            public RibbonState Ribbon;
         }
 
         private static readonly List<Tracked> tracked = new List<Tracked>();
@@ -132,6 +147,12 @@ namespace muse_dash_test
                 Verbose = noteSeq <= MaxLoggedNotes,
                 NextLogFrame = Time.frameCount,
             };
+
+            if (Body == BodyMode.Curved)
+            {
+                // 곡선 리본이 준비되면 몸통 노드는 원위치에 두고 머리/꼬리만 각자 높이로 올립니다.
+                entry.Ribbon = AttachRibbon(entry.Id, noteTransform, target, entry.Verbose);
+            }
             tracked.Add(entry);
 
             if (entry.Verbose)
@@ -211,7 +232,18 @@ namespace muse_dash_test
             float progress = Progress(x);
             float offset = Offset(progress);
 
-            if (!SetOffset(entry, offset))
+            if (entry.Ribbon != null)
+            {
+                // 몸통이 휘는 모드: 몸통 노드는 원위치 유지, 머리/꼬리/리본이 각자 자기 x의 높이를 따릅니다.
+                if (!SetOffset(entry, 0f) || !UpdateRibbon(entry.Ribbon, x))
+                {
+                    entry.EndReason = "리본 갱신 실패";
+                    return false;
+                }
+
+                entry.LastOffset = offset;
+            }
+            else if (!SetOffset(entry, offset))
             {
                 entry.EndReason = "좌표 쓰기 실패";
                 return false;
@@ -338,7 +370,12 @@ namespace muse_dash_test
         /// <summary>대상 좌표를 원래대로 되돌립니다(오브젝트 풀 재사용 대비).</summary>
         private static void RestoreBase(Tracked entry)
         {
-            if (entry?.Target == null) return;
+            if (entry == null) return;
+
+            DetachRibbon(entry.Ribbon);
+            entry.Ribbon = null;
+
+            if (entry.Target == null) return;
             try
             {
                 entry.Target.localPosition = entry.TargetBase;
