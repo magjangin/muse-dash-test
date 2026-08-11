@@ -196,6 +196,10 @@ namespace muse_dash_test
                 if (!GhostNoteIdentity.IsGhost(__instance, out string detail)) return;
 
                 GhostFadeBlockStats.Observe("PlayByKey", $"actionKey={actionKey ?? "(null)"}, {detail}", true);
+
+                // 액션 키가 어떤 애니메이션으로 풀리는지 알아야 대체 키를 고를 수 있습니다.
+                // 계약서 덤퍼는 오브젝트 이름 단위로 1회만 쓰므로 여기서 매번 불러도 파일은 한 번만 생깁니다.
+                SpineActionContract.DumpSupplyForce(__instance);
             }
             catch (Exception ex)
             {
