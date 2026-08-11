@@ -242,20 +242,60 @@ namespace muse_dash_test
             }
         }
 
+        private static float _groundWorldY = float.NaN;
+        private static bool _hasCapturedGroundY;
+
         /// <summary>
-        /// 샌드백 연타 구간 동안 캐릭터가 공중으로 붕 뜨지 않도록 Y 좌표를 지상 높이(0)로 고정합니다.
+        /// 평소(지상 이동 중)일 때 캐릭터의 실제 월드 Y 좌표를 기억합니다.
+        /// </summary>
+        public static void CaptureGroundYIfNeeded(SpineActionController sac)
+        {
+            if (sac == null || sac.transform == null || InMultiHit) return;
+            try
+            {
+                if (!_hasCapturedGroundY)
+                {
+                    _groundWorldY = sac.transform.position.y;
+                    _hasCapturedGroundY = true;
+                    MelonLogger.Msg($"[SpineContract] 지상 WorldY 좌표 캡처 완료: {_groundWorldY}");
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 샌드백 연타 구간 동안 캐릭터가 공중으로 붕 뜨지 않도록 월드/로컬 Y 좌표를 지상 높이로 강제 고정합니다.
         /// </summary>
         public static void EnforceGroundPosition(SpineActionController sac)
         {
             try
             {
-                if (sac != null && sac.transform != null)
+                if (sac == null || sac.transform == null) return;
+
+                if (!float.IsNaN(_groundWorldY))
                 {
-                    var pos = sac.transform.localPosition;
-                    if (pos.y != 0f)
+                    var worldPos = sac.transform.position;
+                    if (Math.Abs(worldPos.y - _groundWorldY) > 0.001f)
                     {
-                        pos.y = 0f;
-                        sac.transform.localPosition = pos;
+                        worldPos.y = _groundWorldY;
+                        sac.transform.position = worldPos;
+                    }
+                }
+
+                var localPos = sac.transform.localPosition;
+                if (localPos.y != 0f)
+                {
+                    localPos.y = 0f;
+                    sac.transform.localPosition = localPos;
+                }
+
+                if (sac.transform.parent != null)
+                {
+                    var parentPos = sac.transform.parent.localPosition;
+                    if (parentPos.y != 0f)
+                    {
+                        parentPos.y = 0f;
+                        sac.transform.parent.localPosition = parentPos;
                     }
                 }
             }
@@ -268,6 +308,8 @@ namespace muse_dash_test
             InMultiHit = false;
             _lastAnimTime = 0f;
             _currentMultiHitAnim = "double_hit_1";
+            _hasCapturedGroundY = false;
+            _groundWorldY = float.NaN;
             FlushDemand();
         }
 
@@ -447,9 +489,11 @@ namespace muse_dash_test
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
 
-            // 샌드백/연타 구간 (char_multihit_start ~ char_multihit_end) 진입 시
-            // 150ms 타이밍 게이트를 적용하여 1프레임 뜩뜩 끊김 없이 "double_hit_1"과 "double_hit_2"를 매끄럽게 교체합니다.
-            if (SpineActionContract.InMultiHit)
+            if (!SpineActionContract.InMultiHit)
+            {
+                SpineActionContract.CaptureGroundYIfNeeded(__instance);
+            }
+            else
             {
                 n = SpineActionContract.GetMultiHitAnimation();
                 SpineActionContract.EnforceGroundPosition(__instance);
@@ -479,19 +523,17 @@ namespace muse_dash_test
 
             SpineActionContract.TrackMultiHitWindow(actionKey);
 
-            // 샌드백/연타 구간 진입 시 공중으로 붕 뜨지 않고 바닥(지상) 위치를 유지하도록 "char_bighit"으로 가로챕니다.
-            if (SpineActionContract.InMultiHit)
+            if (!SpineActionContract.InMultiHit)
+            {
+                SpineActionContract.CaptureGroundYIfNeeded(__instance);
+            }
+            else
             {
                 if (actionKey == "char_jumphit" || actionKey == "char_atk_p" || actionKey == "char_hit")
                 {
                     actionKey = "char_bighit";
                 }
                 SpineActionContract.EnforceGroundPosition(__instance);
-            }
-
-            // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
-            if (SpineActionContract.InMultiHit)
-            {
                 SpineActionContract.RecordRaw("PlayByKey", actionKey, objName);
             }
         }
@@ -521,5 +563,4 @@ namespace muse_dash_test
     // 판별 근거: Awake 프로브는 3개 오브젝트(ghost/battle/shadow)를 잡는데 주입 로그는 2회뿐입니다.
     // Init 과 OnControllerStart 두 훅이 모두 돌았다면 대상 오브젝트당 2회씩 찍혔어야 합니다.
     //
-    // 그래서 별도 클래스를 두지 않고 Patch_Inject_Init 의 Postfix 에서 DumpSupply 를 호출합니다.
 }
