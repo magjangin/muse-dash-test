@@ -49,13 +49,23 @@ namespace muse_dash_test
         private const string DoubleNoteKey = "char_bighit";
 
         /// <summary>
-        /// 애니메이션 이름 단위 교체 스위치.
+        /// 연타 구간을 시작 신호 한 번으로 처리하는 모드.
         ///
-        /// 키(<c>char_jumphit</c>)를 통째로 돌리면 연타 전체가 한 동작으로 덮여서 과합니다.
-        /// 대신 연타 중 무작위로 뽑히는 <c>air_hit_perfect_1~4</c> 중 하나만 바꾸면,
-        /// 평소 모습은 유지한 채 그 하나가 뽑힐 때만 다른 동작이 섞여 들어갑니다.
+        /// 타격마다 <c>SetAnimation</c> 이 불리기 때문에, 타격 단위로 교체하면 대체 동작이
+        /// 매번 0프레임부터 다시 시작되어 끝까지 재생될 틈이 없습니다.
+        /// 대신 <c>char_multihit_start</c> 에서 한 번만 걸고 구간 내내 유지하면
+        /// 동작이 온전히 재생됩니다.
         /// </summary>
-        public static bool AnimationSwapEnabled = true;
+        public static bool StartDrivenEnabled = true;
+
+        /// <summary>연타 구간 내내 유지할 애니메이션. 반복 재생으로 겁니다.</summary>
+        private const string HoldAnimation = "double_hit_1";
+
+        /// <summary>
+        /// 타격 단위 애니메이션 교체 스위치.
+        /// <see cref="StartDrivenEnabled"/> 와 배타적입니다 — 시작 구동 모드가 켜져 있으면 무시됩니다.
+        /// </summary>
+        public static bool AnimationSwapEnabled = false;
 
         /// <summary>
         /// 연타 구간 안에서만 적용할 애니메이션 이름 교체표 (원본 → 대체).
@@ -81,6 +91,9 @@ namespace muse_dash_test
         /// <summary>애니메이션 교체로 다시 호출할 때 자기 자신을 또 가로채지 않도록 하는 가드.</summary>
         private static bool swappingAnimation;
 
+        /// <summary>구간 유지를 위해 막아낸 애니메이션 변경 횟수. 구간 종료 시 한 번만 보고합니다.</summary>
+        private static int suppressedCount;
+
         /// <summary>연타 구간 안이면 true. 이 구간에서만 원본 호출을 중복 제거 없이 기록합니다.</summary>
         public static bool InMultiHit => inMultiHit;
 
@@ -102,18 +115,52 @@ namespace muse_dash_test
                 if (actionKey == MultiHitStartKey)
                 {
                     inMultiHit = true;
-                    MelonLogger.Msg(Enabled
-                        ? "[샌드백실험] 연타 구간 진입 — 타격을 복선 애니메이션으로 대체합니다."
-                        : "[샌드백원본] 연타 구간 진입 — 대체는 꺼져 있고, 원본 호출을 전부 기록합니다.");
+
+                    if (StartDrivenEnabled)
+                    {
+                        // 시작 신호에서 한 번만 걸고, 구간 내내 이 동작을 유지합니다.
+                        // 반복 재생으로 걸어야 짧은 동작이 한 번 끝나고 사라지지 않습니다.
+                        swappingAnimation = true;
+                        try
+                        {
+                            sac.SetAnimation(HoldAnimation, true);
+                            MelonLogger.Msg($"[샌드백실험] 연타 구간 진입 — \"{HoldAnimation}\" 을(를) 반복 재생으로 걸고 유지합니다.");
+                        }
+                        catch (Exception ex)
+                        {
+                            MelonLogger.Warning($"[샌드백실험] 시작 애니메이션 적용 실패: {ex.Message}");
+                        }
+                        finally
+                        {
+                            swappingAnimation = false;
+                        }
+                    }
+                    else
+                    {
+                        MelonLogger.Msg(Enabled
+                            ? "[샌드백실험] 연타 구간 진입 — 타격을 복선 애니메이션으로 대체합니다."
+                            : "[샌드백원본] 연타 구간 진입 — 대체는 꺼져 있고, 원본 호출을 전부 기록합니다.");
+                    }
+
                     return true;
                 }
 
                 if (actionKey == MultiHitEndKey)
                 {
                     inMultiHit = false;
-                    MelonLogger.Msg(Enabled
-                        ? "[샌드백실험] 연타 구간 종료 — 원래 애니메이션으로 복귀합니다."
-                        : "[샌드백원본] 연타 구간 종료.");
+
+                    if (StartDrivenEnabled)
+                    {
+                        MelonLogger.Msg($"[샌드백실험] 연타 구간 종료 — 유지 중 막아낸 애니메이션 변경 {suppressedCount}건.");
+                    }
+                    else
+                    {
+                        MelonLogger.Msg(Enabled
+                            ? "[샌드백실험] 연타 구간 종료 — 원래 애니메이션으로 복귀합니다."
+                            : "[샌드백원본] 연타 구간 종료.");
+                    }
+
+                    suppressedCount = 0;
                     return true;
                 }
 
@@ -152,8 +199,33 @@ namespace muse_dash_test
         /// <returns>원본 호출을 진행하면 true, 대체 호출을 마쳤으면 false.</returns>
         public static bool HandleSetAnimation(SpineActionController sac, string animationName, bool isLoop, ref TrackEntry result)
         {
-            if (!AnimationSwapEnabled || swappingAnimation || !inMultiHit) return true;
+            if (swappingAnimation || !inMultiHit) return true;
             if (sac == null || string.IsNullOrEmpty(animationName)) return true;
+
+            if (StartDrivenEnabled)
+            {
+                // 시작에서 건 동작을 구간 내내 유지해야 하므로, 타격마다 들어오는 변경을 막습니다.
+                // 막더라도 호출자가 후속 처리에 쓸 TrackEntry 는 돌려줘야 하므로
+                // 지금 재생 중인 엔트리를 대신 넘깁니다. 그걸 얻지 못하면 막지 않습니다.
+                if (animationName == HoldAnimation) return true;
+
+                try
+                {
+                    var current = sac.skeletonAnimation.AnimationState.GetCurrent(0);
+                    if (current == null) return true;
+
+                    result = current;
+                    suppressedCount++;
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Warning($"[샌드백실험] 유지 실패, 원본 변경을 허용합니다: {ex.Message}");
+                    return true;
+                }
+            }
+
+            if (!AnimationSwapEnabled) return true;
             if (!AnimationSwapMap.TryGetValue(animationName, out string replacement)) return true;
 
             swappingAnimation = true;
@@ -180,6 +252,7 @@ namespace muse_dash_test
             inMultiHit = false;
             redirecting = false;
             swappingAnimation = false;
+            suppressedCount = 0;
         }
     }
 
