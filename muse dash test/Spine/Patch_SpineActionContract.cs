@@ -15,6 +15,13 @@ namespace muse_dash_test
     /// </summary>
     internal static class SpineActionContract
     {
+        /// <summary>
+        /// 개발자 전용 스위치. 설정 파일에 노출하지 않습니다 — 계약서가 필요한 건 애니메이션을 추적할 때뿐이라
+        /// 여기서 <c>true</c>로 바꾸고 다시 빌드해서 씁니다. 꺼져 있으면 'spine contract' 폴더 자체가 생기지 않습니다.
+        /// (const가 아니라 static readonly인 건, const면 아래 코드가 도달 불가로 잡혀 경고가 나기 때문입니다.)
+        /// </summary>
+        private static readonly bool DumpEnabled = false;
+
         /// <summary>계약서 텍스트가 떨어지는 폴더. 게임 루트의 "spine contract".</summary>
         public static readonly string ContractDirectory =
             Path.Combine(MelonEnvironment.GameRootDirectory, "spine contract");
@@ -56,7 +63,7 @@ namespace muse_dash_test
 
         private static void DumpSupplyCore(SpineActionController sac, bool requireNameFragment)
         {
-            if (!InputOverlay.dumpSpineContract) return;
+            if (!DumpEnabled) return;
             if (sac == null) return;
 
             string objName = sac.gameObject.name;
@@ -197,12 +204,12 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 계약서 파일을 씁니다. `config.txt`의 '스파인 계약서 덤프'가 꺼져 있으면 폴더도 만들지 않고 그냥 돌아갑니다.
+        /// 계약서 파일을 씁니다. <see cref="DumpEnabled"/>가 꺼져 있으면 폴더도 만들지 않고 그냥 돌아갑니다.
         /// 폴더 생성이 여기 한 곳뿐이라, 이 게이트가 곧 'spine contract' 폴더 생성 스위치입니다.
         /// </summary>
         public static void WriteFile(string fileName, string content)
         {
-            if (!InputOverlay.dumpSpineContract) return;
+            if (!DumpEnabled) return;
 
             try
             {
