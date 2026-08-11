@@ -368,18 +368,18 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeletonAnim))]
     internal static class Patch_SpineContract_PlaySkeletonAnim
     {
-        public static void Prefix(string animName, int idx, bool loop)
+        public static void Prefix(string actionKey, int idx, bool isLoop)
         {
-            SpineActionContract.RecordDemand("PlaySkeletonAnim", $"anim={animName}, idx={idx}, loop={loop}", null);
+            SpineActionContract.RecordDemand("PlaySkeletonAnim", $"actionKey={actionKey}, idx={idx}, isLoop={isLoop}", null);
         }
     }
 
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlaySkeleton))]
     internal static class Patch_SpineContract_PlaySkeleton
     {
-        public static void Prefix(string animName, int idx)
+        public static void Prefix(string actionKey, int idx)
         {
-            SpineActionContract.RecordDemand("PlaySkeleton", $"anim={animName}, idx={idx}", null);
+            SpineActionContract.RecordDemand("PlaySkeleton", $"actionKey={actionKey}, idx={idx}", null);
         }
     }
 
