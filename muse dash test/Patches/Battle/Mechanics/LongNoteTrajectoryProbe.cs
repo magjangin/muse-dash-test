@@ -23,8 +23,16 @@ namespace muse_dash_test
         /// <summary>프로브 전체 on/off. 관찰이 끝나면 false로 두면 됩니다.</summary>
         public static bool Enabled = true;
 
-        /// <summary>체인 머리 조각의 y를 한 번 올려 보고, 그 값이 다음 프레임까지 유지되는지 확인합니다.</summary>
-        public static bool EnableWriteTest = true;
+        /// <summary>
+        /// 체인 머리 조각의 y를 한 번 올려 보고, 그 값이 다음 프레임까지 유지되는지 확인합니다.
+        /// <para>1차 관찰 결론(2026-08-11): 지상 롱노트는 유지, 공중 롱노트는 매 프레임 덮어써짐.
+        /// 그래서 <see cref="LongNoteTrajectory"/>는 노트가 아니라 부모 래퍼를 움직입니다.
+        /// 이제는 궤적 모듈과 같은 좌표를 두고 다투게 되므로 기본값을 false로 둡니다.</para>
+        /// </summary>
+        public static bool EnableWriteTest = false;
+
+        /// <summary>첫 롱노트의 계층/렌더러 구성을 1회 덤프합니다(곡선 몸통으로 교체할 대상 탐색용).</summary>
+        public static bool EnableHierarchyDump = true;
 
         /// <summary>WriteTest에서 더할 y 오프셋. 화면에서 눈으로도 구분되도록 충분히 크게 잡습니다.</summary>
         private const float WriteTestOffsetY = 0.6f;
@@ -44,6 +52,12 @@ namespace muse_dash_test
         /// <summary>자식 조각은 이 개수까지만 좌표를 찍습니다(롱노트 middle은 0.1틱마다 생겨 매우 많습니다).</summary>
         private const int MaxLoggedChildren = 4;
 
+        /// <summary>계층 덤프 최대 깊이.</summary>
+        private const int MaxDumpDepth = 5;
+
+        /// <summary>계층 덤프 최대 노드 수(로그 폭발 방지).</summary>
+        private const int MaxDumpNodes = 70;
+
         private sealed class Chain
         {
             public Il2Cpp.LongPressController Head;
@@ -59,6 +73,8 @@ namespace muse_dash_test
         private static readonly List<Chain> chains = new List<Chain>();
         private static int loggedStarts;
         private static int chainSeq;
+        private static bool hierarchyDumped;
+        private static int dumpedNodes;
 
         /// <summary>씬 전환 시 상태를 비웁니다(곡을 다시 시작하면 처음부터 다시 관찰).</summary>
         public static void Reset()
@@ -66,6 +82,8 @@ namespace muse_dash_test
             chains.Clear();
             loggedStarts = 0;
             chainSeq = 0;
+            hierarchyDumped = false;
+            dumpedNodes = 0;
         }
 
         /// <summary>
@@ -99,6 +117,92 @@ namespace muse_dash_test
             chains.Add(chain);
 
             MelonLogger.Msg($"[LongNoteProbe] {chain.Tag} 좌표 샘플링 시작: {Describe(md)}, path={PathOf(SafeTransform(ctrl))}");
+
+            DumpHierarchyOnce(ctrl);
+        }
+
+        /// <summary>
+        /// 롱노트 한 개의 계층 전체와 각 노드의 컴포넌트를 1회 덤프합니다.
+        /// <c>TryGetVisibleComponent</c>가 실패해 몸통 슬라이더를 못 찾았기 때문에,
+        /// 실제로 어느 노드가 몸통을 그리는지(SpriteRenderer/MeshRenderer/Spine) 눈으로 확인하려는 목적입니다.
+        /// </summary>
+        private static void DumpHierarchyOnce(Il2Cpp.LongPressController head)
+        {
+            if (!EnableHierarchyDump || hierarchyDumped) return;
+            hierarchyDumped = true;
+
+            Transform noteTransform = SafeTransform(head);
+            if (noteTransform == null) return;
+
+            try
+            {
+                Transform top = noteTransform.parent != null ? noteTransform.parent : noteTransform;
+                MelonLogger.Msg($"[LongNoteProbe] === 계층 덤프 시작: top='{top.name}' ===");
+                DumpTransform(top, 0);
+                MelonLogger.Msg($"[LongNoteProbe] === 계층 덤프 끝 (노드 {dumpedNodes}개) ===");
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Msg($"[LongNoteProbe] 계층 덤프 예외: {ex.GetType().Name} {ex.Message}");
+            }
+        }
+
+        private static void DumpTransform(Transform t, int depth)
+        {
+            if (t == null || depth > MaxDumpDepth || dumpedNodes >= MaxDumpNodes) return;
+            dumpedNodes++;
+
+            string indent = new string(' ', depth * 2);
+            Vector3 local = t.localPosition;
+            MelonLogger.Msg(
+                $"[LongNoteProbe]   {indent}{t.name} active={t.gameObject.activeSelf} " +
+                $"local=({local.x:0.##},{local.y:0.##}) scale=({t.localScale.x:0.##},{t.localScale.y:0.##}) " +
+                $"{DescribeComponents(t)}");
+
+            for (int i = 0; i < t.childCount; i++)
+            {
+                DumpTransform(t.GetChild(i), depth + 1);
+            }
+        }
+
+        /// <summary>노드에 붙은 컴포넌트 이름을 나열합니다. Renderer 계열은 enabled 상태도 같이 찍습니다.</summary>
+        private static string DescribeComponents(Transform t)
+        {
+            try
+            {
+                var components = t.gameObject.GetComponents<Component>();
+                if (components == null) return "[]";
+
+                var names = new List<string>();
+                foreach (var component in components)
+                {
+                    if (component == null) continue;
+
+                    string name;
+                    try { name = component.GetIl2CppType().Name; }
+                    catch { name = "(타입 확인 실패)"; }
+
+                    if (string.Equals(name, "Transform", StringComparison.Ordinal)) continue;
+
+                    try
+                    {
+                        var renderer = component.TryCast<Renderer>();
+                        if (renderer != null)
+                        {
+                            name += $"(enabled={renderer.enabled}, sortingOrder={renderer.sortingOrder})";
+                        }
+                    }
+                    catch { }
+
+                    names.Add(name);
+                }
+
+                return "[" + string.Join(", ", names) + "]";
+            }
+            catch (Exception ex)
+            {
+                return $"[컴포넌트 조회 실패: {ex.GetType().Name}]";
+            }
         }
 
         /// <summary>

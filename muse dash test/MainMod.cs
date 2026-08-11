@@ -182,6 +182,7 @@ namespace muse_dash_test
             FeatureGuard.Run("Scene.ResetInputOverlay", InputOverlay.ResetCache);
             FeatureGuard.Run("Scene.ResetHitPoint", ExperimentHitPointInstaller.Reset);
             FeatureGuard.Run("Scene.ResetLongNoteProbe", LongNoteTrajectoryProbe.Reset);
+            FeatureGuard.Run("Scene.ResetLongNoteTrajectory", LongNoteTrajectory.Reset);
         }
 
         public override void OnLateUpdate()
@@ -189,6 +190,7 @@ namespace muse_dash_test
             // 롱노트 궤적 관련 좌표 읽기/쓰기는 애니메이션·트윈이 끝난 LateUpdate에서 처리해야
             // 게임이 이번 프레임에 확정한 좌표를 보고, 우리가 쓴 좌표도 밀리지 않습니다.
             FeatureGuard.Run("LongNote.Probe", LongNoteTrajectoryProbe.LateUpdate);
+            FeatureGuard.Run("LongNote.Trajectory", LongNoteTrajectory.LateUpdate);
         }
 
         public override void OnUpdate()
