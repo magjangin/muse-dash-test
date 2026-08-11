@@ -242,12 +242,33 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>
+        /// 샌드백 연타 구간 동안 캐릭터가 공중으로 붕 뜨지 않도록 Y 좌표를 지상 높이(0)로 고정합니다.
+        /// </summary>
+        public static void EnforceGroundPosition(SpineActionController sac)
+        {
+            try
+            {
+                if (sac != null && sac.transform != null)
+                {
+                    var pos = sac.transform.localPosition;
+                    if (pos.y != 0f)
+                    {
+                        pos.y = 0f;
+                        sac.transform.localPosition = pos;
+                    }
+                }
+            }
+            catch { }
+        }
+
         /// <summary>씬을 벗어날 때 구간 상태가 남아 있지 않도록 초기화합니다.</summary>
         public static void ResetWindow()
         {
             InMultiHit = false;
             _lastAnimTime = 0f;
             _currentMultiHitAnim = "double_hit_1";
+            FlushDemand();
         }
 
         /// <summary>기록 순서를 보존한 수요 목록. 파일에 등장 순서대로 씁니다.</summary>
@@ -258,7 +279,7 @@ namespace muse_dash_test
 
         /// <summary>
         /// 게임이 요청한 액션 키/애니메이션 이름을 누적합니다.
-        /// 새 항목일 때만 로그와 파일을 갱신하므로 매 프레임 디스크를 때리지 않습니다.
+        /// 매 타격마다 디스크에 파일 쓰기를 수행하면 렉이 발생하므로 메인 타격 도중 FlushDemand() 호출은 제외합니다.
         /// </summary>
         public static void RecordDemand(string source, string key, string objName)
         {
@@ -276,7 +297,6 @@ namespace muse_dash_test
 
                 DemandLines.Add(entry);
                 MelonLogger.Msg($"[SpineContract.수요] {entry}");
-                FlushDemand();
             }
             catch (Exception ex)
             {
@@ -432,6 +452,7 @@ namespace muse_dash_test
             if (SpineActionContract.InMultiHit)
             {
                 n = SpineActionContract.GetMultiHitAnimation();
+                SpineActionContract.EnforceGroundPosition(__instance);
             }
 
             string objName = SpineActionContract.SafeName(__instance);
@@ -459,9 +480,13 @@ namespace muse_dash_test
             SpineActionContract.TrackMultiHitWindow(actionKey);
 
             // 샌드백/연타 구간 진입 시 공중으로 붕 뜨지 않고 바닥(지상) 위치를 유지하도록 "char_bighit"으로 가로챕니다.
-            if (SpineActionContract.InMultiHit && (actionKey == "char_jumphit" || actionKey == "char_atk_p" || actionKey == "char_hit"))
+            if (SpineActionContract.InMultiHit)
             {
-                actionKey = "char_bighit";
+                if (actionKey == "char_jumphit" || actionKey == "char_atk_p" || actionKey == "char_hit")
+                {
+                    actionKey = "char_bighit";
+                }
+                SpineActionContract.EnforceGroundPosition(__instance);
             }
 
             // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
