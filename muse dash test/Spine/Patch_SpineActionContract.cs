@@ -440,7 +440,7 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
-        public static void Prefix(SpineActionController __instance, string actionKey)
+        public static void Prefix(SpineActionController __instance, ref string actionKey)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
 
@@ -448,6 +448,15 @@ namespace muse_dash_test
             SpineActionContract.RecordDemand("PlayByKey", actionKey, objName);
 
             SpineActionContract.TrackMultiHitWindow(actionKey);
+
+            // 샌드백/연타 구간(InMultiHit) 진입 시:
+            // "char_jumphit"(점프 타격) 요청이 오면 "char_hit"(지상 타격)으로 가로채어 변경합니다.
+            // 이렇게 하면 캐릭터가 공중으로 붕 뜨지 않고 바닥(지상) 위치를 유지하며,
+            // 점프 타격에 의한 카메라 진동/흔들림 현상도 방지됩니다.
+            if (SpineActionContract.InMultiHit && actionKey == "char_jumphit")
+            {
+                actionKey = "char_hit";
+            }
 
             // 연타 구간에서는 반복 자체가 정보이므로 중복 제거 없이 한 번 더 남깁니다.
             if (SpineActionContract.InMultiHit)
