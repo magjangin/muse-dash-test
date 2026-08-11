@@ -83,11 +83,19 @@ namespace muse_dash_test
         [HarmonyPatch(typeof(DBConfigLocalAlbums), nameof(DBConfigLocalAlbums.GetLocalTitleByIndex), new Type[] { typeof(int) })]
         internal class DBConfigLocalAlbums_GetLocalTitleByIndex_Patch
         {
+            private static bool _logged;
+
             private static bool Prefix(int index, ref string __result)
             {
                 if (index != CustomTagRegistry.TagUid) return true;
 
                 __result = CustomTagRegistry.AlbumTitle;
+
+                if (!_logged)
+                {
+                    _logged = true;
+                    MelonLogger.Msg($"[CustomTagRegistry] 앨범 이름 현지화 응답: index={index} → '{__result}' (이 로그는 1회만 표시됩니다)");
+                }
                 return false;
             }
         }
