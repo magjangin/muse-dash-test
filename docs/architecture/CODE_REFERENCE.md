@@ -105,7 +105,12 @@ MelonLoader 모드 진입점 클래스입니다.
   * 눈썹 `#A1099F` → R 63% / G 3.5% / B 62%. 제일 좁습니다.
   * 결론: **빨강·보라·남색 유령은 자연스럽게 되고, 초록·노랑 유령은 안 됩니다**(몸통의 G가 24%라 따라오지 못해 눈·입만 따로 놉니다). 원본보다 밝게·하양·파스텔도 불가. 그쪽이 필요하면 텍스처 교체(`CustomSkinInjector`) 경로입니다.
   * **적용 범위**: 훅이 `SpineActionController.PlayByKey`라 노트 종류를 안 가립니다(캐릭터도 같은 경로). 다만 ① 도달 가능한 색은 노트마다 원본 텍스처가 정하고, ② 컬러 타임라인이 없는 노트는 이 경로로 안 되고 슬롯 색을 써야 하며(고스트 외에는 미확인), ③ `SkeletonData`가 공유라 같은 스켈레톤을 쓰는 노트는 전부 같이 바뀝니다. 노트별로 다른 색을 주려면 애니메이션 데이터가 아니라 런타임 슬롯 색을 매 프레임 써야 합니다(컬러 타임라인이 매 프레임 덮어쓰기 때문).
-* **커스텀 곡의 팩 이름이 '기본 패키지'로 뜨던 문제**(해결). 곡 선택 화면의 팩 라벨(`UI/Standerd/PnlStage/StageUi/Info/ImgAlbumTittle`)은 `AlbumsInfo.title`을 **안 읽습니다**. 앨범 인덱스로 `DBConfigLocalAlbums.GetLocalTitleByIndex`를 조회해 현지화 문자열을 씁니다(숙주 앨범의 raw title은 `Default Music`인데 화면은 `기본 패키지`인 것이 단서였습니다). 커스텀 앨범은 그 테이블에 행이 없어 `GetLocalTitleByIndex(1999)`가 null → 호출자가 인덱스 0으로 폴백 → `기본 패키지`. 우리 인덱스에만 제목을 채워 주면 폴백이 사라집니다([CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)). **라벨을 직접 덮어쓰는 방식은 틀렸습니다** — 값이 여러 패스에 걸쳐 들어와서(직전 팩 이름 → 숙주 팩 이름) 어디까지 잡았는지 알 수 없습니다.
+* **커스텀 곡의 팩 이름이 '기본 패키지'로 뜨던 문제**(해결). 곡 선택 화면의 팩 라벨(`UI/Standerd/PnlStage/StageUi/Info/ImgAlbumTittle`)은 `AlbumsInfo.title`을 **안 읽습니다**. `DBConfigLocalAlbums.GetLocalTitleByIndex(index)`로 현지화 문자열을 가져옵니다(숙주 앨범의 raw title은 `Default Music`인데 화면은 `기본 패키지`인 것이 단서였습니다).
+  * **핵심: 그 `index`는 앨범의 전역 인덱스가 아니라 "지금 선택된 태그 안에서 몇 번째 앨범이냐"입니다.** 커스텀 태그에는 앨범이 하나뿐이라 늘 `0`이고, 현지화 테이블에서 0은 게임의 첫 앨범(`기본 패키지`)입니다. 일반 팩에서는 태그 안 순서와 전역 인덱스가 우연히 맞아떨어져 이 구조가 드러나지 않습니다.
+  * 그래서 `dbMusicTag.m_CurSelectedTagIndex`가 우리 태그(1999)인 동안의 조회에도 답합니다([CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)). 그 태그 안 앨범은 전부 우리 것이라 인덱스가 몇이든 답은 하나입니다.
+  * **빗나간 시도 셋**(전부 곡을 설명하는 값이라 라벨에 닿지 않습니다 — 라벨은 곡이 아니라 **위치**를 묻습니다): `AlbumsInfo.title`을 맞추기 / `MusicInfo.albumIndex`를 1999로 답하기 / `MusicInfo.albumUidName`을 `1999-0`으로 답하기. 뒤의 둘은 그 자체로는 옳은 수정이라 남겨 두었습니다(아래 참고).
+  * **`MusicInfo`의 앨범 계열 멤버는 getter 전용입니다**(`albumIndex`·`albumUidName`·`albumJsonIndex`, 백킹 필드 없음). 그래서 `CustomTagRegistrySupport.SetAlbumMetadata`의 `ModReflection.SetValue(..., silent: true)` 호출은 **작성된 이래 한 번도 성공한 적이 없습니다**. 값을 바꾸려면 getter를 가로채야 합니다.
+  * **라벨을 직접 덮어쓰는 방식은 틀렸습니다** — 값이 여러 패스에 걸쳐 들어와서(직전 팩 이름 → 숙주 팩 이름) 어디까지 잡았는지 알 수 없습니다.
 * **막다른 길 기록**(같은 곳을 다시 파지 않기 위해):
   * `SetAlpha(float)`, `SpineActionController.OnNoteDisappear`, `BaseEnemyObjectController.NoteDisappearLogic` — 셋 다 고스트 노트에 대해 **한 번도 호출되지 않았습니다.**
   * 애니메이션을 `standby`로 통째 교체하면 노트가 화면 중앙에 멈춥니다. **비행 이동도 `in_nor_44`가 갖고 있습니다.**
