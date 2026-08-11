@@ -65,6 +65,33 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>
+        /// 곡 선택 화면의 팩 이름(<c>ImgAlbumTittle</c>)은 <c>AlbumsInfo.title</c>이 아니라
+        /// <b>인덱스로 현지화 테이블</b>을 조회해서 만듭니다. 커스텀 앨범은 그 테이블에 행이 없어
+        /// <c>GetLocalTitleByIndex(1999)</c>가 null을 돌려주고, 호출자가 인덱스 0으로 폴백해
+        /// '기본 패키지'가 찍혔습니다. 그래서 title을 아무리 맞춰 놔도 화면에는 안 나왔습니다.
+        ///
+        /// 실측 순서(26-8-12 로그):
+        ///   GetAlbumIndexByUid('1999-0') → 1999
+        ///   GetLocalTitleByIndex(1999)   → (null)
+        ///   GetLocalTitleByIndex(0)      → '기본 패키지'   ← 폴백
+        ///   RefreshText('기본 패키지')    → ImgAlbumTittle
+        ///
+        /// 우리 인덱스에만 답을 채워 주면 폴백 자체가 일어나지 않습니다. 인덱스 0은 건드리지 않으므로
+        /// 진짜 기본 패키지에 속한 곡들의 팩 이름은 그대로입니다.
+        /// </summary>
+        [HarmonyPatch(typeof(DBConfigLocalAlbums), nameof(DBConfigLocalAlbums.GetLocalTitleByIndex), new Type[] { typeof(int) })]
+        internal class DBConfigLocalAlbums_GetLocalTitleByIndex_Patch
+        {
+            private static bool Prefix(int index, ref string __result)
+            {
+                if (index != CustomTagRegistry.TagUid) return true;
+
+                __result = CustomTagRegistry.AlbumTitle;
+                return false;
+            }
+        }
+
         [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumIndexByUid))]
         internal class DBConfigAlbums_GetAlbumIndexByUid_Patch
         {
