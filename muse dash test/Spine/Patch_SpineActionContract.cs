@@ -415,24 +415,6 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(AbstractGirlManager), nameof(AbstractGirlManager.PlayPressMusic))]
-    internal static class Patch_AbstractGirl_PlayPressMusic
-    {
-        public static void Prefix(AbstractGirlManager __instance)
-        {
-            SpineActionContract.RecordDemand("GirlManager.PlayPressMusic", "PlayPressMusic", SpineActionContract.SafeName(__instance));
-        }
-    }
-
-    [HarmonyPatch(typeof(AbstractGirlManager), nameof(AbstractGirlManager.BeMissed), new Type[] { })]
-    internal static class Patch_AbstractGirl_BeMissed
-    {
-        public static void Prefix(AbstractGirlManager __instance)
-        {
-            SpineActionContract.RecordDemand("GirlManager.BeMissed", "BeMissed", SpineActionContract.SafeName(__instance));
-        }
-    }
-
     [HarmonyPatch(typeof(GirlActionController), nameof(GirlActionController.Attack))]
     internal static class Patch_GirlAction_Attack
     {
