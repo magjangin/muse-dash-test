@@ -181,14 +181,24 @@ namespace muse_dash_test
     }
 
     /// <summary>
-    /// 관찰 전용. 페이드가 C# 알파 호출이 아니라 Spine 애니메이션(액션 키)일 가능성을 확인합니다.
-    /// 고스트 노트에 어떤 액션 키가 재생되는지만 남기고 값은 바꾸지 않습니다.
-    /// `public` + `string`/`bool` 조합이라 이 프로젝트에서 안전이 확인된 훅 모양입니다.
+    /// 페이드의 실체는 C# 알파 호출이 아니라 Spine 애니메이션이었습니다.
+    /// 계약서상 고스트 노트의 `in` 액션은 `in_nor_44` 하나로 풀리고, 노트가 날아오는 1.5초 동안
+    /// 재생되는 것이 그것뿐입니다. 알파를 깎는 주체가 이 애니메이션입니다.
+    ///
+    /// 그래서 `in`이 재생된 직후 페이드가 없는 애니메이션으로 덮어씁니다. 같은 스켈레톤이 갖고 있는
+    /// 6개 중 어떤 액션 키에도 물려 있지 않은 `standby`가 후보입니다(나머지는 in 변형 3종과 out 2종).
+    /// 스켈레톤·프리팹·UID·type을 전부 건드리지 않으므로 외형은 그대로입니다.
     /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
-    public class SpineActionController_PlayByKey_GhostNoteProbe_Patch
+    public class SpineActionController_PlayByKey_GhostNote_Patch
     {
-        public static void Prefix(SpineActionController __instance, string actionKey)
+        /// <summary>노트가 날아오는 동안 재생되는 액션 키. 이 키의 애니메이션이 알파를 깎습니다.</summary>
+        private const string FlightActionKey = "in";
+
+        /// <summary>페이드가 없을 것으로 보이는 대체 애니메이션. 안 맞으면 in_nor_33 / in_nor_38로 바꿔봅니다.</summary>
+        private const string ReplacementAnimation = "standby";
+
+        public static void Postfix(SpineActionController __instance, string actionKey)
         {
             try
             {
@@ -197,13 +207,18 @@ namespace muse_dash_test
 
                 GhostFadeBlockStats.Observe("PlayByKey", $"actionKey={actionKey ?? "(null)"}, {detail}", true);
 
-                // 액션 키가 어떤 애니메이션으로 풀리는지 알아야 대체 키를 고를 수 있습니다.
-                // 계약서 덤퍼는 오브젝트 이름 단위로 1회만 쓰므로 여기서 매번 불러도 파일은 한 번만 생깁니다.
+                // 계약서는 오브젝트 이름 단위로 1회만 파일을 쓰므로 매번 불러도 부담이 없습니다.
                 SpineActionContract.DumpSupplyForce(__instance);
+
+                if (!string.Equals(actionKey, FlightActionKey, StringComparison.Ordinal)) return;
+
+                // 원본 in이 깔린 직후에 덮어써야 트랙이 확정됩니다. 루프로 걸어 끝까지 유지시킵니다.
+                __instance.SetAnimation(ReplacementAnimation, true);
+                GhostFadeBlockStats.Blocked($"PlayByKey({FlightActionKey}→{ReplacementAnimation})");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[SpineActionController.PlayByKey.Prefix] 액션 키 관찰 중 예외 발생: {ex}");
+                MelonLogger.Error($"[SpineActionController.PlayByKey.Postfix] 고스트 애니메이션 교체 중 예외 발생: {ex}");
             }
         }
     }
