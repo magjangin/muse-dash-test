@@ -370,9 +370,21 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.SetAnimation))]
     internal static class Patch_SpineContract_SetAnimation
     {
-        public static void Prefix(SpineActionController __instance, string n)
+        private static bool toggleDoubleHit = false;
+
+        public static void Prefix(SpineActionController __instance, ref string n)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
+
+            // 샌드백(연타) 구간 내부일 때만 공중 연타 모션을 double_hit_1 / double_hit_2 교체 펀치로 변경 (일반 공중 노트 영향 방지)
+            if (Patch_SpineContract_PlayByKey.InMultiHit &&
+                (n == "air_hit_perfect_1" || n == "air_hit_perfect_2" || n == "air_hit_perfect_3" || n == "air_hit_perfect_4"))
+            {
+                toggleDoubleHit = !toggleDoubleHit;
+                string originalAnim = n;
+                n = toggleDoubleHit ? "double_hit_1" : "double_hit_2";
+                MelonLogger.Msg($"[SpineContract] [InMultiHit] SetAnimation 교체: {originalAnim} -> {n} (샌드백 복선 펀치 교차)");
+            }
 
             string objName = SpineActionContract.SafeName(__instance);
             SpineActionContract.RecordDemand("SetAnimation", n, objName);
@@ -382,9 +394,22 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     internal static class Patch_SpineContract_PlayByKey
     {
+        public static bool InMultiHit { get; private set; }
+
         public static void Prefix(SpineActionController __instance, string actionKey)
         {
             if (!SpineActionContract.IsBattleObject(__instance)) return;
+
+            if (actionKey == "char_multihit_start")
+            {
+                InMultiHit = true;
+                MelonLogger.Msg("[SpineContract] 샌드백(multihit) 구간 시작 감지 -> 복선 펀치 교차 활성화");
+            }
+            else if (actionKey == "char_multihit_end")
+            {
+                InMultiHit = false;
+                MelonLogger.Msg("[SpineContract] 샌드백(multihit) 구간 종료 감지 -> 복선 펀치 교차 해제");
+            }
 
             SpineActionContract.EnableMultiHitLoop(__instance);
 
