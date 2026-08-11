@@ -206,6 +206,9 @@ namespace muse_dash_test
 
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);
 
+            // 고스트 노트가 판정선 근처에서 사라지지 않도록 알파를 되돌립니다(20Hz 스캔, 후킹 없음).
+            FeatureGuard.Run("GhostNote.AlphaHold", GhostNoteAlphaHold.HoldAlpha);
+
             // 1. 순정/실험 맵에 구애받지 않고 스테이지 상태를 지속적으로 모니터링합니다.
             FeatureGuard.Run("StageCheck", () =>
             {

@@ -89,6 +89,13 @@ MelonLoader 모드 진입점 클래스입니다.
 * **미스 전부가 데미지를 주지는 않습니다**: 미스 223회 중 `Hurt`는 107회만 왔습니다(`BattleProperty.missHardTime` 무적 구간으로 추정).
 * **검증된 오답 두 가지**: `GameMissPlay.MissCube`는 이 경로가 **아닙니다**(미스 3회 동안 호출 1회·미스 성립 0회). `GameGlobal.MISS_NO_CHECK_TICK`(원본 `-5`)을 `999999`로 밀어도 미스는 동일하게 발생합니다.
 
+### 📂 [Battle/Mechanics/GhostNoteAlphaHold.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/GhostNoteAlphaHold.cs)
+고스트 노트(UID `zzxxyy`의 `xx=17`, type 4)가 판정선에 가까워질수록 알파가 깎여 사라지는 것을 막습니다. `config.txt`의 `고스트노트보이기`로 켜고 끄며 기본값은 `true`입니다. **프리팹을 갈아끼우지 않으므로 고스트 고유 외형은 그대로 유지됩니다.**
+
+* **후킹하지 않습니다.** 페이드를 만드는 `NormalNoteVisibleController`의 `OnAppear`/`Init`/`OnUpdate`가 전부 `virtual`이고(이 프로젝트에서 virtual/private 훅은 로그 없는 네이티브 크래시 전력), 유일한 non-virtual public 지점인 `set_NoteMData`는 IL2CPP가 인라인해 훅이 아예 돌지 않았습니다. 그래서 `MainMod.OnUpdate`에서 20Hz로 살아 있는 노트 오브젝트(`BaseEnemyObjectController`)를 훑습니다.
+* **처리 순서가 중요합니다**: ① `m_ExNoteControllers`에서 `NormalNoteVisibleController`를 찾아 `m_NoteTweener`를 `Kill()` → ② `m_SkeletonAnimation.skeleton.A`를 `1`로 복구. 트윈을 죽이지 않고 알파만 밀면 매 프레임 서로 덮어써 깜빡입니다.
+* **알파는 노트 데이터에 없습니다.** `NoteConfigData`/`MusicData` 어디에도 알파·투명도 필드가 없어 BMS 주입이나 런타임 zz 복구 시점에는 손댈 수단이 없습니다. 런타임 컴포넌트 문제입니다.
+
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.
 * **`AbstractFeverManager_AddFever_Patch`**: 캐릭터 피버 충전(`AbstractFeverManager.AddFever`)을 가로채 설정(`InputOverlay.blockFever`)에 따라 게이지 충전량을 0으로 차단합니다.
