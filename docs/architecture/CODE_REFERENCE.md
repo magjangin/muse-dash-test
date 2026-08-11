@@ -77,7 +77,12 @@ MelonLoader 모드 진입점 클래스입니다.
 `config.txt`의 `강제퍼펙트=true`일 때 **기록되는 판정 값만** Perfect로 승격시키는 패치입니다. 오토플레이(입력 대행)와는 무관하며, 노트 입력과 타이밍은 그대로 사람이 칩니다.
 * **`GameTouchPlay_TouchResult_ForcePerfect_Patch` (Prefix, 상류)**: 터치 판정이 산출된 직후인 `GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)`의 `resultCode`를 `TaskResult.Prefect`로 덮어씁니다. 이 값이 판정 표시(`GameTouchPlay.ShowPlayResult`), 캐릭터 액션(`GirlActionController.Attack(actKey, result)`), 집계로 함께 흘러가므로 **인게임 판정 표시까지 Perfect로 바뀝니다**.
 * **`TaskStageTarget_SetPlayResult_ForcePerfect_Patch` & `BattleEnemyManager_SetPlayResult_ForcePerfect_Patch` (Prefix, 하류 안전망)**: 집계 진입점(`TaskStageTarget.SetPlayResult(int idx, uint result, bool isMulEnd)`)과 노트별 결과 저장소(`BattleEnemyManager.SetPlayResult(int idx, byte result, ...)`)에도 같은 값을 씁니다. 완전 미스(`GameMissPlay.MissCube`)나 롱노트 종료처럼 `TouchResult`를 거치지 않는 경로를 잡기 위한 것이며, 상류에서 이미 승격된 값은 조건에 걸리지 않아 그대로 통과합니다.
-* **훅별 카운트 로그**: `[ForcePerfect] 누적 승격 현황: ... | 훅별: ...`에 어느 훅에서 승격이 일어났는지 함께 남습니다. 상류만 오르면 화면 표시까지 일치한 것이고, 하류 카운트가 오르면 `TouchResult`를 거치지 않는 경로가 남아 있다는 뜻입니다.
+* **훅별 카운트 로그**: `[ForcePerfect] 누적 승격 현황: ... | 훅별: ...`에 어느 훅에서 승격이 일어났는지 함께 남습니다. 상류만 오르면 화면 표시까지 일치한 것이고, 하류 카운트가 오르면 `TouchResult`를 거치지 않는 경로가 남아 있다는 뜻입니다. 실측 결과 **친 노트(Great)는 전부 `TouchResult`, 안 친 노트(Miss)는 전부 `BattleEnemyManager.SetPlayResult`** 로 들어옵니다. 즉 안 친 노트는 기록만 승격되고 MISS 연출과 체력 감소는 그대로 남습니다.
+
+### 📂 [Battle/Mechanics/ForcePerfectPatch.MissProbe.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.MissProbe.cs)
+안 친 노트의 미스 경로를 관찰하는 **임시 진단 전용** 프로브입니다(값 변경 없음, 강제퍼펙트가 켜진 동안만 로그). "미스 페널티 무효화"를 어디에 걸지 정하기 위한 근거를 모읍니다.
+* **`GameMissPlay_MissCube_ForcePerfectProbe_Patch`**: 호출 빈도만 세고(10초 주기 요약), 실제 미스가 성립한 호출(`__result == true`)에서만 `idx`/`currentTick`/체력을 남깁니다. 여기에 Prefix를 걸어도 되는 경로인지 판단하는 근거입니다.
+* **`BattleRoleAttributeComponent_Miss_/Hurt_ForcePerfectProbe_Patch`**: 미스 시 체력을 실제로 깎는 주체가 `Miss()`인지 `Hurt(hurtValue, isAir)`인지 HP 전후 값으로 가려냅니다.
 * **승격 대상 제한**: 타격 판정인 `Miss(1)`, `Cool(2)`, `Great(3)`만 `Prefect(4)`로 올립니다. `None(0)`(미판정), `JumpOver(5)`(톱니 회피), `Fever(6)`는 종류가 다른 결과이므로 그대로 두어야 정확도 분모와 톱니/피버 집계가 유지됩니다.
 * **`TaskStageTarget_AddMiss_ForcePerfectProbe_Patch` & `TriggerNoteMiss` 프로브 (Postfix, 관찰 전용)**: 값을 바꾸지 않고 로그만 남깁니다. 판정을 덮어써도 미스 카운터(`m_MissResult`, `m_MissCombo`)가 별도 경로로 올라가면 올 퍼펙트 조건이 깨지므로, 강제퍼펙트가 켜진 동안 해당 경로가 여전히 호출되는지 `[ForcePerfect.Probe]` 로그로 확인합니다.
 

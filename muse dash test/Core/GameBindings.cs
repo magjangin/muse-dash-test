@@ -44,6 +44,21 @@ namespace muse_dash_test
             public const string TouchResult = "TouchResult";
         }
 
+        /// <summary>Il2CppGameLogic.GameMissPlay — 안 친 노트의 미스 처리 지점.</summary>
+        public static class GameMissPlay
+        {
+            /// <summary>MissCube(int idx, Il2CppSystem.Decimal currentTick) → 미스로 처리했는지 여부.</summary>
+            public const string MissCube = "MissCube";
+        }
+
+        /// <summary>Il2CppAssets.Scripts.GameCore.HostComponent.BattleRoleAttributeComponent — 플레이어 체력/피격.</summary>
+        public static class BattleRoleAttributeComponent
+        {
+            public const string Miss = "Miss";
+            /// <summary>Hurt(int hurtValue, bool isAir).</summary>
+            public const string Hurt = "Hurt";
+        }
+
         /// <summary>Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager — 인게임 풀콤보/승리 2D 배너.</summary>
         public static class PnlVictory2dManager
         {
