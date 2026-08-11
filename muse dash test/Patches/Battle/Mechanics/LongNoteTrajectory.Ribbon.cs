@@ -14,14 +14,26 @@ namespace muse_dash_test
     /// </summary>
     public static partial class LongNoteTrajectory
     {
-        /// <summary>원본 직선 막대를 숨길지. 끄면 원본과 리본이 같이 보여 위치 비교에 쓸 수 있습니다.</summary>
-        public static bool HideOriginalBody = true;
+        /// <summary>
+        /// 원본 직선 막대를 숨길지.
+        /// <para>지금은 진단을 위해 꺼 둡니다. 원본 막대와 리본을 같이 띄워야
+        /// "리본이 안 그려지는 것"과 "리본이 엉뚱하게 그려지는 것"을 눈으로 가를 수 있습니다.</para>
+        /// </summary>
+        public static bool HideOriginalBody = false;
+
+        /// <summary>
+        /// 리본에 게임 원본 재질 대신 Unity 기본 스프라이트 재질을 쓸지.
+        /// <para>게임 셰이더가 LineRenderer의 정점 색을 무시하거나 투명하게 처리하면
+        /// 지오메트리가 멀쩡해도 화면에 아무것도 안 나옵니다. 기본 셰이더로 한 번 그려 보면
+        /// 그 경우인지 바로 판별됩니다.</para>
+        /// </summary>
+        public static bool UseFallbackShader = true;
 
         /// <summary>
         /// 리본에 원본 막대의 스프라이트 텍스처를 입힐지. false면 <see cref="RibbonColor"/> 단색으로 그립니다.
-        /// <para>텍스처를 못 잘라내면 자동으로 단색으로 떨어집니다.</para>
+        /// <para>지금은 진단을 위해 단색으로 둡니다. 원본 막대와 색이 겹치면 어느 쪽이 우리 것인지 알 수 없습니다.</para>
         /// </summary>
-        public static bool UseSpriteTexture = true;
+        public static bool UseSpriteTexture = false;
 
         /// <summary>단색 모드에서 쓸 리본 색. 게임 원본과 헷갈리지 않게 눈에 띄는 색을 기본으로 둡니다.</summary>
         public static Color RibbonColor = new Color(0.2f, 1f, 0.7f, 0.9f);
@@ -286,7 +298,7 @@ namespace muse_dash_test
             Material material;
             try
             {
-                material = new Material(source);
+                material = CreateBaseMaterial(source);
 
                 // 텍스처를 비우면 셰이더가 흰색으로 채우고 정점 색(RibbonColor)이 곱해집니다.
                 // 잘라내기에 실패했을 때도 이 상태로 남아 단색 리본이 됩니다.
@@ -311,6 +323,42 @@ namespace muse_dash_test
 
             ribbonMaterials[key] = material;
             return material;
+        }
+
+        /// <summary>
+        /// 리본 재질의 바탕을 만듭니다.
+        /// <para>게임 원본 재질은 커스텀 셰이더일 수 있고, 그런 셰이더는 LineRenderer가 넘기는 정점 색을
+        /// 무시하거나 스프라이트 전용 입력에 의존해 아무것도 그리지 않을 수 있습니다.
+        /// <see cref="UseFallbackShader"/>가 켜져 있으면 Unity 기본 스프라이트 셰이더로 만들어
+        /// "안 그려지는 문제"를 배제합니다.</para>
+        /// </summary>
+        private static Material CreateBaseMaterial(Material source)
+        {
+            if (UseFallbackShader)
+            {
+                Shader shader = Shader.Find("Sprites/Default");
+                if (shader == null) shader = Shader.Find("Unlit/Transparent");
+
+                if (shader != null)
+                {
+                    MelonLogger.Msg($"[LongNoteTrajectory] 리본 재질: 기본 셰이더 '{shader.name}' 사용 (원본 '{DescribeShader(source)}')");
+                    return new Material(shader);
+                }
+
+                MelonLogger.Msg($"[LongNoteTrajectory] 리본 재질: 기본 셰이더를 찾지 못해 원본 '{DescribeShader(source)}'을 복제합니다.");
+            }
+            else
+            {
+                MelonLogger.Msg($"[LongNoteTrajectory] 리본 재질: 원본 셰이더 '{DescribeShader(source)}' 복제");
+            }
+
+            return new Material(source);
+        }
+
+        private static string DescribeShader(Material material)
+        {
+            try { return material != null && material.shader != null ? material.shader.name : "(null)"; }
+            catch { return "(조회 실패)"; }
         }
 
         /// <summary>
