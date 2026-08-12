@@ -221,6 +221,13 @@ namespace muse_dash_test
                 Description = "공식 곡 또는 알 수 없는 UID이므로 원본 차트를 유지합니다."
             };
 
+            if (!ModConfig.EnableCustomChart)
+            {
+                decision.ReasonCode = "ConfigDisabled";
+                decision.Description = "ModConfig에서 EnableCustomChart 설정이 비활성화되어 원본 차트를 유지합니다.";
+                return decision;
+            }
+
             if (string.IsNullOrEmpty(uid))
             {
                 decision.ReasonCode = "EmptyUid";
