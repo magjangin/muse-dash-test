@@ -89,7 +89,6 @@ namespace muse_dash_test.Patches
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
         {
-            if (!ModConfig.EnableAPMod) return;
             try
             {
                 if (VictoryDataCache.ActiveTarget != __instance)
@@ -136,7 +135,6 @@ namespace muse_dash_test.Patches
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
         {
-            if (!ModConfig.EnableAPMod) return;
             try
             {
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
@@ -156,7 +154,6 @@ namespace muse_dash_test.Patches
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
         {
-            if (!ModConfig.EnableAPMod) return;
             try
             {
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
