@@ -10,11 +10,10 @@ namespace muse_dash_test
     public static class CustomRecordUiPatchHelper
     {
         // 콤보 표시값: 풀콤보면 전체 노트 수, 아니면 실제 최대 콤보(record.maxCombo)를 씁니다.
-        // (이전엔 perfect+great = 총 히트 수를 썼는데, 미스가 섞이면 최대 콤보보다 커서 부정확했습니다.)
         public static string FormatCombo(CustomRecordStore.PlayRecord r)
             => (r.isFullCombo ? r.noteCount : r.maxCombo).ToString();
 
-        // 점수 표시값: 게임에서 읽어 저장한 실제 점수를 천 단위 구분으로 표시합니다. (추정 공식 아님)
+        // 점수 표시값: 게임에서 읽어 저장한 실제 점수를 천 단위 구분으로 표시합니다.
         public static string FormatScore(CustomRecordStore.PlayRecord r)
             => r.score.ToString("N0");
 
@@ -139,7 +138,8 @@ namespace muse_dash_test
                     }
                     if (pnlRecord.txtClear != null)
                     {
-                        pnlRecord.txtClear.text = "1";
+                        int playCount = record.playCount > 0 ? record.playCount : 1;
+                        pnlRecord.txtClear.text = playCount.ToString();
                     }
 
                     if (pnlRecord.txtCombo != null)
@@ -157,7 +157,7 @@ namespace muse_dash_test
                         pnlRecord.txtScore.text = FormatScore(record);
                     }
 
-                    MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> acc={FormatAccuracy(record)}, FC={record.isFullCombo}, AP={record.isAllPerfect}");
+                    MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> acc={FormatAccuracy(record)}, clear={record.playCount}, FC={record.isFullCombo}, AP={record.isAllPerfect}");
                 }
                 else
                 {

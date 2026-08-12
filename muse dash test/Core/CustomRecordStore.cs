@@ -10,10 +10,11 @@ namespace muse_dash_test
     /// 커스텀 곡(1999-*, 1998-*)의 플레이 기록을 게임 세이브와 분리된 별도 폴더(record/)에 저장합니다.
     ///
     /// 게임 세이브 시스템은 "최고 기록만 유지"하고 가상 곡 데이터를 오염시키므로(그래서 SaveDataManagerPatch가
-    /// 저장 직전 가상 기록을 제거합니다), 커스텀 곡 기록은 게임과 싸우지 않고 우리가 직접 관리합니다.
+    /// 저장 직전 가상 기록을 제거합니다), 커스텀 곡 기록은 당사 전용 샌드박스로 직접 관리합니다.
     ///
-    /// [1단계] 승리 시점에 record/{uid}.json 파일을 생성/갱신하는 것까지만 담당합니다.
-    ///         (이 파일을 읽어서 곡 선택/준비 패널에 띄우는 것은 2단계에서 진행합니다.)
+    /// [최고 기록 갱신 & 플레이 횟수 누적 지원]
+    /// 1. 이전 기록보다 점수/정확도/FC/AP 상태가 우수할 때만 최고 기록(High Score)을 갱신합니다.
+    /// 2. 플레이할 때마다 플레이/클리어 횟수(playCount)가 누적 갱신됩니다.
     /// </summary>
     public static class CustomRecordStore
     {
@@ -42,6 +43,7 @@ namespace muse_dash_test
 
         /// <summary>
         /// 한 판의 플레이 결과를 record/{uid}_{difficulty}.json 에 기록합니다.
+        /// (최고 점수 갱신 비교 및 플레이 횟수 누적을 수행합니다.)
         /// </summary>
         public static void SaveResult(
             string uid, int difficulty,
@@ -65,17 +67,63 @@ namespace muse_dash_test
                 // 풀콤보면 최대 콤보는 정의상 전체 노트 수입니다. (게임 필드 읽기 실패 시 안전 보정)
                 if (isFullCombo && maxCombo < noteCount) maxCombo = noteCount;
 
+                // 1. 기존 기록을 읽어와 최고 점수 비교 및 플레이 횟수 누적을 수행합니다.
+                var existing = LoadResult(uid, difficulty);
+
+                int updatedPlayCount = (existing != null && existing.playCount > 0) ? existing.playCount + 1 : 1;
+
+                // 2. 최고 기록(High Score) 판정:
+                //    기존 기록이 없거나, 새 점수가 더 높거나, 점수가 같아도 정확도가 높거나, FC/AP 신규 달성 시 갱신
+                bool isNewHighScore = false;
+                if (existing == null)
+                {
+                    isNewHighScore = true;
+                }
+                else if (score > existing.score)
+                {
+                    isNewHighScore = true;
+                }
+                else if (score == existing.score && accuracy > existing.accuracy)
+                {
+                    isNewHighScore = true;
+                }
+                else if (isAllPerfect && !existing.isAllPerfect)
+                {
+                    isNewHighScore = true;
+                }
+                else if (isFullCombo && !existing.isFullCombo && !existing.isAllPerfect)
+                {
+                    isNewHighScore = true;
+                }
+
+                int finalScore = isNewHighScore ? score : existing.score;
+                int finalMaxCombo = isNewHighScore ? maxCombo : existing.maxCombo;
+                float finalAccuracy = isNewHighScore ? accuracy : existing.accuracy;
+                bool finalIsFullCombo = isNewHighScore ? isFullCombo : (existing.isFullCombo || isFullCombo);
+                bool finalIsAllPerfect = isNewHighScore ? isAllPerfect : (existing.isAllPerfect || isAllPerfect);
+
+                int finalNoteCount = isNewHighScore ? noteCount : existing.noteCount;
+                int finalStandard = isNewHighScore ? standard : existing.standard;
+                int finalGears = isNewHighScore ? gears : existing.gears;
+                int finalHearts = isNewHighScore ? hearts : existing.hearts;
+                int finalBlueNotes = isNewHighScore ? blueNotes : existing.blueNotes;
+                int finalPerfect = isNewHighScore ? perfect : existing.perfect;
+                int finalGreat = isNewHighScore ? great : existing.great;
+                int finalMiss = isNewHighScore ? miss : existing.miss;
+                string finalSavedAt = isNewHighScore ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) : existing.savedAtUtc;
+
                 string filePath = Path.Combine(RecordFolderPath, $"{SanitizeFileName(uid)}_{difficulty}.json");
-                string json = BuildJson(uid, noteCount, standard, gears, hearts, blueNotes,
-                    perfect, great, miss, score, maxCombo, accuracy, isFullCombo, isAllPerfect);
+                string json = BuildJson(uid, finalNoteCount, finalStandard, finalGears, finalHearts, finalBlueNotes,
+                    finalPerfect, finalGreat, finalMiss, finalScore, finalMaxCombo, finalAccuracy,
+                    finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt);
 
                 File.WriteAllText(filePath, json, Encoding.UTF8);
-                MelonLogger.Msg($"[CustomRecordStore] 기록 저장 완료 → {filePath} (notes={noteCount}, score={score}, maxCombo={maxCombo}, acc={accuracy:0.0000}, FC={isFullCombo}, AP={isAllPerfect})");
+                MelonLogger.Msg($"[CustomRecordStore] 기록 저장 완료 (신규 최고기록: {isNewHighScore}) → {filePath} (playCount={updatedPlayCount}, score={finalScore}, maxCombo={finalMaxCombo}, acc={finalAccuracy:0.0000}, FC={finalIsFullCombo}, AP={finalIsAllPerfect})");
 
                 try
                 {
                     DiscordPresenceManager.ResolveSongDetails(uid, out string title, out _);
-                    DiscordPresenceManager.SetResults(title, score, accuracy, isFullCombo, isAllPerfect);
+                    DiscordPresenceManager.SetResults(title, finalScore, finalAccuracy, finalIsFullCombo, finalIsAllPerfect);
                 }
                 catch (Exception ex)
                 {
@@ -104,6 +152,7 @@ namespace muse_dash_test
             public float accuracy;
             public bool isFullCombo;
             public bool isAllPerfect;
+            public int playCount = 1;
             public string savedAtUtc = string.Empty;
         }
 
@@ -134,7 +183,8 @@ namespace muse_dash_test
 
                 string content = File.ReadAllText(filePath, Encoding.UTF8);
                 var record = ParseJson(content);
-                MelonLogger.Msg($"[CustomRecordStore] 기록 로드 성공 → {filePath} (acc={record.accuracy:0.0000}, FC={record.isFullCombo})");
+                if (record != null && record.playCount <= 0) record.playCount = 1;
+                MelonLogger.Msg($"[CustomRecordStore] 기록 로드 성공 → {filePath} (playCount={record?.playCount}, score={record?.score}, acc={record?.accuracy:0.0000}, FC={record?.isFullCombo})");
                 return record;
             }
             catch (Exception ex)
@@ -200,6 +250,9 @@ namespace muse_dash_test
                     case "isAllPerfect":
                         record.isAllPerfect = val.Equals("true", StringComparison.OrdinalIgnoreCase);
                         break;
+                    case "playCount":
+                        int.TryParse(val, out record.playCount);
+                        break;
                     case "savedAtUtc":
                         record.savedAtUtc = val.Replace("\"", "").Trim();
                         break;
@@ -208,13 +261,14 @@ namespace muse_dash_test
             return record;
         }
 
-        // 사람이 열어볼 수 있도록 들여쓰기된 평문 JSON을 직접 구성합니다. (외부 의존성 없이 1단계용)
+        // 사람이 열어볼 수 있도록 들여쓰기된 평문 JSON을 직접 구성합니다.
         private static string BuildJson(
             string uid, int noteCount,
             int standard, int gears, int hearts, int blueNotes,
             int perfect, int great, int miss,
             int score, int maxCombo,
-            float accuracy, bool isFullCombo, bool isAllPerfect)
+            float accuracy, bool isFullCombo, bool isAllPerfect,
+            int playCount, string savedAtUtc)
         {
             var ci = CultureInfo.InvariantCulture;
             var sb = new StringBuilder();
@@ -233,7 +287,8 @@ namespace muse_dash_test
             sb.Append("  \"accuracy\": ").Append(accuracy.ToString("0.000000", ci)).Append(",\n");
             sb.Append("  \"isFullCombo\": ").Append(isFullCombo ? "true" : "false").Append(",\n");
             sb.Append("  \"isAllPerfect\": ").Append(isAllPerfect ? "true" : "false").Append(",\n");
-            sb.Append("  \"savedAtUtc\": \"").Append(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", ci)).Append("\"\n");
+            sb.Append("  \"playCount\": ").Append(playCount).Append(",\n");
+            sb.Append("  \"savedAtUtc\": \"").Append(string.IsNullOrEmpty(savedAtUtc) ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", ci) : savedAtUtc).Append("\"\n");
             sb.Append('}').Append('\n');
             return sb.ToString();
         }
