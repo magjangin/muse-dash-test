@@ -32,6 +32,21 @@
   * 곡 완료 시 플레이어의 판정(Great 0, Miss 0, Full Combo)을 실시간으로 감지하여, 기존 FULL COMBO 배너 대신 찬란한 골드빛의 **"ALL PERFECT !"** 커스텀 텍스트 배너를 동적으로 교환 적용합니다.
   * 인게임 HUD 스코어 컴포넌트(`ChangeScoreValue`)로부터 뮤즈 대시 메인 서체인 `LuckiestGuy-Regular` 등의 **프리미엄 시그니처 폰트를 실시간 추출/캐싱**하여 결과창에 완벽히 연동시켰으며, 입체적인 3D 섀도우 및 검은색 아웃라인(`Outline`) 효과까지 그대로 재현해 인게임 정체성을 지켰습니다.
 
+* **ModConfig Feature Toggle System (개별 기능 온/오프 제어 시스템) [v0.9.3]** ✅
+  * `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 카테고리를 통해 12가지 개별 기능(커스텀 차트, 스킨 스왑, 입력 오버레이, 판정바, 디스코드 RPC, 체력바, AP 패치, 오토플레이, 강제 올퍼펙트 등)을 자유롭게 활성화/비활성화할 수 있습니다.
+
+* **Real-Time FavGirl Swapper (인게임/준비화면 실시간 캐릭터 & 스킨 스왑)** ✅
+  * 인게임 및 곡 선택/준비 화면에서 `P` / `O` 핫키를 눌러 현재 플레이어 캐릭터와 스킨을 실시간으로 핫스왑 조작할 수 있는 편의 기능을 제공합니다.
+
+* **In-Game Input Overlay & Judgment Bar (키 입력 오버레이 & 판정 타임라인 시각화)** ✅
+  * 인게임 플레이 중 실시간 키보드 입력 상황을 직관적인 HUD 오버레이로 표시하며, 화면 하단에 판정 타임라인(`JudgmentBar`)을 그래픽으로 시각화합니다.
+
+* **Spine Custom Skin Injection (Spine 커스텀 스킨 주입)** ✅
+  * Spine 애니메이션 캐릭터의 텍스처 및 아틀라스 에셋을 런타임 커스텀 에셋으로 주입 및 바인딩합니다.
+
+* **AutoPlay & Force Perfect (오토 플레이 및 올퍼펙트 파라미터 모드)** ✅
+  * 인게임 차트 자동 연주 기능 및 판정 파라미터 조작을 통한 All-Perfect 유도 기능을 선택적으로 활성화할 수 있습니다.
+
 * **Offline Sandbox Toggle (오프라인 샌드박스 동적 토글) [NEW]** ✅
   * `save custom key/OFFLINE_SANDBOX.txt` 플래그 파일의 설정값(`오프라인_샌드박스=활성화/비활성화`)에 따라 게임을 재시작하지 않고도 실시간으로 오프라인 샌드박스 패치(전체 DLC 잠금 해제 및 검증 우회)를 활성화/비활성화할 수 있습니다.
 
@@ -60,6 +75,11 @@
 | UID 단독 변조 한계 확인 및 정식 등록 방향 정리 | ✅ 완료 |
 | 네이티브 훅 없는 인메모리 차트 재구성 | ✅ 완료 |
 | **ALL PERFECT! 배너 동적 교체 및 폰트/외곽선 적용** | ✅ 완료 |
+| **ModConfig 개별 기능 토글 제어 (`MelonPreferences.cfg`)** | ✅ 완료 (v0.9.3) |
+| **인게임 키 입력 오버레이 (`InputOverlay`) & 판정바 (`JudgmentBar`) 표시** | ✅ 완료 |
+| **`P`/`O` 핫키 기반 실시간 캐릭터/스킨 핫스왑 (`RealTimeSwapper`)** | ✅ 완료 |
+| **Spine 커스텀 스킨 런타임 텍스처/아틀라스 주입 (`Spine/`)** | ✅ 완료 |
+| **오토 플레이(`AutoPlay`) 및 강제 올퍼펙트(`ForcePerfect`) 조작 패치** | ✅ 완료 |
 | **오프라인 샌드박스 플래그 제어 및 실시간 토글** | ✅ 완료 |
 | **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (`music.ogg`)** | ✅ 완료 |
 | **로컬 `cover.png` 기반 커스텀 곡 셀/디스크 앨범 아트 주입** | ✅ 완료 |
@@ -100,8 +120,10 @@
 ```text
 ├── muse dash test/           # C# 모드 프로젝트 폴더
 │   ├── Bms/                  # BMS 파서/렉서, WAV 코드 해석, 노트 매칭, 보스 스왑 플래너
-│   ├── Core/                 # 게임 바인딩, 예외 격리, 플레이 세션, 기록 저장소, 즐겨찾기 세이브
-│   ├── Integration/          # Discord RPC 연동 및 실시간 리소스 스와퍼
+│   ├── Core/                 # 게임 바인딩, 예외 격리, 세션/기록 저장소, ModConfig 통합 설정
+│   │   ├── ModConfig.cs      # MelonPreferences 기반 12개 개별 기능 동적 On/Off 제어
+│   │   └── ...
+│   ├── Integration/          # Discord RPC 연동 및 실시간 리소스/스킨 스와퍼 (P/O 단축키)
 │   │   ├── DiscordPresenceManager.cs
 │   │   ├── DiscordRpc.cs
 │   │   └── RealTimeSwapper.cs
@@ -178,10 +200,11 @@
 │   │           ├── PnlReportCardPatch.cs
 │   │           ├── PnlStagePatch.cs
 │   │           └── RankCellHookPatch.cs
-│   ├── Spine/                # Spine 커스텀 스킨 주입 및 스킨명 프로브
+│   ├── Spine/                # Spine 커스텀 스킨 주입 및 아키텍처 제어
 │   │   ├── CustomSkinInjector.cs
 │   │   ├── Patch_Inject_BlackGirlBattle.cs
-│   │   └── Patch_SkinNameProbe.cs
+│   │   ├── Patch_SkinNameProbe.cs
+│   │   └── Patch_SpineActionContract.cs
 │   ├── Properties/           # AssemblyInfo (MelonInfo/MelonGame 특성)
 │   ├── Resources/            # DLL 내장 리소스 (tag_icon.png)
 │   ├── MainMod.cs            # MelonLoader 진입점 (MelonMod)
@@ -220,6 +243,27 @@
 ├── run-logic-tests.bat       # BMS 로직 테스트 실행 스크립트
 └── README.md                 # 본 프로젝트 소개 파일
 ```
+
+---
+
+## ⚙️ Configuration (모드 기능 설정)
+
+게임을 1회 실행하면 Muse Dash 설치 디렉터리의 `UserData/MelonPreferences.cfg` 파일에 `[muse-dash-custom-chart-features]` 카테고리가 자동 생성됩니다. 각 항목을 `true`/`false`로 수정하여 기능을 개별 제어할 수 있습니다.
+
+| 설정 키 (Entry) | 기본값 | 기능 설명 |
+|---|---|---|
+| `EnableCustomChart` | `true` | 커스텀 차트 로더 및 인메모리 BMS 주입 활성화 |
+| `EnableRealTimeSwap` | `true` | FavGirl 실시간 소녀/스킨 핫스왑 조작 활성화 (`P` / `O` 단축키) |
+| `EnableInputOverlay` | `true` | 인게임 실시간 키보드 입력 오버레이 HUD 표시 |
+| `EnableJudgmentBar` | `true` | 화면 하단 판정 타임라인 시각화 그래프 UI 표시 |
+| `EnableDiscordRPC` | `true` | Discord Rich Presence 실시간 상태 연동 |
+| `EnableHpTextMod` | `true` | 배틀 체력바 워터마크 및 HitPoint 텍스트 오버레이 |
+| `EnableAPMod` | `true` | 올 퍼펙트 배너 및 정확도/판정 계산 오버라이드 |
+| `EnableAllPerfectSound` | `true` | 올 퍼펙트 달성 시 시그니처 효과음 재생 |
+| `EnableAutoPlay` | `true` | 오토 플레이 패치 활성화 |
+| `EnableForcePerfect` | `true` | All-Perfect 파라미터 모드 (강제 퍼펙트 판정) 활성화 |
+| `EnableBattleMedia` | `true` | 배틀 커스텀 BGA 비디오/미디어 재생기 활성화 |
+| `EnableSpineSkin` | `true` | Spine 커스텀 스킨 텍스처/아틀라스 런타임 주입 활성화 |
 
 ---
 
