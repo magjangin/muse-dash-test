@@ -34,7 +34,14 @@ namespace muse_dash_test
                 if (data == null) return;
 
                 string objName = __instance.gameObject != null ? __instance.gameObject.name : "(Unknown)";
-                string skeletonName = !string.IsNullOrEmpty(data.name) ? data.name : objName;
+                string basePrefabName = objName;
+                int cloneIdx = basePrefabName.IndexOf("(Clone)");
+                if (cloneIdx >= 0) basePrefabName = basePrefabName.Substring(0, cloneIdx);
+
+                string skeletonName = !string.IsNullOrEmpty(data.name) ? data.name : basePrefabName;
+                int skelCloneIdx = skeletonName.IndexOf("(Clone)");
+                if (skelCloneIdx >= 0) skeletonName = skeletonName.Substring(0, skelCloneIdx);
+
                 string animName = __instance.currentAnimationName;
                 if (string.IsNullOrEmpty(animName)) animName = actionKey;
 
