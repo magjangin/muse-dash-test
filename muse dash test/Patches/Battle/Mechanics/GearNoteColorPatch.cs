@@ -7,8 +7,8 @@ using UnityEngine;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 오직 톱니바퀴 노트(Gear Note / xx=09, 0901, 0902, gear 등)만 
-    /// 핀포인트로 감지하여 네온 라임 그린 색상으로 100% 틴트 변조하는 패치입니다.
+    /// 톱니바퀴 노트(xx=09, 0901, 0902, gear, saw 등) 및 zz0301/음표 노트만 
+    /// 핀포인트로 감지하여 네온 라임 그린 색상으로 100% 전신 틴트 변조하는 패치입니다.
     /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     public class GearNoteColorPatch
@@ -18,7 +18,7 @@ namespace muse_dash_test
         public static float customG = 1.0f;
         public static float customB = 0.3f;
 
-        private static readonly HashSet<string> tintedObjects = new HashSet<string>();
+        private static readonly HashSet<string> loggedObjects = new HashSet<string>();
 
         public static void Postfix(SpineActionController __instance, string actionKey)
         {
@@ -38,8 +38,21 @@ namespace muse_dash_test
 
                 string skelName = skeleton.Data != null && !string.IsNullOrEmpty(skeleton.Data.name) ? skeleton.Data.name : objName;
 
-                // 🎯 오직 톱니바퀴 노트 계열만 핀포인트 검사
-                if (!IsGearNote(objName, skelName)) return;
+                // 🎯 톱니바퀴 / zz0301 / 음표 노트 핀포인트 검사
+                bool isTarget = IsGearOrTestNote(objName, skelName);
+
+                string baseName = objName;
+                int cloneIdx = baseName.IndexOf("(Clone)");
+                if (cloneIdx >= 0) baseName = baseName.Substring(0, cloneIdx);
+
+                if (!isTarget)
+                {
+                    if (loggedObjects.Add("SKIP:" + baseName))
+                    {
+                        MelonLogger.Msg($"[GearNoteColorPatch] ⚪ 일반 노트 '{baseName}' 틴트 대상 아님 (순정유지)");
+                    }
+                    return;
+                }
 
                 // 1. Spine 스켈레톤, 슬롯, SlotData 및 Attachment (Region / Mesh) 틴트
                 var slots = skeleton.Slots;
@@ -127,19 +140,25 @@ namespace muse_dash_test
                     }
                 }
 
-                if (tintedObjects.Add(objName))
+                if (loggedObjects.Add("TINT:" + baseName))
                 {
-                    MelonLogger.Msg($"[GearNoteColorPatch] 🟢 톱니바퀴 노트 '{objName}' (Skel: '{skelName}', Action: '{actionKey}') 100% 틴트 완료!");
+                    MelonLogger.Msg($"[GearNoteColorPatch] 🟢 톱니바퀴/타겟 노트 '{baseName}' 100% 네온 라임 그린 틴트 적용 완료!");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[GearNoteColorPatch] 톱니바퀴 틴트 처리 중 예외 발생: {ex}");
+                MelonLogger.Error($"[GearNoteColorPatch] 틴트 처리 중 예외 발생: {ex}");
             }
         }
 
-        private static bool IsGearNote(string objName, string skelName)
+        private static bool IsGearOrTestNote(string objName, string skelName)
         {
+            // 1. zz0301 / 음표 노트 계열 (0301, 000301, 000304 등)
+            if (objName.Contains("0301") || skelName.Contains("0301")) return true;
+            if (objName.Contains("0304") || skelName.Contains("0304")) return true;
+            if (objName.Contains("0003") || skelName.Contains("0003")) return true;
+
+            // 2. 톱니바퀴 노트 계열 (09, 0901, 0902, 0903, 0209, 0709, 0509, gear, saw 등)
             if (objName.Contains("0901") || skelName.Contains("0901")) return true;
             if (objName.Contains("0902") || skelName.Contains("0902")) return true;
             if (objName.Contains("0903") || skelName.Contains("0903")) return true;
@@ -151,6 +170,7 @@ namespace muse_dash_test
             if (skelName.IndexOf("gear", StringComparison.OrdinalIgnoreCase) >= 0) return true;
             if (objName.IndexOf("saw", StringComparison.OrdinalIgnoreCase) >= 0) return true;
             if (skelName.IndexOf("saw", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+
             return false;
         }
     }
