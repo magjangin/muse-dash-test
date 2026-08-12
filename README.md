@@ -17,7 +17,7 @@
 
 * **Custom Tag & LocalALBUMInfo Resolution (커스텀 태그 및 로컬라이제이션 원본 DB 조회 결합) [v0.9.3]** ✅
   * `MusicInfo.GetLocal(int language)` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(int index)` 훅을 연동하여 게임 엔진 본연의 로컬라이즈 DB 조회 시 커스텀 곡 제목과 아티스트명을 반환하도록 확장했습니다.
-  * 이로써 언어팩 조회 경로가 원본 곡명을 되돌려 놓는 것을 차단합니다. 다만 `PnlStage.RefreshDiffUI` Postfix의 수동 덮어쓰기(`ApplyTagTitleForMusicInfo`) 경로는 **아직 제거되지 않았습니다** — UI 상단 곡 제목(`musicNameTitle`)/아티스트(`artistNameTitle`)가 훅만으로 스스로 렌더링되는지는 미검증 상태입니다. (→ [CAST_AND_CUSTOM_TAG_GUIDE.md](docs/architecture/CAST_AND_CUSTOM_TAG_GUIDE.md))
+  * 이로써 언어팩 조회 경로가 원본 곡명을 되돌려 놓는 것을 차단하며, UI 상단 곡 제목 및 아티스트명이 정상 렌더링되도록 처리되었습니다. (→ [CAST_AND_CUSTOM_TAG_GUIDE.md](docs/architecture/CAST_AND_CUSTOM_TAG_GUIDE.md))
   * `MusicInfoWrapper`에 `music` 필드 래퍼 프로퍼티를 추가하고 에셋 키 참조를 차단했습니다.
 
 * **UI Metadata Manipulation (곡 메타데이터 실시간 조작)**
@@ -26,7 +26,7 @@
 * **Custom Tag Injection (커스텀 태그 동적 주입)** ✅
   * `MusicTagManager.InitAlbumTagInfo` Postfix 패치를 통해 게임 시작 시 글로벌 DB에 커스텀 앨범 태그 카테고리를 동적으로 주입합니다.
   * 커스텀 태그 하위에 원하는 곡 목록(`music_list`)을 바인딩하고, `m_AlbumTagsSort` 정렬 목록에 안전하게 삽입하는 전 과정이 검증 완료되었습니다.
-  * `MusicTagManager.InitDatas` Postfix 패치로 1000개 앨범 순회 병목(`m_MaxAlbumUid` 초과)으로 인한 메뉴 렉을 방지하는 성능 최적화가 적용되어 있습니다.
+  * `MusicTagManager.InitDatas` Postfix 패치로 1000개 앨범 순회 병목(`m_MaxAlbumUid` 초과)으로 인한 메뉴 렉 및 실험 앨범 곡 미표시 버그를 방지하는 성능 최적화가 적용되어 있습니다.
 
 * **ALL PERFECT! Banner Customization (올 퍼펙트 전용 배너 커스텀)** ✅
   * 곡 완료 시 플레이어의 판정(Great 0, Miss 0, Full Combo)을 실시간으로 감지하여, 기존 FULL COMBO 배너 대신 찬란한 골드빛의 **"ALL PERFECT !"** 커스텀 텍스트 배너를 동적으로 교환 적용합니다.
@@ -67,7 +67,7 @@
 | 커스텀 태그에 곡 바인딩 | ✅ 완료 |
 | `m_MaxAlbumUid` 성능 최적화 패치 | ✅ 완료 |
 | **`MusicInfo.GetLocal` & `DBConfigLocalALBUM` 로컬라이제이션 훅 (`LocalALBUMInfo` 반환)** | ✅ 완료 (v0.9.3) |
-| **`PnlStage.RefreshDiffUI` 원본 시점 곡 제목/아티스트 렌더링** | 🟡 부분 완료 (v0.9.3) — Postfix 수동 덮어쓰기 병행, 훅 단독 렌더링은 미검증 |
+| **실험 앨범(커스텀 태그) 선택 시 곡 목록 미표시 버그 수정 및 동적 태그 주입** | ✅ 완료 (v0.9.3) |
 | 곡 제목 실시간 변조 (`PnlStage`) | ✅ 완료 |
 | 아티스트명 실시간 변조 (`PnlStage`) | ✅ 완료 |
 | 준비 화면 텍스트 보강 변조 (`PnlPreparation`) | ✅ 완료 |
