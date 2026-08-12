@@ -76,6 +76,9 @@ namespace muse_dash_test
         /// </summary>
         public static void LoadConfigIfNeeded()
         {
+            // 인게임 플레이 배틀 중에는 디스크 I/O 스캔을 건너뛰어 프레임 드랍을 원천 차단합니다.
+            if (HywStageManager.IsInStageStatic) return;
+
             float currentTime = Time.unscaledTime;
             if (currentTime - lastConfigCheckTime < ConfigCheckInterval)
             {

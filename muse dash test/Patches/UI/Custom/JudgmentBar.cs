@@ -87,9 +87,16 @@ namespace muse_dash_test
             {
                 if (!InputOverlay.showBar) return;
 
-                // 1. 유효 시간이 지난 틱 제거
+                // 1. 유효 시간이 지난 틱 제거 (가비지 할당 없는 루프 구조)
                 float duration = InputOverlay.tickDuration;
-                hitHistory.RemoveAll(tick => Time.time - tick.timeAdded > duration);
+                float now = Time.time;
+                for (int i = hitHistory.Count - 1; i >= 0; i--)
+                {
+                    if (now - hitHistory[i].timeAdded > duration)
+                    {
+                        hitHistory.RemoveAt(i);
+                    }
+                }
 
                 // 2. 화이트 텍스처 초기화
                 if (whiteTex == null)

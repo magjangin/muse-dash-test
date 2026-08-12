@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace muse_dash_test
@@ -13,6 +14,9 @@ namespace muse_dash_test
         // UpdateTextures가 OnGUI 바깥(OnUpdate/초기화)에서 호출될 때 스타일 재생성을 미루기 위한 더티 플래그.
         // 실제 UpdateStyles()는 GUI.skin 접근이 가능한 OnGUI(DrawInputOverlay)에서만 수행합니다.
         private static bool stylesDirty = true;
+
+        // OnGUI 매 프레임 동적 문자열 할당으로 인한 GC 렉 방지용 키이름 캐시 사전
+        private static readonly Dictionary<KeyCode, string> keyNameCache = new Dictionary<KeyCode, string>();
 
         /// <summary>
         /// 설정값이나 텍스처 변경 시 GUI 스타일을 미리 캐싱하여 온가이드 가비지 생성을 차단합니다.
@@ -157,17 +161,23 @@ namespace muse_dash_test
 
         private static string CleanKeyName(KeyCode key)
         {
+            if (keyNameCache.TryGetValue(key, out string cached))
+            {
+                return cached;
+            }
+
             string name = key.ToString();
             // 알파벳 숫자는 그대로 표시
-            if (name.StartsWith("Alpha")) return name.Substring(5);
-            // 방향키 간략화
-            if (name == "UpArrow") return "↑";
-            if (name == "DownArrow") return "↓";
-            if (name == "LeftArrow") return "←";
-            if (name == "RightArrow") return "→";
-            if (name == "Backspace") return "BS";
-            if (name == "Delete") return "DEL";
-            if (name == "Escape") return "ESC";
+            if (name.StartsWith("Alpha")) name = name.Substring(5);
+            else if (name == "UpArrow") name = "↑";
+            else if (name == "DownArrow") name = "↓";
+            else if (name == "LeftArrow") name = "←";
+            else if (name == "RightArrow") name = "→";
+            else if (name == "Backspace") name = "BS";
+            else if (name == "Delete") name = "DEL";
+            else if (name == "Escape") name = "ESC";
+
+            keyNameCache[key] = name;
             return name;
         }
     }

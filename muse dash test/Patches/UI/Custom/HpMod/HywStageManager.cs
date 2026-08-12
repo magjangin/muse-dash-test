@@ -10,6 +10,7 @@ namespace muse_dash_test
         private string lastText = "";
 
         public bool IsInStage => isInStage;
+        public static bool IsInStageStatic { get; private set; } = false;
 
         public void CheckForStageAndModify()
         {
@@ -24,10 +25,19 @@ namespace muse_dash_test
                     {
                         // 스테이지 종료
                         isInStage = false;
+                        IsInStageStatic = false;
                         targetTextComponent = null;
                         lastText = "";
                         MelonLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
                     }
+                    return;
+                }
+
+                // 🚀 성능 최적화: 이미 체력바 텍스트 컴포넌트가 정상 확보되었으면
+                // 매 주기 무거운 GameObject.Find 16개 씬 전체 순회 검색을 건너뜁니다.
+                if (isInStage && targetTextComponent != null)
+                {
+                    IsInStageStatic = true;
                     return;
                 }
 
@@ -39,6 +49,7 @@ namespace muse_dash_test
                     {
                         // 최초 진입
                         isInStage = true;
+                        IsInStageStatic = true;
                         targetTextComponent = null;
                         lastText = "";
                         
@@ -63,6 +74,7 @@ namespace muse_dash_test
                     {
                         // 스테이지 종료
                         isInStage = false;
+                        IsInStageStatic = false;
                         targetTextComponent = null;
                         lastText = "";
                         MelonLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
