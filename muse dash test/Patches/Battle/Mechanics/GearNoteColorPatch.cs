@@ -14,6 +14,8 @@ namespace muse_dash_test
     public class GearNoteColorPatch
     {
         // 🎨 커스텀 틴트 RGB (네온 라임 그린: R=0.1, G=1.0, B=0.3)
+        // 🧪 테스트용 전면 적용 해제 → 오직 톱니바퀴 노트 계열만 틴트 적용
+        public static bool tintAllNotesForTest = false;
         public static float customR = 0.1f;
         public static float customG = 1.0f;
         public static float customB = 0.3f;
