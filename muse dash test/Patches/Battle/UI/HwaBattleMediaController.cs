@@ -31,6 +31,11 @@ namespace muse_dash_test
 
         public static void StartBattleMediaInjection()
         {
+            if (!ModConfig.EnableBattleMedia)
+            {
+                MelonLogger.Msg("[HwaBattleMediaController.Debug] 스킵: ModConfig에서 BattleMedia 기능이 비활성화됨");
+                return;
+            }
             try
             {
                 string debugUid = CustomPlaySession.Current.SelectedMusicUid;

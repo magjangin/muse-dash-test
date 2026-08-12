@@ -14,6 +14,7 @@ namespace muse_dash_test
     {
         public static void Prefix(DBSkill __instance, ref bool enable)
         {
+            if (!ModConfig.EnableAutoPlay) return;
             try
             {
                 MelonLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay Prefix 호출 감지: 원래 인자 enable={enable}, 강제 설정값={InputOverlay.forceAutoPlay}");

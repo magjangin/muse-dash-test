@@ -38,6 +38,7 @@ namespace muse_dash_test.Patches
     {
         public static void Postfix(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager __instance, Il2CppSystem.Object sender, Il2CppSystem.Object rev, Il2CppReferenceArray<Il2CppSystem.Object> pars)
         {
+            if (!ModConfig.EnableAPMod) return;
             try
             {
                 MelonLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");

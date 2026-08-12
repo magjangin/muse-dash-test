@@ -21,7 +21,7 @@ namespace muse_dash_test
 
         public static void Initialize()
         {
-            if (isInitialized || !isAvailable) return;
+            if (isInitialized || !isAvailable || !ModConfig.EnableDiscordRPC) return;
 
             try
             {
@@ -46,7 +46,7 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 isAvailable = false;
-                MelonLogger.Error($"[DiscordRPC] Discord Rich Presence 초기화 중 예외 발생: {ex.Message}");
+                MelonLogger.Warning($"[DiscordRPC] 초기화 실패 (Discord가 켜져있지 않거나 래퍼 라이브러리 누락): {ex.Message}");
             }
         }
 

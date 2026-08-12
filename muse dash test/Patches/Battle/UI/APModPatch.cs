@@ -20,6 +20,7 @@ namespace muse_dash_test.Patches
     {
         public static void Prefix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance)
         {
+            if (!ModConfig.EnableAPMod) return;
             try
             {
                 if (VictoryDataCache.ActiveTarget != __instance)

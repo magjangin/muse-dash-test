@@ -116,7 +116,7 @@ namespace muse_dash_test
         {
             try
             {
-                if (!ForcePerfectState.Enabled) return;
+                if (!ModConfig.EnableForcePerfect || !ForcePerfectState.Enabled) return;
 
                 uint original = resultCode;
                 if (!ForcePerfectState.ShouldPromote(original)) return;

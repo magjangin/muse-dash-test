@@ -48,6 +48,7 @@ namespace muse_dash_test.Patches
     {
         public static bool Prefix(AudioClip clip)
         {
+            if (!ModConfig.EnableAllPerfectSound) return true;
             try
             {
                 if (!AllPerfectSound.IsFullComboClip(clip)) return true; // FC 효과음이 아니면 통과

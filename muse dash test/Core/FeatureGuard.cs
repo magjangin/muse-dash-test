@@ -37,6 +37,7 @@ namespace muse_dash_test
         public static bool Run(string feature, Action body, int maxConsecutiveFailures = DefaultMaxConsecutiveFailures)
         {
             if (body == null) return false;
+            if (!ModConfig.IsEnabled(feature)) return false;
 
             State state;
             if (!States.TryGetValue(feature, out state))
