@@ -7,7 +7,7 @@ using UnityEngine;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 오직 zz03yy (xx=03 노트 계열)만 핀포인트로 감지하여 
+    /// 오직 zz03yy (xx=03 이고 zz != 00 인 노트 계열)만 핀포인트로 감지하여 
     /// 네온 라임 그린 색상으로 100% 전신 틴트 변조하는 패치입니다.
     /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
@@ -38,7 +38,7 @@ namespace muse_dash_test
 
                 string skelName = skeleton.Data != null && !string.IsNullOrEmpty(skeleton.Data.name) ? skeleton.Data.name : objName;
 
-                // 🎯 오직 zz03yy (xx=03) 노트 핀포인트 검사
+                // 🎯 오직 zz03yy (xx=03 & zz != 00) 노트 핀포인트 검사
                 bool isTarget = IsZz03Yy(objName) || IsZz03Yy(skelName);
 
                 string baseName = objName;
@@ -49,7 +49,7 @@ namespace muse_dash_test
                 {
                     if (loggedObjects.Add("SKIP:" + baseName))
                     {
-                        MelonLogger.Msg($"[GearNoteColorPatch] ⚪ 노트 '{baseName}' (zz03yy 아님 → 순정유지)");
+                        MelonLogger.Msg($"[GearNoteColorPatch] ⚪ 노트 '{baseName}' (zz!=00 & xx=03 조건 미충족 → 순정유지)");
                     }
                     return;
                 }
@@ -142,7 +142,7 @@ namespace muse_dash_test
 
                 if (loggedObjects.Add("TINT:" + baseName))
                 {
-                    MelonLogger.Msg($"[GearNoteColorPatch] 🟢 zz03yy 타겟 노트 '{baseName}' (Action: '{actionKey}') 100% 네온 라임 그린 틴트 적용 완료!");
+                    MelonLogger.Msg($"[GearNoteColorPatch] 🟢 zz!=00 & xx=03 타겟 노트 '{baseName}' (Action: '{actionKey}') 100% 네온 라임 그린 틴트 적용 완료!");
                 }
             }
             catch (Exception ex)
@@ -152,22 +152,29 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// zz03yy 패턴 검사: 이름의 2~3번째 인덱스가 "03" (xx=03)이거나 "0301"/"0304" 키워드를 포함하는지 검사
+        /// zz03yy 패턴 검사: xx="03" 이고 zz != "00" 인 노트 매칭 (예: 070301, 020301 등)
         /// </summary>
         private static bool IsZz03Yy(string name)
         {
             if (string.IsNullOrEmpty(name)) return false;
 
-            // 1. "070301_..." 또는 "000301_..." 6자리 이상 UID 명칭에서 xx=03 위치 검사
+            // 1. "0003..." 등 zz="00" 인 명칭 제외
+            if (name.StartsWith("0003")) return false;
+
+            // 2. "zz03yy" 패턴 검사 (6자리 이상 UID 명칭에서 xx=03 위치 검사)
             if (name.Length >= 4 && char.IsDigit(name[0]) && char.IsDigit(name[1]) && name[2] == '0' && name[3] == '3')
             {
+                // zz가 "00"이면 제외 (zz != "00")
+                if (name[0] == '0' && name[1] == '0') return false;
+
                 return true;
             }
 
-            // 2. 명시적 키워드 "0301", "0304", "0302", "0305" 검사
+            // 3. 명시적 키워드 "0301", "0304" 등 포함되지만 zz="00"이 아닌 경우
             if (name.Contains("0301") || name.Contains("0304") || name.Contains("0302") || name.Contains("0305"))
             {
-                return true;
+                // 000301, 000304 제외
+                if (!name.Contains("0003")) return true;
             }
 
             return false;
