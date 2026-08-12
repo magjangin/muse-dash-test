@@ -22,12 +22,12 @@ Thumbs.db
 # Temporary scratch files
 scratch/
 
-# Decompiled sources
-# (Decompiled_SpineUnity/는 예외 - 이미 커밋돼 있어 여기 넣어도 무시되지 않습니다)
+# Decompiled sources (전부 로컬 전용 참조 자료입니다 - 필요하면 각자 덤프해서 봅니다)
 Decompiled/
 Decompiled_AssemblyCSharp/
 Decompiled_Firstpass/
 Decompiled_PeroTools2/
+Decompiled_SpineUnity/
 
 # Zip archives
 *.zip
