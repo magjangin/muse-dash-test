@@ -108,6 +108,7 @@ MelonLoader 모드 진입점 클래스입니다.
 * **커스텀 곡의 팩 이름이 '기본 패키지'로 뜨던 문제**(해결). 곡 선택 화면의 팩 라벨(`UI/Standerd/PnlStage/StageUi/Info/ImgAlbumTittle`)은 `AlbumsInfo.title`을 **안 읽습니다**. `DBConfigLocalAlbums.GetLocalTitleByIndex(index)`로 현지화 문자열을 가져옵니다(숙주 앨범의 raw title은 `Default Music`인데 화면은 `기본 패키지`인 것이 단서였습니다).
   * **핵심: 그 `index`는 앨범의 전역 인덱스가 아니라 "지금 선택된 태그 안에서 몇 번째 앨범이냐"입니다.** 커스텀 태그에는 앨범이 하나뿐이라 늘 `0`이고, 현지화 테이블에서 0은 게임의 첫 앨범(`기본 패키지`)입니다. 일반 팩에서는 태그 안 순서와 전역 인덱스가 우연히 맞아떨어져 이 구조가 드러나지 않습니다.
   * 그래서 `dbMusicTag.m_CurSelectedTagIndex`가 우리 태그(1999)인 동안의 조회에도 답합니다([CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)). 그 태그 안 앨범은 전부 우리 것이라 인덱스가 몇이든 답은 하나입니다.
+  * **다만 이 관대한 조건은 곡 인덱스 화면을 오염시켰습니다**(팩 구분선 라벨이 전부 `실험 앨범`). 그 화면은 팩마다 같은 조회를 돌리기 때문입니다. 지금은 선택 곡 한 곡을 그리는 구간(`SelectedSongLocalizationScope`)에서만 관대한 쪽을 허용합니다 — 위 [CustomTagPatch.AlbumPatches.cs](#-customtagscustomtagpatchalbumpatchescs) 절 참고.
   * **빗나간 시도 셋**(전부 곡을 설명하는 값이라 라벨에 닿지 않습니다 — 라벨은 곡이 아니라 **위치**를 묻습니다): `AlbumsInfo.title`을 맞추기 / `MusicInfo.albumIndex`를 1999로 답하기 / `MusicInfo.albumUidName`을 `1999-0`으로 답하기. 뒤의 둘은 그 자체로는 옳은 수정이라 남겨 두었습니다(아래 참고).
   * **`MusicInfo`의 앨범 계열 멤버는 getter 전용입니다**(`albumIndex`·`albumUidName`·`albumJsonIndex`, 백킹 필드 없음). 그래서 `CustomTagRegistrySupport.SetAlbumMetadata`의 `ModReflection.SetValue(..., silent: true)` 호출은 **작성된 이래 한 번도 성공한 적이 없습니다**. 값을 바꾸려면 getter를 가로채야 합니다.
   * **라벨을 직접 덮어쓰는 방식은 틀렸습니다** — 값이 여러 패스에 걸쳐 들어와서(직전 팩 이름 → 숙주 팩 이름) 어디까지 잡았는지 알 수 없습니다.
@@ -181,6 +182,11 @@ MelonLoader 모드 진입점 클래스입니다.
 
 ### 📂 [Custom/Tags/CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)
 * `GetAlbumInfoByMusicInfo` 등을 후킹하여, 가상 곡의 앨범 정보를 요청하면 미리 만들어 둔 커스텀 앨범 메타데이터(`CustomAlbumInfo`)를 반환합니다. 이를 통해 가상 앨범에서도 UI 스크롤이 정상 동작합니다.
+* **현지화 DB는 곡을 UID가 아니라 "행 번호"로 물어봅니다.** `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(index)`(곡명·아티스트)와 `DBConfigLocalAlbums.GetLocalTitleByIndex(index)`(팩 이름) 둘 다 인덱스 하나만 받습니다. 그래서 **"누구를 위한 질문인지"가 인자에 없습니다.**
+  * 가상 곡은 숙주의 얇은 복제본이라 행 번호까지 물려받습니다(실측 `musicIndex=4`). "그 번호로 오는 조회에 커스텀 이름을 답한다"로만 막으면 **다른 곡의 이름 조회까지 가로채** 곡 인덱스 화면의 엉뚱한 곡들이 커스텀 곡명으로 보입니다. 팩 이름 쪽도 마찬가지로 "커스텀 태그를 보는 동안"만 조건으로 두면 화면의 팩 이름이 전부 `실험 앨범`이 됩니다.
+  * 그래서 [SelectedSongLocalizationScope](../../muse%20dash%20test/Patches/UI/Custom/Tags/SelectedSongLocalizationScope.cs)로 **"지금 선택된 곡 한 곡을 그리는 중"인 구간에서만** 답합니다. 스코프를 여는 곳은 실측으로 확인된 두 곳입니다 — `PnlStage.ChangeMusic`(선택 곡 정보 패널 갱신 일체를 감쌉니다)과 `SetSelectedMusicNameTxt.Awake`/`OnEnable`. 스코프는 `Enter`/`Exit` 짝이 깨져도 **프레임이 넘어가면 스스로 닫힙니다**(열린 채 고착되면 버그가 그대로 돌아오기 때문).
+  * 스코프 밖에서 들어와 거절된 조회는 호출 지점당 1회 로그를 남깁니다. **그 로그가 보이는데 커스텀 이름이 안 나오는 화면이 생겼다면, 그 화면을 그리는 메서드를 스코프 진입점에 추가하라는 신호입니다.**
+  * 남은 한계(허용): 곡을 넘기는 `ChangeMusic` 안에서 목록 셀이 같이 그려지면, 그 프레임 한정으로 같은 행 번호의 곡 하나가 커스텀 이름으로 보일 수 있습니다. `index == 1999`(전역 앨범 인덱스)로 들어오는 팩 이름 조회는 실제 앨범이 그만큼 많지 않으므로 스코프와 무관하게 항상 답합니다.
 
 ### 📂 [Custom/Tags/AlbumTagTogglePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/AlbumTagTogglePatch.cs) [NEW]
 태그 버튼 탭 UI 컴포넌트(`AlbumTagToggle`)를 감지하여 커스텀 태그 아이콘 이미지를 동적으로 교체하는 UI 렌더링 오버라이더 패치입니다.

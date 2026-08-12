@@ -77,21 +77,35 @@ namespace muse_dash_test
         }
     }
 
+    // 이 컴포넌트는 선택 곡 한 곡의 이름만 그립니다. 그리는 동안 도는 인덱스 기반 현지화 조회는
+    // 선택 곡 자신을 위한 것이므로 스코프를 열어 둡니다(실측: Awake/OnEnable 사이에 index=4 조회 1건).
     [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), GameBindings.SetSelectedMusicNameTxt.Awake)]
     internal static class SetSelectedMusicNameTxt_Awake_Patch
     {
+        private static void Prefix() => SelectedSongLocalizationScope.Enter();
+
         private static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance)
         {
-            SetSelectedMusicNameTxtPatchHelper.Apply(__instance, "Awake");
+            try
+            {
+                SetSelectedMusicNameTxtPatchHelper.Apply(__instance, "Awake");
+            }
+            finally { SelectedSongLocalizationScope.Exit(); }
         }
     }
 
     [HarmonyPatch(typeof(Il2Cpp.SetSelectedMusicNameTxt), GameBindings.SetSelectedMusicNameTxt.OnEnable)]
     internal static class SetSelectedMusicNameTxt_OnEnable_Patch
     {
+        private static void Prefix() => SelectedSongLocalizationScope.Enter();
+
         private static void Postfix(Il2Cpp.SetSelectedMusicNameTxt __instance)
         {
-            SetSelectedMusicNameTxtPatchHelper.Apply(__instance, "OnEnable");
+            try
+            {
+                SetSelectedMusicNameTxtPatchHelper.Apply(__instance, "OnEnable");
+            }
+            finally { SelectedSongLocalizationScope.Exit(); }
         }
     }
 }

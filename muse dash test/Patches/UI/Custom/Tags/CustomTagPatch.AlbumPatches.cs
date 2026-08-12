@@ -154,8 +154,23 @@ namespace muse_dash_test
                 // '지금 선택된 태그 안에서 몇 번째 앨범이냐'로 물어보는 호출자도 있습니다.
                 // 후자가 팩 이름 라벨을 채우는 쪽인데, 커스텀 태그에는 앨범이 하나뿐이라 늘 0으로 옵니다.
                 // 그 0은 현지화 테이블에서는 첫 앨범('기본 패키지')을 가리켜서 엉뚱한 이름이 찍혔습니다.
-                bool ours = index == CustomTagRegistry.TagUid || IsCustomTagSelected();
-                if (!ours) return true;
+                //
+                // 다만 후자는 인덱스만으로 우리 앨범인지 가릴 수 없어서, 커스텀 태그를 보고 있는 동안
+                // 들어오는 조회를 전부 '실험 앨범'으로 답해 왔습니다. 곡 인덱스 화면은 팩마다 이 조회를
+                // 돌리기 때문에 화면의 팩 이름이 전부 '실험 앨범'이 됐습니다
+                // (실측 26-8-12_8-43-14.log 10:05:44~10:06:09: MusicButtonAreaTitle이 전부 '실험 앨범').
+                // 그래서 관대한 쪽은 선택 곡 한 곡을 그리는 구간에서만 허용합니다.
+                bool ours = index == CustomTagRegistry.TagUid ||
+                            (IsCustomTagSelected() && SelectedSongLocalizationScope.IsActive);
+                if (!ours)
+                {
+                    if (IsCustomTagSelected())
+                    {
+                        SelectedSongLocalizationScope.LogRefusedOnce(
+                            "DBConfigLocalAlbums.GetLocalTitleByIndex", index, "커스텀 태그 선택 중이지만 곡 목록 렌더링으로 간주");
+                    }
+                    return true;
+                }
 
                 __result = CustomTagRegistry.AlbumTitle;
 
@@ -255,6 +270,20 @@ namespace muse_dash_test
                 // 인덱스를 검사하지 않으면 가상 곡이 선택돼 있는 동안 다른 곡을 대상으로 한 조회까지
                 // 커스텀 이름으로 응답해 버립니다(곡 목록 렌더링 등). 소유 행 번호만 가로챕니다.
                 if (!IsIndexOwnedByVirtualSong(currentUid, index)) return true;
+
+                // 행 번호만으로는 부족합니다. 가상 곡은 숙주의 얇은 복제본이라 행 번호(musicIndex=4)를
+                // 그대로 물려받아서, 앨범마다 같은 행 번호를 가진 곡이 또 있습니다. 그래서 곡 인덱스 화면이
+                // 그 곡들의 이름을 물어볼 때도 '아기상어'로 답해 버렸습니다.
+                // (실측 26-8-12_8-43-14.log — 10:05:36.565 조회는 직후 PnlStage.RefreshDiffUI[1999-1]로 이어지는
+                //  선택 곡 자신의 조회, 10:05:44.258·10:05:46.700·10:06:04.056·10:06:07.430 조회는 앞뒤로
+                //  MusicButtonAreaTitle만 있는 목록 렌더링 조회였습니다.)
+                // 지금 선택 곡 한 곡을 그리는 중일 때만 답합니다.
+                if (!SelectedSongLocalizationScope.IsActive)
+                {
+                    SelectedSongLocalizationScope.LogRefusedOnce(
+                        "DBConfigLocalALBUM.GetLocalAlbumInfoByIndex", index, $"선택 곡 uid={currentUid}의 행 번호와 같지만 목록 렌더링으로 간주");
+                    return true;
+                }
 
                 if (MainMod.TryGetHwaPrimarySong(currentUid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
                 {

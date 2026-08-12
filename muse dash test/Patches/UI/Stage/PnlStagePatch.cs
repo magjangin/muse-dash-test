@@ -49,6 +49,13 @@ public class PnlStage_OnEnable_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), "ChangeMusic", new Type[] { typeof(int) })]
 public class PnlStage_ChangeMusic_Patch
 {
+    // 선택 곡의 제목·아티스트·팩 이름 현지화 조회가 이 안에서 일어납니다
+    // (실측: 조회 → PnlStage.RefreshDiffUI → ChangeMusic 반환). 그동안만 인덱스 기반 응답을 허용합니다.
+    public static void Prefix()
+    {
+        SelectedSongLocalizationScope.Enter();
+    }
+
     public static void Postfix(PnlStage __instance, int i)
     {
         try
@@ -61,6 +68,7 @@ public class PnlStage_ChangeMusic_Patch
             MelonLogger.Msg($"[PnlStage.ChangeMusic] exit index={i}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, currentShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, currentExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }
+        finally { SelectedSongLocalizationScope.Exit(); }
     }
 }
 
