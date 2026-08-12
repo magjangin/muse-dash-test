@@ -7,8 +7,8 @@ using UnityEngine;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 톱니바퀴 노트(xx=09, 0901, 0902, gear, saw 등) 및 zz0301/음표 노트만 
-    /// 핀포인트로 감지하여 네온 라임 그린 색상으로 100% 전신 틴트 변조하는 패치입니다.
+    /// 오직 zz03yy (xx=03 노트 계열)만 핀포인트로 감지하여 
+    /// 네온 라임 그린 색상으로 100% 전신 틴트 변조하는 패치입니다.
     /// </summary>
     [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
     public class GearNoteColorPatch
@@ -38,8 +38,8 @@ namespace muse_dash_test
 
                 string skelName = skeleton.Data != null && !string.IsNullOrEmpty(skeleton.Data.name) ? skeleton.Data.name : objName;
 
-                // 🎯 톱니바퀴 / zz0301 / 음표 노트 핀포인트 검사
-                bool isTarget = IsGearOrTestNote(objName, skelName);
+                // 🎯 오직 zz03yy (xx=03) 노트 핀포인트 검사
+                bool isTarget = IsZz03Yy(objName) || IsZz03Yy(skelName);
 
                 string baseName = objName;
                 int cloneIdx = baseName.IndexOf("(Clone)");
@@ -49,7 +49,7 @@ namespace muse_dash_test
                 {
                     if (loggedObjects.Add("SKIP:" + baseName))
                     {
-                        MelonLogger.Msg($"[GearNoteColorPatch] ⚪ 일반 노트 '{baseName}' 틴트 대상 아님 (순정유지)");
+                        MelonLogger.Msg($"[GearNoteColorPatch] ⚪ 노트 '{baseName}' (zz03yy 아님 → 순정유지)");
                     }
                     return;
                 }
@@ -142,7 +142,7 @@ namespace muse_dash_test
 
                 if (loggedObjects.Add("TINT:" + baseName))
                 {
-                    MelonLogger.Msg($"[GearNoteColorPatch] 🟢 톱니바퀴/타겟 노트 '{baseName}' 100% 네온 라임 그린 틴트 적용 완료!");
+                    MelonLogger.Msg($"[GearNoteColorPatch] 🟢 zz03yy 타겟 노트 '{baseName}' (Action: '{actionKey}') 100% 네온 라임 그린 틴트 적용 완료!");
                 }
             }
             catch (Exception ex)
@@ -151,25 +151,24 @@ namespace muse_dash_test
             }
         }
 
-        private static bool IsGearOrTestNote(string objName, string skelName)
+        /// <summary>
+        /// zz03yy 패턴 검사: 이름의 2~3번째 인덱스가 "03" (xx=03)이거나 "0301"/"0304" 키워드를 포함하는지 검사
+        /// </summary>
+        private static bool IsZz03Yy(string name)
         {
-            // 1. zz0301 / 음표 노트 계열 (0301, 000301, 000304 등)
-            if (objName.Contains("0301") || skelName.Contains("0301")) return true;
-            if (objName.Contains("0304") || skelName.Contains("0304")) return true;
-            if (objName.Contains("0003") || skelName.Contains("0003")) return true;
+            if (string.IsNullOrEmpty(name)) return false;
 
-            // 2. 톱니바퀴 노트 계열 (09, 0901, 0902, 0903, 0209, 0709, 0509, gear, saw 등)
-            if (objName.Contains("0901") || skelName.Contains("0901")) return true;
-            if (objName.Contains("0902") || skelName.Contains("0902")) return true;
-            if (objName.Contains("0903") || skelName.Contains("0903")) return true;
-            if (objName.Contains("0209") || skelName.Contains("0209")) return true;
-            if (objName.Contains("0709") || skelName.Contains("0709")) return true;
-            if (objName.Contains("0509") || skelName.Contains("0509")) return true;
-            if (objName.Contains("09_") || skelName.Contains("09_")) return true;
-            if (objName.IndexOf("gear", StringComparison.OrdinalIgnoreCase) >= 0) return true;
-            if (skelName.IndexOf("gear", StringComparison.OrdinalIgnoreCase) >= 0) return true;
-            if (objName.IndexOf("saw", StringComparison.OrdinalIgnoreCase) >= 0) return true;
-            if (skelName.IndexOf("saw", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            // 1. "070301_..." 또는 "000301_..." 6자리 이상 UID 명칭에서 xx=03 위치 검사
+            if (name.Length >= 4 && char.IsDigit(name[0]) && char.IsDigit(name[1]) && name[2] == '0' && name[3] == '3')
+            {
+                return true;
+            }
+
+            // 2. 명시적 키워드 "0301", "0304", "0302", "0305" 검사
+            if (name.Contains("0301") || name.Contains("0304") || name.Contains("0302") || name.Contains("0305"))
+            {
+                return true;
+            }
 
             return false;
         }
