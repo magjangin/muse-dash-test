@@ -95,7 +95,13 @@ MelonLoader 모드 진입점 클래스입니다.
 켜고 끄는 곳이 둘입니다. **공식곡**은 `config.txt`의 `공식곡에서도 고스트 노트 보이기`(기본 `true`), **커스텀 곡**은 각자의 `hwa info.txt`에 적은 `커스텀 곡 고스트 노트 보이기`(안 적으면 전역 설정을 따름)입니다. `SkeletonData`가 프로세스 내내 공유되므로 **덮기 전 알파를 기억해 뒀다가 꺼진 곡에서는 되돌립니다.**
 
 > [!TIP]
-> Spine 애니메이션 타임라인(`in_nor_44`) 알파 키 재작성 구조, 스켈레톤+애니메이션 복합 캐시 키, 타임라인 실측 페이드 데이터, RGB 틴트 제한 분석 및 실패했던 4가지 막다른 길에 관한 정밀 기술 명세는 **[👻 GHOST_NOTE_ALPHA_HOLD.md](../experiments/GHOST_NOTE_ALPHA_HOLD.md)** 전용 문서를 참고하세요.
+> Spine 애니메이션 타임라인(`in_nor_44`) 알파 키 재작성 구조, 스켈레톤+애니메이션 복합 캐시 키, 타임라인 실측 페이드 데이터 및 실패했던 4가지 막다른 길에 관한 정밀 기술 명세는 **[👻 GHOST_NOTE_ALPHA_HOLD.md](../experiments/GHOST_NOTE_ALPHA_HOLD.md)** 전용 문서를 참고하세요.
+
+### 📂 [Diagnostics/NoteColorDiagnosticsPatch.cs](../../muse%20dash%20test/Patches/Diagnostics/NoteColorDiagnosticsPatch.cs)
+인게임 배틀 씬에서 스폰되는 모든 노트의 Spine 스켈레톤, 슬롯 RGBA 색상, 어태치먼트 및 애니메이션 타임라인을 100% 실측 분석하는 진단용 패치입니다.
+
+> [!TIP]
+> 톱니바퀴, 샌드백, 음표, 고스트 노트 등 **모든 노트 종류별 틴트 변조 가능성 및 실측 분석 명세서**는 **[🎨 NOTE_COLOR_TINTING.md](../experiments/NOTE_COLOR_TINTING.md)** 문서를 참조하세요.
 
 
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
