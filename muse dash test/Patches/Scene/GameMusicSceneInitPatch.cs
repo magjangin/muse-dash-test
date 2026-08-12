@@ -67,6 +67,7 @@ public class GameMusicScene_InitTimer_Patch
 
         muse_dash_test.SceneZzTransformTracker.Clear();
         loggedGhostUids.Clear();
+        NoteColorDiagnosticsPatch.ClearDumpCache();
 
         for (int i = 0; i < list.Count; i++)
         {
