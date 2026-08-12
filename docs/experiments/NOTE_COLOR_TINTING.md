@@ -74,3 +74,178 @@ $$\text{FinalColor}_{RGB} = \text{TexturePixel}_{RGB} \times \text{SlotColor}_{R
 | **메모리 / 로딩** | ⚡ 0ms (실시간 코드 조작) | 에셋 로딩 필요 |
 | **색상 자유도** | ⚠️ 원본 RGB 상한선 내 제한 | 🎨 100% 완전한 자유 (초록 고스트, 흰색, 야광 등) |
 | **추천 케이스** | 톱니바퀴(모든색), 샌드백, 보라계열 고스트 | 초록/노란 고스트 노트, 완전 흰색/파스텔 노트 |
+
+---
+
+## 💻 4계층 전신 틴트 덮어쓰기 C# 레퍼런스 소스 코드
+
+이 코드는 실측 검증을 통해 완성된 **4계층 전신 틴트 덮어쓰기(Spine Slot + SlotData + Attachments + Unity Renderers) 및 `zz03yy` (단, `zz != 00`) 핀포인트 조건 필터링 핵심 참조 로직**입니다. 나중에 다시 틴트 기능을 구현하거나 수정할 때 그대로 활용할 수 있습니다.
+
+```csharp
+using System;
+using System.Collections.Generic;
+using MelonLoader;
+using Il2Cpp;
+using UnityEngine;
+
+namespace muse_dash_test
+{
+    /// <summary>
+    /// Spine 슬롯, SlotData, Attachments 및 Unity Component Renderers까지 
+    /// 4계층 100% 전신 틴트 덮어쓰기를 수행하는 참조용 로직입니다.
+    /// </summary>
+    [HarmonyLib.HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.PlayByKey))]
+    public class NoteColorTintReferencePatch
+    {
+        // 🎨 커스텀 틴트 RGB (네온 라임 그린: R=0.1, G=1.0, B=0.3)
+        public static float customR = 0.1f;
+        public static float customG = 1.0f;
+        public static float customB = 0.3f;
+
+        public static void Postfix(SpineActionController __instance, string actionKey)
+        {
+            try
+            {
+                if (__instance == null) return;
+
+                string objName = __instance.gameObject != null ? __instance.gameObject.name : "";
+                if (string.IsNullOrEmpty(objName)) return;
+
+                // 캐릭터 / 플레이어 / 이펙트 제외
+                if (objName.Contains("girl") || objName.Contains("char") || objName.Contains("player") || objName.Contains("Elfin")) return;
+
+                var skeletonAnimation = __instance.skeletonAnimation;
+                var skeleton = skeletonAnimation != null ? skeletonAnimation.skeleton : null;
+                if (skeleton == null) return;
+
+                string skelName = skeleton.Data != null && !string.IsNullOrEmpty(skeleton.Data.name) ? skeleton.Data.name : objName;
+
+                // 🎯 zz03yy (xx=03 & zz != 00) 타겟 조건 필터링
+                if (!IsZz03Yy(objName) && !IsZz03Yy(skelName)) return;
+
+                // -------------------------------------------------------------
+                // 1계층: Spine 스켈레톤, 런타임 슬롯, SetupPose SlotData & Attachments
+                // -------------------------------------------------------------
+                var slots = skeleton.Slots;
+                if (slots != null && slots.Items != null)
+                {
+                    int count = Math.Min(slots.Count, slots.Items.Length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var slot = slots.Items[i];
+                        if (slot == null) continue;
+
+                        string slotName = slot.data != null ? slot.data.name : "";
+                        if (string.Equals(slotName, "shadow", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        // 1-1. Runtime Slot Color
+                        slot.r = customR;
+                        slot.g = customG;
+                        slot.b = customB;
+
+                        // 1-2. SetupPose SlotData Color (포즈 초기화 시 되돌아감 방지)
+                        if (slot.data != null)
+                        {
+                            slot.data.r = customR;
+                            slot.data.g = customG;
+                            slot.data.b = customB;
+                        }
+
+                        // 1-3. Region / Mesh Attachment Color (부위별 틴트 100% 덮어쓰기)
+                        var attachment = slot.Attachment;
+                        if (attachment != null)
+                        {
+                            var region = attachment.TryCast<Il2CppSpine.RegionAttachment>();
+                            if (region != null)
+                            {
+                                region.r = customR;
+                                region.g = customG;
+                                region.b = customB;
+                            }
+
+                            var mesh = attachment.TryCast<Il2CppSpine.MeshAttachment>();
+                            if (mesh != null)
+                            {
+                                mesh.r = customR;
+                                mesh.g = customG;
+                                mesh.b = customB;
+                            }
+                        }
+                    }
+                }
+
+                // -------------------------------------------------------------
+                // 2계층: Unity 하위 SpriteRenderer / MeshRenderer (롱노트 몸통 띠 메쉬 등 커버)
+                // -------------------------------------------------------------
+                if (__instance.gameObject != null)
+                {
+                    var spriteRenderers = __instance.gameObject.GetComponentsInChildren<SpriteRenderer>(true);
+                    if (spriteRenderers != null)
+                    {
+                        foreach (var sr in spriteRenderers)
+                        {
+                            if (sr != null)
+                            {
+                                Color old = sr.color;
+                                sr.color = new Color(customR, customG, customB, old.a);
+                            }
+                        }
+                    }
+
+                    var meshRenderers = __instance.gameObject.GetComponentsInChildren<MeshRenderer>(true);
+                    if (meshRenderers != null)
+                    {
+                        foreach (var mr in meshRenderers)
+                        {
+                            if (mr != null && mr.material != null)
+                            {
+                                try
+                                {
+                                    if (mr.material.HasProperty("_Color"))
+                                    {
+                                        Color old = mr.material.color;
+                                        mr.material.color = new Color(customR, customG, customB, old.a);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[NoteColorTint] 틴트 처리 중 예외 발생: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// zz03yy 패턴 필터: xx="03" 이고 zz != "00" 인 노트 매칭 (예: 070301, 020301 등)
+        /// </summary>
+        private static bool IsZz03Yy(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+
+            // 1. "0003..." 등 zz="00" 인 명칭 제외
+            if (name.StartsWith("0003")) return false;
+
+            // 2. "zz03yy" 패턴 검사 (6자리 이상 UID 명칭에서 xx=03 위치 검사)
+            if (name.Length >= 4 && char.IsDigit(name[0]) && char.IsDigit(name[1]) && name[2] == '0' && name[3] == '3')
+            {
+                // zz가 "00"이면 제외 (zz != "00")
+                if (name[0] == '0' && name[1] == '0') return false;
+
+                return true;
+            }
+
+            // 3. 명시적 키워드 "0301", "0304" 등 포함되지만 zz="00"이 아닌 경우
+            if (name.Contains("0301") || name.Contains("0304") || name.Contains("0302") || name.Contains("0305"))
+            {
+                if (!name.Contains("0003")) return true;
+            }
+
+            return false;
+        }
+    }
+}
+```
