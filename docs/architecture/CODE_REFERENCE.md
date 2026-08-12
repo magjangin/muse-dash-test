@@ -92,31 +92,11 @@ MelonLoader 모드 진입점 클래스입니다.
 ### 📂 [Battle/Mechanics/GhostNoteAlphaHold.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/GhostNoteAlphaHold.cs)
 고스트 노트(UID `zzxxyy`의 `xx=17`, type 4)가 판정선에 가까워질수록 사라지는 것을 막습니다. 스켈레톤·프리팹·UID·type을 전부 건드리지 않아 **고스트 고유 외형이 그대로 유지됩니다.**
 
-켜고 끄는 곳이 둘입니다. **공식곡**은 `config.txt`의 `공식곡에서도 고스트 노트 보이기`(기본 `true`, 옛 이름 `고스트노트보이기`도 계속 읽히며 기존 파일은 새 문구로 자동 정리됩니다), **커스텀 곡**은 각자의 `hwa info.txt`에 적은 `커스텀 곡 고스트 노트 보이기`(안 적으면 전역 설정을 따름)입니다. `SkeletonData`가 프로세스 내내 공유되므로 **덮기 전 알파를 기억해 뒀다가 꺼진 곡에서는 되돌립니다** — 안 그러면 한 곡에서 켠 뒤로는 끈 곡에서도 계속 보입니다.
+켜고 끄는 곳이 둘입니다. **공식곡**은 `config.txt`의 `공식곡에서도 고스트 노트 보이기`(기본 `true`), **커스텀 곡**은 각자의 `hwa info.txt`에 적은 `커스텀 곡 고스트 노트 보이기`(안 적으면 전역 설정을 따름)입니다. `SkeletonData`가 프로세스 내내 공유되므로 **덮기 전 알파를 기억해 뒀다가 꺼진 곡에서는 되돌립니다.**
 
-* **원인은 C# 코드가 아니라 Spine 애니메이션 데이터입니다.** 액션 계약서상 고스트 노트의 액션은 세 개뿐이고(`in`→`in_nor_44`, `note_out_g`→`out_g`, `note_out_p`→`out_p`), 비행 1.5초(`dt=1.48`) 동안 재생되는 것은 `in_nor_44` 하나입니다. 그 애니메이션이 알파를 깎습니다.
-* **`SpineActionController.PlayByKey`(Postfix)** 에서 `in`이 재생된 직후, 현재 애니메이션의 타임라인을 훑어 `ColorTimeline`/`TwoColorTimeline`의 **알파 키만 `1`로 덮어씁니다**(`frames`는 `[time,r,g,b,a]` 5칸 단위, TwoColor는 8칸). 이동·스케일·회전 타임라인은 손대지 않으므로 등장 모션은 원본 그대로입니다. 실측: 타임라인 89개 중 컬러 8개, 알파 키 24개.
-* `SkeletonData`는 같은 에셋을 쓰는 모든 노트가 공유하므로 조합당 1회만 처리합니다. **캐시 키는 `{스켈레톤 이름}|{애니메이션 이름}`이어야 합니다** — 지상(`071701_road_nor_1`)과 공중(`071704_air_nor_1`) 고스트는 별개 프리팹이라 `SkeletonData`도 따로인데 애니메이션 이름은 같을 수 있어, 이름만으로 키를 잡으면 먼저 처리된 쪽 때문에 나머지가 통째로 건너뛰어집니다(공중 고스트만 계속 사라지던 원인).
-* **페이드 실측값**(일회성 덤프로 측정 후 덤프 코드는 제거). `in_nor_44`는 길이 2.1초, 컬러 타임라인 8개가 모두 키 3개(`t=0` `t=0.3` `t=끝`)로 같은 모양입니다. 알파는 `0.796`(=203/255, 고스트의 원래 반투명도)으로 0.3초까지 버티다 선형으로 0까지 떨어지고, 0이 되는 시각은 부위마다 다릅니다 — 손 0.733초, 입 0.933초, 눈썹 1.100초, 몸통·눈 1.267초. 비행 `dt=1.48초`보다 빨라서 판정선 도달 전에 이미 사라집니다.
-* **고스트 노트의 실제 색**. 슬롯 색·어태치먼트 틴트가 전부 `(1,1,1,1)`이라 컬러 타임라인의 `#FFFFFF`는 "텍스처를 안 건드림"이라는 뜻이고, 보이는 색은 전부 아틀라스 픽셀입니다. 팔레트는 세 가지뿐입니다 — `#FF3EB9`(몸통·손 채움), `#A1099F`(외곽선 겸 눈썹), `#FEE09C`(눈·입). 텍스처는 07 계열 공용 시트 `s07_atlas.png`(2048×1024)의 `0717/images_road/*`이고, `body`만 MeshAttachment이며 나머지 7개 슬롯은 RegionAttachment입니다.
-* **색조 변경 가능성**(같은 배열, 인덱스만 알파 `4` 대신 `1·2·3`). 슬롯 색·어태치먼트 틴트가 전부 1.0이라 자리가 비어 있어 곱셈 틴트가 그대로 먹습니다. 단 **곱셈이라 각 채널이 원본 텍스처 값을 못 넘습니다** — 부위마다 상한이 다릅니다.
-  * 몸통·손 `#FF3EB9` → R 100% / G 24% / B 73%. 빨강 ↔ 자홍 ↔ 보라 ↔ 남색 벨트는 전부 됩니다.
-  * 눈·입 `#FEE09C` → R 100% / G 88% / B 61%. 노랑·주황·초록·민트까지 갑니다.
-  * 눈썹 `#A1099F` → R 63% / G 3.5% / B 62%. 제일 좁습니다.
-  * 결론: **빨강·보라·남색 유령은 자연스럽게 되고, 초록·노랑 유령은 안 됩니다**(몸통의 G가 24%라 따라오지 못해 눈·입만 따로 놉니다). 원본보다 밝게·하양·파스텔도 불가. 그쪽이 필요하면 텍스처 교체(`CustomSkinInjector`) 경로입니다.
-  * **적용 범위**: 훅이 `SpineActionController.PlayByKey`라 노트 종류를 안 가립니다(캐릭터도 같은 경로). 다만 ① 도달 가능한 색은 노트마다 원본 텍스처가 정하고, ② 컬러 타임라인이 없는 노트는 이 경로로 안 되고 슬롯 색을 써야 하며(고스트 외에는 미확인), ③ `SkeletonData`가 공유라 같은 스켈레톤을 쓰는 노트는 전부 같이 바뀝니다. 노트별로 다른 색을 주려면 애니메이션 데이터가 아니라 런타임 슬롯 색을 매 프레임 써야 합니다(컬러 타임라인이 매 프레임 덮어쓰기 때문).
-* **커스텀 곡의 팩 이름이 '기본 패키지'로 뜨던 문제**(해결). 곡 선택 화면의 팩 라벨(`UI/Standerd/PnlStage/StageUi/Info/ImgAlbumTittle`)은 `AlbumsInfo.title`을 **안 읽습니다**. `DBConfigLocalAlbums.GetLocalTitleByIndex(index)`로 현지화 문자열을 가져옵니다(숙주 앨범의 raw title은 `Default Music`인데 화면은 `기본 패키지`인 것이 단서였습니다).
-  * **핵심: 그 `index`는 앨범의 전역 인덱스가 아니라 "지금 선택된 태그 안에서 몇 번째 앨범이냐"입니다.** 커스텀 태그에는 앨범이 하나뿐이라 늘 `0`이고, 현지화 테이블에서 0은 게임의 첫 앨범(`기본 패키지`)입니다. 일반 팩에서는 태그 안 순서와 전역 인덱스가 우연히 맞아떨어져 이 구조가 드러나지 않습니다.
-  * 그래서 `dbMusicTag.m_CurSelectedTagIndex`가 우리 태그(1999)인 동안의 조회에도 답합니다([CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)). 그 태그 안 앨범은 전부 우리 것이라 인덱스가 몇이든 답은 하나입니다.
-  * **다만 이 관대한 조건은 곡 인덱스 화면을 오염시켰습니다**(팩 구분선 라벨이 전부 `실험 앨범`). 그 화면은 팩마다 같은 조회를 돌리기 때문입니다. 지금은 선택 곡 한 곡을 그리는 구간(`SelectedSongLocalizationScope`)에서만 관대한 쪽을 허용합니다 — 위 [CustomTagPatch.AlbumPatches.cs](#-customtagscustomtagpatchalbumpatchescs) 절 참고.
-  * **빗나간 시도 셋**(전부 곡을 설명하는 값이라 라벨에 닿지 않습니다 — 라벨은 곡이 아니라 **위치**를 묻습니다): `AlbumsInfo.title`을 맞추기 / `MusicInfo.albumIndex`를 1999로 답하기 / `MusicInfo.albumUidName`을 `1999-0`으로 답하기. 뒤의 둘은 그 자체로는 옳은 수정이라 남겨 두었습니다(아래 참고).
-  * **`MusicInfo`의 앨범 계열 멤버는 getter 전용입니다**(`albumIndex`·`albumUidName`·`albumJsonIndex`, 백킹 필드 없음). 그래서 `CustomTagRegistrySupport.SetAlbumMetadata`의 `ModReflection.SetValue(..., silent: true)` 호출은 **작성된 이래 한 번도 성공한 적이 없습니다**. 값을 바꾸려면 getter를 가로채야 합니다.
-  * **라벨을 직접 덮어쓰는 방식은 틀렸습니다** — 값이 여러 패스에 걸쳐 들어와서(직전 팩 이름 → 숙주 팩 이름) 어디까지 잡았는지 알 수 없습니다.
-* **막다른 길 기록**(같은 곳을 다시 파지 않기 위해):
-  * `SetAlpha(float)`, `SpineActionController.OnNoteDisappear`, `BaseEnemyObjectController.NoteDisappearLogic` — 셋 다 고스트 노트에 대해 **한 번도 호출되지 않았습니다.**
-  * 애니메이션을 `standby`로 통째 교체하면 노트가 화면 중앙에 멈춥니다. **비행 이동도 `in_nor_44`가 갖고 있습니다.**
-  * 알파·투명도 필드는 `NoteConfigData`/`MusicData` 어디에도 없어 BMS 주입이나 zz 복구 레이어에서는 손댈 수단이 없습니다.
-  * `OnNoteDisappear`/`NoteDisappearLogic`은 Il2CppInterop이 `params` 편의 오버로드를 함께 만들어 두므로, 이름만으로 패치하면 `AmbiguousMatchException`으로 패치 클래스 전체가 등록에서 빠집니다. 인자 타입을 못박아야 합니다.
+> [!TIP]
+> Spine 애니메이션 타임라인(`in_nor_44`) 알파 키 재작성 구조, 스켈레톤+애니메이션 복합 캐시 키, 타임라인 실측 페이드 데이터, RGB 틴트 제한 분석 및 실패했던 4가지 막다른 길에 관한 정밀 기술 명세는 **[👻 GHOST_NOTE_ALPHA_HOLD.md](../experiments/GHOST_NOTE_ALPHA_HOLD.md)** 전용 문서를 참고하세요.
+
 
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.
