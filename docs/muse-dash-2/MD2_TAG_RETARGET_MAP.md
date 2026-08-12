@@ -228,3 +228,38 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
 | S1.1 | `SaveDataManager` 또는 `DataManager` | `Save()` | 후크(Prefix) | 세이브 직전 가상 키(`1999-`, `1998-`) 컬렉션 정화 | 🟡 | |
+
+---
+
+## 🎨 Spine 커스텀 스킨 및 고스트 노트 알파 연출 재타깃팅 지도
+
+**파일**: [CustomSkinInjector.cs](../../muse%20dash%20test/Spine/CustomSkinInjector.cs), [GhostNoteAlphaHold.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/GhostNoteAlphaHold.cs)
+
+| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
+|---|---|---|---|---|---|---|
+| SK1 | `SkeletonDataAsset` / `AtlasAsset` | `GetSkeletonData()`, `materials` | 후크(Prefix/Postfix) | Spine 스켈레톤 초기화 시 커스텀 텍스처/아틀라스 주입 | 🟡 | |
+| SK2 | `SpineActionController` | `PlayByKey(string, ...)` | 후크(Prefix) | 연타/홀드 도중 투명 노드가 원래 알파로 복원되는 것을 억제 | 🟡 | |
+
+---
+
+## 🔄 실시간 소녀/스킨 교체 (FavGirl) 재타깃팅 지도
+
+**파일**: [RealTimeSwapper.cs](../../muse%20dash%20test/Integration/RealTimeSwapper.cs), [FavManager.cs](../../muse%20dash%20test/Patches/Fav/FavManager.cs)
+
+| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 item | 위험 | **MD2 이름 (← 채울 칸)** |
+|---|---|---|---|---|---|---|
+| F1.1 | `AbstractGirlManager` | `InstanceGirl()`, `AwakeInit()` | 후크(Postfix) | 스킬 캐릭터 유지 상태에서 렌더링 외형 스킨 모델 덮어쓰기 | 🟡 | |
+| F1.2 | `MuseShow` / `CharCreate` | `OnEnable()` | 후크(Postfix) | 로비/캐릭터 선택창 외형 모델 실시간 갱신 | 🟡 | |
+| F1.3 | `RealTimeSwapper` | `CheckForOKeyPress()`, P키 토글 | 매프레임 틱 | P키(모드 토글), O키(슬롯 순환) 핫키 입력 감지 | 🟢 | |
+
+---
+
+## 🎯 판정 조작, 오토 플레이 및 키 입력 오버레이 재타깃팅 지도
+
+**파일**: [ForcePerfectPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.cs), [AutoPlayPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs), [InputOverlay.cs](../../muse%20dash%20test/Patches/UI/Custom/InputOverlay.cs)
+
+| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
+|---|---|---|---|---|---|---|
+| M1.1 | `GameTouchPlay` | `TouchResult(int, ref byte)` | 후크(Prefix) | 판정 코드 Perfect 강제 조작 (All-Perfect Parameter Mod) | 🟡 | |
+| M1.2 | `DBSkill` | `SetAutoPlay(ref bool)` | 후크(Prefix) | 오토플레이 설정 인자 강제 덮어쓰기 | 🟡 | |
+| M1.3 | `InputOverlay` / `JudgmentBar` | `OnGUI()` | 렌더링 | 유니티 표준 GUI로 화면 하단 키보드 오버레이 및 판정바 렌더링 | 🟢 | |

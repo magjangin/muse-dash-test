@@ -220,7 +220,66 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 ---
 
-## 💡 요약: 2편 모딩 분석 타임라인
+## 🎨 Phase 6. Spine 커스텀 스킨 주입 (Custom Spine Skin Injection)
+
+2편에서도 캐릭터 및 보스 렌더링에 Spine 2D 애니메이션이 계속 사용될 가능성이 90% 이상입니다. 커스텀 스킨 주입은 캐릭터 3D 메쉬를 바꾸지 않고도 개별 `.png` / `.atlas` / `.json` 세트를 런타임에 갈아끼우는 핵심 기술입니다.
+
+### 1. Spine 에셋 주입 메커니즘 (`CustomSkinInjector`)
+- **스킨 세트 폴더 스캔**: `skin test/<set_name>/` (예: `skin test/char_3_black/`) 폴더에서 개별 텍스처, 아틀라스, 스켈레톤 JSON 데이터를 감지합니다.
+- **ILSpy 분석 및 훅 타겟**:
+  - **검색 키워드**: `SkeletonDataAsset`, `Spine.Unity`, `InitData`, `GetSkeletonData`
+  - **목표**: Spine 스켈레톤 초기화 시점의 **Prefix/Postfix 후크**를 잡아 `AtlasAsset` 텍스처 인스턴스를 커스텀 텍스처 바이너리로 덮어씁니다.
+- **2편 주의사항**: Spine 런타임 버전(예: Spine 3.8 → Spine 4.x)이 업그레이드되면 아틀라스 헤더 및 메쉬 UV 좌표 포맷이 변경될 수 있으므로, Spine 버전 매칭을 사전에 점검해야 합니다.
+
+---
+
+## 👻 Phase 7. 고스트 노트 알파 유지 및 특수 연출 (Ghost Note Alpha Control)
+
+커스텀 차트에서 투명 노트(Ghost Note)나 특수 연출 노트가 연타/홀드 도중 애니메이션 컨트롤러에 의해 원래의 불투명 알파값으로 강제 복원되는 문제가 생길 수 있습니다.
+
+### 1. ILSpy 분석 및 훅 타겟
+- **검색 키워드**: `SpineActionController`, `PlayByKey`, `PlayAnimation`
+- **목표**: 노트 판정이 발생할 때 캐릭터/오브젝트 애니메이션을 트리거하는 `PlayByKey` 메서드에 **Prefix 후크**를 뚫어줍니다.
+
+### 2. 알파 유지 계약 윈도우 (`SpineActionContract`)
+- 연타/홀드 구간에 진입하면 투명도 감쇄 계약 윈도우(`SpineActionContract`)를 켜고, 해당 타깃 오브젝트의 알파(Alpha)가 0f 미만으로 복원되지 않도록 억제합니다.
+- 씬 이탈 시 `Scene.ResetSpineContractWindow`를 호출해 플래그를 정화하여 다음 곡에 영향을 주지 않도록 조치합니다.
+
+---
+
+## 🔄 Phase 8. 실시간 캐릭터/외형 교체 (FavGirl & RealTime Swapper)
+
+1편의 **FavGirl 실시간 외형 교체 시스템**은 스킬을 보유한 본래 캐릭터와 시각적인 캐릭터 스킨을 분리 적용하여 오토플레이 영상 촬영이나 커스텀 차트 시연 시 원하는 캐릭터 외형을 자유롭게 연출하는 핵심 모딩 도구입니다.
+
+### 1. ILSpy 분석 및 훅 타겟
+- **검색 키워드**: `AbstractGirlManager`, `InstanceGirl`, `AwakeInit`, `CharCreate`, `MuseShow`
+- **목표**: 인게임 진입 시 스킬 캐릭터의 능력치 데이터는 유지하면서 프리팹 스폰 시점에 외형 스킨 모델(`MARIJA_BLACK`, `RIN_BASS` 등)을 교체 반환하도록 Postfix 후크를 적용합니다.
+
+### 2. P/O 핫키 및 실시간 순환 조작 (`RealTimeSwapper`)
+- 인게임 및 로비에서 `P키`(실시간 모드 토글) 및 `O키`(설정 세트 순환 적용) 입력 이벤트를 모니터링하여 실시간 외형 교체를 활성화합니다.
+
+---
+
+## 🎯 Phase 9. 판정 강제(Force Perfect), 오토 플레이 및 HUD 오버레이
+
+모드 시연 영상 제작, 커스텀 차트 난이도 테스트, 봇 시뮬레이션을 위해 판정을 정밀 조작하거나 화면에 키 입력 시각화를 렌더링합니다.
+
+### 1. All-Perfect Parameter Mod (`ForcePerfectPatch`)
+- **ILSpy 타겟**: `GameTouchPlay.TouchResult` (터치/키 판정 처리 시점)
+- **동작**: 판정이 발생한 직후 결과 코드(`resultCode`)를 Perfect 코드로 덮어써서 판정 파라미터를 조작하고 올퍼펙트를 유도합니다.
+
+### 2. 오토 플레이 스킬 패치 (`AutoPlayPatch`)
+- **ILSpy 타겟**: `DBSkill.SetAutoPlay`
+- **동작**: 게임의 오토플레이 설정 함수를 가로채 모드 설정 파일(`forceAutoPlay`)의 값으로 강제 덮어씁니다.
+
+### 3. 키 입력 오버레이 & 판정바 UI (`InputOverlay` / `JudgmentBar`)
+- 유니티 `OnGUI` 파이프라인에서 매 프레임 동적 텍스처 스타일(`airActiveStyle`, `groundActiveStyle`)을 그려 화면 하단 하드웨어 키 입력 상태와 판정바를 실시간 노출합니다.
+
+---
+
+## 💡 요약: 2편 모딩 전체 분석 타임라인
 1. **일주일 이내**: `ModReflection`을 이식해 데이터 래퍼 클래스들의 변수명 정상 바인딩 확인.
 2. **이주일 이내**: 로비 UI 태그 주입 훅을 성공시켜 "실험 모드" 카테고리를 리스트 스크롤에 띄우기 성공.
 3. **삼주일 이내**: 인게임 진입 훅을 성공시켜 디스크의 커스텀 `.ogg` 재생 및 `.bms` 차트 노트들을 실제 배틀 레인에 렌더링 완료.
+4. **한달 이내**: Spine 커스텀 스킨 주입, 고스트 노트 알파 보존, FavGirl 실시간 교체, 오토플레이/판정 조작 2편 바인딩 완료.
+
