@@ -49,10 +49,6 @@ namespace muse_dash_test
         // 커스텀 곡은 이 값 대신 각자의 `hwa info.txt`에 적은 '커스텀 곡 고스트 노트 보이기'를 따릅니다.
         public static bool showGhostNotes = true;
 
-        // 첫 설정 로드가 끝나기 전까지는 파일의 '오토플레이' 값을 적용하지 않습니다.
-        // 첫 로드 이후 게임 도중 config.txt를 저장하면 그때부터는 파일 값을 그대로 따릅니다.
-        private static bool autoPlayFollowsConfig = false;
-
         private static string airColorName = "파랑";
         private static float airAlpha = 85f;
 
@@ -425,15 +421,7 @@ namespace muse_dash_test
                             break;
                         case "오토플레이":
                         {
-                            bool requestedAutoPlay = ParseBool(val, key, forceAutoPlay);
-                            if (autoPlayFollowsConfig)
-                            {
-                                forceAutoPlay = requestedAutoPlay;
-                            }
-                            else if (requestedAutoPlay)
-                            {
-                                MelonLogger.Msg("[InputOverlay] 모드 로드 직후의 첫 설정 로드이므로 '오토플레이=true'를 무시하고 오토를 끈 상태로 시작합니다. (게임 도중 config.txt를 저장하면 그때부터 설정값이 그대로 적용됩니다.)");
-                            }
+                            forceAutoPlay = ParseBool(val, key, forceAutoPlay);
                             break;
                         }
                         case "피버충전금지":
@@ -458,9 +446,6 @@ namespace muse_dash_test
                         }
                     }
                 }
-
-                // 첫 로드를 마쳤으므로, 이후의 config.txt 저장부터는 '오토플레이' 값을 그대로 반영합니다.
-                autoPlayFollowsConfig = true;
 
                 MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 공식곡고스트노트보이기={showGhostNotes})");
                 UpdateTextures();
