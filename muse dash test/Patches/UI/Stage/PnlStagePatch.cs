@@ -26,7 +26,7 @@ public class PnlStage_OnEnable_Patch
                     {
                         UnlockAllMasterGuard.CaptureOnce(val.GetResult<bool>());
                         VariableUtils.SetResult(val, (Il2CppSystem.Object)true);
-                        MelonLogger.Msg("[🔓 FixLocksPatch] PnlStage.OnEnable - IsUnlockAllMaster를 true로 설정 완료!");
+                        ModConfig.VerboseLog("[🔓 FixLocksPatch] PnlStage.OnEnable - IsUnlockAllMaster를 true로 설정 완료!");
                     }
                 }
             }
@@ -60,12 +60,12 @@ public class PnlStage_ChangeMusic_Patch
     {
         try
         {
-            MelonLogger.Msg($"[PnlStage.ChangeMusic] enter index={i}, previousSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, previousShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, previousExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
+            ModConfig.VerboseLog($"[PnlStage.ChangeMusic] enter index={i}, previousSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, previousShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, previousExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.ChangeMusic", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.ChangeMusic.Force", __instance);
             PnlStagePatchHelper.LogButtons("PnlStage.ChangeMusic", __instance);
-            MelonLogger.Msg($"[PnlStage.ChangeMusic] exit index={i}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, currentShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, currentExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
+            ModConfig.VerboseLog($"[PnlStage.ChangeMusic] exit index={i}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, currentShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, currentExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }
         finally { SelectedSongLocalizationScope.Exit(); }
@@ -109,7 +109,7 @@ public class PnlStage_OnAddCollection_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnAddCollection Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnAddCollection Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnAddCollection Prefix 예외: {ex}"); }
     }
@@ -118,7 +118,7 @@ public class PnlStage_OnAddCollection_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnAddCollection Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnAddCollection Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnAddCollection Postfix 예외: {ex}"); }
     }
@@ -132,7 +132,7 @@ public class PnlStage_OnRemoveCollection_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnRemoveCollection Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnRemoveCollection Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnRemoveCollection Prefix 예외: {ex}"); }
     }
@@ -141,7 +141,7 @@ public class PnlStage_OnRemoveCollection_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnRemoveCollection Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnRemoveCollection Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnRemoveCollection Postfix 예외: {ex}"); }
     }
@@ -155,7 +155,7 @@ public class PnlStage_OnHideMusic_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnHideMusic Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnHideMusic Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnHideMusic Prefix 예외: {ex}"); }
     }
@@ -164,7 +164,7 @@ public class PnlStage_OnHideMusic_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnHideMusic Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnHideMusic Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnHideMusic Postfix 예외: {ex}"); }
     }
@@ -178,7 +178,7 @@ public class PnlStage_OnRemoveHideMusic_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnRemoveHideMusic Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnRemoveHideMusic Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnRemoveHideMusic Prefix 예외: {ex}"); }
     }
@@ -187,7 +187,7 @@ public class PnlStage_OnRemoveHideMusic_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.OnRemoveHideMusic Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.OnRemoveHideMusic Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.OnRemoveHideMusic Postfix 예외: {ex}"); }
     }
@@ -201,7 +201,7 @@ public class PnlStage_SetLikeAndHideTglState_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.SetLikeAndHideTglState Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, isUnlock={isUnlock}");
+            ModConfig.VerboseLog($"PnlStage.SetLikeAndHideTglState Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, isUnlock={isUnlock}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.SetLikeAndHideTglState Prefix 예외: {ex}"); }
     }
@@ -210,7 +210,7 @@ public class PnlStage_SetLikeAndHideTglState_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.SetLikeAndHideTglState Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, isUnlock={isUnlock}");
+            ModConfig.VerboseLog($"PnlStage.SetLikeAndHideTglState Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, isUnlock={isUnlock}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.SetLikeAndHideTglState Postfix 예외: {ex}"); }
     }
@@ -224,7 +224,7 @@ public class PnlStage_SetAchievementPercent_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.SetAchievementPercent Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.SetAchievementPercent Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.SetAchievementPercent Prefix 예외: {ex}"); }
     }
@@ -233,7 +233,7 @@ public class PnlStage_SetAchievementPercent_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.SetAchievementPercent Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.SetAchievementPercent Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.SetAchievementPercent Postfix 예외: {ex}"); }
@@ -274,11 +274,11 @@ public class PnlStage_RefreshDiffUI_Patch
             string varState = val != null ? "Found" : "Null";
             string execState = success ? "SUCCESS" : "FAILED";
 
-            MelonLogger.Msg($"[🔓 Unlock Process] PnlStage.RefreshDiffUI -> Target: [{musicUid}]");
-            MelonLogger.Msg($"  ├─ Step 1: Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager dm = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager>.instance; -> {dmPtr}");
-            MelonLogger.Msg($"  ├─ Step 2: Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataObject account = (Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataObject)dm[\"Account\"]; -> {accPtr}");
-            MelonLogger.Msg($"  ├─ Step 3: Il2CppAssets.Scripts.PeroTools.Nice.Interface.IVariable variable = account[\"IsUnlockAllMaster\"]; -> {varState}");
-            MelonLogger.Msg($"  └─ Step 4: Il2CppAssets.Scripts.PeroTools.Commons.VariableUtils.SetResult(variable, true); -> {execState}");
+            ModConfig.VerboseLog($"[🔓 Unlock Process] PnlStage.RefreshDiffUI -> Target: [{musicUid}]");
+            ModConfig.VerboseLog($"  ├─ Step 1: DataManager dm = Singleton<DataManager>.instance; -> {dmPtr}");
+            ModConfig.VerboseLog($"  ├─ Step 2: DataObject account = (DataObject)dm[\"Account\"]; -> {accPtr}");
+            ModConfig.VerboseLog($"  ├─ Step 3: IVariable variable = account[\"IsUnlockAllMaster\"]; -> {varState}");
+            ModConfig.VerboseLog($"  └─ Step 4: VariableUtils.SetResult(variable, true); -> {execState}");
 
             if (musicInfo != null && !string.IsNullOrEmpty(musicInfo.uid))
             {
@@ -294,7 +294,7 @@ public class PnlStage_RefreshDiffUI_Patch
             
             var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
             string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}', diff1={infoWrap.difficulty1}" : "(null)";
-            MelonLogger.Msg($"PnlStage.RefreshDiffUI Prefix: musicNameTitle='{musicText}', artistNameTitle='{artistText}' | [Passed musicInfo details]: {argDetails}");
+            ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Prefix: musicNameTitle='{musicText}', artistNameTitle='{artistText}' | [Passed musicInfo details]: {argDetails}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshDiffUI Prefix 예외: {ex}"); }
     }
@@ -305,7 +305,7 @@ public class PnlStage_RefreshDiffUI_Patch
         {
             var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
             string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}'" : "(null)";
-            MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, argDetails=[{argDetails}], currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
+            ModConfig.VerboseLog($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, argDetails=[{argDetails}], currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
 
             if (PnlStagePatchHelper.ApplyTagTitleForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
@@ -313,16 +313,16 @@ public class PnlStage_RefreshDiffUI_Patch
                 // 다이내믹 주입에 성공했으면 다른 정적 주입은 실행하지 않고 리턴합니다.
                 string mText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
                 string aText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-                MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix (Direct Applied): musicNameTitle='{mText}', artistNameTitle='{aText}'");
+                ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Postfix (Direct Applied): musicNameTitle='{mText}', artistNameTitle='{aText}'");
                 return;
             }
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.RefreshDiffUI", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.RefreshDiffUI.Force", __instance);
 
-            MelonLogger.Msg($"[PnlStage.RefreshDiffUI.Postfix] exit uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
+            ModConfig.VerboseLog($"[PnlStage.RefreshDiffUI.Postfix] exit uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
             string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
             string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-            MelonLogger.Msg($"PnlStage.RefreshDiffUI Postfix: musicNameTitle='{musicText}', artistNameTitle='{artistText}'");
+            ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Postfix: musicNameTitle='{musicText}', artistNameTitle='{artistText}'");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshDiffUI Postfix 예외: {ex}"); }
     }
@@ -336,7 +336,7 @@ public class PnlStage_RefreshBg_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.RefreshBg Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, hideText={hideText}");
+            ModConfig.VerboseLog($"PnlStage.RefreshBg Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, hideText={hideText}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshBg Prefix 예외: {ex}"); }
     }
@@ -345,7 +345,7 @@ public class PnlStage_RefreshBg_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.RefreshBg Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, hideText={hideText}");
+            ModConfig.VerboseLog($"PnlStage.RefreshBg Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, hideText={hideText}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.RefreshBg Postfix 예외: {ex}"); }
     }
@@ -359,7 +359,7 @@ public class PnlStage_IsContainOffPlan_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.IsContainOffPlan Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            ModConfig.VerboseLog($"PnlStage.IsContainOffPlan Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.IsContainOffPlan Prefix 예외: {ex}"); }
     }
@@ -368,7 +368,7 @@ public class PnlStage_IsContainOffPlan_Patch
     {
         try
         {
-            MelonLogger.Msg($"PnlStage.IsContainOffPlan Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, result={__result}");
+            ModConfig.VerboseLog($"PnlStage.IsContainOffPlan Postfix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}, result={__result}");
         }
         catch (Exception ex) { MelonLogger.Error($"PnlStage.IsContainOffPlan Postfix 예외: {ex}"); }
     }

@@ -24,6 +24,7 @@ namespace muse_dash_test
         public static MelonPreferences_Entry<bool> ForcePerfectEntry { get; private set; }
         public static MelonPreferences_Entry<bool> BattleMediaEntry { get; private set; }
         public static MelonPreferences_Entry<bool> SpineSkinEntry { get; private set; }
+        public static MelonPreferences_Entry<bool> VerboseLogEntry { get; private set; }
 
         public static bool EnableCustomChart => CustomChartEntry?.Value ?? true;
         public static bool EnableRealTimeSwap => RealTimeSwapEntry?.Value ?? true;
@@ -37,6 +38,7 @@ namespace muse_dash_test
         public static bool EnableForcePerfect => ForcePerfectEntry?.Value ?? true;
         public static bool EnableBattleMedia => BattleMediaEntry?.Value ?? true;
         public static bool EnableSpineSkin => SpineSkinEntry?.Value ?? true;
+        public static bool EnableVerboseLog => VerboseLogEntry?.Value ?? false;
 
         private static readonly Dictionary<string, Func<bool>> FeatureMap = new Dictionary<string, Func<bool>>(StringComparer.OrdinalIgnoreCase);
 
@@ -58,6 +60,7 @@ namespace muse_dash_test
             ForcePerfectEntry = Category.CreateEntry("EnableForcePerfect", true, description: "강제 올 퍼펙트 (All-Perfect Parameter Mod) 기능 활성화");
             BattleMediaEntry = Category.CreateEntry("EnableBattleMedia", true, description: "배틀 커스텀 BGA 비디오/미디어 재생기 활성화");
             SpineSkinEntry = Category.CreateEntry("EnableSpineSkin", true, description: "Spine 커스텀 스킨 텍스처/아틀라스 주입 활성화");
+            VerboseLogEntry = Category.CreateEntry("EnableVerboseLog", false, description: "진단 로그 상세 출력 활성화 (개발/디버깅용, 평소에는 꺼두세요)");
 
             RegisterFeatureMapping();
             MelonLogger.Msg("[ModConfig] 개별 기능 토글 설정 로드 완료.");
@@ -110,6 +113,15 @@ namespace muse_dash_test
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// <see cref="EnableVerboseLog"/>가 켜져 있을 때만 MelonLogger.Msg를 출력하는 헬퍼입니다.
+        /// 진단성 로그를 조건부로 출력하여 릴리스 플레이 중 로그 노이즈를 방지합니다.
+        /// </summary>
+        public static void VerboseLog(string msg)
+        {
+            if (EnableVerboseLog) MelonLogger.Msg(msg);
         }
     }
 }

@@ -117,7 +117,7 @@ public class Boss_InitBossObject_Patch
             {
                 uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
-            if (MainMod.TryGetCachedHwaBmsChart(uid, out var chart, out _))
+            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart, out _))
             {
                 if (chart != null && chart.Notes != null)
                 {

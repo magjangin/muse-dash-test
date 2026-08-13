@@ -196,7 +196,7 @@ public class GameMusicScene_InitTimer_Patch
             uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.CustomPlaySession.Current.LastClickedMusicUid;
         }
 
-        if (muse_dash_test.MainMod.TryGetCachedHwaScene(uid, out int manifestScene))
+        if (muse_dash_test.HwaResourceManager.TryGetCachedHwaScene(uid, out int manifestScene))
         {
             return manifestScene.ToString("00");
         }

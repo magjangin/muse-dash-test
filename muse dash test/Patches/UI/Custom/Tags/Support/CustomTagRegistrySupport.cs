@@ -41,12 +41,12 @@ namespace muse_dash_test
 
             try
             {
-                var vUids = MainMod.GetVirtualUids();
+                var vUids = HwaResourceManager.GetVirtualUids();
                 MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 생성 시작: count={vUids.Count}");
 
                 foreach (var uid in vUids)
                 {
-                    MainMod.TryGetCachedHwaSearchTerms(uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string _);
+                    HwaResourceManager.TryGetCachedHwaSearchTerms(uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string _);
 
                     string lookupQuery = string.IsNullOrWhiteSpace(sourceUid) ? null : sourceUid;
                     if (string.IsNullOrWhiteSpace(lookupQuery)) lookupQuery = sourceTitle;
@@ -84,7 +84,7 @@ namespace muse_dash_test
                         int primaryDiff4 = 0;
                         int primaryDiff5 = 0;
 
-                        if (MainMod.TryGetHwaPrimarySong(uid, out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out _))
+                        if (HwaResourceManager.TryGetHwaPrimarySong(uid, out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out _))
                         {
                             if (!string.IsNullOrWhiteSpace(manifestTitle)) primaryName = manifestTitle;
                             if (!string.IsNullOrWhiteSpace(manifestArtist)) primaryAuthor = manifestArtist;

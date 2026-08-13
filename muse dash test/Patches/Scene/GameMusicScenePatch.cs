@@ -22,7 +22,7 @@ public class GameMusicScene_LoadScene_Patch
                 uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
             }
 
-            bool hasCachedScene = muse_dash_test.MainMod.TryGetCachedHwaScene(uid, out int scene);
+            bool hasCachedScene = muse_dash_test.HwaResourceManager.TryGetCachedHwaScene(uid, out int scene);
             MelonLogger.Msg($"[GameMusicScene.LoadScene] uid={uid ?? "(null)"}, sceneName={sceneName}, hasCachedScene={hasCachedScene}, resolvedScene={scene}");
 
             if (!hasCachedScene)

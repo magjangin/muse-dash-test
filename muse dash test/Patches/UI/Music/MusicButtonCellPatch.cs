@@ -80,7 +80,7 @@ namespace muse_dash_test
                 string author = initMusicInfo.author;
 
                 // 캐시된 manifest 정보 조회 시도
-                if (MainMod.TryGetHwaPrimarySong(initMusicInfo.uid,
+                if (HwaResourceManager.TryGetHwaPrimarySong(initMusicInfo.uid,
                     out string manifestTitle, out string manifestArtist, out _, out _, out _, out _, out _, out _, out _))
                 {
                     if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
@@ -174,7 +174,7 @@ namespace muse_dash_test
             if (cache.TryGetValue(uid, out sprite)) return sprite != null;
             if (missing.Contains(uid)) return false;
 
-            if (!MainMod.TryGetSongDirectory(uid, out string songDir) || string.IsNullOrEmpty(songDir))
+            if (!HwaResourceManager.TryGetSongDirectory(uid, out string songDir) || string.IsNullOrEmpty(songDir))
             {
                 missing.Add(uid);
                 return false;

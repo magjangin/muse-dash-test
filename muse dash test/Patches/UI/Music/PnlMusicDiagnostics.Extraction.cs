@@ -49,7 +49,7 @@ namespace muse_dash_test
             {
                 string selectedUid = resolvedUid ?? ResolveCustomMusicUid(pnlInstance);
                 if (!string.IsNullOrEmpty(selectedUid)
-                    && MainMod.TryGetHwaPrimarySong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _, out _)
+                    && HwaResourceManager.TryGetHwaPrimarySong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _, out _)
                     && !string.IsNullOrWhiteSpace(manifestLevelDesigner))
                 {
                     info.LevelDesigner = manifestLevelDesigner;

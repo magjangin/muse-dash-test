@@ -7,36 +7,12 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "OnEnable")]
 public class PnlPreparation_OnEnable_Patch
 {
-    public static void Prefix(Il2Cpp.PnlPreparation __instance)
-    {
-        try
-        {
-            if (__instance != null)
-            {
-                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
-                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
-                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-
-            }
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"PnlPreparation.OnEnable Prefix 로그 예외: {ex}");
-        }
-    }
+    public static void Prefix(Il2Cpp.PnlPreparation __instance) { }
 
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
         try
         {
-            if (__instance != null)
-            {
-                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
-                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
-                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-
-            }
-
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnEnable");
             
             string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
@@ -67,7 +43,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
     {
         try
         {
-            MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.Prefix] 호출 감지: instance={(__instance != null ? __instance.ToString() : "null")}");
+            ModConfig.VerboseLog($"[PnlPreparation.OnDownloadBestReport.Prefix] 호출 감지: instance={(__instance != null ? __instance.ToString() : "null")}");
             DumpRecordContext(__instance, "Prefix");
         }
         catch (Exception ex)
@@ -80,7 +56,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
     {
         try
         {
-            MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
+            ModConfig.VerboseLog($"[PnlPreparation.OnDownloadBestReport.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
             DumpRecordContext(__instance, "Postfix");
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnDownloadBestReport");
 
@@ -105,7 +81,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
                 selectedUid = CustomPlaySession.Current.LastClickedMusicUid;
             }
 
-            MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.{phase}] selectedUid={selectedUid ?? "(null)"}");
+            ModConfig.VerboseLog($"[PnlPreparation.OnDownloadBestReport.{phase}] selectedUid={selectedUid ?? "(null)"}");
 
             if (__instance == null)
             {
@@ -138,7 +114,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
                     value = $"(error: {ex.Message})";
                 }
 
-                MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.{phase}] field {fieldName}={value ?? "(null)"}");
+                ModConfig.VerboseLog($"[PnlPreparation.OnDownloadBestReport.{phase}] field {fieldName}={value ?? "(null)"}");
             }
 
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -171,7 +147,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
                     value = $"(error: {ex.Message})";
                 }
 
-                MelonLogger.Msg($"[PnlPreparation.OnDownloadBestReport.{phase}] property {propertyName}={value ?? "(null)"}");
+                ModConfig.VerboseLog($"[PnlPreparation.OnDownloadBestReport.{phase}] property {propertyName}={value ?? "(null)"}");
             }
         }
         catch (Exception ex)
@@ -185,36 +161,12 @@ public class PnlPreparation_OnDownloadBestReport_Patch
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "RefreshUi")]
 public class PnlPreparation_RefreshUi_Patch
 {
-    public static void Prefix(Il2Cpp.PnlPreparation __instance)
-    {
-        try
-        {
-            if (__instance != null)
-            {
-                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
-                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
-                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-
-            }
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error($"PnlPreparation.RefreshUi Prefix 로그 예외: {ex}");
-        }
-    }
+    public static void Prefix(Il2Cpp.PnlPreparation __instance) { }
 
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
         try
         {
-            if (__instance != null)
-            {
-                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
-                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
-                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-
-            }
-
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.RefreshUi");
 
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlPreparation(__instance);
@@ -237,14 +189,6 @@ public class PnlPreparation_GameStart_Patch
     {
         try
         {
-            if (__instance != null)
-            {
-                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
-                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
-                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-
-            }
-
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.GameStart");
         }
         catch (Exception ex)
@@ -262,14 +206,6 @@ public class PnlPreparation_OnBattleStart_Patch
     {
         try
         {
-            if (__instance != null)
-            {
-                string designerText = PnlStagePatchHelper.GetLongNameControllerText(__instance.designerLongNameController);
-                string artistText = PnlStagePatchHelper.GetLongNameControllerText(__instance.songAuthorLongNameController);
-                string achvText = __instance.stageAchievementValue != null ? __instance.stageAchievementValue.text : "(null)";
-
-            }
-
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnBattleStart");
         }
         catch (Exception ex)

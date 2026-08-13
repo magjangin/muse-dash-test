@@ -43,7 +43,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         musicList.Add(anchor);
 
         var runtimeSpecs = BuildRuntimeExperimentNotes(ExperimentNotes);
-        if (UseBmsInjection && muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
+        if (UseBmsInjection && muse_dash_test.HwaResourceManager.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
         {
             var bmsSpecs = BuildBmsExperimentNotes(bmsChart, activeUid);
             if (bmsSpecs.Count > 0)
@@ -72,7 +72,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         SceneZzTransformTracker.ClearBmsOriginalIdentities();
-        if (UseBmsInjection && muse_dash_test.MainMod.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
+        if (UseBmsInjection && muse_dash_test.HwaResourceManager.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
         {
             ApplyBmsDoubleState(musicList, 1);
             SortBmsNotesByShowTick(musicList, 1);

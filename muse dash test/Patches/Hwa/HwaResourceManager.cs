@@ -99,7 +99,7 @@ namespace muse_dash_test
         /// </summary>
         private static void RegisterSongDirectory(string uid, string dir)
         {
-            MelonLogger.Msg($"[HwaResourceManager] [{uid}] 매핑 시도: folder={dir}");
+            ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 매핑 시도: folder={dir}");
 
             HwaManifest manifest = LoadHwaManifest(dir) ?? CreateFallbackManifest(uid, dir);
             if (string.IsNullOrEmpty(manifest.SourcePath))
@@ -116,7 +116,7 @@ namespace muse_dash_test
                 {
                     cachedBmsCharts[uid] = bmsChart;
                 }
-                MelonLogger.Msg($"[HwaResourceManager] [{uid}] BMS 로드 성공: {HwaChartDiagnostics.DescribeBmsChart(bmsChart)}");
+                ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] BMS 로드 성공: {HwaChartDiagnostics.DescribeBmsChart(bmsChart)}");
             }
             else
             {
@@ -130,10 +130,10 @@ namespace muse_dash_test
             if (!string.IsNullOrWhiteSpace(manifest.Uid))
             {
                 customClaimedUids.Add(manifest.Uid.Trim());
-                MelonLogger.Msg($"[HwaResourceManager] [{uid}] 숙주 uid '{manifest.Uid.Trim()}'를 커스텀 곡으로 등록했습니다.");
+                ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 숙주 uid '{manifest.Uid.Trim()}'를 커스텀 곳으로 등록했습니다.");
             }
 
-            MelonLogger.Msg($"[HwaResourceManager] [{uid}] 등록 완료: {HwaManifestLoader.DescribeManifest(manifest)}");
+            ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 등록 완료: {HwaManifestLoader.DescribeManifest(manifest)}");
         }
 
         private static HwaManifest CreateFallbackManifest(string uid, string dir)
@@ -144,7 +144,7 @@ namespace muse_dash_test
                 dirName = "HwaRoot";
             }
 
-            MelonLogger.Msg($"[HwaResourceManager] [{uid}] 설정 파일(info.txt)이 없어 폴백 설정을 생성했습니다.");
+            ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 설정 파일(info.txt)이 없어 폴백 설정을 생성했습니다.");
             return new HwaManifest
             {
                 SourcePath = Path.Combine(dir, "info.txt"),
@@ -267,7 +267,7 @@ namespace muse_dash_test
         public static bool ShouldApplyCustomChartForSelection(string uid, bool isExperimentModeActive)
         {
             var decision = DecideCustomChartForSelection(uid, isExperimentModeActive);
-            MelonLogger.Msg($"[HwaResourceManager.Debug] ShouldApplyCustomChartForSelection: uid={uid ?? "(null)"}, isExperimentModeActive={isExperimentModeActive}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
+            ModConfig.VerboseLog($"[HwaResourceManager.Debug] ShouldApplyCustomChartForSelection: uid={uid ?? "(null)"}, isExperimentModeActive={isExperimentModeActive}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
             return decision.ShouldApply;
         }
 

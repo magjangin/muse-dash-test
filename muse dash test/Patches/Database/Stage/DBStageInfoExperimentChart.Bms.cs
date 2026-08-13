@@ -133,7 +133,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             spec.Scene = "scene_" + UidCode.Scene(spec.Uid);
         }
 
-        if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.MainMod.TryGetCachedHwaScene(activeUid, out int manifestScene))
+        if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.HwaResourceManager.TryGetCachedHwaScene(activeUid, out int manifestScene))
         {
             spec.Scene = $"scene_{manifestScene:00}";
         }

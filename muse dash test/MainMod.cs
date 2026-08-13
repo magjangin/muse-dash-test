@@ -78,7 +78,7 @@ namespace muse_dash_test
             }, maxConsecutiveFailures: 0);
 
             // hwa 매니페스트 사전 로드
-            FeatureGuard.Run("Init.PreloadManifest", PreloadHwaManifest, maxConsecutiveFailures: 0);
+            FeatureGuard.Run("Init.PreloadManifest", HwaResourceManager.PreloadHwaManifest, maxConsecutiveFailures: 0);
 
             // FavGirl 즐겨찾기 설정 및 핫키 정보 초기화
             FavSave.Load();
@@ -269,48 +269,5 @@ namespace muse_dash_test
             MelonLogger.Msg("모드가 종료되었습니다.");
         }
 
-        // ==========================================
-        // HwaResourceManager 기능 포워딩 프록시 메서드
-        // ==========================================
-
-        public static void PreloadHwaManifest()
-        {
-            HwaResourceManager.PreloadHwaManifest();
-        }
-
-        public static bool TryGetCachedHwaManifest(string uid, out string description)
-        {
-            return HwaResourceManager.TryGetCachedHwaManifest(uid, out description);
-        }
-
-        public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string description)
-        {
-            return HwaResourceManager.TryGetCachedHwaSearchTerms(uid, out sourceUid, out sourceTitle, out sourceArtist, out sourceAlbum, out description);
-        }
-
-        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
-        {
-            return HwaResourceManager.TryGetHwaPrimarySong(uid, out title, out artist, out levelDesigner, out diff1, out diff2, out diff3, out diff4, out diff5, out description);
-        }
-
-        public static bool TryGetCachedHwaScene(string uid, out int scene)
-        {
-            return HwaResourceManager.TryGetCachedHwaScene(uid, out scene);
-        }
-
-        public static bool TryGetCachedHwaBmsChart(string uid, out BmsChart chart, out string description)
-        {
-            return HwaResourceManager.TryGetCachedHwaBmsChart(uid, out chart, out description);
-        }
-
-        public static bool TryGetSongDirectory(string uid, out string songDir)
-        {
-            return HwaResourceManager.TryGetSongDirectory(uid, out songDir);
-        }
-
-        public static List<string> GetVirtualUids()
-        {
-            return HwaResourceManager.GetVirtualUids();
-        }
     }
 }

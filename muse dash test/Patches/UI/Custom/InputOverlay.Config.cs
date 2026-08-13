@@ -267,43 +267,38 @@ namespace muse_dash_test
                 if (!File.Exists(configPath)) return;
 
                 string text = ReadConfigTextRobust();
-                bool hasAutoPlay = text.Contains("오토플레이");
-                bool hasBlockFever = text.Contains("피버충전금지");
-                bool hasCinema = text.Contains("시네마");
-                bool hasForcePerfect = text.Contains("강제퍼펙트");
-                // 옛 이름과 새 이름(띄어쓰기 포함) 둘 다 있는 것으로 칩니다. 이름만 바뀐 항목을 중복으로 덧붙이지 않으려고요.
-                bool hasShowGhostNotes = text.Contains(GhostNotesLegacyKey) || text.Contains("고스트 노트 보이기");
+                if (string.IsNullOrEmpty(text)) return;
 
-                if (!hasAutoPlay || !hasBlockFever || !hasCinema || !hasForcePerfect || !hasShowGhostNotes)
+                // 추가할 키와 기본값 선언 테이블. 새 설정 키를 추가할 때 이곳만 고치면 됩니다.
+                var missingEntries = new (string checkKey, string appendLine)[] {
+                    ("오토플레이",   "오토플레이=false"),
+                    ("피버충전금지",  $"피버충전금지={blockFever.ToString().ToLower()}"),
+                    ("시네마",      $"시네마={enableCinema.ToString().ToLower()}"),
+                    ("강제퍼펙트",   $"강제퍼펙트={forcePerfect.ToString().ToLower()}"),
+                    (GhostNotesLegacyKey, $"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}"),
+                    // ↑ GhostNotesLegacyKey 로 체크하면 new/legacy 둘 다 잡습니다.
+                };
+
+                var sb = new StringBuilder();
+                bool anyMissing = false;
+                foreach (var (checkKey, appendLine) in missingEntries)
                 {
-                    StringBuilder sb = new StringBuilder();
-                    sb.AppendLine();
-                    sb.AppendLine("# [자동 업데이트] 누락된 설정 항목 추가");
-                    
-                    if (!hasAutoPlay)
+                    if (!text.Contains(checkKey))
                     {
-                        sb.AppendLine("오토플레이=false");
+                        if (!anyMissing)
+                        {
+                            sb.AppendLine();
+                            sb.AppendLine("# [자동 업데이트] 누락된 설정 항목 추가");
+                            anyMissing = true;
+                        }
+                        sb.AppendLine(appendLine);
                     }
-                    if (!hasBlockFever)
-                    {
-                        sb.AppendLine($"피버충전금지={blockFever.ToString().ToLower()}");
-                    }
-                    if (!hasCinema)
-                    {
-                        sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
-                    }
-                    if (!hasForcePerfect)
-                    {
-                        sb.AppendLine($"강제퍼펙트={forcePerfect.ToString().ToLower()}");
-                    }
-                    if (!hasShowGhostNotes)
-                    {
-                        sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}");
-                    }
-
-                    File.AppendAllText(configPath, sb.ToString(), new UTF8Encoding(true));
-                    MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목(오토플레이/피버/시네마/강제퍼펙트/고스트 노트)을 자동 추가했습니다.");
                 }
+
+                if (!anyMissing) return;
+
+                File.AppendAllText(configPath, sb.ToString(), new UTF8Encoding(true));
+                MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목을 자동 추가했습니다.");
             }
             catch (Exception ex)
             {
@@ -342,10 +337,10 @@ namespace muse_dash_test
                 string text = ReadConfigTextRobust();
                 if (string.IsNullOrEmpty(text)) return;
 
-                MelonLogger.Msg($"[InputOverlay] ParseConfigFile 시작. 총 문자 수={text.Length}, configPath={configPath}");
+                ModConfig.VerboseLog($"[InputOverlay] ParseConfigFile 시작. 총 문자 수={text.Length}, configPath={configPath}");
 
                 string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                MelonLogger.Msg($"[InputOverlay] 분리된 줄 수={lines.Length}");
+                ModConfig.VerboseLog($"[InputOverlay] 분리된 줄 수={lines.Length}");
 
                 foreach (string line in lines)
                 {
@@ -467,13 +462,13 @@ namespace muse_dash_test
                 case "on":
                 case "켜짐":
                 case "1":
-                    MelonLogger.Msg($"[InputOverlay] '{key}' → true (입력값: '{val}')");
+                    ModConfig.VerboseLog($"[InputOverlay] '{key}' → true (입력값: '{val}')");
                     return true;
                 case "false":
                 case "off":
                 case "끔":
                 case "0":
-                    MelonLogger.Msg($"[InputOverlay] '{key}' → false (입력값: '{val}')");
+                    ModConfig.VerboseLog($"[InputOverlay] '{key}' → false (입력값: '{val}')");
                     return false;
                 default:
                     MelonLogger.Warning($"[InputOverlay] '{key}' 파싱 실패: '{val}'은 인식할 수 없는 값입니다. (true/false/on/off/켜짐/끔/1/0 중 하나를 사용하세요) 기존 값({fallback}) 유지.");

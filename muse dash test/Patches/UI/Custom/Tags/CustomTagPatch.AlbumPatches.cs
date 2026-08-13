@@ -222,7 +222,7 @@ namespace muse_dash_test
             {
                 if (__instance != null && CustomContentIds.IsVirtualSong(__instance.uid))
                 {
-                    if (MainMod.TryGetHwaPrimarySong(__instance.uid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
+                    if (HwaResourceManager.TryGetHwaPrimarySong(__instance.uid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
                     {
                         var localInfo = new LocalALBUMInfo();
                         localInfo.name = title;
@@ -285,7 +285,7 @@ namespace muse_dash_test
                     return true;
                 }
 
-                if (MainMod.TryGetHwaPrimarySong(currentUid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
+                if (HwaResourceManager.TryGetHwaPrimarySong(currentUid, out string title, out string artist, out _, out _, out _, out _, out _, out _, out _))
                 {
                     var localInfo = new LocalALBUMInfo();
                     localInfo.name = title;

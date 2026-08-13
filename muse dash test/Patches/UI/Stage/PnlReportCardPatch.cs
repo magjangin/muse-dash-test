@@ -52,7 +52,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
         string title = "Custom Chart";
         string artist = "Custom Artist";
 
-        bool foundInManifest = MainMod.TryGetHwaPrimarySong(
+        bool foundInManifest = HwaResourceManager.TryGetHwaPrimarySong(
             uid,
             out string manifestTitle,
             out string manifestArtist,

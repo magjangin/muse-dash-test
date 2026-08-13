@@ -40,7 +40,7 @@ namespace muse_dash_test
             ShouldApplyExperimentChart = decision.ShouldApply;
             LastApplyDecisionReasonCode = decision.ReasonCode;
             LastApplyDecisionDescription = decision.Description;
-            MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] RememberMusicSelection 호출: prevUid={prevUid}, newUid={uid ?? "(null)"}, experimentMode={isExperimentMode}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, prevShouldApply={prevShouldApply}, newShouldApply={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
+            ModConfig.VerboseLog($"[CustomPlaySession.Debug] RememberMusicSelection 호출: prevUid={prevUid}, newUid={uid ?? "(null)"}, experimentMode={isExperimentMode}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, prevShouldApply={prevShouldApply}, newShouldApply={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
 
             try
             {
@@ -81,7 +81,7 @@ namespace muse_dash_test
             ShouldApplyExperimentChart = false;
             LastApplyDecisionReasonCode = "BATTLE_EXIT_RESET";
             LastApplyDecisionDescription = "배틀 종료/이탈로 실험 차트 적용 결정 초기화";
-            MelonLoader.MelonLogger.Msg($"[CustomPlaySession.Debug] ResetApplyDecision 호출: prevShouldApply={prevShouldApply}, newShouldApply=false");
+            ModConfig.VerboseLog($"[CustomPlaySession.Debug] ResetApplyDecision 호출: prevShouldApply={prevShouldApply}, newShouldApply=false");
         }
     }
 }

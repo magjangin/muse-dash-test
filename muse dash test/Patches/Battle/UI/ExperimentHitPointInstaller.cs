@@ -154,7 +154,7 @@ namespace muse_dash_test
             AddSceneCandidate(candidates, lastLoadSceneRedirected, "loadscene-redirected");
             AddSceneCandidate(candidates, lastLoadSceneOriginal, "loadscene-original");
 
-            if (MainMod.TryGetCachedHwaScene(uid, out int manifestScene))
+            if (HwaResourceManager.TryGetCachedHwaScene(uid, out int manifestScene))
             {
                 AddSceneCandidate(candidates, manifestScene, "manifest");
             }
@@ -173,7 +173,7 @@ namespace muse_dash_test
 
         private static void AddBmsSceneCandidates(List<SceneCandidate> candidates, string uid)
         {
-            if (!MainMod.TryGetCachedHwaBmsChart(uid, out BmsChart chart, out _) || chart?.Notes == null)
+            if (!HwaResourceManager.TryGetCachedHwaBmsChart(uid, out BmsChart chart, out _) || chart?.Notes == null)
             {
                 return;
             }

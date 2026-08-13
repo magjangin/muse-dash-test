@@ -44,7 +44,7 @@ namespace muse_dash_test
             string artist = ExperimentArtist;
             string designer = ExperimentLevelDesignerName;
 
-            if (MainMod.TryGetHwaPrimarySong(
+            if (HwaResourceManager.TryGetHwaPrimarySong(
                     resolvedUid,
                     out string manifestTitle,
                     out string manifestArtist,
