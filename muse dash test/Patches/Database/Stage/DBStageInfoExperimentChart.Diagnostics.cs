@@ -104,17 +104,17 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     }
 
     /// <summary>
-    /// 원본 차트(공식 곡) 덤프 시, boss_action 필드가 "0"이 아니거나 비어있지 않은
-    /// 모든 보스 액션 연동 노트(샌드백, 보스 공격, 보스 전환 등)를 조건 없이 덤프 출력합니다.
+    /// 원본 차트(공식 곡) 덤프 시, UID/프리팹의 중간 2자리 xx가 "01" (보스 액션/전환) 또는 "04" (샌드백/연타)인
+    /// zz01yy 및 zz04yy 전용 노트만을 덤프 출력합니다.
     /// </summary>
     public static void LogSandbagAnalysisOriginalChartNotes(Il2CppSystem.Collections.Generic.List<MusicData> musicList)
     {
         if (musicList == null || musicList.Count == 0) return;
 
         var loggedKeys = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
-        int bossActionTotalCount = 0;
+        int matchedTotalCount = 0;
 
-        MelonLogger.Msg($"[BossActionAnalysis] ★ 원본 차트 보스 액션 노트(boss_action != '0') 전체 서치 시작 (total={musicList.Count}) ★");
+        MelonLogger.Msg($"[Zz01Zz04Analysis] ★ 원본 차트 zz01yy & zz04yy 노트 서치 시작 (total={musicList.Count}) ★");
 
         for (int i = 0; i < musicList.Count; i++)
         {
@@ -122,16 +122,20 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             if (note?.noteData == null) continue;
 
             string uid = note.noteData.uid ?? string.Empty;
-            string bossAction = note.noteData.boss_action ?? string.Empty;
+            string prefabStr = note.noteData.prefab_name ?? string.Empty;
             uint noteTypeVal = (uint)note.noteData.type;
 
-            // 특정 UID/Type/Prefab 제한 조건을 모두 해제하고, boss_action이 "0"이 아니거나 비어있지 않은 노트만 필터링
-            bool hasValidBossAction = !string.IsNullOrEmpty(bossAction) && bossAction != "0";
+            string xxFromUid = (uid.Length >= 4) ? UidCode.Xx(uid) : string.Empty;
+            string xxFromPrefab = (prefabStr.Length >= 4) ? prefabStr.Substring(2, 2) : string.Empty;
 
-            if (hasValidBossAction)
+            // zz01yy (xx="01") 또는 zz04yy (xx="04") 패턴인 노트 필터링
+            bool isZz01OrZz04 = xxFromUid == "01" || xxFromUid == "04" || xxFromPrefab == "01" || xxFromPrefab == "04" || noteTypeVal == 8;
+
+            if (isZz01OrZz04)
             {
-                bossActionTotalCount++;
-                string key = $"{uid}_type{noteTypeVal}_{note.noteData.prefab_name}_{bossAction}";
+                matchedTotalCount++;
+                string bossAction = SafeLogValue(() => note.noteData.boss_action);
+                string key = $"{i}_{uid}_type{noteTypeVal}_{prefabStr}_{bossAction}_{note.tick}";
 
                 if (!loggedKeys.Contains(key))
                 {
@@ -147,7 +151,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                     string showTick = SafeLogValue(() => note.showTick);
 
                     MelonLogger.Msg(
-                        $"[BossActionAnalysis] ★보스 액션 노트 감지★ index={i}, objId={note.objId}, tick={tick}, dt={dt}, showTick={showTick}, " +
+                        $"[Zz01Zz04Analysis] ★zz01yy/zz04yy 노트 감지★ index={i}, objId={note.objId}, tick={tick}, dt={dt}, showTick={showTick}, " +
                         $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
                         $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
                     );
@@ -155,7 +159,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        MelonLogger.Msg($"[BossActionAnalysis] ★ 원본 차트 보스 액션 노트 서치 완료: 감지 노트={bossActionTotalCount}개, 고유 액션 노트={loggedKeys.Count}개 ★");
+        MelonLogger.Msg($"[Zz01Zz04Analysis] ★ 원본 차트 zz01yy & zz04yy 서치 완료: 감지 노트={matchedTotalCount}개, 출력 고유 노트={loggedKeys.Count}개 ★");
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
