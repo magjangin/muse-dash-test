@@ -122,14 +122,22 @@ UID의 앞 두 자리 `zz`는 씬 계열입니다. 보스 토큰은 뒤 4자리(
 
 현재 실험에서 중요하게 보는 값은 아래입니다.
 
-| 예시 UID | 뒤 4자리 | `BossAction` | `prefab_name` | `dt/showTick` 기본값 |
-| --- | --- | --- | --- | --- |
-| `050101` | `0101` | `in` | `empty_000` | `dt=0`, `showTick=tick` |
-| `050107` | `0107` | `boss_far_atk_1_start` | `empty_000` | `dt=0`, `showTick=tick` |
-| `050108` | `0108` | `boss_far_atk_1_end` | `empty_000` | `dt=0`, `showTick=tick` |
-| `050109` | `0109` | `boss_far_atk_2_start` | `empty_000` | `dt=0`, `showTick=tick` |
-| `050110` | `0110` | `boss_far_atk_2_end` | `empty_000` | `dt=0`, `showTick=tick` |
-| `050102` | `0102` | `out` | `empty_000` | `dt=0`, `showTick=tick` |
+| 예시 UID | 뒤 4자리 | `BossAction` | `prefab_name` | `dt/showTick` 기본값 | 메모 |
+| --- | --- | --- | --- | --- | --- |
+| `050101` | `0101` | `in` | `empty_000` | `dt=0`, `showTick=tick` | 보스 등장 |
+| `050107` | `0107` | `boss_far_atk_1_start` | `empty_000` | `dt=0`, `showTick=tick` | 보스 원거리1 공격 시작 |
+| `050108` | `0108` | `boss_far_atk_1_end` | `empty_000` | `dt=0`, `showTick=tick` | 보스 원거리1 공격 종료 |
+| `050109` | `0109` | `boss_far_atk_2_start` | `empty_000` | `dt=0`, `showTick=tick` | 보스 원거리2 공격 시작 |
+| `050110` | `0110` | `boss_far_atk_2_end` | `empty_000` | `dt=0`, `showTick=tick` | 보스 원거리2 공격 종료 |
+| **`020113`** | **`0113`** | **`multi_atk_48`** | `boss_multihit_160` | `type=8`, `configLength > 0` | **보스 샌드백/연타 시작** |
+| **`020114`** | **`0114`** | **`multi_atk_48_end`** | `boss_multihit_160` | `type=8`, `configLength > 0` | **보스 샌드백/연타 종료** |
+| `050102` | `0102` | `out` | `empty_000` | `dt=0`, `showTick=tick` | 보스 퇴장 |
+
+> [!IMPORTANT]
+> **보스 샌드백/연타(Boss Multi-hit) 실데이터 규격 확정 (`zz0113` & `zz0114`)**
+> - **보스 샌드백 시작 (`zz0113`)**: `type=8` (Sandbag), `boss_action="multi_atk_48"`, `prefab_name="boss_multihit_160"`, `configData.length > 0`
+> - **보스 샌드백 종료 (`zz0114`)**: `type=8` (Sandbag), `boss_action="multi_atk_48_end"`, `prefab_name="boss_multihit_160"`, `configData.length > 0`
+> - 샌드백 노트는 중간 행이 없는 **단일 `MusicData` 슬롯 + `configData.length`** 구조로 생성됩니다.
 
 `empty_000`은 보스 액션 노트의 프리팹 이름입니다. 이름 때문에 보스 프리팹처럼 보일 수 있지만, 실제 역할은 “보이지 않는 액션 트리거”입니다.
 

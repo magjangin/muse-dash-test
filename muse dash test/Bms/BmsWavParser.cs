@@ -55,6 +55,8 @@ namespace muse_dash_test
             { "0108", ("boss_far_atk_1_end",   null) },
             { "0109", ("boss_far_atk_2_start", null) },
             { "0110", ("boss_far_atk_2_end",   null) },
+            { "0113", ("multi_atk_48",          null) },
+            { "0114", ("multi_atk_48_end",      null) },
         };
 
         // xxyy → BossAction — 보스 발사체/톱니 자동 매핑 테이블
