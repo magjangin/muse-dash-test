@@ -24,6 +24,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void DumpMusicList(DBStageInfo __instance)
     {
+        if (!DebugExperimentNotes) return;
         var musicList = __instance._musicList_k__BackingField;
         if (musicList == null)
         {
