@@ -104,8 +104,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     }
 
     /// <summary>
-    /// 원본 차트(공식 곡) 덤프 시, UID/프리팹의 중간 2자리 xx가 "01" (보스 액션/전환) 또는 "04" (샌드백/연타)인
-    /// zz01yy 및 zz04yy 전용 노트만을 덤프 출력합니다.
+    /// 원본 차트(공식 곡) 덤프 시, 중간 행이 없는 단일 슬롯 + length(dt > 0) 구조의 샌드백/연타 노트 및
+    /// zz01yy/zz04yy 전용 노트를 감지하여 [SandbagSingleSlotAnalysis] 전용 태그로 출력합니다.
     /// </summary>
     public static void LogSandbagAnalysisOriginalChartNotes(Il2CppSystem.Collections.Generic.List<MusicData> musicList)
     {
@@ -114,7 +114,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         var loggedKeys = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
         int matchedTotalCount = 0;
 
-        MelonLogger.Msg($"[Zz01Zz04Analysis] ★ 원본 차트 zz01yy & zz04yy 노트 서치 시작 (total={musicList.Count}) ★");
+        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 단일 슬롯 샌드백(length/dt > 0 & zz01yy/zz04yy) 분석 시작 (total={musicList.Count}) ★");
 
         for (int i = 0; i < musicList.Count; i++)
         {
@@ -124,14 +124,23 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             string uid = note.noteData.uid ?? string.Empty;
             string prefabStr = note.noteData.prefab_name ?? string.Empty;
             uint noteTypeVal = (uint)note.noteData.type;
+            double dtVal = 0.0;
+            try { dtVal = (double)note.dt; } catch { }
 
             string xxFromUid = (uid.Length >= 4) ? UidCode.Xx(uid) : string.Empty;
             string xxFromPrefab = (prefabStr.Length >= 4) ? prefabStr.Substring(2, 2) : string.Empty;
 
-            // zz01yy (xx="01") 또는 zz04yy (xx="04") 패턴인 노트 필터링
-            bool isZz01OrZz04 = xxFromUid == "01" || xxFromUid == "04" || xxFromPrefab == "01" || xxFromPrefab == "04" || noteTypeVal == 8;
+            // 1. 단일 슬롯 + length(dt > 0) 구조의 샌드백/연타 노트
+            bool hasLength = dtVal > 0.0;
+            bool isSandbagOrMultiHit = noteTypeVal == 8 || prefabStr.IndexOf("sandbag", System.StringComparison.OrdinalIgnoreCase) >= 0 || prefabStr.IndexOf("multihit", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            
+            // 2. zz01yy (보스 액션/전환) 또는 zz04yy (샌드백/연타) 패턴
+            bool isZz01OrZz04 = xxFromUid == "01" || xxFromUid == "04" || xxFromPrefab == "01" || xxFromPrefab == "04";
 
-            if (isZz01OrZz04)
+            // 조건: 단일 슬롯 + length(dt>0) 구조이거나, 샌드백/연타 노트이거나, zz01yy/zz04yy 패턴인 노트
+            bool isMatch = isSandbagOrMultiHit || isZz01OrZz04 || (hasLength && (noteTypeVal == 8 || noteTypeVal == 3));
+
+            if (isMatch)
             {
                 matchedTotalCount++;
                 string bossAction = SafeLogValue(() => note.noteData.boss_action);
@@ -151,7 +160,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                     string showTick = SafeLogValue(() => note.showTick);
 
                     MelonLogger.Msg(
-                        $"[Zz01Zz04Analysis] ★zz01yy/zz04yy 노트 감지★ index={i}, objId={note.objId}, tick={tick}, dt={dt}, showTick={showTick}, " +
+                        $"[SandbagSingleSlotAnalysis] ★단일 슬롯 샌드백 감지★ index={i}, objId={note.objId}, tick={tick}, dt(length)={dt}, showTick={showTick}, " +
                         $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
                         $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
                     );
@@ -159,7 +168,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        MelonLogger.Msg($"[Zz01Zz04Analysis] ★ 원본 차트 zz01yy & zz04yy 서치 완료: 감지 노트={matchedTotalCount}개, 출력 고유 노트={loggedKeys.Count}개 ★");
+        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 단일 슬롯 샌드백 분석 완료: 감지 노트={matchedTotalCount}개, 고유 노트={loggedKeys.Count}개 ★");
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
