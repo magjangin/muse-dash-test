@@ -9,6 +9,10 @@ namespace muse_dash_test
         private UnityEngine.UI.Text targetTextComponent = null;
         private string lastText = "";
 
+        // 워터마크 복구 검사 주기. 매 프레임 텍스트를 읽지 않기 위한 스로틀입니다.
+        private float noteEventTimer = 0f;
+        private const float NoteEventCheckInterval = 0.1f;
+
         public bool IsInStage => isInStage;
         public static bool IsInStageStatic { get; private set; } = false;
 
@@ -90,6 +94,13 @@ namespace muse_dash_test
         public void CheckForNoteEvents()
         {
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+
+            // 이 메서드는 MainMod.OnUpdate에서 매 프레임 호출됩니다. targetTextComponent.text 읽기는
+            // IL2CPP → 관리 문자열 마샬링이라 프레임마다 새 문자열이 할당됩니다. 워터마크 복구는
+            // 즉각성이 필요한 작업이 아니므로 0.1초 주기로 낮춰 인게임 GC 압력을 줄입니다.
+            noteEventTimer += Time.deltaTime;
+            if (noteEventTimer < NoteEventCheckInterval) return;
+            noteEventTimer = 0f;
 
             if (targetTextComponent != null)
             {

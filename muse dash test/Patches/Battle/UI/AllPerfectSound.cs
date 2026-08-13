@@ -23,6 +23,19 @@ namespace muse_dash_test.Patches
                 && clip.name.StartsWith(FullComboClipPrefix, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// 결과 판정을 물어볼 수 있는 상태인지 확인합니다(= TaskStageTarget이 캐시된 상태).
+        /// <para><b>왜 필요한가</b>: 아래 Prefix들은 <see cref="AudioSource.PlayOneShot"/>이라는
+        /// 게임 전역 API에 걸려 있어 노트 타격음까지 <i>모든</i> 효과음마다 실행됩니다.
+        /// <see cref="IsFullComboClip"/>을 먼저 부르면 그때마다 <c>clip.name</c>을 IL2CPP에서
+        /// 마샬링(문자열 할당)하게 되므로, 곡당 수천 번의 불필요한 할당이 생깁니다.
+        /// 이 검사는 정적 필드 하나만 보므로 사실상 공짜이고, 결과창 밖에서는 여기서 끝납니다.</para>
+        /// </summary>
+        public static bool IsResultContextActive()
+        {
+            return VictoryDataCache.ActiveTarget != null;
+        }
+
         /// <summary>현재 결과가 ALL PERFECT(풀콤보 + Great 0 + Miss 0)인지 판정합니다.</summary>
         public static bool IsAllPerfect()
         {
@@ -48,7 +61,9 @@ namespace muse_dash_test.Patches
     {
         public static bool Prefix(AudioClip clip)
         {
+            // 아래 두 줄은 게임 전역 효과음마다 실행됩니다. 가장 싼 검사부터 둡니다.
             if (!ModConfig.EnableAllPerfectSound) return true;
+            if (!AllPerfectSound.IsResultContextActive()) return true;   // 결과 문맥 밖이면 clip.name도 안 읽음
             try
             {
                 if (!AllPerfectSound.IsFullComboClip(clip)) return true; // FC 효과음이 아니면 통과
@@ -71,6 +86,10 @@ namespace muse_dash_test.Patches
     {
         public static bool Prefix(AudioClip clip)
         {
+            // 볼륨 인자 있는 오버로드와 동일한 순서/게이트를 씁니다.
+            // (이 오버로드에는 EnableAllPerfectSound 검사가 빠져 있어, 설정을 꺼도 절반만 꺼졌습니다.)
+            if (!ModConfig.EnableAllPerfectSound) return true;
+            if (!AllPerfectSound.IsResultContextActive()) return true;
             try
             {
                 if (!AllPerfectSound.IsFullComboClip(clip)) return true;

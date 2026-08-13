@@ -11,7 +11,13 @@ namespace muse_dash_test
     public static class ExperimentHitPointInstaller
     {
         private const float RetryInterval = 0.5f;
+
+        /// <summary>이 횟수를 넘겨도 설치되지 않으면 이번 스테이지의 재시도를 포기합니다(≈20초).</summary>
+        private const int MaxInstallAttempts = 40;
+
         private static bool installed;
+        private static bool gaveUp;
+        private static int installAttempts;
         private static float nextAttemptTime;
         private static string lastStatusLog;
         private static int lastLoadSceneOriginal = -1;
@@ -28,6 +34,8 @@ namespace muse_dash_test
         public static void Reset()
         {
             installed = false;
+            gaveUp = false;
+            installAttempts = 0;
             nextAttemptTime = 0f;
             lastStatusLog = null;
             prefabCache.Clear();
@@ -47,6 +55,7 @@ namespace muse_dash_test
         public static void Update(bool isInStage)
         {
             if (installed
+                || gaveUp
                 || !isInStage
                 || !CustomPlaySession.Current.ShouldApplyExperimentChart
                 || Time.unscaledTime < nextAttemptTime)
@@ -55,6 +64,18 @@ namespace muse_dash_test
             }
 
             nextAttemptTime = Time.unscaledTime + RetryInterval;
+
+            // 재시도 1회에는 GameObject.Find가 여러 번 들어갑니다(씬 전체 이름 스캔).
+            // 설치가 끝내 실패하는 곡에서는 이게 곡 내내 초당 2회 반복되어 프레임을 갉아먹으므로,
+            // 일정 횟수를 넘기면 이번 스테이지에서는 포기합니다. (스테이지 전환 시 Reset으로 복구)
+            if (++installAttempts > MaxInstallAttempts)
+            {
+                gaveUp = true;
+                MelonLogger.Warning(
+                    $"[ExperimentHitPoint] {MaxInstallAttempts}회({MaxInstallAttempts * RetryInterval:0.#}초) 시도했지만 HitPoints 설치에 실패해 " +
+                    "이번 스테이지에서는 재시도를 중단합니다. (프레임 드랍 방지)");
+                return;
+            }
 
             try
             {
@@ -134,11 +155,15 @@ namespace muse_dash_test
                     return;
                 }
 
+                // lastStatusLog에는 반드시 '접미사를 붙이기 전' 문자열을 기억시킵니다.
+                // 접미사까지 포함해 저장하면 다음 비교가 영원히 불일치가 되어,
+                // DescribeLoadedHitPoints()의 Resources.FindObjectsOfTypeAll 전체 스캔이
+                // 재시도마다(초당 2회) 인게임 내내 돌게 됩니다.
                 string statusMsg = $"[ExperimentHitPoint] 프리팹 대기 중: candidates={DescribeCandidates(candidates)}";
                 if (!string.Equals(lastStatusLog, statusMsg, StringComparison.Ordinal))
                 {
-                    statusMsg += $", loaded={DescribeLoadedHitPoints()}";
-                    LogStatusOnce(statusMsg);
+                    lastStatusLog = statusMsg;
+                    MelonLogger.Msg($"{statusMsg}, loaded={DescribeLoadedHitPoints()}");
                 }
             }
             catch (Exception ex)

@@ -79,9 +79,9 @@ namespace muse_dash_test
         /// </summary>
         public static void DrawInputOverlay()
         {
-            // 실시간으로 설정 변경 감지 및 반영
-            LoadConfigIfNeeded();
-
+            // 설정 재로드는 여기서 하지 않습니다. LoadConfigIfNeeded는 인게임(IsInStageStatic)에서
+            // 곧바로 반환하도록 되어 있어 OnGUI 안에서는 항상 빈 호출이었고, OnGUI는 프레임당
+            // 여러 번 돌기 때문에 두면 오해를 부릅니다. 실제 재로드는 MainMod.OnUpdate가 맡습니다.
             if (!showOverlay) return;
 
             // 키 정보가 로드되지 않았다면 로드를 시도합니다.

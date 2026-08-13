@@ -229,13 +229,18 @@ namespace muse_dash_test
 
         public override void OnGUI()
         {
-            // 인게임 오버레이 및 판정바 그리기(GUI). OnGUI는 프레임당 여러 번 호출되므로
-            // 각 그리기를 FeatureGuard로 격리하여 예외 발생 시 로그 폭발/프레임 드랍을 방지합니다.
-            if (hywStageManager != null && hywStageManager.IsInStage)
-            {
-                FeatureGuard.Run("InputOverlay.Draw", InputOverlay.DrawInputOverlay);
-                FeatureGuard.Run("JudgmentBar.Draw", JudgmentBar.DrawJudgmentBar);
-            }
+            // 인게임 오버레이 및 판정바 그리기(GUI). 각 그리기를 FeatureGuard로 격리하여
+            // 예외 발생 시 로그 폭발/프레임 드랍을 방지합니다.
+            if (hywStageManager == null || !hywStageManager.IsInStage) return;
+
+            // OnGUI는 프레임당 1회가 아니라 Layout 1회 + Repaint 1회 + 입력 이벤트 1건당 1회씩
+            // 호출됩니다. 리듬 게임은 키 입력이 초당 수십 건이라, 게이트가 없으면 오버레이와
+            // 판정바 전체가 그 횟수만큼 다시 그려집니다. 실제 픽셀이 찍히는 Repaint에서만 그립니다.
+            // (걸러낸 횟수는 [OnGuiProfiler] 요약 로그로 1회 보고됩니다.)
+            if (!OnGuiFrameProfiler.ShouldDraw()) return;
+
+            FeatureGuard.Run("InputOverlay.Draw", InputOverlay.DrawInputOverlay);
+            FeatureGuard.Run("JudgmentBar.Draw", JudgmentBar.DrawJudgmentBar);
         }
 
         /// <summary>

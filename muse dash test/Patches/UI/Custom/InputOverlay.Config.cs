@@ -16,6 +16,7 @@ namespace muse_dash_test
         private static float lastConfigCheckTime = 0f;
         private const float ConfigCheckInterval = 1.0f; // 1초마다 실시간 변경 감지 (디스크 I/O 최적화)
         private static bool hasFailedToWrite = false;   // 쓰기/생성 실패 시 반복적인 시도 및 로그 스패밍 방지
+        private static bool migrationDone = false;      // 이름 이관/누락 보충은 세션당 1회만 (무한 재작성 방지)
 
         // 실제 런타임에 사용할 설정 필드 (기본값 제공)
         private static float keyWidth = 55f;
@@ -94,10 +95,19 @@ namespace muse_dash_test
                     if (!File.Exists(configPath))
                     {
                         SaveDefaultConfig();
+                        migrationDone = true;
                     }
-                    else
+                    else if (!migrationDone)
                     {
+                        // 마이그레이션/누락 보충은 파일을 '쓰는' 작업입니다. 여기서 쓰면 LastWriteTime이
+                        // 바뀌어 아래 감시 로직이 즉시 재파싱을 하므로, 판정이 한 번이라도 어긋나면
+                        // "쓰기 → 재파싱 → 쓰기"가 매 폴링마다 무한 반복됩니다.
+                        // 실제로 그 사고가 있었으므로(공백 포함 키를 공백 없는 키로 검사) 구조적으로 차단합니다:
+                        // 이 두 작업은 성격상 1회성 이관이라 세션당 딱 한 번만 돌립니다.
+                        // 이후의 폴링은 순수하게 '읽기'만 합니다.
+                        migrationDone = true;
                         MigrateRenamedKeys();
+                        RepairDuplicatedAutoAppendedKeys();
                         EnsureMissingKeysAdded();
                     }
                 }
@@ -193,9 +203,14 @@ namespace muse_dash_test
             catch (Exception) { }
 
             byte[] bytes = File.ReadAllBytes(configPath);
-            
+
+            // UTF-8 BOM은 Encoding.UTF8.GetString이 걷어내지 않아 첫 글자로 남습니다(U+FEFF).
+            // 이 텍스트를 다시 UTF8Encoding(true)로 쓰는 경로(이름 이관/중복 정리)가 있으므로,
+            // 그대로 두면 BOM이 파일 안에 두 번 들어갑니다. 읽는 쪽에서 한 번만 걷어냅니다.
+            int offset = (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) ? 3 : 0;
+
             // 1. UTF-8 디코딩 시도
-            string utf8Text = Encoding.UTF8.GetString(bytes);
+            string utf8Text = Encoding.UTF8.GetString(bytes, offset, bytes.Length - offset);
             if (utf8Text.Contains("오토플레이") || utf8Text.Contains("키가로크기") || utf8Text.Contains("판정바"))
             {
                 return utf8Text;
@@ -205,7 +220,7 @@ namespace muse_dash_test
             try
             {
                 var cp949 = Encoding.GetEncoding(949);
-                string cp949Text = cp949.GetString(bytes);
+                string cp949Text = cp949.GetString(bytes, offset, bytes.Length - offset);
                 if (cp949Text.Contains("오토플레이") || cp949Text.Contains("키가로크기") || cp949Text.Contains("판정바"))
                 {
                     MelonLogger.Msg("[InputOverlay] config.txt를 CP949(EUC-KR) 인코딩으로 인식하여 로드했습니다.");
@@ -266,10 +281,17 @@ namespace muse_dash_test
             {
                 if (!File.Exists(configPath)) return;
 
-                string text = ReadConfigTextRobust();
-                if (string.IsNullOrEmpty(text)) return;
+                string rawText = ReadConfigTextRobust();
+                if (string.IsNullOrEmpty(rawText)) return;
+
+                // 파일에는 '공식곡에서도 고스트 노트 보이기'처럼 띄어쓰기를 넣어 적습니다.
+                // 그래서 존재 여부도 반드시 공백을 지운 텍스트에서 봐야 합니다. 원문 그대로 비교하면
+                // 공백 있는 키를 공백 없는 키로 찾게 되어 영원히 "없음"으로 판정되고,
+                // 매 폴링마다 같은 줄을 append 하는 무한 루프가 됩니다. (실제 발생했던 버그)
+                string text = StripSpaces(rawText);
 
                 // 추가할 키와 기본값 선언 테이블. 새 설정 키를 추가할 때 이곳만 고치면 됩니다.
+                // checkKey는 반드시 '공백을 지운' 형태로 적습니다.
                 var missingEntries = new (string checkKey, string appendLine)[] {
                     ("오토플레이",   "오토플레이=false"),
                     ("피버충전금지",  $"피버충전금지={blockFever.ToString().ToLower()}"),
