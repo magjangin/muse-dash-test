@@ -31,7 +31,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         int sceneEventCount = 0;
-        MelonLogger.Msg($"[OfficialSceneContext] 원본 차트 씬 전환(0004XX) 이벤트 주변 덤프 시작: total={musicList.Count}, neighbors=2");
+        MelonLogger.Msg($"[OfficialSceneContext] 원본 차트 진단 덤프 시작 (전체 노트 수: {musicList.Count}개)");
+        MelonLogger.Msg($"[OfficialSceneContext] ▶ 씬 전환(0004XX) 이벤트 덤프 (전후 2개 노트 포함) 스캔 중...");
 
         for (int i = 0; i < musicList.Count; i++)
         {
@@ -46,7 +47,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             sceneEventCount++;
             string ibmsId = note.noteData?.ibms_id ?? "(null)";
-            MelonLogger.Msg($"[OfficialSceneContext] === event#{sceneEventCount}, index={i}, uid={uid}, ibms_id={ibmsId} ===");
+            MelonLogger.Msg($"[OfficialSceneContext] === 씬 전환 이벤트 #{sceneEventCount} (index={i}, uid={uid}, ibms_id={ibmsId}) ===");
 
             int firstIndex = System.Math.Max(0, i - 2);
             int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
@@ -56,7 +57,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        MelonLogger.Msg($"[OfficialSceneContext] 원본 차트 씬 전환(0004XX) 이벤트 주변 덤프 완료: events={sceneEventCount}");
+        MelonLogger.Msg($"[OfficialSceneContext] ▶ 씬 전환(0004XX) 이벤트 덤프 완료 (발견된 씬 전환 이벤트: {sceneEventCount}개)");
 
         // 원본 차트 전체 노트 중 모드 표준 노트를 제외한 신규/미등록 노트(UID 및 NoteType > 17) 서치 로그
         LogUnregisteredOriginalChartNotes(musicList);
