@@ -53,6 +53,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             if (note?.noteData == null) continue;
 
             string uid = note.noteData.uid ?? string.Empty;
+            string prefabStr = note.noteData.prefab_name ?? string.Empty;
             uint noteTypeVal = (uint)note.noteData.type;
 
             // 표준 NoteType (0:None ~ 17:SceneHideOff) 범위 및 모드 표준 UID 패턴인지 검사
@@ -65,8 +66,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                                      uid.StartsWith("07") || uid.StartsWith("08") || uid.StartsWith("09")))
             );
 
-            // zz04yy 샌드백 패턴 (UID 길이 >= 6 이고 중간 2자리 xx == "04")
-            bool isSandbagZz04yy = uid.Length >= 6 && UidCode.Xx(uid) == "04";
+            // zz04yy 샌드백/연타 노트 패턴 검사 (type=8, uid/prefab 내 xx=04 또는 sandbag 포함)
+            bool isSandbagZz04yy = noteTypeVal == 8 ||
+                (!string.IsNullOrEmpty(uid) && uid.Length >= 6 && UidCode.Xx(uid) == "04") ||
+                (!string.IsNullOrEmpty(uid) && uid.StartsWith("0004")) ||
+                (!string.IsNullOrEmpty(prefabStr) && (prefabStr.IndexOf("sandbag", System.StringComparison.OrdinalIgnoreCase) >= 0 || (prefabStr.Length >= 6 && prefabStr.Substring(2, 2) == "04")));
 
             // 표준 노트가 아닌 새로운 노트이거나, zz04yy 노트인 경우 감지 대상에 포함
             bool isUnregisteredOrNew = !isStandardType || (!string.IsNullOrEmpty(uid) && !isKnownUidPrefix) || isSandbagZz04yy;
