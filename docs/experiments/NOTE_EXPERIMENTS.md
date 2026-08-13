@@ -473,3 +473,19 @@ BMS UID는 `zzxxyy` 구조로 봅니다. 여기서 앞 두 자리 `zz`는 단순
 - `Dt`를 너무 크게 잡으면 `showTick`이 너무 앞당겨질 수 있습니다.
 - UID와 프리팹 조합이 게임 리소스에 없으면 로그상 생성돼도 화면에 안 보일 수 있습니다.
 - `Uid`만 바꿔서는 부족할 수 있습니다. 최소한 `NoteType`, `Pathway`, 필요하면 `PrefabName`, `KeyAudio`까지 같이 맞추는 편이 좋습니다.
+
+## 🔮 공식 기믹 곡 신규 UID 스캔 및 커스텀 차트 반영 계획
+
+모드는 `[OfficialSceneContext]` 원본 차트 신규 노트 탐지기(`LogUnregisteredOriginalChartNotes`)를 사용하여 아래 공식 특수 연출 곡들에서 발생하는 신규 노트 UIDs 및 NoteTypes(>17)를 분석 및 수집하고 있습니다.
+
+### 주요 분석 대상 곡
+1. **`ペロペロ in the Universe`** - 立秋 feat.ちょこ
+2. **`Saishuu kichiku imouto Flandre-S` (최종귀축동생 플랑도르 S)** - ビートまりお
+3. **`Spider's Thread` (蜘蛛の糸)** - kikuo×cosMo@Bousou-P feat.kagenui hana
+4. **`喵斯摇 (feat. 春哥，渊神)` (Pero Shake)** - DJ怪哥/DJ鹏哥
+5. **`Ruler Of My Heart` (VIVINOS - 'Alien Stage Pt5')** - STUDIO LICO
+6. **`Nyan Cat`** - daniwell
+7. **`Cubibibibism（きゅびびびびずむ / 큐비비비비즘）`** - 초절정 귀요미 천사 (Needy Streamer Overload)
+
+### 반영 계획
+수집된 특수 기믹 노트(Note Freeze, RGB Split, Old TV CRT, Pixelate, Grayscale, Wave Shader, Quiz Question 등)는 BMS `#WAVxx` 매핑 테이블 및 커스텀 차트 주입 엔진에 정식 반영하여, 오프라인 커스텀 차트 제작 시 특수 연출 노트로 활용할 수 있도록 업데이트될 예정입니다.

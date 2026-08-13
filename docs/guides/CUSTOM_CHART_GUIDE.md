@@ -155,3 +155,22 @@ BMS 차트 프로그램(BMSE 등)에서 `#WAVxx` 영역에 지정할 파일명�
    - `hwa/` 폴더에 세팅한 개수대로 곡들이 `1999-0`, `1999-1` 형태로 주입되어 있습니다.
    - 플레이를 원하는 곡을 누르고 들어가 재생 버튼을 누릅니다.
    - 플레이를 시작하면 BGM이 로드되고 배경에 비디오 BGA가 재생되며, BMS 파일에서 분석한 커스텀 차트의 노트가 플레이됩니다.
+
+---
+
+## 🔍 6. 특수 기믹 곡 신규 노트(UID/NoteType) 스캔 및 커스텀 차트 반영 계획
+
+모드는 공식 곡에 존재하는 다양한 특수 비주얼 연출 및 특수 노트 기믹을 커스텀 차트 BMS에서도 제작자가 자유롭게 활용할 수 있도록 **[OfficialSceneContext] 원본 노트 탐지기(`LogUnregisteredOriginalChartNotes`)**를 탑재하여 분석 중입니다.
+
+### 🎵 스캔 분석 대상 주요 공식 기믹 곡 리스트
+- **`ペロペロ in the Universe`** - 立秋 feat.ちょこ
+- **`Saishuu kichiku imouto Flandre-S` (최종귀축동생 플랑도르 S)** - ビートまりお
+- **`Spider's Thread` (蜘蛛の糸)** - kikuo×cosMo@Bousou-P feat.kagenui hana
+- **`喵斯摇 (feat. 春哥，渊神)` (Pero Shake)** - DJ怪哥/DJ鹏哥
+- **`Ruler Of My Heart` (VIVINOS - 'Alien Stage Pt5')** - STUDIO LICO
+- **`Nyan Cat`** - daniwell
+- **`Cubibibibism（きゅびびびびずむ / 큐비비비비즘）`** - 초절정 귀요미 천사 (Needy Streamer Overload)
+
+### 🚀 반영 및 확장 로드맵
+1. **신규 NoteType (>17) 및 비표준 UID 수집**: 공식 곡 플레이 시 자동으로 덤프되는 로그를 통해 노트 시간 정지(Note Freeze, Type 30/31), RGB Split 글리치, CRT TV, 픽셀화(Pixelate), Wave 파형 일렁임, 퀴즈(Question) 팝업 등의 시그니처 UID를 분석합니다.
+2. **BMS WAV 매핑 테이블 이식**: 추출된 특수 노트 UID와 NoteType을 BMS 파서의 `#WAVxx` 매핑 테이블 및 딜레이/시간 계산 로직에 반영하여, 커스텀 BMS 차트 제작 시 해당 WAV 코드를 배치하는 것만으로 인게임 특수 연출 노트가 즉시 작동하도록 확장할 예정입니다.

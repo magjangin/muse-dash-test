@@ -101,6 +101,17 @@
 * **완료**: 곡 선택/준비 화면의 가상 곡 커스텀 BGM(.ogg) 실시간 핫스왑 로딩 구현
 * **완료**: 로컬 `cover.png` 파일 디코딩 및 UID별 캐싱을 통한 커스텀 곡 셀/디스크 앨범 아트 동적 주입
 * **완료**: 가상 곡 플레이 데이터(정확도·스코어·최대 콤보·풀콤보)를 순정 세이브 손상 없이 로컬 전용 JSON(`record/{uid}_{난이도}.json`)으로 기록하고 결과창·기록 카드·곡 선택 화면에 표시 (등급/랭크 이미지 표시는 보류)
+* **진행 중**: **특수 기믹 곡 신규 UID/NoteType 스캔 및 커스텀 BMS 매핑 확장**
+  * `[OfficialSceneContext]` 미등록 노트 탐지기(`LogUnregisteredOriginalChartNotes`)를 통해 공식 기믹 곡들의 신규 노트 UID 및 NoteType(>17) 분석 진행 중.
+  * **대상 대표 기믹 곡 목록:**
+    - 🎵 `ペロペロ in the Universe` - 立秋 feat.ちょこ
+    - 🎵 `Saishuu kichiku imouto Flandre-S` (최종귀축동생 플랑도르 S) - ビートまりお
+    - 🎵 `Spider's Thread` (蜘蛛の糸) - kikuo×cosMo@Bousou-P feat.kagenui hana
+    - 🎵 `喵斯摇 (feat. 春哥，渊神)` (Pero Shake) - DJ怪哥/DJ鹏哥
+    - 🎵 `Ruler Of My Heart` (VIVINOS - 'Alien Stage Pt5') - STUDIO LICO
+    - 🎵 `Nyan Cat` - daniwell
+    - 🎵 `Cubibibibism（きゅびびびびずむ）` - 초절정 귀요미 천사 (Needy Streamer Overload)
+  * **반영 계획:** 발견된 신규 특수 노트(Note Freeze, RGB Split glitch, Old TV CRT, Pixelate, Grayscale, Wave Shader, Quiz Question 등)를 BMS 파서 및 `#WAV` 매핑 테이블에 이식하여 커스텀 차트에서 기믹 노트로 완벽 사용할 수 있도록 정식 반영할 예정입니다.
 * **진행 예정**: BMS 특정 채널 이벤트를 감지해 배경 블러, Fever 트리거 강제 작동 등 시네마틱 카메라/HUD 연출 확장
 * **보류**: 커스텀 곡 대사(Dialog) 주입 — 동작하는 프로토타입까지 검증했으나 우선순위 조정으로 본체에서 제거했습니다. 훅 지점, 실측 스타일 값, 알려진 파싱 함정까지 [DIALOG_INJECTION.md](docs/experiments/DIALOG_INJECTION.md)에 보존해 두었습니다.
 
