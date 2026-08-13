@@ -57,6 +57,75 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         MelonLogger.Msg($"[OfficialSceneContext] 원본 차트 씬 전환(0004XX) 이벤트 주변 덤프 완료: events={sceneEventCount}");
+
+        // 원본 차트 전체 노트 중 모드 표준 노트를 제외한 신규/미등록 노트(UID 및 NoteType > 17) 서치 로그
+        LogUnregisteredOriginalChartNotes(musicList);
+    }
+
+    /// <summary>
+    /// 원본 차트(공식 곡) 덤프 시, 모드 기본 노트 UID 및 표준 NoteType(0~17)을 제외한
+    /// 새로운/미등록 노트(UID 및 NoteType > 17)를 감지하여 덤프 출력합니다.
+    /// </summary>
+    public static void LogUnregisteredOriginalChartNotes(Il2CppSystem.Collections.Generic.List<MusicData> musicList)
+    {
+        if (musicList == null || musicList.Count == 0) return;
+
+        var loggedUids = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        int newNoteTotalCount = 0;
+
+        MelonLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트(UID & NoteType) 서치 시작 (total={musicList.Count}) ★");
+
+        for (int i = 0; i < musicList.Count; i++)
+        {
+            var note = musicList[i];
+            if (note?.noteData == null) continue;
+
+            string uid = note.noteData.uid ?? string.Empty;
+            uint noteTypeVal = (uint)note.noteData.type;
+
+            // 표준 NoteType (0:None ~ 17:SceneHideOff) 범위 및 모드 표준 UID 패턴인지 검사
+            bool isStandardType = noteTypeVal <= 17;
+            bool isKnownUidPrefix = isStandardType && (
+                uid.StartsWith("0001") || uid.StartsWith("0002") || uid.StartsWith("0003") ||
+                uid.StartsWith("0004") || uid.StartsWith("0017") ||
+                (uid.Length >= 6 && (uid.StartsWith("01") || uid.StartsWith("02") || uid.StartsWith("03") ||
+                                     uid.StartsWith("04") || uid.StartsWith("05") || uid.StartsWith("06") ||
+                                     uid.StartsWith("07") || uid.StartsWith("08") || uid.StartsWith("09")))
+            );
+
+            // 표준 노트(기본 몬스터/블록/홀드/보스/HP/점수/씬체인지)가 아닌 새로운 노트인 경우
+            bool isUnregisteredOrNew = !isStandardType || (!string.IsNullOrEmpty(uid) && !isKnownUidPrefix);
+
+            if (isUnregisteredOrNew)
+            {
+                newNoteTotalCount++;
+                string key = $"{uid}_type{noteTypeVal}";
+
+                // 콘솔 중복 출력을 방지하며 고유한 신규 노트 타입/UID만 상세 출력
+                if (!loggedUids.Contains(key))
+                {
+                    loggedUids.Add(key);
+
+                    string ibmsId = SafeLogValue(() => note.noteData.ibms_id);
+                    string prefab = SafeLogValue(() => note.noteData.prefab_name);
+                    string bossAction = SafeLogValue(() => note.noteData.boss_action);
+                    string pathway = SafeLogValue(() => note.noteData.pathway);
+                    string keyAudio = SafeLogValue(() => note.noteData.key_audio);
+                    string scene = SafeLogValue(() => note.noteData.scene);
+                    string tick = SafeLogValue(() => note.tick);
+                    string dt = SafeLogValue(() => note.dt);
+                    string showTick = SafeLogValue(() => note.showTick);
+
+                    MelonLogger.Msg(
+                        $"[OfficialSceneContext] ★신규/미등록 노트 감지★ index={i}, objId={note.objId}, tick={tick}, dt={dt}, showTick={showTick}, " +
+                        $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
+                        $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
+                    );
+                }
+            }
+        }
+
+        MelonLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
     }
 
     public static void LogOfficialSceneContextNote(int index, int eventIndex, MusicData note)
