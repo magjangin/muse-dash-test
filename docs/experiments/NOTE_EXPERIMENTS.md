@@ -30,12 +30,19 @@ public struct MusicData
 | `objId` | 노트 식별자/순번 | 중복되거나 순서가 꼬이면 로그에는 있는데 화면에 안 보일 수 있습니다. 현재 코드는 자동 할당합니다. |
 | `tick` | 실제 판정/등장 기준 시간 | `StartTick`, `Interval`, `Count`로 계산합니다. |
 | `showTick` | 화면에 보이기 시작하는 시간 | 보통 `tick - dt`입니다. 보스 액션은 기본적으로 `showTick=tick`입니다. |
-| `dt` | 화면 표시 선행 시간 | `Dt`를 지정하면 직접값, 생략하면 UID 기반 자동값을 씁니다. |
+| `dt` | **화면 표시 선행 시간 (Display Time)** | 노트가 화면 우측에서 스폰되어 판정선까지 오는 **화면 표시 선행 시간 오프셋**입니다. **(⚠️ 노트 지속시간/길이가 아닙니다!)** |
+| `configData.length` | **노트의 실제 지속시간/길이 (Length)** | 샌드백/연타/롱노트 등 **지속시간이 존재하는 노트의 실제 길이(Duration / Length)**가 저장되는 핵심 필드입니다. |
 | `configData` | 차트 쪽 설정 데이터 | `time`, `length`, `note_uid`, `id` 등을 동기화합니다. |
 | `noteData` | 노트 정의 데이터 | `uid`, `type`, `pathway`, `prefab_name`, `key_audio`, `speed` 등을 바꿉니다. |
 | `isLongPressing` | 롱노트 중간 조각 여부 | `IsLong=true`일 때 코드가 자동 생성합니다. |
 | `isLongPressEnd` | 롱노트 끝 조각 여부 | `IsLong=true`일 때 코드가 자동 생성합니다. |
 | `longPressPTick` | 롱노트 시작 tick | 롱 start/middle/end가 같은 시작 tick을 공유해야 합니다. |
+
+> [!IMPORTANT]
+> **노트 지속시간(Length) vs 디스플레이 타임(dt) 명확한 구분**
+> - **`dt`**: 노트의 화면 스폰 선행 시간 오프셋 (**Display Time**). 노트의 길이가 절대 아닙니다. (`showTick = tick - dt`)
+> - **`configData.length`**: 샌드백, 보스 연타, 롱노트의 **진짜 노트 지속시간/길이(Length)**.
+> - **샌드백/보스 멀티히트(`type=8`) 노트 구조**: 롱노트처럼 시작/중간/끝 여러 행으로 나뉘는 것이 아니라, **중간 행(Middle)이 존재하지 않는 "단일 `MusicData` 슬롯 + `configData.length`" 구조**로 판정선에 스폰됩니다.
 
 중요한 점은 `MusicData`가 struct라는 점입니다. 원본을 그대로 만지면 내부 참조가 꼬일 수 있어서 현재 코드는 베이스 노트를 복사하고, `configData`와 `noteData`도 새 인스턴스로 복제한 뒤 수정합니다.
 
@@ -48,12 +55,12 @@ public struct MusicData
 | `0` | 빈 슬롯/특수 트리거 | 보스 액션 `050101` 등 | 보스 등장/공격 시작/퇴장 트리거는 `prefab_name=empty_000`을 씁니다. |
 | `1` | 일반 단타 노트 | `051001`, `051004`, `070601` | `pathway=0` 지상, `pathway=1` 공중입니다. 보스 발사체 `xx=06/07/08`, `yy=01/04`도 type 1이며 일반 노트 프리팹을 씁니다. |
 | `2` | 톱니바퀴 계열 | `050301`, 보스 톱니 `xx=09` | 일반 톱니와 보스 톱니는 같은 type 2라도 내부 필드가 다를 수 있습니다. |
-| `3` | 롱노트 | `050201` | start, middle, end가 여러 `MusicData` 행으로 만들어집니다. |
+| `3` | 롱노트 | `050201` | start, middle, end가 여러 `MusicData` 행으로 만들어집니다. (길이는 `configData.length`) |
 | `4` | 고스트 계열 | `xx=17` | 공중 계열로 관찰된 케이스가 있습니다. |
 | `5` | 보스 1대 치기 노트 | 원본 보스 타격 계열 | `xx=06/07/08` 발사체와 혼동하지 않는 편이 좋습니다. |
 | `6` | 하트 | `000201` | `key_audio=sfx_hp`가 필요합니다. |
 | `7` | 음표 | `000301`, `000304` | `key_audio=sfx_score`가 필요합니다. |
-| `8` | 샌드백/보스 멀티히트 | `020401` | 롱노트처럼 보이지만 중간 행이 없는 단일 슬롯 + `length` 구조입니다. |
+| `8` | 샌드백/보스 멀티히트 | `020401`, `boss_multihit_160` | 롱노트와 달리 중간 행(Middle)이 존재하지 않으며, **단일 `MusicData` 슬롯 + `configData.length`** 구조로 동작합니다. |
 
 ## pathway와 프리팹
 
