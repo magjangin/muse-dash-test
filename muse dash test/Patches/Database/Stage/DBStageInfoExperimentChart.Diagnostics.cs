@@ -30,11 +30,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return;
         }
 
-        // 1. 원본 차트 전체 노트 중 모드 표준 노트를 제외한 신규/미등록 노트(UID 및 NoteType > 17) 서치 로그
+        // 원본 차트 전체 노트 중 모드 표준 노트를 제외한 신규/미등록 노트(UID 및 NoteType > 17) 서치 로그
         LogUnregisteredOriginalChartNotes(musicList);
-
-        // 2. 샌드백/연타 노트(zz04yy & Type 8) 전용 별도 분석 로그
-        LogSandbagAnalysisOriginalChartNotes(musicList);
     }
 
     /// <summary>
@@ -101,69 +98,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         MelonLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
-    }
-
-    /// <summary>
-    /// 원본 차트(공식 곡) 덤프 시, configData.length > 0 인 노트만을 정밀 감지하여
-    /// [SandbagSingleSlotAnalysis] 전용 태그로 지속시간(length) 포함 덤프를 출력합니다.
-    /// </summary>
-    public static void LogSandbagAnalysisOriginalChartNotes(Il2CppSystem.Collections.Generic.List<MusicData> musicList)
-    {
-        if (musicList == null || musicList.Count == 0) return;
-
-        var loggedKeys = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
-        int matchedTotalCount = 0;
-
-        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 지속길이 노트(configData.length > 0) 정밀 분석 시작 (total={musicList.Count}) ★");
-
-        for (int i = 0; i < musicList.Count; i++)
-        {
-            var note = musicList[i];
-            if (note?.noteData == null) continue;
-
-            string uid = note.noteData.uid ?? string.Empty;
-            string prefabStr = note.noteData.prefab_name ?? string.Empty;
-            uint noteTypeVal = (uint)note.noteData.type;
-
-            string configLengthStr = SafeLogValue(() => note.configData?.length);
-            double configLengthVal = 0.0;
-            if (note.configData != null)
-            {
-                try { configLengthVal = (double)note.configData.length; } catch { }
-            }
-
-            // 오직 configData.length > 0.0 인 노트만 필터링
-            bool isMatch = configLengthVal > 0.0;
-
-            if (isMatch)
-            {
-                matchedTotalCount++;
-                string bossAction = SafeLogValue(() => note.noteData.boss_action);
-                string key = $"{i}_{uid}_type{noteTypeVal}_{prefabStr}_{bossAction}_{note.tick}_{configLengthStr}";
-
-                if (!loggedKeys.Contains(key))
-                {
-                    loggedKeys.Add(key);
-
-                    string ibmsId = SafeLogValue(() => note.noteData.ibms_id);
-                    string prefab = SafeLogValue(() => note.noteData.prefab_name);
-                    string pathway = SafeLogValue(() => note.noteData.pathway);
-                    string keyAudio = SafeLogValue(() => note.noteData.key_audio);
-                    string scene = SafeLogValue(() => note.noteData.scene);
-                    string tick = SafeLogValue(() => note.tick);
-                    string dt = SafeLogValue(() => note.dt);
-                    string showTick = SafeLogValue(() => note.showTick);
-
-                    MelonLogger.Msg(
-                        $"[SandbagSingleSlotAnalysis] ★지속길이 노트 감지(length>0)★ index={i}, objId={note.objId}, tick={tick}, configLength={configLengthStr}, display_dt={dt}, showTick={showTick}, " +
-                        $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
-                        $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
-                    );
-                }
-            }
-        }
-
-        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 지속길이 노트(configData.length > 0) 분석 완료: 감지 노트={matchedTotalCount}개, 고유 노트={loggedKeys.Count}개 ★");
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)

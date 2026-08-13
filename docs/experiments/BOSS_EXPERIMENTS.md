@@ -138,6 +138,7 @@ UID의 앞 두 자리 `zz`는 씬 계열입니다. 보스 토큰은 뒤 4자리(
 > - **보스 샌드백 시작 (`zz0113`)**: `type=8` (Sandbag), `boss_action="multi_atk_48"`, `prefab_name="boss_multihit_160"`, `configData.length > 0`
 > - **보스 샌드백 종료 (`zz0114`)**: `type=8` (Sandbag), `boss_action="multi_atk_48_end"`, `prefab_name="boss_multihit_160"`, `configData.length > 0`
 > - 샌드백 노트는 중간 행이 없는 **단일 `MusicData` 슬롯 + `configData.length`** 구조로 생성됩니다.
+> - **⚠️ 일반 샌드백 참고**: 보스 샌드백과 달리 **일반 샌드백(몬스터 형태 연타)**은 씬/스테이지/디자인별 몬스터 프리팹 및 UID 후보(`010401`, `020401`, `030401` 등)가 너무 많아 단일 규격으로 특정하기 어렵습니다.
 
 `empty_000`은 보스 액션 노트의 프리팹 이름입니다. 이름 때문에 보스 프리팹처럼 보일 수 있지만, 실제 역할은 “보이지 않는 액션 트리거”입니다.
 
