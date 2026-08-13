@@ -24,41 +24,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void DumpMusicList(DBStageInfo __instance)
     {
-        if (!DebugExperimentNotes) return;
         var musicList = __instance._musicList_k__BackingField;
         if (musicList == null)
         {
             return;
         }
-
-        int sceneEventCount = 0;
-        MelonLogger.Msg($"[OfficialSceneContext] 원본 차트 진단 덤프 시작 (전체 노트 수: {musicList.Count}개)");
-        MelonLogger.Msg($"[OfficialSceneContext] ▶ 씬 전환(0004XX) 이벤트 덤프 (전후 2개 노트 포함) 스캔 중...");
-
-        for (int i = 0; i < musicList.Count; i++)
-        {
-            var note = musicList[i];
-            string uid = note.noteData?.uid ?? string.Empty;
-            bool isSceneToggle = uid.StartsWith("0004", System.StringComparison.OrdinalIgnoreCase)
-                || note.noteData?.type == NoteTypes.SceneToggle;
-            if (!isSceneToggle)
-            {
-                continue;
-            }
-
-            sceneEventCount++;
-            string ibmsId = note.noteData?.ibms_id ?? "(null)";
-            MelonLogger.Msg($"[OfficialSceneContext] === 씬 전환 이벤트 #{sceneEventCount} (index={i}, uid={uid}, ibms_id={ibmsId}) ===");
-
-            int firstIndex = System.Math.Max(0, i - 2);
-            int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
-            for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
-            {
-                LogOfficialSceneContextNote(contextIndex, i, musicList[contextIndex]);
-            }
-        }
-
-        MelonLogger.Msg($"[OfficialSceneContext] ▶ 씬 전환(0004XX) 이벤트 덤프 완료 (발견된 씬 전환 이벤트: {sceneEventCount}개)");
 
         // 원본 차트 전체 노트 중 모드 표준 노트를 제외한 신규/미등록 노트(UID 및 NoteType > 17) 서치 로그
         LogUnregisteredOriginalChartNotes(musicList);
@@ -128,34 +98,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         MelonLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
-    }
-
-    public static void LogOfficialSceneContextNote(int index, int eventIndex, MusicData note)
-    {
-        if (note == null)
-        {
-            MelonLogger.Msg($"[OfficialSceneContext] {(index == eventIndex ? "EVENT" : "NEIGHBOR")} index={index}, note=(null)");
-            return;
-        }
-
-        string role = index == eventIndex ? "EVENT" : index < eventIndex ? "PREV" : "NEXT";
-        MelonLogger.Msg(
-            $"[OfficialSceneContext] {role} index={index}, objId={SafeLogValue(() => note.objId)}, " +
-            $"tick={SafeLogValue(() => note.tick)}, dt={SafeLogValue(() => note.dt)}, showTick={SafeLogValue(() => note.showTick)}, " +
-            $"uid={SafeLogValue(() => note.noteData?.uid)}, ibms_id={SafeLogValue(() => note.noteData?.ibms_id)}, type={SafeLogValue(() => note.noteData?.type)}, " +
-            $"scene={SafeLogValue(() => note.noteData?.scene)}, sceneChangeNames={FormatSceneChangeNames(SafeGetSceneChangeNames(note))}, " +
-            $"pathway={SafeLogValue(() => note.noteData?.pathway)}, boss_action={SafeLogValue(() => note.noteData?.boss_action)}, " +
-            $"prefab={SafeLogValue(() => note.noteData?.prefab_name)}, key_audio={SafeLogValue(() => note.noteData?.key_audio)}, " +
-            $"isDouble={SafeLogValue(() => note.isDouble)}, doubleIdx={SafeLogValue(() => note.doubleIdx)}, sameTickNoteIdx={SafeLogValue(() => note.sameTickNoteIdx)}, " +
-            $"isLongPressing={SafeLogValue(() => note.isLongPressing)}, isLongPressEnd={SafeLogValue(() => note.isLongPressEnd)}, endIndex={SafeLogValue(() => note.endIndex)}, " +
-            $"config.id={SafeLogValue(() => note.configData?.id)}, config.time={SafeLogValue(() => note.configData?.time)}, " +
-            $"config.length={SafeLogValue(() => note.configData?.length)}, config.pathway={SafeLogValue(() => note.configData?.pathway)}");
-    }
-
-    private static Il2CppSystem.Collections.Generic.List<string> SafeGetSceneChangeNames(MusicData note)
-    {
-        try { return note.noteData?.sceneChangeNames; }
-        catch { return null; }
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
