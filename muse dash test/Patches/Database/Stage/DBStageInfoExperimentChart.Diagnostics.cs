@@ -60,6 +60,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             bool isKnownUidPrefix = isStandardType && (
                 uid.StartsWith("0001") || uid.StartsWith("0002") || uid.StartsWith("0003") ||
                 uid.StartsWith("0004") || uid.StartsWith("0017") ||
+                (uid.Length >= 6 && UidCode.Xx(uid) == "04") ||
                 (uid.Length >= 6 && (uid.StartsWith("01") || uid.StartsWith("02") || uid.StartsWith("03") ||
                                      uid.StartsWith("04") || uid.StartsWith("05") || uid.StartsWith("06") ||
                                      uid.StartsWith("07") || uid.StartsWith("08") || uid.StartsWith("09")))
