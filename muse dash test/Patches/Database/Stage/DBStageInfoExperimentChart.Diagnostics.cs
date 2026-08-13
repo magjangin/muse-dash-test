@@ -60,14 +60,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             bool isKnownUidPrefix = isStandardType && (
                 uid.StartsWith("0001") || uid.StartsWith("0002") || uid.StartsWith("0003") ||
                 uid.StartsWith("0004") || uid.StartsWith("0017") ||
-                (uid.Length >= 6 && UidCode.Xx(uid) == "04") ||
                 (uid.Length >= 6 && (uid.StartsWith("01") || uid.StartsWith("02") || uid.StartsWith("03") ||
                                      uid.StartsWith("04") || uid.StartsWith("05") || uid.StartsWith("06") ||
                                      uid.StartsWith("07") || uid.StartsWith("08") || uid.StartsWith("09")))
             );
 
-            // 표준 노트(기본 몬스터/블록/홀드/보스/HP/점수/씬체인지)가 아닌 새로운 노트인 경우
-            bool isUnregisteredOrNew = !isStandardType || (!string.IsNullOrEmpty(uid) && !isKnownUidPrefix);
+            // zz04yy 샌드백 패턴 (UID 길이 >= 6 이고 중간 2자리 xx == "04")
+            bool isSandbagZz04yy = uid.Length >= 6 && UidCode.Xx(uid) == "04";
+
+            // 표준 노트가 아닌 새로운 노트이거나, zz04yy 노트인 경우 감지 대상에 포함
+            bool isUnregisteredOrNew = !isStandardType || (!string.IsNullOrEmpty(uid) && !isKnownUidPrefix) || isSandbagZz04yy;
 
             if (isUnregisteredOrNew)
             {
