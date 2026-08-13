@@ -282,7 +282,7 @@ namespace muse_dash_test
                     
                     if (!hasAutoPlay)
                     {
-                        sb.AppendLine($"오토플레이={forceAutoPlay.ToString().ToLower()}");
+                        sb.AppendLine("오토플레이=false");
                     }
                     if (!hasBlockFever)
                     {
