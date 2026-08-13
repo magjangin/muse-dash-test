@@ -109,6 +109,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
                 MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: {CustomPlaySession.Current.LastApplyDecisionDescription} (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, isExperimentModeActive={CustomPlaySession.Current.IsExperimentModeActive}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, lastClickedUid={CustomPlaySession.Current.LastClickedMusicUid})");
+                LogUnregisteredOriginalChartNotes(__instance.musicList);
                 return;
             }
 
