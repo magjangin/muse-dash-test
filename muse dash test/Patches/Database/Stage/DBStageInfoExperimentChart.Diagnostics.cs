@@ -30,8 +30,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return;
         }
 
-        // 원본 차트 전체 노트 중 모드 표준 노트를 제외한 신규/미등록 노트(UID 및 NoteType > 17) 서치 로그
+        // 1. 원본 차트 전체 노트 중 모드 표준 노트를 제외한 신규/미등록 노트(UID 및 NoteType > 17) 서치 로그
         LogUnregisteredOriginalChartNotes(musicList);
+
+        // 2. 샌드백/연타 노트(zz04yy & Type 8) 전용 별도 분석 로그
+        LogSandbagAnalysisOriginalChartNotes(musicList);
     }
 
     /// <summary>
@@ -53,7 +56,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             if (note?.noteData == null) continue;
 
             string uid = note.noteData.uid ?? string.Empty;
-            string prefabStr = note.noteData.prefab_name ?? string.Empty;
             uint noteTypeVal = (uint)note.noteData.type;
 
             // 표준 NoteType (0:None ~ 17:SceneHideOff) 범위 및 모드 표준 UID 패턴인지 검사
@@ -66,14 +68,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                                      uid.StartsWith("07") || uid.StartsWith("08") || uid.StartsWith("09")))
             );
 
-            // zz04yy 샌드백/연타 노트 패턴 검사 (type=8, uid/prefab 내 xx=04 또는 sandbag 포함)
-            bool isSandbagZz04yy = noteTypeVal == 8 ||
-                (!string.IsNullOrEmpty(uid) && uid.Length >= 6 && UidCode.Xx(uid) == "04") ||
-                (!string.IsNullOrEmpty(uid) && uid.StartsWith("0004")) ||
-                (!string.IsNullOrEmpty(prefabStr) && (prefabStr.IndexOf("sandbag", System.StringComparison.OrdinalIgnoreCase) >= 0 || (prefabStr.Length >= 6 && prefabStr.Substring(2, 2) == "04")));
-
-            // 표준 노트가 아닌 새로운 노트이거나, zz04yy 노트인 경우 감지 대상에 포함
-            bool isUnregisteredOrNew = !isStandardType || (!string.IsNullOrEmpty(uid) && !isKnownUidPrefix) || isSandbagZz04yy;
+            // 표준 노트(기본 몬스터/블록/홀드/보스/HP/점수/씬체인지)가 아닌 새로운 노트인 경우
+            bool isUnregisteredOrNew = !isStandardType || (!string.IsNullOrEmpty(uid) && !isKnownUidPrefix);
 
             if (isUnregisteredOrNew)
             {
@@ -105,6 +101,65 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         MelonLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
+    }
+
+    /// <summary>
+    /// 원본 차트(공식 곡) 덤프 시, 샌드백/연타 노트(zz04yy, Type 8, Sandbag 키워드)를 감지하여
+    /// [SandbagAnalysis] 전용 태그로 분석 덤프를 출력합니다.
+    /// </summary>
+    public static void LogSandbagAnalysisOriginalChartNotes(Il2CppSystem.Collections.Generic.List<MusicData> musicList)
+    {
+        if (musicList == null || musicList.Count == 0) return;
+
+        var loggedKeys = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        int sandbagTotalCount = 0;
+
+        MelonLogger.Msg($"[SandbagAnalysis] ★ 원본 차트 샌드백/연타 노트(zz04yy & Type 8) 분석 시작 (total={musicList.Count}) ★");
+
+        for (int i = 0; i < musicList.Count; i++)
+        {
+            var note = musicList[i];
+            if (note?.noteData == null) continue;
+
+            string uid = note.noteData.uid ?? string.Empty;
+            string prefabStr = note.noteData.prefab_name ?? string.Empty;
+            uint noteTypeVal = (uint)note.noteData.type;
+
+            // 샌드백/연타 노트 판정 조건 (Type 8, zz04yy, 또는 prefab 내 sandbag/04 포함)
+            bool isSandbagNote = noteTypeVal == 8 ||
+                (!string.IsNullOrEmpty(uid) && uid.Length >= 6 && UidCode.Xx(uid) == "04") ||
+                (!string.IsNullOrEmpty(uid) && uid.StartsWith("0004")) ||
+                (!string.IsNullOrEmpty(prefabStr) && (prefabStr.IndexOf("sandbag", System.StringComparison.OrdinalIgnoreCase) >= 0 || (prefabStr.Length >= 6 && prefabStr.Substring(2, 2) == "04")));
+
+            if (isSandbagNote)
+            {
+                sandbagTotalCount++;
+                string key = $"{uid}_type{noteTypeVal}_{prefabStr}_{note.noteData.boss_action}";
+
+                if (!loggedKeys.Contains(key))
+                {
+                    loggedKeys.Add(key);
+
+                    string ibmsId = SafeLogValue(() => note.noteData.ibms_id);
+                    string prefab = SafeLogValue(() => note.noteData.prefab_name);
+                    string bossAction = SafeLogValue(() => note.noteData.boss_action);
+                    string pathway = SafeLogValue(() => note.noteData.pathway);
+                    string keyAudio = SafeLogValue(() => note.noteData.key_audio);
+                    string scene = SafeLogValue(() => note.noteData.scene);
+                    string tick = SafeLogValue(() => note.tick);
+                    string dt = SafeLogValue(() => note.dt);
+                    string showTick = SafeLogValue(() => note.showTick);
+
+                    MelonLogger.Msg(
+                        $"[SandbagAnalysis] ★샌드백/연타 노트 분석★ index={i}, objId={note.objId}, tick={tick}, dt={dt}, showTick={showTick}, " +
+                        $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
+                        $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
+                    );
+                }
+            }
+        }
+
+        MelonLogger.Msg($"[SandbagAnalysis] ★ 원본 차트 샌드백/연타 노트 분석 완료: 감지 노트={sandbagTotalCount}개, 고유 타입={loggedKeys.Count}개 ★");
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
