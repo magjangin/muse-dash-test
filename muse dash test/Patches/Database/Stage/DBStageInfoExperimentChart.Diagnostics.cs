@@ -104,8 +104,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     }
 
     /// <summary>
-    /// 원본 차트(공식 곡) 덤프 시, 중간 행이 없는 단일 슬롯 + configData.length 구조의 샌드백/연타 노트 및
-    /// zz01yy/zz04yy 전용 노트를 감지하여 [SandbagSingleSlotAnalysis] 전용 태그로 출력합니다.
+    /// 원본 차트(공식 곡) 덤프 시, configData.length > 0 인 노트만을 정밀 감지하여
+    /// [SandbagSingleSlotAnalysis] 전용 태그로 지속시간(length) 포함 덤프를 출력합니다.
     /// </summary>
     public static void LogSandbagAnalysisOriginalChartNotes(Il2CppSystem.Collections.Generic.List<MusicData> musicList)
     {
@@ -114,7 +114,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         var loggedKeys = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
         int matchedTotalCount = 0;
 
-        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 단일 슬롯 샌드백(configData.length & zz01yy/zz04yy) 분석 시작 (total={musicList.Count}) ★");
+        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 지속길이 노트(configData.length > 0) 정밀 분석 시작 (total={musicList.Count}) ★");
 
         for (int i = 0; i < musicList.Count; i++)
         {
@@ -132,24 +132,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 try { configLengthVal = (double)note.configData.length; } catch { }
             }
 
-            string xxFromUid = (uid.Length >= 4) ? UidCode.Xx(uid) : string.Empty;
-            string xxFromPrefab = (prefabStr.Length >= 4) ? prefabStr.Substring(2, 2) : string.Empty;
-
-            // 1. configData.length > 0 인 단일 슬롯 노트
-            bool hasConfigLength = configLengthVal > 0.0;
-            bool isSandbagOrMultiHit = noteTypeVal == 8 || prefabStr.IndexOf("sandbag", System.StringComparison.OrdinalIgnoreCase) >= 0 || prefabStr.IndexOf("multihit", System.StringComparison.OrdinalIgnoreCase) >= 0;
-            
-            // 2. zz01yy (보스 액션/전환) 또는 zz04yy (샌드백/연타) 패턴
-            bool isZz01OrZz04 = xxFromUid == "01" || xxFromUid == "04" || xxFromPrefab == "01" || xxFromPrefab == "04";
-
-            // 조건: 단일 슬롯 + configData.length>0 구조이거나, 샌드백/연타 노트이거나, zz01yy/zz04yy 패턴인 노트
-            bool isMatch = isSandbagOrMultiHit || isZz01OrZz04 || (hasConfigLength && (noteTypeVal == 8 || noteTypeVal == 3));
+            // 오직 configData.length > 0.0 인 노트만 필터링
+            bool isMatch = configLengthVal > 0.0;
 
             if (isMatch)
             {
                 matchedTotalCount++;
                 string bossAction = SafeLogValue(() => note.noteData.boss_action);
-                string key = $"{i}_{uid}_type{noteTypeVal}_{prefabStr}_{bossAction}_{note.tick}";
+                string key = $"{i}_{uid}_type{noteTypeVal}_{prefabStr}_{bossAction}_{note.tick}_{configLengthStr}";
 
                 if (!loggedKeys.Contains(key))
                 {
@@ -165,7 +155,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                     string showTick = SafeLogValue(() => note.showTick);
 
                     MelonLogger.Msg(
-                        $"[SandbagSingleSlotAnalysis] ★단일 슬롯 샌드백 감지★ index={i}, objId={note.objId}, tick={tick}, display_dt={dt}, showTick={showTick}, configLength={configLengthStr}, " +
+                        $"[SandbagSingleSlotAnalysis] ★지속길이 노트 감지(length>0)★ index={i}, objId={note.objId}, tick={tick}, configLength={configLengthStr}, display_dt={dt}, showTick={showTick}, " +
                         $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
                         $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
                     );
@@ -173,7 +163,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 단일 슬롯 샌드백 분석 완료: 감지 노트={matchedTotalCount}개, 고유 노트={loggedKeys.Count}개 ★");
+        MelonLogger.Msg($"[SandbagSingleSlotAnalysis] ★ 원본 차트 지속길이 노트(configData.length > 0) 분석 완료: 감지 노트={matchedTotalCount}개, 고유 노트={loggedKeys.Count}개 ★");
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
