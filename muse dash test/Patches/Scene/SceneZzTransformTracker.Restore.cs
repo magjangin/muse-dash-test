@@ -16,17 +16,80 @@ namespace muse_dash_test
             if (listObj == null) return 0;
 
             int restored = 0;
+            var inspectedObjects = new HashSet<int>();
+
+            // 1. objCtrls (List<BaseSpineObjectController>) 초고속 다이렉트 패스
+            if (listObj is Il2CppSystem.Collections.Generic.List<Il2Cpp.BaseSpineObjectController> spineList)
+            {
+                int count = spineList.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    var item = spineList[i];
+                    if (item == null) continue;
+                    restored += RestoreBaseSpineController(item, inspectedObjects);
+                }
+
+                if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
+                {
+                    MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2Cpp.BaseSpineObjectController]");
+                }
+                return restored;
+            }
+
+            // 2. preloads (List<GameObject>) 초고속 다이렉트 패스
+            if (listObj is Il2CppSystem.Collections.Generic.List<UnityEngine.GameObject> goList)
+            {
+                int count = goList.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    var go = goList[i];
+                    if (go == null) continue;
+                    restored += RestoreGameObject(go, inspectedObjects);
+                }
+
+                if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
+                {
+                    MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[UnityEngine.GameObject]");
+                }
+                return restored;
+            }
+
+            // 3. preloads1 (List<List<GameObject>>) 초고속 다이렉트 패스
+            if (listObj is Il2CppSystem.Collections.Generic.List<Il2CppSystem.Collections.Generic.List<UnityEngine.GameObject>> nestedGoList)
+            {
+                int count = nestedGoList.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    var subList = nestedGoList[i];
+                    if (subList == null) continue;
+                    int subCount = subList.Count;
+                    for (int j = 0; j < subCount; j++)
+                    {
+                        var go = subList[j];
+                        if (go == null) continue;
+                        restored += RestoreGameObject(go, inspectedObjects);
+                    }
+                }
+
+                if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
+                {
+                    MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2CppSystem.Collections.Generic.List`1[[UnityEngine.GameObject]]]");
+                }
+                return restored;
+            }
+
+            // 4. 일반 폴백 (리플렉션 + 단일 visitedSet 재사용)
             var listType = listObj.GetType();
             var countProp = GetCountProperty(listType);
             if (countProp == null) return 0;
 
-            int count = (int)countProp.GetValue(listObj);
+            int fallbackCount = (int)countProp.GetValue(listObj);
             var itemProp = GetItemProperty(listType);
             if (itemProp == null) return 0;
 
             var itemTypes = new HashSet<string>();
             var indexArgs = new object[1];
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < fallbackCount; i++)
             {
                 indexArgs[0] = i;
                 object item = itemProp.GetValue(listObj, indexArgs);
@@ -37,14 +100,88 @@ namespace muse_dash_test
                     itemTypes.Add(item.GetType().FullName ?? item.GetType().Name);
                 }
 
-                restored += RestoreObjectMusicData(item, 0, new HashSet<int>());
+                restored += RestoreObjectMusicData(item, 0, inspectedObjects);
             }
 
             if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
             {
                 var preview = itemTypes.Count == 0 ? "(none)" : string.Join(", ", itemTypes);
-                MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[{preview}]");
+                MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={fallbackCount}, restored={restored}, itemTypes=[{preview}]");
             }
+            return restored;
+        }
+
+        private static readonly Dictionary<Type, FieldInfo[]> s_TypeMusicDataFields = new Dictionary<Type, FieldInfo[]>();
+
+        private static FieldInfo[] GetTypeMusicDataFields(Type type)
+        {
+            if (!s_TypeMusicDataFields.TryGetValue(type, out var fields))
+            {
+                var list = new List<FieldInfo>();
+                foreach (var f in GetFieldsCached(type))
+                {
+                    if (f.FieldType == typeof(MusicData))
+                    {
+                        list.Add(f);
+                    }
+                }
+                fields = list.ToArray();
+                s_TypeMusicDataFields[type] = fields;
+            }
+            return fields;
+        }
+
+        private static int RestoreBaseSpineController(object item, HashSet<int> inspectedObjects)
+        {
+            if (item == null) return 0;
+            int identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(item);
+            if (!inspectedObjects.Add(identity)) return 0;
+
+            int restored = 0;
+            try
+            {
+                var fields = GetTypeMusicDataFields(item.GetType());
+                for (int i = 0; i < fields.Length; i++)
+                {
+                    object val = fields[i].GetValue(item);
+                    if (val is MusicData md)
+                    {
+                        if (RestoreMusicData(ref md))
+                        {
+                            try { fields[i].SetValue(item, md); restored++; } catch (Exception) { }
+                        }
+                    }
+                }
+            }
+            catch (Exception) { }
+
+            return restored;
+        }
+
+        private static int RestoreGameObject(UnityEngine.GameObject go, HashSet<int> inspectedObjects)
+        {
+            if (go == null) return 0;
+            int identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(go);
+            if (!inspectedObjects.Add(identity)) return 0;
+
+            int restored = 0;
+            try
+            {
+                var comps = go.GetComponents<UnityEngine.Component>();
+                if (comps != null)
+                {
+                    for (int i = 0; i < comps.Length; i++)
+                    {
+                        var comp = comps[i];
+                        if (comp != null && ShouldInspectNested(comp))
+                        {
+                            restored += RestoreBaseSpineController(comp, inspectedObjects);
+                        }
+                    }
+                }
+            }
+            catch (Exception) { }
+
             return restored;
         }
 

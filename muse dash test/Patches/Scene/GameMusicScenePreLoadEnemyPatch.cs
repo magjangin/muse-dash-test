@@ -14,6 +14,8 @@ public class GameMusicScene_PreLoadEnemy_Patch
     {
         try
         {
+            Boss_InitBossObject_Patch.ResetPrewarmedScenes();
+
             if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             if (!EnableDebugLogs) return;

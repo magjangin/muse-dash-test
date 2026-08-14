@@ -25,9 +25,11 @@ public class Boss_Play_Patch
                 {
                     string newName = parts[1];
 
-                    // 교체 전후 상태를 양 끝에서 찍어 둡니다. 스왑이 화면에 안 나올 때
-                    // "어느 단계에서 꺼져 있었는지"를 로그만 보고 특정할 수 있어야 합니다.
-                    LogBossState(__instance, "① swap 요청 직전");
+                    // 교체 전후 상태를 디버그 로그용으로 남깁니다 (VerboseLog 활성화 시에만).
+                    if (ModConfig.EnableVerboseLog)
+                    {
+                        LogBossState(__instance, "① swap 요청 직전");
+                    }
 
                     // out으로 비활성화된 보스 오브젝트를 깨웁니다.
                     ForceActivateBossObjects(__instance, "InitBossObject 전");
@@ -42,14 +44,20 @@ public class Boss_Play_Patch
                         CustomPlaySession.Current.IsDynamicBossSwap = false;
                     }
 
-                    LogBossState(__instance, "② InitBossObject 직후");
+                    if (ModConfig.EnableVerboseLog)
+                    {
+                        LogBossState(__instance, "② InitBossObject 직후");
+                    }
 
                     // InitBossObject가 m_CurBossObject를 새 보스로 갈아끼우므로, 그 새 오브젝트를 다시 깨웁니다.
                     ForceActivateBossObjects(__instance, "InitBossObject 후");
 
                     __instance.Play("in", playAnimator);
 
-                    LogBossState(__instance, "③ Play(in) 직후");
+                    if (ModConfig.EnableVerboseLog)
+                    {
+                        LogBossState(__instance, "③ Play(in) 직후");
+                    }
                 }
                 else
                 {
@@ -103,14 +111,20 @@ public class Boss_Play_Patch
             if (!wasActive)
             {
                 target.SetActive(true);
-                MelonLogger.Msg($"[DynamicSwap] {label}: '{target.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+                if (ModConfig.EnableVerboseLog)
+                {
+                    MelonLogger.Msg($"[DynamicSwap] {label}: '{target.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+                }
             }
 
             var parent = target.transform != null ? target.transform.parent : null;
             if (parent != null && !parent.gameObject.activeSelf)
             {
                 parent.gameObject.SetActive(true);
-                MelonLogger.Msg($"[DynamicSwap] {label}: 부모 '{parent.gameObject.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+                if (ModConfig.EnableVerboseLog)
+                {
+                    MelonLogger.Msg($"[DynamicSwap] {label}: 부모 '{parent.gameObject.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+                }
             }
         }
         catch (Exception ex)
@@ -122,6 +136,8 @@ public class Boss_Play_Patch
     /// <summary>보스 교체 각 단계의 실제 상태를 한 줄로 남깁니다. 스왑이 안 보일 때 원인 지점을 특정하기 위한 계측입니다.</summary>
     private static void LogBossState(Il2Cpp.Boss boss, string phase)
     {
+        if (!ModConfig.EnableVerboseLog) return;
+
         if (boss == null)
         {
             MelonLogger.Msg($"[DynamicSwap.State] {phase}: boss=(null)");
@@ -264,6 +280,67 @@ public class Boss_InitBossObject_Patch
         return false;
     }
 
+    private static readonly System.Collections.Generic.HashSet<int> s_PrewarmedScenes = new System.Collections.Generic.HashSet<int>();
+
+    public static void ResetPrewarmedScenes()
+    {
+        s_PrewarmedScenes.Clear();
+    }
+
+    private static void PrewarmBmsBosses(Il2Cpp.Boss boss)
+    {
+        if (boss == null) return;
+        try
+        {
+            string uid = CustomPlaySession.Current.SelectedMusicUid;
+            if (string.IsNullOrEmpty(uid))
+            {
+                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
+            }
+            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart, out _))
+            {
+                if (chart != null)
+                {
+                    var swapEvents = BmsBossSwapPlanner.BuildSwapEvents(chart);
+                    if (swapEvents != null && swapEvents.Count > 0)
+                    {
+                        CustomPlaySession.Current.IsDynamicBossSwap = true;
+                        try
+                        {
+                            foreach (var ev in swapEvents)
+                            {
+                                if (ev?.InWav != null && !string.IsNullOrWhiteSpace(ev.InWav.BossName) && ev.InWav.BossScene >= 0)
+                                {
+                                    int sceneId = ev.InWav.BossScene;
+                                    if (s_PrewarmedScenes.Add(sceneId))
+                                    {
+                                        if (boss.m_BossObjects == null || !boss.m_BossObjects.ContainsKey(sceneId))
+                                        {
+                                            MelonLogger.Msg($"[DynamicSwap] BMS 보스 사전 로드(Pre-warm): name={ev.InWav.BossName}, scene={sceneId}");
+                                            boss.InitBossObject(ev.InWav.BossName, sceneId, false);
+                                            if (boss.m_CurBossObject != null)
+                                            {
+                                                boss.m_CurBossObject.SetActive(false);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            CustomPlaySession.Current.IsDynamicBossSwap = false;
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Warning($"[DynamicSwap] BMS 보스 프리워밍 중 예외: {ex.Message}");
+        }
+    }
+
     public static void Prefix(Il2Cpp.Boss __instance, ref string name, ref int scene, ref bool isLast)
     {
         try
@@ -285,6 +362,8 @@ public class Boss_InitBossObject_Patch
             // 1. BMS 차트의 첫 번째 'in' 노트를 검색하여 보스 동적 결정 시도
             if (TryGetFirstBmsBoss(out string firstBossName, out int firstBossScene))
             {
+                PrewarmBmsBosses(__instance);
+
                 MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: BMS 첫 'in' 노트를 통한 동적 보스 매핑 적용 -> name={firstBossName}, scene={firstBossScene}");
                 name = firstBossName;
                 scene = firstBossScene;
