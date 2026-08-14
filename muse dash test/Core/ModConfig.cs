@@ -82,11 +82,20 @@ namespace muse_dash_test
             FeatureMap["Input.RealTimeSwap"] = () => EnableRealTimeSwap;
 
             // Overlay & Judgment UI
-            FeatureMap["Init.InputOverlayConfig"] = () => EnableInputOverlay;
             FeatureMap["Scene.ResetInputOverlay"] = () => EnableInputOverlay;
-            FeatureMap["InputOverlay.Config"] = () => EnableInputOverlay;
             FeatureMap["InputOverlay.Draw"] = () => EnableInputOverlay;
             FeatureMap["JudgmentBar.Draw"] = () => EnableJudgmentBar;
+
+            // config.txt 로딩("Init.ConfigFile" / "ConfigFile.Reload")은 여기에 등록하지 마세요.
+            //
+            // 예전에는 이 둘이 EnableInputOverlay에 묶여 있었습니다. 그런데 config.txt는 키 오버레이
+            // 전용 파일이 아니라 오토플레이·강제퍼펙트·피버충전금지·시네마·고스트노트·판정바까지
+            // 담고 있는 모드 공용 설정 파일입니다. 그래서 키 오버레이 하나를 끄면 파일 전체가
+            // 읽히지도 생성되지도 않아, 나머지 설정이 전부 기본값에 고정됐습니다.
+            // FeatureGuard는 게이트에 걸리면 조용히 return하므로 로그에 아무 흔적도 남지 않아
+            // "config.txt를 고쳐도 반응이 없다"는 증상만 남고 원인 추적이 불가능했습니다.
+            //
+            // 미등록 키는 IsEnabled가 true를 반환하므로, 등록하지 않는 것이 곧 "항상 로드"입니다.
 
             // Discord RPC
             FeatureMap["Init.DiscordRPC"] = () => EnableDiscordRPC;

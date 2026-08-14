@@ -36,7 +36,9 @@ namespace muse_dash_test
             FeatureGuard.Run("Init.OfflineSandbox", OfflineCustomSandbox.Initialize, maxConsecutiveFailures: 0);
 
             // 게임이 켜질 때 즉시 설정 폴더/파일을 감지 및 생성/로드합니다.
-            FeatureGuard.Run("Init.InputOverlayConfig", InputOverlay.LoadConfigIfNeeded, maxConsecutiveFailures: 0);
+            // config.txt는 키 오버레이 전용이 아니라 오토플레이·강제퍼펙트·판정바까지 담은 공용
+            // 설정 파일이므로, 기능 토글에 묶지 않습니다(ModConfig.RegisterFeatureMapping 주석 참고).
+            FeatureGuard.Run("Init.ConfigFile", InputOverlay.LoadConfigIfNeeded, maxConsecutiveFailures: 0);
 
             // hwa 작업 폴더 생성 및 이전 실행의 진단 덤프 정리
             FeatureGuard.Run("Init.HwaFolder", () =>
@@ -203,7 +205,7 @@ namespace muse_dash_test
             });
 
             // 실시간 설정 파일 변경 감지 (오토플레이 등 인게임 진입 전 설정 로드 보장)
-            FeatureGuard.Run("InputOverlay.Config", InputOverlay.LoadConfigIfNeeded);
+            FeatureGuard.Run("ConfigFile.Reload", InputOverlay.LoadConfigIfNeeded);
 
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);
 
