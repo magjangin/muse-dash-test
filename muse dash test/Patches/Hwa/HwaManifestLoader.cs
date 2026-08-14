@@ -105,10 +105,22 @@ namespace muse_dash_test
             }
 
             string line = rawLine.Trim();
-            if (line.StartsWith("//"))
+
+            // '//'로 시작하는 줄은 주석입니다.
+            //
+            // 예전에는 '//'만 벗겨내고 남은 텍스트를 설정으로 파싱했습니다. 그래서
+            // "// 씬번호: 9" 같은 줄이 그대로 적용됐고, 진짜 설정 아래에 주석이 있으면
+            // 주석 쪽이 이기기까지 했습니다(설정을 끄려고 주석 처리하면 오히려 켜짐).
+            if (line.StartsWith("//", StringComparison.Ordinal))
             {
-                line = line.Substring(2).Trim();
+                return false;
             }
+
+            // 값 뒤에 붙인 '//' 주석을 잘라냅니다. CUSTOM_CHART_GUIDE.md의 예시가
+            // "씬번호: 4    // 플레이할 인게임 배경 테마 번호" 형식인데, 예전에는 이 주석이
+            // 값에 그대로 눌어붙어 씬번호가 int 파싱에 실패하고(=미설정) 곡 제목·아티스트에는
+            // 설명문이 통째로 들어갔습니다.
+            line = StripTrailingComment(line);
 
             if (string.IsNullOrWhiteSpace(line))
             {
@@ -135,6 +147,27 @@ namespace muse_dash_test
             return !string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(value);
         }
 
+        /// <summary>
+        /// 값 뒤에 붙은 <c>//</c> 주석을 잘라냅니다.
+        /// <para>앞에 공백이 있는 <c>//</c>만 주석으로 봅니다. 값 안에 <c>//</c>가 붙어 나오는
+        /// 경우(경로·URL 등)를 실수로 자르지 않기 위해서입니다. 문서의 예시도 전부
+        /// "값<i>공백</i>// 설명" 형태입니다.</para>
+        /// </summary>
+        internal static string StripTrailingComment(string line)
+        {
+            if (string.IsNullOrEmpty(line)) return line;
+
+            for (int i = 1; i < line.Length - 1; i++)
+            {
+                if (line[i] == '/' && line[i + 1] == '/' && char.IsWhiteSpace(line[i - 1]))
+                {
+                    return line.Substring(0, i).TrimEnd();
+                }
+            }
+
+            return line;
+        }
+
         internal static void ApplyManifestValue(HwaManifest manifest, string key, string value)
         {
             if (manifest == null || string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
@@ -158,7 +191,11 @@ namespace muse_dash_test
             if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty4 = v, "난이도4", "difficulty4")) return;
             if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty5 = v, "난이도5", "difficulty5")) return;
             if (TryApplyDouble(normalizedKey, value, v => manifest.Delay = v, "delay", "지연")) return;
-            TryApplyDouble(normalizedKey, value, v => manifest.Offset = v, "offset", "오프셋", "싱크");
+            if (TryApplyDouble(normalizedKey, value, v => manifest.Offset = v, "offset", "오프셋", "싱크")) return;
+
+            // 어떤 항목에도 걸리지 않은 줄은 오타일 가능성이 높습니다. 예전에는 조용히 버려서
+            // "설정을 적었는데 반영이 안 된다"는 증상만 남았습니다.
+            MelonLogger.Warning($"[HwaResourceManager] info.txt에서 알 수 없는 설정 키를 건너뜁니다: '{key}' (값: '{value}')");
         }
 
         private static bool TryApplyString(string normalizedKey, string value, Action<string> apply, params string[] tokens)
@@ -189,6 +226,14 @@ namespace muse_dash_test
             return true;
         }
 
+        /// <summary>
+        /// 키에 토큰 중 하나라도 <b>포함</b>되면 참입니다(정확 일치가 아닙니다).
+        /// <para>실제 사용 중인 info.txt가 "내가 가져올 uid", "커스텀 곡 고스트 보이기"처럼
+        /// 문장형 키를 쓰기 때문에 부분일치가 필요합니다. 대신 <see cref="ApplyManifestValue"/>의
+        /// <b>검사 순서가 곧 우선순위</b>가 되므로, 더 구체적인 키를 반드시 먼저 두어야 합니다.
+        /// (예: "커스텀아티스트"는 "아티스트"를 포함하므로 앞에 와야 합니다.)
+        /// 새 키를 추가할 때는 기존 토큰의 부분 문자열이 되지 않는지 확인하세요.</para>
+        /// </summary>
         private static bool ContainsAny(string normalizedKey, params string[] tokens)
         {
             foreach (string token in tokens)

@@ -105,6 +105,7 @@ namespace muse_dash_test
             string lowerName = nameWithoutExt.ToLowerInvariant();
 
             // Check UID xx structure (zzxxyy)
+            bool typeResolvedFromUid = false;
             if (info.Uid != null && info.Uid.Length == 6)
             {
                 string xx = info.Uid.Substring(2, 2);
@@ -115,20 +116,30 @@ namespace muse_dash_test
                 {
                     info.NoteType = prefixEntry.noteType;
                     info.KeyAudio = prefixEntry.keyAudio;
+                    typeResolvedFromUid = true;
                 }
                 else if (XxNoteType.TryGetValue(xx, out int xxType))
                 {
                     info.NoteType = xxType;
+                    typeResolvedFromUid = true;
                 }
 
+                if (XxyyTransitionMap.ContainsKey(xxyy))
+                {
+                    typeResolvedFromUid = true;
+                }
                 ApplyBossTransitionFromXxyy(info, xxyy);
 
                 // 4. 보스 발사체 (xx=06/07/08, Type 1) 및 보스 톱니 (xx=09, Type 2) 처리
+                if (xx == "06" || xx == "07" || xx == "08" || xx == "09")
+                {
+                    typeResolvedFromUid = true;
+                }
                 ApplyBossProjectileAction(info, lowerName, xx, xxyy);
             }
 
             // String-based pattern matching and overrides for fallbacks
-            ApplyFallbackNoteType(info, lowerName, nameWithoutExt);
+            ApplyFallbackNoteType(info, lowerName, nameWithoutExt, typeResolvedFromUid);
 
             return info;
         }
@@ -161,13 +172,60 @@ namespace muse_dash_test
             }
         }
 
-        private static void ApplyFallbackNoteType(BmsWavInfo info, string lowerName, string nameWithoutExt)
+        /// <summary>
+        /// 파일명의 영문 키워드로 노트 타입을 추정합니다. UID로 타입이 정해지지 않은 경우에만 쓰는
+        /// <b>폴백</b>입니다.
+        ///
+        /// <para><paramref name="typeResolvedFromUid"/>가 참이면 타입 추정 부분을 건너뜁니다.
+        /// 예전에는 이 함수가 UID 매핑 뒤에 무조건 실행되어 <b>폴백이 아니라 override로</b>
+        /// 동작했습니다. else-if 순서상 "note"가 xx=="02"(홀드)보다 먼저 걸리기 때문에,
+        /// 예를 들어 <c>010201_hold_note_start.wav</c>가 홀드(3)가 아니라 음표(7)로 파싱됐습니다.
+        /// 샌드백(8)·고스트(4)도 같은 방식으로 오염됐고, 타입이 7이 되면 BmsNoteMatcher의 짝
+        /// 매칭에서도 빠지는데 "짝 없음" 경고조차 뜨지 않아 완전히 조용히 실패했습니다.
+        /// (한글 파일명 차트는 영문 키워드에 걸리지 않아 우연히 피해 있었습니다.)</para>
+        ///
+        /// <para>보스 관련 분기(<c>boss_swap</c>/<c>boss_out</c>/<c>boss_in</c>)는 파일명에 명시적으로
+        /// 적는 영문 표식이므로 UID 해석 여부와 무관하게 계속 존중합니다.</para>
+        /// </summary>
+        private static void ApplyFallbackNoteType(BmsWavInfo info, string lowerName, string nameWithoutExt, bool typeResolvedFromUid)
         {
             // 씬 전환 노트(0004xx)는 UID 중간 2자리가 "04"라 아래 샌드백 규칙(Substring(2,2)=="04")과
             // 충돌합니다. prefix "0004"를 가장 먼저 가로채 SceneToggle(type 9)로 고정하고 조기 반환합니다.
             if (info.Uid != null && info.Uid.StartsWith("0004"))
             {
                 info.NoteType = 9; // SceneToggle (= NoteTypes.SceneToggle)
+                return;
+            }
+
+            // 보스 표식은 UID 해석 여부와 무관하게 처리합니다.
+            if (lowerName.Contains("boss_swap"))
+            {
+                info.NoteType = 0;
+                info.PrefabName = "empty_000";
+                info.BossAction = "swap:0401_boss:4"; // Skeleton default swap redirection
+                return;
+            }
+            if (lowerName.Contains("boss_out"))
+            {
+                info.NoteType = 0;
+                info.PrefabName = "empty_000";
+                info.BossAction = "out";
+                info.BossTransition = "out";
+                return;
+            }
+            if (lowerName.Contains("boss_in"))
+            {
+                info.NoteType = 0;
+                info.PrefabName = "empty_000";
+                info.BossAction = "in";
+                info.BossTransition = "in";
+                ApplyBossTargetFromName(info, nameWithoutExt);
+                return;
+            }
+
+            // 여기부터는 UID가 타입을 정하지 못했을 때만 쓰는 이름 기반 추정입니다.
+            if (typeResolvedFromUid)
+            {
                 return;
             }
 
@@ -180,27 +238,6 @@ namespace muse_dash_test
             {
                 info.NoteType = 7;
                 info.KeyAudio = "sfx_score";
-            }
-            else if (lowerName.Contains("boss_swap"))
-            {
-                info.NoteType = 0;
-                info.PrefabName = "empty_000";
-                info.BossAction = "swap:0401_boss:4"; // Skeleton default swap redirection
-            }
-            else if (lowerName.Contains("boss_out"))
-            {
-                info.NoteType = 0;
-                info.PrefabName = "empty_000";
-                info.BossAction = "out";
-                info.BossTransition = "out";
-            }
-            else if (lowerName.Contains("boss_in"))
-            {
-                info.NoteType = 0;
-                info.PrefabName = "empty_000";
-                info.BossAction = "in";
-                info.BossTransition = "in";
-                ApplyBossTargetFromName(info, nameWithoutExt);
             }
             else if (lowerName.Contains("sandbag") || (info.Uid != null && info.Uid.Substring(2, 2) == "04"))
             {

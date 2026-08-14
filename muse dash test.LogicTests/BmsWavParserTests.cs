@@ -143,6 +143,44 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(0.8, withoutBoss.Dt);
         }
 
+        public static void ParseWavName_UidTypeWinsOverNameKeywords()
+        {
+            // 영문 파일명은 프리팹명이 보존되는 1급 경로입니다(위 KeepsAsciiOnlyPrefabName 참고).
+            // 예전에는 이름 기반 폴백이 UID 매핑 뒤에 무조건 실행돼 override로 동작했고,
+            // else-if 순서상 "note"가 홀드(xx=02)보다 먼저 걸려 타입을 음표(7)로 덮어썼습니다.
+            // 타입이 7이 되면 BmsNoteMatcher의 짝 매칭에서도 빠지는데 경고조차 뜨지 않았습니다.
+            Assert.Equal(3, BmsWavParser.ParseWavName("010201_hold_note_start.wav").NoteType);
+            Assert.Equal(8, BmsWavParser.ParseWavName("010401_sandbag_note.wav").NoteType);
+            Assert.Equal(4, BmsWavParser.ParseWavName("011701_ghost_note.wav").NoteType);
+
+            // 'graphpad' 안의 'hp'처럼 우연한 부분일치도 UID를 이기지 못해야 합니다.
+            Assert.Equal(3, BmsWavParser.ParseWavName("010201_hold_graphpad.wav").NoteType);
+
+            // 타격음도 함께 오염됐었습니다(sfx_score가 붙음).
+            Assert.Null(BmsWavParser.ParseWavName("010201_hold_note_start.wav").KeyAudio);
+        }
+
+        public static void ParseWavName_StillUsesNameKeywordsWhenUidResolvesNothing()
+        {
+            // UID가 없거나 xx가 매핑 테이블에 없으면 이름 기반 추정이 그대로 살아 있어야 합니다.
+            Assert.Equal(7, BmsWavParser.ParseWavName("score_pickup.wav").NoteType);
+            Assert.Equal(6, BmsWavParser.ParseWavName("heart_pickup.wav").NoteType);
+
+            // xx=05(복선)는 매핑에 없으므로 이름 규칙이 적용됩니다.
+            Assert.Equal(3, BmsWavParser.ParseWavName("010501_hold_variant.wav").NoteType);
+        }
+
+        public static void ParseWavName_BossMarkersSurviveUidResolution()
+        {
+            // 보스 표식은 파일명에 명시적으로 적는 영문 키워드이므로 UID 해석 여부와 무관해야 합니다.
+            var enter = BmsWavParser.ParseWavName("020301_boss_in_scene2.wav");
+            Assert.Equal("in", enter.BossTransition);
+            Assert.Equal("empty_000", enter.PrefabName);
+
+            var exit = BmsWavParser.ParseWavName("020301_boss_out.wav");
+            Assert.Equal("out", exit.BossTransition);
+        }
+
         public static void ParseWavName_HandlesBgmEntryWithoutUid()
         {
             // 실제 차트 마지막 항목: #WAV0HS music.ogg (노트가 아닌 BGM, UID/dt 없음)
