@@ -1,88 +1,55 @@
 using System;
 using MelonLoader;
 using Il2CppAssets.Scripts.Database;
+using Il2CppPeroTools2.Commons;
 
 namespace muse_dash_test
 {
     /// <summary>
-    /// 뮤즈대시 모드의 플레이 상태(곡 선택, 인게임 플레이, 결과 화면)를 디스코드 Rich Presence에 실시간 업데이트하는 매니저입니다.
-    /// 커스텀 곡 및 공식 곡의 실제 제목과 아티스트명을 최우선으로 탐색하여 디스코드 프로필에 정확하게 렌더링합니다.
+    /// 뮤즈대시 원본 내장 DiscordManager(Il2Cpp)를 활용하여 플레이 상태(곡 선택, 인게임 플레이, 결과 화면)를
+    /// 디스코드 Rich Presence에 실시간 업데이트하는 고수준 매니저입니다.
+    /// 외부 네이티브 DLL(discord-rpc.dll) 의존성 없이 게임 내장 DiscordManager 싱글톤을 제어합니다.
     /// </summary>
     public static class DiscordPresenceManager
     {
-        private const string DefaultAppId = "1180000000000000000";
-
         private static bool isInitialized;
-        private static bool isAvailable = true;
-        private static DiscordRpc.DiscordEventHandlers handlers;
-        private static DiscordRpc.DiscordRichPresence presence;
-        private static float updateTimer;
-        private const float UpdateInterval = 2.0f;
+        private static string lastSentLevelInfo;
+        private static bool? lastSentIsPlaying;
 
         public static void Initialize()
         {
-            if (isInitialized || !isAvailable || !ModConfig.EnableDiscordRPC) return;
+            if (isInitialized || !ModConfig.EnableDiscordRPC) return;
 
             try
             {
-                handlers = new DiscordRpc.DiscordEventHandlers
+                var discordManager = Singleton<Il2Cpp.DiscordManager>.instance;
+                if (discordManager != null)
                 {
-                    readyCallback = OnReady,
-                    disconnectedCallback = OnDisconnected,
-                    erroredCallback = OnErrored
-                };
-
-                DiscordRpc.Initialize(DefaultAppId, ref handlers, 1, null);
-                isInitialized = true;
-                MelonLogger.Msg("[DiscordRPC] Discord Rich Presence 초기화 성공!");
-
-                SetIdleState();
-            }
-            catch (DllNotFoundException)
-            {
-                // 게임 원본 내장 DiscordManager 하모니 훅을 사용하므로 구형 DLL 미존재 경고는 출력하지 않고 무소음 처리
-                isAvailable = false;
+                    isInitialized = true;
+                    MelonLogger.Msg("[DiscordRPC] 내장 Il2Cpp.DiscordManager 연동 활성화 성공!");
+                    SetIdleState();
+                }
+                else
+                {
+                    // 게임 시작 극초기에는 아직 DiscordManager 인스턴스가 없을 수 있으므로 추후 갱신 시 재시도
+                    isInitialized = true;
+                    MelonLogger.Msg("[DiscordRPC] Discord Presence 관리자 초기화 완료 (게임 내장 인스턴스 대기 중)");
+                }
             }
             catch (Exception ex)
             {
-                isAvailable = false;
-                MelonLogger.Warning($"[DiscordRPC] 초기화 실패 (Discord가 켜져있지 않거나 래퍼 라이브러리 누락): {ex.Message}");
+                MelonLogger.Warning($"[DiscordRPC] 초기화 경고: {ex.Message}");
             }
         }
 
         public static void Update()
         {
-            if (!isInitialized || !isAvailable) return;
-
-            try
-            {
-                updateTimer += UnityEngine.Time.deltaTime;
-                if (updateTimer >= UpdateInterval)
-                {
-                    updateTimer = 0f;
-                    DiscordRpc.RunCallbacks();
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Error($"[DiscordRPC] Update 틱 중 예외 발생: {ex.Message}");
-            }
+            // 게임 내장 DiscordManager가 자체 틱/콜백을 관리하므로 별도의 P/Invoke 폴링 불필요
         }
 
         public static void SetIdleState()
         {
-            if (!isInitialized || !isAvailable) return;
-
-            presence = new DiscordRpc.DiscordRichPresence
-            {
-                details = "메인 메뉴",
-                state = "대기 중...",
-                largeImageKey = "icon_main",
-                largeImageText = "Muse Dash Custom Chart",
-                startTimestamp = GetCurrentUnixTimestamp()
-            };
-
-            SendPresence();
+            SendPresence(isPlaying: false, levelInfo: "In Menu");
         }
 
         public static void ResolveSongDetails(string uid, out string title, out string artist)
@@ -142,21 +109,9 @@ namespace muse_dash_test
 
         public static void SetSelectingSong(string title, string artist, string difficultyText = "")
         {
-            if (!isInitialized || !isAvailable) return;
-
             string detailsText = !string.IsNullOrEmpty(artist) ? $"{title} - {artist}" : title;
-            string stateText = !string.IsNullOrEmpty(difficultyText) ? $"곡 선택 중 ({difficultyText})" : "곡 선택 중";
-
-            presence = new DiscordRpc.DiscordRichPresence
-            {
-                details = TruncateString(detailsText, 128),
-                state = TruncateString(stateText, 128),
-                largeImageKey = "icon_main",
-                largeImageText = "Muse Dash Custom Chart",
-                startTimestamp = GetCurrentUnixTimestamp()
-            };
-
-            SendPresence();
+            string stateText = !string.IsNullOrEmpty(difficultyText) ? $"{detailsText} (곡 선택 중 - {difficultyText})" : $"{detailsText} (곡 선택 중)";
+            SendPresence(isPlaying: true, levelInfo: stateText);
         }
 
         public static void UpdateForPlaying(string uid)
@@ -169,94 +124,54 @@ namespace muse_dash_test
 
         public static void SetPlayingSong(string title, string artist, string difficultyText = "")
         {
-            if (!isInitialized || !isAvailable) return;
-
             string detailsText = !string.IsNullOrEmpty(artist) ? $"{title} - {artist}" : title;
-            string stateText = !string.IsNullOrEmpty(difficultyText) ? $"플레이 중 [{difficultyText}]" : "플레이 중";
-
-            presence = new DiscordRpc.DiscordRichPresence
-            {
-                details = TruncateString(detailsText, 128),
-                state = TruncateString(stateText, 128),
-                largeImageKey = "icon_main",
-                largeImageText = "Muse Dash Custom Chart",
-                startTimestamp = GetCurrentUnixTimestamp()
-            };
-
-            SendPresence();
+            string stateText = !string.IsNullOrEmpty(difficultyText) ? $"{detailsText} [플레이 중: {difficultyText}]" : $"{detailsText} (플레이 중)";
+            SendPresence(isPlaying: true, levelInfo: stateText);
         }
 
         public static void SetResults(string title, int score, float accuracy, bool isFullCombo, bool isAllPerfect)
         {
-            if (!isInitialized || !isAvailable) return;
-
             string statusText = isAllPerfect ? "ALL PERFECT!" : (isFullCombo ? "FULL COMBO!" : "CLEAR!");
-            string stateText = $"{statusText} | Acc: {accuracy:F2}% (Score: {score})";
-
-            presence = new DiscordRpc.DiscordRichPresence
-            {
-                details = TruncateString($"결과: {title}", 128),
-                state = TruncateString(stateText, 128),
-                largeImageKey = "icon_main",
-                largeImageText = "Muse Dash Custom Chart",
-                startTimestamp = GetCurrentUnixTimestamp()
-            };
-
-            SendPresence();
+            string stateText = $"{title} [{statusText} | Acc: {accuracy:F2}%]";
+            SendPresence(isPlaying: true, levelInfo: stateText);
         }
 
         public static void Shutdown()
         {
-            if (!isInitialized || !isAvailable) return;
-
             try
             {
-                DiscordRpc.Shutdown();
+                SetIdleState();
                 isInitialized = false;
-                MelonLogger.Msg("[DiscordRPC] Discord Rich Presence 종료 완료.");
+                MelonLogger.Msg("[DiscordRPC] Discord Presence 관리자 종료.");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DiscordRPC] Shutdown 예외 발생: {ex.Message}");
+                MelonLogger.Error($"[DiscordRPC] Shutdown 예외: {ex.Message}");
             }
         }
 
-        private static void SendPresence()
+        private static void SendPresence(bool isPlaying, string levelInfo)
         {
+            if (!ModConfig.EnableDiscordRPC) return;
+
+            // 동일한 내용 중복 호출 방지
+            if (lastSentIsPlaying == isPlaying && lastSentLevelInfo == levelInfo)
+                return;
+
             try
             {
-                DiscordRpc.UpdatePresence(ref presence);
+                var discordManager = Singleton<Il2Cpp.DiscordManager>.instance;
+                if (discordManager != null)
+                {
+                    lastSentIsPlaying = isPlaying;
+                    lastSentLevelInfo = levelInfo;
+                    discordManager.SetUpdateActivity(isPlaying, levelInfo);
+                }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DiscordRPC] Presence 전송 예외 발생: {ex.Message}");
+                MelonLogger.Error($"[DiscordRPC] SetUpdateActivity 호출 실패: {ex.Message}");
             }
-        }
-
-        private static long GetCurrentUnixTimestamp()
-        {
-            return (long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-        }
-
-        private static string TruncateString(string str, int maxLength)
-        {
-            if (string.IsNullOrEmpty(str)) return string.Empty;
-            return str.Length <= maxLength ? str : str.Substring(0, maxLength - 3) + "...";
-        }
-
-        private static void OnReady(ref DiscordRpc.DiscordUser connectedUser)
-        {
-            MelonLogger.Msg($"[DiscordRPC] 디스코드 연결 완료! 사용자: {connectedUser.username}#{connectedUser.discriminator}");
-        }
-
-        private static void OnDisconnected(int errorCode, string message)
-        {
-            MelonLogger.Warning($"[DiscordRPC] 디스코드 연결 해제됨: ({errorCode}) {message}");
-        }
-
-        private static void OnErrored(int errorCode, string message)
-        {
-            MelonLogger.Error($"[DiscordRPC] 디스코드 오류 발생: ({errorCode}) {message}");
         }
     }
 }

@@ -136,7 +136,6 @@
 │   │   └── ...
 │   ├── Integration/          # Discord RPC 연동 및 실시간 리소스/스킨 스와퍼 (P/O 단축키)
 │   │   ├── DiscordPresenceManager.cs
-│   │   ├── DiscordRpc.cs
 │   │   └── RealTimeSwapper.cs
 │   ├── Patches/              # Harmony 런타임 패치 클래스들
 │   │   ├── Battle/           # 인게임 배틀 제어 및 연출
