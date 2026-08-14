@@ -52,14 +52,14 @@ namespace muse_dash_test
             return HwaManifestLoader.LoadHwaManifest(folderPath);
         }
 
+        /// <summary>
+        /// 임시 파일이라 채보 후보에서 제외할지 판정합니다.
+        /// 판정 규칙 본체는 게임에 의존하지 않는 <see cref="BmsFileNames.IsTempFile"/>에 있고,
+        /// 로직 테스트(<c>BmsFileNamesTests</c>)로 검증됩니다.
+        /// </summary>
         public static bool IsTempBmsFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return true;
-            string fileName = Path.GetFileName(filePath);
-            return fileName.StartsWith("~", StringComparison.OrdinalIgnoreCase)
-                || fileName.StartsWith("___", StringComparison.OrdinalIgnoreCase)
-                || fileName.IndexOf("temp", StringComparison.OrdinalIgnoreCase) >= 0
-                || fileName.IndexOf("tmp", StringComparison.OrdinalIgnoreCase) >= 0;
+            return BmsFileNames.IsTempFile(filePath);
         }
 
         private static string FindPreferredBmsFile(string folderPath, SearchOption searchOption)

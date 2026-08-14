@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using MelonLoader;
 
 namespace muse_dash_test
@@ -57,13 +57,16 @@ namespace muse_dash_test
                         targetTextComponent = null;
                         lastText = "";
                         
-                        if (CustomPlaySession.Current.ShouldApplyExperimentChart)
+                        // 아래는 워터마크 적용만 EnableHpTextMod에 묶습니다.
+                        // 위의 isInStage/IsInStageStatic 추적은 입력 오버레이·판정바·HitPoint 설치와
+                        // OnGUI 게이트가 함께 쓰므로 이 설정과 무관하게 항상 돌아야 합니다.
+                        if (HywHpText.ShouldApply)
                         {
                             MelonLogger.Msg("[HywHpTextMod] 스테이지 진입 감지: UI 덮어쓰기를 실행합니다.");
                             ModifyHealthBar();
                         }
                     }
-                    else if (CustomPlaySession.Current.ShouldApplyExperimentChart && targetTextComponent == null)
+                    else if (HywHpText.ShouldApply && targetTextComponent == null)
                     {
                         // 재시작 감지 (이전 스테이지 컴포넌트가 파괴됨)
                         targetTextComponent = null;
@@ -93,7 +96,7 @@ namespace muse_dash_test
 
         public void CheckForNoteEvents()
         {
-            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+            if (!HywHpText.ShouldApply) return;
 
             // 이 메서드는 MainMod.OnUpdate에서 매 프레임 호출됩니다. targetTextComponent.text 읽기는
             // IL2CPP → 관리 문자열 마샬링이라 프레임마다 새 문자열이 할당됩니다. 워터마크 복구는
@@ -122,7 +125,7 @@ namespace muse_dash_test
 
         private void ModifyHealthBar()
         {
-            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+            if (!HywHpText.ShouldApply) return;
 
             try
             {

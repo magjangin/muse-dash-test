@@ -15,6 +15,9 @@ namespace muse_dash_test
     {
         static void Postfix(SpineActionController __instance)
         {
+            // 이 프로브는 커스텀 스킨 대상을 찾기 위한 것이라, 스킨 기능을 끄면 로그도 나오지 않아야 합니다.
+            if (!ModConfig.EnableSpineSkin) return;
+
             var name = __instance.gameObject.name;
             if (name.ToLowerInvariant().Contains("battle"))
             {

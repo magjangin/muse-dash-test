@@ -28,6 +28,12 @@ namespace muse_dash_test
 
         public static void TryInject(SpineActionController instance)
         {
+            // EnableSpineSkin의 유일한 집행 지점입니다. 주입 훅이 Init/OnControllerStart 두 곳이라
+            // 각 훅에 검사를 흩어 두면 하나를 빠뜨리기 쉬우므로, 두 훅이 공유하는 여기서 한 번만 봅니다.
+            // (예전에는 MainMod의 'skin test' 폴더 생성만 이 설정에 묶여 있어서, 설정을 꺼도
+            //  스킨 주입은 그대로 돌았습니다.)
+            if (!ModConfig.EnableSpineSkin) return;
+
             if (!TargetToBaseName.TryGetValue(instance.gameObject.name, out var baseName)) return;
 
             var customAsset = CustomSkinInjector.GetOrBuild(baseName);
