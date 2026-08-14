@@ -303,18 +303,35 @@ new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0
    > (이 문서도 한동안 "유니티 컴포넌트 캐스팅으로 깨운다"고 적혀 있었지만, 그 코드는
    > 예외가 catch에 먹혀 **한 번도 실행된 적이 없었습니다.**)
    >
-   > 보스의 GameObject는 아래 두 멤버로 얻습니다.
-   >
-   > | 멤버 | 형 | 뜻 |
-   > |---|---|---|
-   > | `boss.go` | `GameObject` (프로퍼티) | 보스 관리 오브젝트 본체 |
-   > | `boss.m_CurBossObject` | `GameObject` (필드) | 지금 화면에 있는 보스 인스턴스 |
+   > 보스의 GameObject는 **`boss.m_CurBossObject`**(`GameObject` 필드, 지금 화면에 있는 보스 인스턴스)로 얻습니다.
    >
    > 함께 쓸 수 있는 상태 멤버: `m_BossObjects`(`Dictionary<int, GameObject>`),
    > `m_CurBossIndex`, `curBossIsIn`, `BossHasEntered`, `m_DisappearBoss`, `SetDisappear(bool)`.
    >
    > `InitBossObject`는 `m_CurBossObject`를 새 보스로 갈아끼우므로,
    > **활성화는 `InitBossObject` 앞뒤로 두 번** 해야 새 오브젝트까지 켜집니다.
+
+   > ⚠️ **`boss.go`는 교체 중에 쓰면 안 됩니다.**
+   > `Boss`에 `GameObject go` 프로퍼티가 있지만, 교체 시점에 호출하면
+   > `KeyNotFoundException`(`Dictionary.get_Item`)을 던집니다.
+   > Boss의 유일한 딕셔너리는 `m_BossObjects`(키 = **씬 번호**)인데,
+   > 실측에서 키는 `[9, 8]`인 반면 `m_CurBossIndex`는 `2`였습니다.
+   > 즉 `m_CurBossIndex`는 `m_BossObjects`의 키가 아니어서 `get_go`가 성립하지 않습니다.
+   > 실제로 보스를 되살리는 데 필요한 것도 `m_CurBossObject` 하나뿐이었습니다.
+
+   **실측 로그 (정상 동작 시)** — 세 단계 모두 `[DynamicSwap.State]`로 찍힙니다.
+
+   ```text
+   ① swap 요청 직전   : curBossObject='0901_boss'(self=True,  hierarchy=True ), curBossIndex=2, bossObjects=1개[9],   curBossIsIn=False
+   ② InitBossObject 직후: curBossObject='0801_boss'(self=False, hierarchy=False), curBossIndex=2, bossObjects=2개[9,8], curBossIsIn=False
+      [DynamicSwap] InitBossObject 후/m_CurBossObject: '0801_boss'이(가) 꺼져 있어 강제로 켰습니다.
+   ③ Play(in) 직후    : curBossObject='0801_boss'(self=True,  hierarchy=True ), curBossIndex=2, bossObjects=2개[9,8], curBossIsIn=True
+   ```
+
+   읽는 법:
+   - ②에서 새 보스가 **꺼진 채로** 생성됩니다. 여기서 켜 주지 않으면 스왑이 화면에 안 나옵니다.
+   - ③에서 `self`/`hierarchy`가 `True`, `curBossIsIn`이 `True`면 성공입니다.
+   - ③에서도 `self=False`라면 활성화가 막힌 것이고, `curBossIsIn=False`라면 `Play("in")`이 안 먹은 것입니다.
 3. **리디렉션 필터 우회**:
    `BossPatch.cs`에 등록된 글로벌 리디렉션 룰(`OrigName = "*"`)에 걸려 교체하려는 보스가 강제로 첫 번째 보스로 덮어써지는 일을 임시 플래그(`isDynamicSwapping`)를 통해 우회 차단합니다.
 4. **자동 등장 연출**:

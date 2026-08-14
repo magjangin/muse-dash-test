@@ -75,13 +75,21 @@ public class Boss_Play_Patch
     /// 그래서 예전 코드의 <c>__instance.Cast&lt;UnityEngine.Component&gt;()</c>는 항상
     /// <i>Can't cast object of type Boss to type UnityEngine.Component</i>로 던졌고,
     /// 바깥 catch가 경고만 남기는 바람에 <b>활성화가 한 번도 실행되지 않았습니다</b>.
-    /// Boss가 실제로 내놓는 GameObject는 <c>go</c>(프로퍼티)와 <c>m_CurBossObject</c>(필드) 둘입니다.</para>
+    /// Boss가 내놓는 GameObject는 <c>go</c>(프로퍼티)와 <c>m_CurBossObject</c>(필드) 둘이지만,
+    /// 아래 이유로 <b><c>m_CurBossObject</c>만</b> 씁니다.</para>
+    ///
+    /// <para><b><c>go</c>를 쓰지 않는 이유(실측)</b>: 교체 시점에 <c>boss.go</c>는
+    /// <c>KeyNotFoundException(Dictionary.get_Item)</c>을 던집니다. Boss의 유일한 딕셔너리는
+    /// <c>m_BossObjects</c>(키 = 씬 번호)인데, 실측 로그에서 키는 <c>[9, 8]</c>인 반면
+    /// <c>m_CurBossIndex</c>는 <c>2</c>라 조회가 실패합니다. 즉 <c>get_go</c>는 이 상태에서
+    /// 구조적으로 성립하지 않습니다. 게다가 실제로 보스를 되살린 것은 <c>m_CurBossObject</c>
+    /// 하나였습니다(로그: "InitBossObject 후/m_CurBossObject: '0801_boss'이(가) 꺼져 있어 강제로 켰습니다").
+    /// 부모(<c>SceneObjectController</c>)는 아래 <see cref="ActivateWithParent"/>가 함께 켭니다.</para>
     /// </summary>
     private static void ForceActivateBossObjects(Il2Cpp.Boss boss, string phase)
     {
         if (boss == null) return;
 
-        ActivateWithParent(SafeGet(() => boss.go, "go"), $"{phase}/go");
         ActivateWithParent(SafeGet(() => boss.m_CurBossObject, "m_CurBossObject"), $"{phase}/m_CurBossObject");
     }
 
@@ -120,9 +128,11 @@ public class Boss_Play_Patch
             return;
         }
 
+        // boss.go는 여기서 항상 KeyNotFoundException을 던지므로 찍지 않습니다
+        // (사유는 ForceActivateBossObjects 주석 참고). 대신 그 원인이 되는
+        // curBossIndex와 bossObjects 키를 나란히 남겨 불일치가 눈에 보이게 합니다.
         MelonLogger.Msg(
             $"[DynamicSwap.State] {phase}: " +
-            $"go={Describe(SafeGet(() => boss.go, "go"))}, " +
             $"curBossObject={Describe(SafeGet(() => boss.m_CurBossObject, "m_CurBossObject"))}, " +
             $"curBossIndex={SafeGet(() => boss.m_CurBossIndex.ToString(), "m_CurBossIndex") ?? "?"}, " +
             $"bossObjects={DescribeBossObjects(boss)}, " +
