@@ -153,6 +153,18 @@ namespace muse_dash_test
                     menuSource.Play();
                     injectedMenuClip = customClip;
 
+                    // 직전에 우리가 주입했던 클립을 해제합니다. 위에서 menuSource.clip을 새 클립으로
+                    // 갈아끼웠으므로 이 시점의 previousInjected는 어떤 AudioSource도 참조하지 않습니다.
+                    //
+                    // injectedMenuClip에는 "우리가 만든 클립"만 담기므로(게임 원본 클립은 절대 들어오지
+                    // 않습니다) 여기서 해제해도 게임 BGM을 건드리지 않습니다. 이 해제가 없으면 곡 선택
+                    // 화면에서 커스텀 곡 사이를 오갈 때마다 디코딩된 OGG가 하나씩 쌓입니다.
+                    if (previousInjected != null && previousInjected != customClip)
+                    {
+                        UnityEngine.Object.Destroy(previousInjected);
+                        MelonLogger.Msg($"[MenuBGM] 이전 커스텀 클립 해제: {previousInjected.name}");
+                    }
+
                     MelonLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
                     MelonLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
 

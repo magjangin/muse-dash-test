@@ -77,6 +77,11 @@ namespace muse_dash_test
                     }
                     else
                     {
+                        // 디코딩에 실패해도 Texture2D 객체 자체는 이미 만들어져 있으므로 즉시 해제합니다.
+                        // 실패하면 cachedCustomTexture가 null로 남아 다음 호출에서 이 경로를 다시 타므로,
+                        // 해제하지 않으면 GetCustomTexture()를 부를 때마다 텍스처가 하나씩 샙니다.
+                        // (MusicButtonCellPatch의 cover.png 로딩과 같은 처리입니다.)
+                        UnityEngine.Object.Destroy(texture);
                         MelonLogger.Error($"[APMod.TagIcon] 물리 파일 '{pngPath}'를 Texture2D로 디코딩하는 데 실패했습니다.");
                     }
                 }
