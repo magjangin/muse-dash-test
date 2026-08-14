@@ -9,11 +9,19 @@ namespace muse_dash_test
         public static MelonPreferences_Entry<GirlID> favGirl;
         public static MelonPreferences_Entry<bool> conditionalHideScoreDetails;
 
+        /// <summary>
+        /// 현재 즐겨찾기 소녀입니다.
+        /// <para><see cref="Load"/>가 실패하면 <see cref="favGirl"/>이 null로 남는데, 이 값은
+        /// FavManager와 RealTimeSwapper의 20여 곳에서 읽힙니다. 그 전부가 NullReference로
+        /// 무너지지 않도록 여기서 한 번만 막고 <see cref="GirlID.NONE"/>으로 degrade합니다.</para>
+        /// </summary>
         public static GirlID FavGirl
         {
-            get => favGirl.Value;
+            get => favGirl != null ? favGirl.Value : GirlID.NONE;
             set
             {
+                if (favGirl == null) return;
+
                 if (Enum.IsDefined(typeof(GirlID), value))
                     favGirl.Value = value;
                 else

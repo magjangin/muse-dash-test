@@ -11,6 +11,18 @@ namespace muse_dash_test
     {
         private static FileSystemWatcher bmsWatcher = null;
 
+        /// <summary>
+        /// 같은 파일에 대해 이 시간 안에 다시 들어온 이벤트는 무시합니다.
+        /// FileSystemWatcher는 저장 한 번에 LastWrite와 Size 알림을 따로 올리고, 에디터에 따라
+        /// 쓰기 자체가 여러 번 일어나기도 합니다. 그때마다 파일을 다시 읽고 파싱하면
+        /// 저장 1회에 재파싱이 여러 번 도는 낭비가 생깁니다.
+        /// </summary>
+        private static readonly TimeSpan BmsEventDebounceWindow = TimeSpan.FromMilliseconds(300);
+
+        /// <summary>경로별 마지막 처리 시각. 워처 이벤트는 스레드풀에서 오므로 접근을 잠급니다.</summary>
+        private static readonly System.Collections.Generic.Dictionary<string, DateTime> lastHandledByPath =
+            new System.Collections.Generic.Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+
         public static void InitializeBmsWatcher()
         {
             try
@@ -69,6 +81,19 @@ namespace muse_dash_test
                 if (!string.Equals(ext, ".bms", StringComparison.OrdinalIgnoreCase)) return;
 
                 string fullPath = Path.GetFullPath(filePath);
+
+                // 저장 1회에 여러 알림이 몰려 오는 경우 첫 건만 처리합니다.
+                lock (lastHandledByPath)
+                {
+                    DateTime now = DateTime.UtcNow;
+                    if (lastHandledByPath.TryGetValue(fullPath, out DateTime last)
+                        && now - last < BmsEventDebounceWindow)
+                    {
+                        return;
+                    }
+                    lastHandledByPath[fullPath] = now;
+                }
+
                 string matchedUid = null;
 
                 foreach (var uid in virtualUids)

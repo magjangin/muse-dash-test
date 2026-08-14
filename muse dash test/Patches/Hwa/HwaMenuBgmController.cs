@@ -29,9 +29,11 @@ namespace muse_dash_test
             }
 
             currentLoadingUid = uid;
-            monitorGeneration++;
-            MelonLogger.Msg($"[MenuBGM] BGM 변경 트리거: uid={uid}");
-            MelonCoroutines.Start(LoadAndPlayCustomMenuBgm(uid));
+            // 이번 요청의 세대 번호를 코루틴에 넘겨 줍니다. uid만으로는 A→B→A처럼 같은 곡으로
+            // 되돌아온 경우 낡은 코루틴이 자기가 낡았다는 걸 알 수 없습니다(아래 코루틴 주석 참고).
+            int generation = ++monitorGeneration;
+            MelonLogger.Msg($"[MenuBGM] BGM 변경 트리거: uid={uid}, generation={generation}");
+            MelonCoroutines.Start(LoadAndPlayCustomMenuBgm(uid, generation));
         }
 
         public static void StopMenuMonitoring(string reason)
@@ -75,7 +77,17 @@ namespace muse_dash_test
             }
         }
 
-        private static IEnumerator LoadAndPlayCustomMenuBgm(string uid)
+        /// <summary>
+        /// 커스텀 곡의 ogg를 읽어 메뉴 BGM AudioSource에 주입합니다.
+        ///
+        /// <para><paramref name="generation"/>은 이 코루틴이 시작될 때 발급받은 요청 번호입니다.
+        /// 중간에 다른 선택이 들어오면 <see cref="monitorGeneration"/>이 올라가므로, 두 값을 비교해
+        /// 자기가 낡았는지 판단합니다. 예전에는 <c>currentLoadingUid != uid</c>로만 판단했는데,
+        /// A→B→A로 빠르게 이동하면 <c>currentLoadingUid</c>가 다시 A로 돌아와 있어서 첫 번째 A
+        /// 코루틴이 그대로 통과했습니다. 그 결과 A 코루틴 두 개가 같은 ogg를 로드하고 둘 다
+        /// Play()를 불러 재생이 겹치고 클립 하나가 즉시 누수됐습니다.</para>
+        /// </summary>
+        private static IEnumerator LoadAndPlayCustomMenuBgm(string uid, int generation)
         {
             string songDir;
             if (!HwaResourceManager.TryGetSongDirectory(uid, out songDir) || string.IsNullOrEmpty(songDir))
@@ -94,7 +106,7 @@ namespace muse_dash_test
             yield return new WaitForSeconds(0.2f);
 
             // 대기 시간 도중 다른 곡으로 선택이 넘어간 경우 로딩을 중단합니다.
-            if (currentLoadingUid != uid || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
+            if (generation != monitorGeneration || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
             {
                 yield break;
             }
@@ -124,7 +136,7 @@ namespace muse_dash_test
                 }
 
                 // 로드가 완료되었을 시점에도 유효성 검사 (사용자가 곡을 다시 변경했는지 여부)
-                if (currentLoadingUid != uid || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
+                if (generation != monitorGeneration || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
                 {
                     yield break;
                 }
@@ -169,7 +181,9 @@ namespace muse_dash_test
                     MelonLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
 
                     // 후속 볼륨 페이드아웃이나 변경 현상 감시를 위해 실시간 모니터러 작동
-                    MelonCoroutines.Start(MonitorAudioSource(menuSource, uid, customClip.name, monitorGeneration));
+                    // (바로 위 가드에서 generation == monitorGeneration을 확인했으므로 같은 값이며,
+                    //  이 코루틴이 책임지는 세대를 그대로 넘기는 편이 의도가 분명합니다.)
+                    MelonCoroutines.Start(MonitorAudioSource(menuSource, uid, customClip.name, generation));
                 }
             }
             finally

@@ -82,8 +82,12 @@ namespace muse_dash_test
             // hwa 매니페스트 사전 로드
             FeatureGuard.Run("Init.PreloadManifest", HwaResourceManager.PreloadHwaManifest, maxConsecutiveFailures: 0);
 
-            // FavGirl 즐겨찾기 설정 및 핫키 정보 초기화
-            FavSave.Load();
+            // FavGirl 즐겨찾기 설정 및 핫키 정보 초기화.
+            // 이 블록에서 유일하게 FeatureGuard 밖에 있던 호출이었습니다. 여기서 던지면
+            // OnInitializeMelon이 통째로 중단되어 바로 아래 Discord 초기화까지 함께 죽습니다.
+            // (기능 토글에는 묶지 않습니다. FavSave.favGirl은 FavManager의 Harmony 패치들이
+            //  토글과 무관하게 읽으므로, 로드를 건너뛰면 그쪽이 전부 null을 보게 됩니다.)
+            FeatureGuard.Run("Init.FavSave", FavSave.Load, maxConsecutiveFailures: 0);
             MelonLogger.Msg("=== FavGirl 실시간 교체 기능 활성화 ===");
             MelonLogger.Msg("P키: 실시간 교체 모드 켜기/끄기");
             MelonLogger.Msg("O키: 실시간 교체 실행 (모드 활성화 후)");
