@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MelonLoader;
@@ -16,7 +17,7 @@ namespace muse_dash_test
         private static float lastConfigCheckTime = 0f;
         private const float ConfigCheckInterval = 1.0f; // 1초마다 실시간 변경 감지 (디스크 I/O 최적화)
         private static bool hasFailedToWrite = false;   // 쓰기/생성 실패 시 반복적인 시도 및 로그 스패밍 방지
-        private static bool migrationDone = false;      // 이름 이관/누락 보충은 세션당 1회만 (무한 재작성 방지)
+        private static bool canonicalizeDone = false;   // 표준 형식 정규화는 세션당 1회만 (무한 재작성 방지)
 
         // 실제 런타임에 사용할 설정 필드 (기본값 제공)
         private static float keyWidth = 55f;
@@ -94,21 +95,16 @@ namespace muse_dash_test
 
                     if (!File.Exists(configPath))
                     {
-                        SaveDefaultConfig();
-                        migrationDone = true;
+                        WriteConfigFile("기본 설정 파일(config.txt)을 새로 생성했습니다");
+                        canonicalizeDone = true;
                     }
-                    else if (!migrationDone)
+                    else if (!canonicalizeDone)
                     {
-                        // 마이그레이션/누락 보충은 파일을 '쓰는' 작업입니다. 여기서 쓰면 LastWriteTime이
-                        // 바뀌어 아래 감시 로직이 즉시 재파싱을 하므로, 판정이 한 번이라도 어긋나면
-                        // "쓰기 → 재파싱 → 쓰기"가 매 폴링마다 무한 반복됩니다.
-                        // 실제로 그 사고가 있었으므로(공백 포함 키를 공백 없는 키로 검사) 구조적으로 차단합니다:
-                        // 이 두 작업은 성격상 1회성 이관이라 세션당 딱 한 번만 돌립니다.
-                        // 이후의 폴링은 순수하게 '읽기'만 합니다.
-                        migrationDone = true;
-                        MigrateRenamedKeys();
-                        RepairDuplicatedAutoAppendedKeys();
-                        EnsureMissingKeysAdded();
+                        // 파일을 '쓰는' 작업은 LastWriteTime을 바꿔 아래 감시 로직의 재파싱을 부릅니다.
+                        // 그래서 쓰기 판정이 한 번이라도 어긋나면 "쓰기 → 재파싱 → 쓰기"가 매 폴링마다
+                        // 무한 반복됩니다(실제로 그 사고가 있었습니다). 세션당 1회로 못박아 차단합니다.
+                        canonicalizeDone = true;
+                        EnsureCanonicalConfigFile();
                     }
                 }
 
@@ -135,7 +131,94 @@ namespace muse_dash_test
         private const string GhostNotesKey = "공식곡에서도고스트노트보이기";
         private const string GhostNotesLegacyKey = "고스트노트보이기";
 
-        private static void SaveDefaultConfig()
+        /// <summary>
+        /// config.txt에 들어가는 설정 키 전체 목록(공백 제거·소문자 형태).
+        /// <see cref="WriteConfigFile"/>이 실제로 쓰는 키와 반드시 일치해야 합니다.
+        /// 새 설정을 추가할 때는 이 배열과 WriteConfigFile 두 곳만 고치면 됩니다.
+        /// </summary>
+        private static readonly string[] CanonicalKeys =
+        {
+            "키가로크기", "키세로크기", "키간격", "하단여백", "오버레이표시", "글자크기",
+            "공중색상", "공중투명도", "지상색상", "지상투명도", "대기색상", "대기투명도",
+            "판정바표시", "판정바가로크기", "판정바세로크기", "판정바하단여백",
+            "판정바글자크기", "판정바틱유지시간", "판정바반응형",
+            "오토플레이", "피버충전금지", "시네마", "강제퍼펙트",
+            GhostNotesKey,
+        };
+
+        /// <summary>
+        /// 기존 config.txt가 표준 형식이 아니면(항목 누락 / 같은 키 중복 / 옛 키 이름) 전체를 다시 씁니다.
+        ///
+        /// <para>예전에는 부족한 항목만 파일 끝에 append 하는 방식이었는데, 존재 검사가 한 번 어긋나자
+        /// 폴링마다 같은 줄이 덧붙어 파일이 무한히 커졌습니다. 그래서 부분 수정(append)을 아예 없애고,
+        /// "파일을 만들 때 쓰는 그 함수"로 항상 전체를 다시 쓰는 방식으로 통일했습니다.
+        /// 쓰는 경로가 <see cref="WriteConfigFile"/> 하나뿐이라 형식이 갈라질 여지가 없습니다.</para>
+        ///
+        /// <para>다시 쓰기 전에 <see cref="ParseConfigFile"/>로 현재 값을 필드에 먼저 실어 둡니다.
+        /// WriteConfigFile은 필드 값을 그대로 출력하므로 사용자가 적어 둔 값이 보존되고,
+        /// 옛 키 이름(<see cref="GhostNotesLegacyKey"/>)도 파싱 단계에서 흡수되어 새 이름으로 옮겨집니다.</para>
+        /// </summary>
+        private static void EnsureCanonicalConfigFile()
+        {
+            string text = ReadConfigTextRobust();
+            if (string.IsNullOrEmpty(text))
+            {
+                WriteConfigFile("config.txt가 비어 있어 기본값으로 다시 생성했습니다");
+                return;
+            }
+
+            ParseConfigFile();
+
+            if (IsCanonicalConfigText(text, out string reason)) return;
+
+            WriteConfigFile($"config.txt를 표준 형식으로 다시 썼습니다 (사유: {reason}, 설정값은 그대로 유지)");
+        }
+
+        /// <summary>
+        /// 파일이 표준 형식인지 판정합니다. 표준이 아니면 <paramref name="reason"/>에 사유를 채웁니다.
+        /// 모르는 키가 섞여 있는 것만으로는 다시 쓰지 않습니다(사용자가 직접 적어 둔 줄일 수 있으므로).
+        /// </summary>
+        private static bool IsCanonicalConfigText(string text, out string reason)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (string line in text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
+            {
+                string trimmed = line.Trim();
+                if (trimmed.Length == 0 || trimmed.StartsWith("#", StringComparison.Ordinal)) continue;
+
+                int idx = trimmed.IndexOf('=');
+                if (idx <= 0) continue;
+
+                // 파일에는 '공식곡에서도 고스트 노트 보이기'처럼 띄어 적으므로 공백을 지우고 비교합니다.
+                string key = StripSpaces(trimmed.Substring(0, idx)).ToLowerInvariant();
+                if (key.Length == 0) continue;
+
+                if (!seen.Add(key))
+                {
+                    reason = $"'{key}' 항목이 중복됨";
+                    return false;
+                }
+            }
+
+            foreach (string key in CanonicalKeys)
+            {
+                if (!seen.Contains(key))
+                {
+                    reason = $"'{key}' 항목이 없음";
+                    return false;
+                }
+            }
+
+            reason = null;
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 설정값 전체를 config.txt에 씁니다. 생성·정규화 모두 이 함수 하나만 씁니다.
+        /// (부분 추가/수정 경로를 두지 않는 것이 핵심입니다. 아래 <see cref="CanonicalKeys"/>와 짝을 맞추세요.)
+        /// </summary>
+        private static void WriteConfigFile(string reasonLog)
         {
             try
             {
@@ -183,12 +266,12 @@ namespace muse_dash_test
                 sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
-                MelonLogger.Msg($"[InputOverlay] 기본 설정 파일(config.txt)을 새로 생성했습니다: {configPath}");
+                MelonLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");
             }
             catch (Exception ex)
             {
                 hasFailedToWrite = true;
-                MelonLogger.Error($"[InputOverlay] 기본 설정 저장 중 실패 (쓰기 시도가 중단됩니다): {ex.Message}");
+                MelonLogger.Error($"[InputOverlay] 설정 파일 저장 중 실패 (쓰기 시도가 중단됩니다): {ex.Message}");
             }
         }
 
@@ -233,100 +316,6 @@ namespace muse_dash_test
             }
 
             return utf8Text;
-        }
-
-        /// <summary>
-        /// 이름만 바뀐 설정 항목을 기존 파일에서 새 문구로 갈아 끼웁니다(값은 그대로 둡니다).
-        /// 옛 이름도 계속 읽히지만, 파일에 보이는 문구가 지금 뜻과 맞아야 헷갈리지 않습니다.
-        /// </summary>
-        private static void MigrateRenamedKeys()
-        {
-            try
-            {
-                if (!File.Exists(configPath)) return;
-
-                string text = ReadConfigTextRobust();
-                if (string.IsNullOrEmpty(text)) return;
-                if (!text.Contains(GhostNotesLegacyKey + "=")) return;
-
-                string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                bool changed = false;
-
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    string trimmed = lines[i].TrimStart();
-                    if (trimmed.StartsWith("#")) continue;
-                    if (!trimmed.StartsWith(GhostNotesLegacyKey + "=")) continue;
-
-                    string value = trimmed.Substring(GhostNotesLegacyKey.Length + 1).Trim();
-                    lines[i] = $"{GhostNotesKeyText}={value}";
-                    changed = true;
-                }
-
-                if (!changed) return;
-
-                File.WriteAllText(configPath, string.Join(Environment.NewLine, lines), new UTF8Encoding(true));
-                MelonLogger.Msg($"[InputOverlay] config.txt의 '{GhostNotesLegacyKey}' 항목을 '{GhostNotesKeyText}'로 이름만 바꿔 두었습니다(값은 그대로).");
-            }
-            catch (Exception ex)
-            {
-                hasFailedToWrite = true;
-                MelonLogger.Error($"[InputOverlay] 설정 항목 이름 정리 중 예외 발생 (쓰기 시도가 중단됩니다): {ex.Message}");
-            }
-        }
-
-        private static void EnsureMissingKeysAdded()
-        {
-            try
-            {
-                if (!File.Exists(configPath)) return;
-
-                string rawText = ReadConfigTextRobust();
-                if (string.IsNullOrEmpty(rawText)) return;
-
-                // 파일에는 '공식곡에서도 고스트 노트 보이기'처럼 띄어쓰기를 넣어 적습니다.
-                // 그래서 존재 여부도 반드시 공백을 지운 텍스트에서 봐야 합니다. 원문 그대로 비교하면
-                // 공백 있는 키를 공백 없는 키로 찾게 되어 영원히 "없음"으로 판정되고,
-                // 매 폴링마다 같은 줄을 append 하는 무한 루프가 됩니다. (실제 발생했던 버그)
-                string text = StripSpaces(rawText);
-
-                // 추가할 키와 기본값 선언 테이블. 새 설정 키를 추가할 때 이곳만 고치면 됩니다.
-                // checkKey는 반드시 '공백을 지운' 형태로 적습니다.
-                var missingEntries = new (string checkKey, string appendLine)[] {
-                    ("오토플레이",   "오토플레이=false"),
-                    ("피버충전금지",  $"피버충전금지={blockFever.ToString().ToLower()}"),
-                    ("시네마",      $"시네마={enableCinema.ToString().ToLower()}"),
-                    ("강제퍼펙트",   $"강제퍼펙트={forcePerfect.ToString().ToLower()}"),
-                    (GhostNotesLegacyKey, $"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}"),
-                    // ↑ GhostNotesLegacyKey 로 체크하면 new/legacy 둘 다 잡습니다.
-                };
-
-                var sb = new StringBuilder();
-                bool anyMissing = false;
-                foreach (var (checkKey, appendLine) in missingEntries)
-                {
-                    if (!text.Contains(checkKey))
-                    {
-                        if (!anyMissing)
-                        {
-                            sb.AppendLine();
-                            sb.AppendLine("# [자동 업데이트] 누락된 설정 항목 추가");
-                            anyMissing = true;
-                        }
-                        sb.AppendLine(appendLine);
-                    }
-                }
-
-                if (!anyMissing) return;
-
-                File.AppendAllText(configPath, sb.ToString(), new UTF8Encoding(true));
-                MelonLogger.Msg("[InputOverlay] 기존 config.txt 파일에서 누락된 설정 항목을 자동 추가했습니다.");
-            }
-            catch (Exception ex)
-            {
-                hasFailedToWrite = true;
-                MelonLogger.Error($"[InputOverlay] 누락된 설정 추가 중 예외 발생 (쓰기 시도가 중단됩니다): {ex.Message}");
-            }
         }
 
         /// <summary>키 비교용. 설정 파일에서는 띄어쓰기를 자유롭게 쓰게 두고, 코드에서는 붙여 쓴 이름 하나로 봅니다.</summary>
