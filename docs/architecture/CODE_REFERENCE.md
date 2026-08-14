@@ -151,9 +151,6 @@ MelonLoader 모드 진입점 클래스입니다.
 * `.Schema.cs` — 스펙/상수/헬퍼 모델
 * `.Diagnostics.cs` — 노트 덤프 및 디버그 로그
 
-### 📂 [Skill/DBSkillPatch.cs](../../muse%20dash%20test/Patches/Database/Skill/DBSkillPatch.cs)
-**(폐기됨)** 현재 안내 주석 한 줄만 남은 빈 파일입니다. 스킬 오토플레이/초기화 패치(`DBSkill_SetAutoPlay_Patch`, `DBSkill_AwakeInit_Patch`)는 [Battle/Mechanics/AutoPlayPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs)로 이전되었습니다.
-
 ### 📂 [Save/SaveDataManagerPatch.cs](../../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs) [NEW]
 가상 곡/앨범(`1999-`, `1998-`) 플레이 데이터가 실제 게임 로컬 및 클라우드 세이브 파일에 기록되지 않도록, `DataManager.Save()` 시점에 컬렉션 데이터의 가상 키들을 안전하게 걸러내는 정밀 정화 모듈입니다.
 

@@ -161,8 +161,6 @@
 │   │   ├── Database/         # 런타임 차트 및 세이브 데이터 관련 패치
 │   │   │   ├── Save/         # 세이브 가상 데이터 클렌징 (오염 방지)
 │   │   │   │   └── SaveDataManagerPatch.cs
-│   │   │   ├── Skill/        # 스킬 DB 패치
-│   │   │   │   └── DBSkillPatch.cs
 │   │   │   └── Stage/        # 인메모리 차트 수명 주기 제어 및 BMS 주입
 │   │   │       ├── DBStageInfoPatch.cs
 │   │   │       └── DBStageInfoExperimentChart*.cs
