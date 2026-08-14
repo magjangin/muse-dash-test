@@ -71,10 +71,10 @@ namespace muse_dash_test
             FeatureMap.Clear();
 
             // Custom Chart / BMS
-            FeatureMap["Init.OfflineSandbox"] = () => EnableCustomChart;
             FeatureMap["Init.PreloadManifest"] = () => EnableCustomChart;
-            FeatureMap["StageCheck"] = () => EnableCustomChart;
             FeatureMap["ExperimentStage"] = () => EnableCustomChart;
+            FeatureMap["Scene.ResetHitPoint"] = () => EnableCustomChart;
+            FeatureMap["ExperimentHitPoint"] = () => EnableCustomChart;
 
             // Skins & Swap
             FeatureMap["Init.SkinsConfig"] = () => EnableRealTimeSwap;
@@ -86,27 +86,43 @@ namespace muse_dash_test
             FeatureMap["InputOverlay.Draw"] = () => EnableInputOverlay;
             FeatureMap["JudgmentBar.Draw"] = () => EnableJudgmentBar;
 
-            // config.txt 로딩("Init.ConfigFile" / "ConfigFile.Reload")은 여기에 등록하지 마세요.
-            //
-            // 예전에는 이 둘이 EnableInputOverlay에 묶여 있었습니다. 그런데 config.txt는 키 오버레이
-            // 전용 파일이 아니라 오토플레이·강제퍼펙트·피버충전금지·시네마·고스트노트·판정바까지
-            // 담고 있는 모드 공용 설정 파일입니다. 그래서 키 오버레이 하나를 끄면 파일 전체가
-            // 읽히지도 생성되지도 않아, 나머지 설정이 전부 기본값에 고정됐습니다.
-            // FeatureGuard는 게이트에 걸리면 조용히 return하므로 로그에 아무 흔적도 남지 않아
-            // "config.txt를 고쳐도 반응이 없다"는 증상만 남고 원인 추적이 불가능했습니다.
-            //
-            // 미등록 키는 IsEnabled가 true를 반환하므로, 등록하지 않는 것이 곧 "항상 로드"입니다.
-
             // Discord RPC
             FeatureMap["Init.DiscordRPC"] = () => EnableDiscordRPC;
             FeatureMap["DiscordRPC.Update"] = () => EnableDiscordRPC;
 
-            // HP / HitPoint
-            FeatureMap["Scene.ResetHitPoint"] = () => EnableHpTextMod;
-            FeatureMap["ExperimentHitPoint"] = () => EnableHpTextMod;
-
             // Hwa Media
             FeatureMap["HwaSync.Battle"] = () => EnableBattleMedia;
+
+            // ────────────────────────────────────────────────────────────────────────
+            //  의도적으로 등록하지 않는 키
+            //
+            //  미등록 키는 IsEnabled가 true를 반환하므로, 등록하지 않는 것이 곧 "항상 실행"입니다.
+            //  아래 셋은 전부 "A 기능의 토글이 B 기능을 조용히 죽이던" 같은 사고로 한 번씩 당한
+            //  자리입니다. FeatureGuard는 게이트에 걸리면 로그 없이 return하므로, 잘못 묶으면
+            //  증상만 남고 원인을 추적할 방법이 없습니다. 다시 묶기 전에 반드시 읽어 주세요.
+            //
+            //  • "Init.ConfigFile" / "ConfigFile.Reload"  (예전: EnableInputOverlay)
+            //      config.txt는 키 오버레이 전용이 아니라 오토플레이·강제퍼펙트·피버충전금지·
+            //      시네마·고스트노트·판정바까지 담은 모드 공용 설정 파일입니다. 오버레이 하나를
+            //      끄면 파일이 읽히지도 생성되지도 않아 나머지 설정이 전부 기본값에 고정됐습니다.
+            //
+            //  • "StageCheck"  (예전: EnableCustomChart)
+            //      HywStageManager.CheckForStageAndModify는 체력바 워터마크만 담당하는 것처럼
+            //      보이지만, 배틀 진입/이탈을 추적해 IsInStage / IsInStageStatic을 유지하는
+            //      유일한 곳입니다. 그 값을 쓰는 쪽은 커스텀 차트와 무관합니다.
+            //        - MainMod.OnGUI : !IsInStage면 통째로 return → 키 오버레이 + 판정바 전체
+            //        - ExperimentHitPointInstaller.Update(IsInStage)
+            //        - InputOverlay.LoadConfigIfNeeded : 배틀 중 디스크 I/O 회피
+            //      워터마크 적용 자체는 안쪽 HywHpText.ShouldApply가 이미 거르므로, 게이트를
+            //      빼도 체력바 텍스트가 원치 않게 덮어써지지 않습니다.
+            //
+            //  • "Init.OfflineSandbox"  (예전: EnableCustomChart)
+            //      오프라인 샌드박스는 DLC 허용 / DLCVerify 바이패스 / 콜라보 만료 우회를 다루는
+            //      기능이라 커스텀 차트와 관련이 없고, 자체 제어 수단
+            //      (save custom key/OFFLINE_SANDBOX.txt)을 이미 가집니다. 게다가 Initialize()가
+            //      그 플래그 파일을 만드는 유일한 경로라, 묶여 있으면 파일 생성조차 되지 않아
+            //      사용자가 설정할 방법 자체가 사라집니다.
+            // ────────────────────────────────────────────────────────────────────────
         }
 
         /// <summary>

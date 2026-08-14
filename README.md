@@ -261,12 +261,12 @@
 
 | 설정 키 (Entry) | 기본값 | 기능 설명 |
 |---|---|---|
-| `EnableCustomChart` | `true` | 커스텀 차트 로더 및 인메모리 BMS 주입 활성화 |
+| `EnableCustomChart` | `true` | 커스텀 차트 로더, 인메모리 BMS 주입, 실험 차트 HitPoints 프리팹 설치 활성화 |
 | `EnableRealTimeSwap` | `true` | FavGirl 실시간 소녀/스킨 핫스왑 조작 활성화 (`P` / `O` 단축키) |
 | `EnableInputOverlay` | `true` | 인게임 실시간 키보드 입력 오버레이 HUD 표시 |
 | `EnableJudgmentBar` | `true` | 화면 하단 판정 타임라인 시각화 그래프 UI 표시 |
 | `EnableDiscordRPC` | `true` | Discord Rich Presence 실시간 상태 연동 |
-| `EnableHpTextMod` | `true` | 배틀 체력바 워터마크 및 HitPoint 텍스트 오버레이 |
+| `EnableHpTextMod` | `true` | 배틀 체력바 텍스트 워터마크 표시 |
 | `EnableAPMod` | `true` | 올 퍼펙트 배너 및 정확도/판정 계산 오버라이드 |
 | `EnableAllPerfectSound` | `true` | 올 퍼펙트 달성 시 시그니처 효과음 재생 |
 | `EnableAutoPlay` | `true` | 오토 플레이 패치 활성화 |
