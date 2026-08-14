@@ -32,6 +32,23 @@ namespace muse_dash_test
         private static readonly string[] DesignerNameMemberNames = { "levelDesignerName", "designerName", "chartDesignerName", "stageDesignerName" };
         private static readonly string[] DesignerLabelMemberNames = { "levelDesignerText", "designerText" };
 
+        private sealed class CachedPanelBinding
+        {
+            public readonly List<Text> TitleTexts = new List<Text>();
+            public readonly List<Text> ArtistTexts = new List<Text>();
+            public readonly List<Text> DesignerLabelTexts = new List<Text>();
+            public readonly List<Text> DesignerNameTexts = new List<Text>();
+
+            public bool IsAlive()
+            {
+                if (TitleTexts.Count > 0 && TitleTexts[0] == null) return false;
+                if (ArtistTexts.Count > 0 && ArtistTexts[0] == null) return false;
+                return true;
+            }
+        }
+
+        private static readonly Dictionary<int, CachedPanelBinding> BindingCache = new Dictionary<int, CachedPanelBinding>();
+
         /// <summary>
         /// 지정한 패널의 텍스트 멤버 및 자식 UI 컴포넌트들을 찾아서 커스텀 곡 정보로 오버라이드합니다.
         /// </summary>
@@ -76,11 +93,7 @@ namespace muse_dash_test
             var root = GetRootGameObject(pnlInstance);
             if (root != null)
             {
-                SetChildTextsBatch(root,
-                    (TitleTextObjectNames,                title),
-                    (ArtistTextObjectNames,               artist),
-                    (LevelDesignerLabelTextObjectNames,   ExperimentLevelDesignerLabel),
-                    (LevelDesignerNameTextObjectNames,    designer));
+                ApplyCachedChildTexts(root, title, artist, designer, ExperimentLevelDesignerLabel);
             }
         }
 
@@ -136,48 +149,45 @@ namespace muse_dash_test
             return 0;
         }
 
-        private static void SetChildTextsBatch(GameObject root, params (string[] names, string value)[] pairs)
+        private static void ApplyCachedChildTexts(GameObject root, string title, string artist, string designer, string designerLabel)
         {
-            if (root == null || pairs == null || pairs.Length == 0) return;
-            try
+            if (root == null) return;
+            int rootId = root.GetInstanceID();
+
+            if (!BindingCache.TryGetValue(rootId, out var binding) || !binding.IsAlive())
             {
-                var transforms = root.GetComponentsInChildren<Transform>(true);
-                if (transforms == null) return;
-                foreach (var trans in transforms)
-                {
-                    try
-                    {
-                        if (trans == null || trans.gameObject == null) continue;
-                        var go = trans.gameObject;
-                        foreach (var (names, value) in pairs)
-                        {
-                            if (!NameMatches(go.name, names)) continue;
-                            var components = go.GetComponents<Component>();
-                            if (components != null)
-                            {
-                                foreach (var comp in components)
-                                {
-                                    if (comp == null || comp is Transform || comp.GetType().Name == "CanvasRenderer") continue;
-                                    SetTextValue(comp, value);
-                                }
-                            }
-                            SetAllTextUnder(go, value);
-                        }
-                    }
-                    catch (Exception) { }
-                }
+                binding = BuildBinding(root);
+                BindingCache[rootId] = binding;
             }
-            catch (Exception ex)
+
+            for (int i = 0; i < binding.TitleTexts.Count; i++)
             {
-                MelonLogger.Error($"[PnlMusicOverride] SetChildTextsBatch 중 예외: {ex.Message}");
+                var t = binding.TitleTexts[i];
+                if (t != null) t.text = title;
+            }
+
+            for (int i = 0; i < binding.ArtistTexts.Count; i++)
+            {
+                var t = binding.ArtistTexts[i];
+                if (t != null) t.text = artist;
+            }
+
+            for (int i = 0; i < binding.DesignerLabelTexts.Count; i++)
+            {
+                var t = binding.DesignerLabelTexts[i];
+                if (t != null) t.text = designerLabel;
+            }
+
+            for (int i = 0; i < binding.DesignerNameTexts.Count; i++)
+            {
+                var t = binding.DesignerNameTexts[i];
+                if (t != null) t.text = designer;
             }
         }
 
-        private static int SetAllTextUnder(GameObject root, string value)
+        private static CachedPanelBinding BuildBinding(GameObject root)
         {
-            int writes = 0;
-            if (root == null) return writes;
-
+            var binding = new CachedPanelBinding();
             try
             {
                 var texts = root.GetComponentsInChildren<Text>(true);
@@ -186,38 +196,32 @@ namespace muse_dash_test
                     foreach (var text in texts)
                     {
                         if (text == null) continue;
-                        text.text = value;
-                        writes++;
-                    }
-                }
-            }
-            catch (Exception) { }
+                        string goName = text.gameObject.name;
 
-            try
-            {
-                var transforms = root.GetComponentsInChildren<Transform>(true);
-                if (transforms != null)
-                {
-                    foreach (var trans in transforms)
-                    {
-                        if (trans == null || trans.gameObject == null) continue;
-                        var go = trans.gameObject;
-
-                        var components = go.GetComponents<Component>();
-                        if (components != null)
+                        if (NameMatches(goName, TitleTextObjectNames))
                         {
-                            foreach (var comp in components)
-                            {
-                                if (comp == null || comp is Text || comp is Transform || comp.GetType().Name == "CanvasRenderer") continue;
-                                writes += SetTextValue(comp, value);
-                            }
+                            binding.TitleTexts.Add(text);
+                        }
+                        else if (NameMatches(goName, ArtistTextObjectNames))
+                        {
+                            binding.ArtistTexts.Add(text);
+                        }
+                        else if (NameMatches(goName, LevelDesignerLabelTextObjectNames))
+                        {
+                            binding.DesignerLabelTexts.Add(text);
+                        }
+                        else if (NameMatches(goName, LevelDesignerNameTextObjectNames))
+                        {
+                            binding.DesignerNameTexts.Add(text);
                         }
                     }
                 }
             }
-            catch (Exception) { }
-
-            return writes;
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[PnlMusicOverride] BuildBinding 예외: {ex.Message}");
+            }
+            return binding;
         }
 
         private static bool NameMatches(string name, string[] candidates)

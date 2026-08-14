@@ -141,6 +141,19 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// 기능 식별자에 매핑된 동적 체크 대리자를 조회합니다. (FeatureGuard 1회성 캐싱용)
+        /// </summary>
+        public static bool TryGetFeatureChecker(string featureName, out Func<bool> checkFunc)
+        {
+            if (!string.IsNullOrEmpty(featureName) && FeatureMap.TryGetValue(featureName, out checkFunc))
+            {
+                return true;
+            }
+            checkFunc = null;
+            return false;
+        }
+
+        /// <summary>
         /// <see cref="EnableVerboseLog"/>가 켜져 있을 때만 MelonLogger.Msg를 출력하는 헬퍼입니다.
         /// 진단성 로그를 조건부로 출력하여 릴리스 플레이 중 로그 노이즈를 방지합니다.
         /// </summary>

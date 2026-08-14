@@ -195,42 +195,38 @@ namespace muse_dash_test
         public override void OnUpdate()
         {
             // 매 프레임 호출되므로 각 기능을 FeatureGuard로 격리합니다.
-            // 한 기능의 예외가 다른 기능을 막거나 로그를 폭발시키지 않으며,
-            // 연속 실패가 누적되면 해당 기능만 자동 비활성화됩니다.
-
-            // FavGirl 실시간 교체 입력 감지
-            FeatureGuard.Run("Input.RealTimeSwap", () =>
-            {
-                RealTimeSwapper.CheckForOKeyPress();
-                if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.P))
-                {
-                    RealTimeSwapManager.ToggleRealTimeMode();
-                }
-            });
-
-            // 실시간 설정 파일 변경 감지 (오토플레이 등 인게임 진입 전 설정 로드 보장)
+            // 람다 클로저 대신 정적 메서드를 전달하여 매 프레임 GC 가비지 생성을 차단합니다.
+            FeatureGuard.Run("Input.RealTimeSwap", UpdateRealTimeSwap);
             FeatureGuard.Run("ConfigFile.Reload", InputOverlay.LoadConfigIfNeeded);
-
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);
-
-            // 1. 순정/실험 맵에 구애받지 않고 스테이지 상태를 지속적으로 모니터링합니다.
-            FeatureGuard.Run("StageCheck", () =>
-            {
-                hywCheckTimer += Time.deltaTime;
-                if (hywCheckTimer >= HywCheckInterval)
-                {
-                    hywCheckTimer = 0f;
-                    hywStageManager.CheckForStageAndModify();
-                }
-            });
-
-            // 2. 실험 모드 관련 업데이트 처리
+            FeatureGuard.Run("StageCheck", UpdateStageCheck);
             FeatureGuard.Run("ExperimentStage", HandleExperimentStageUpdate);
-            FeatureGuard.Run("ExperimentHitPoint", () =>
-                ExperimentHitPointInstaller.Update(hywStageManager != null && hywStageManager.IsInStage));
-
-            // 3. Discord RPC 콜백 처리
+            FeatureGuard.Run("ExperimentHitPoint", UpdateExperimentHitPoint);
             FeatureGuard.Run("DiscordRPC.Update", DiscordPresenceManager.Update);
+        }
+
+        private static void UpdateRealTimeSwap()
+        {
+            RealTimeSwapper.CheckForOKeyPress();
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.P))
+            {
+                RealTimeSwapManager.ToggleRealTimeMode();
+            }
+        }
+
+        private static void UpdateStageCheck()
+        {
+            hywCheckTimer += Time.deltaTime;
+            if (hywCheckTimer >= HywCheckInterval)
+            {
+                hywCheckTimer = 0f;
+                hywStageManager.CheckForStageAndModify();
+            }
+        }
+
+        private static void UpdateExperimentHitPoint()
+        {
+            ExperimentHitPointInstaller.Update(hywStageManager != null && hywStageManager.IsInStage);
         }
 
         public override void OnGUI()

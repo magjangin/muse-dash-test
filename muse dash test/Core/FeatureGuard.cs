@@ -23,9 +23,11 @@ namespace muse_dash_test
             public int ConsecutiveFailures;
             public bool Disabled;
             public string LastErrorText;
+            public Func<bool> CheckFunc;
+            public bool HasCheckedFunc;
         }
 
-        private static readonly Dictionary<string, State> States = new Dictionary<string, State>();
+        private static readonly Dictionary<string, State> States = new Dictionary<string, State>(StringComparer.Ordinal);
 
         /// <summary>
         /// 지정한 기능 본문을 격리 실행합니다. 예외는 외부로 전파되지 않습니다.
@@ -37,16 +39,25 @@ namespace muse_dash_test
         public static bool Run(string feature, Action body, int maxConsecutiveFailures = DefaultMaxConsecutiveFailures)
         {
             if (body == null) return false;
-            if (!ModConfig.IsEnabled(feature)) return false;
 
-            State state;
-            if (!States.TryGetValue(feature, out state))
+            if (!States.TryGetValue(feature, out State state))
             {
                 state = new State();
                 States[feature] = state;
             }
 
             if (state.Disabled) return false;
+
+            if (!state.HasCheckedFunc)
+            {
+                ModConfig.TryGetFeatureChecker(feature, out state.CheckFunc);
+                state.HasCheckedFunc = true;
+            }
+
+            if (state.CheckFunc != null && !state.CheckFunc())
+            {
+                return false;
+            }
 
             try
             {

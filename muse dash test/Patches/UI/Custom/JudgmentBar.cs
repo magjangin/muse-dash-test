@@ -25,6 +25,8 @@ namespace muse_dash_test
         private static Texture2D whiteTex;
         private static GUIStyle labelStyle;
 
+        private static string cachedMsText = "";
+
         public static void RegisterHit(float gapInSeconds, byte result)
         {
             try
@@ -66,6 +68,23 @@ namespace muse_dash_test
                 lastHitOffsetMs = offsetMs;
                 lastHitTime = Time.time;
                 lastHitColor = tickColor;
+
+                // OnGUI 매 프레임 문자열 할당을 방지하기 위해 히트 등록 시점에 1회만 문자열 생성
+                if (InputOverlay.barResponsive)
+                {
+                    if (absOffset <= 5f) cachedMsText = "완벽해요! (0ms)";
+                    else if (absOffset <= 25f) cachedMsText = "정말 최고에요!";
+                    else if (absOffset <= 50f) cachedMsText = "퍼펙트!";
+                    else if (absOffset <= 90f) cachedMsText = "잘했어요!";
+                    else if (absOffset <= 130f) cachedMsText = "좋아요!";
+                    else if (offsetMs < 0f) cachedMsText = "조금 빨라요!";
+                    else cachedMsText = "조금 느려요!";
+                }
+                else
+                {
+                    string sign = offsetMs >= 0f ? "+" : "";
+                    cachedMsText = $"{sign}{offsetMs:F0} ms";
+                }
 
                 // 역사 기록 추가 (잔상 틱용)
                 hitHistory.Add(new HitTick
@@ -142,13 +161,14 @@ namespace muse_dash_test
                 DrawColorRect(new Rect(centerX - 1f, y - 3f, 2f, barH + 6f), Color.white);
 
                 // 6. 히트 잔상 틱들 렌더링
-                foreach (var tick in hitHistory)
+                for (int i = 0; i < hitHistory.Count; i++)
                 {
+                    var tick = hitHistory[i];
                     float ms = Mathf.Clamp(tick.offsetMs, -maxMsRange, maxMsRange);
                     float tickX = centerX + (ms * scale);
 
                     // 남은 시간에 비례하여 알파(투명도) 페이드아웃 적용
-                    float elapsed = Time.time - tick.timeAdded;
+                    float elapsed = now - tick.timeAdded;
                     float alpha = Mathf.Clamp01(1f - (elapsed / duration));
 
                     Color finalColor = new Color(tick.color.r, tick.color.g, tick.color.b, alpha * 0.9f);
@@ -157,27 +177,11 @@ namespace muse_dash_test
                     DrawColorRect(new Rect(tickX - 1f, y - 1f, 2f, barH + 2f), finalColor);
                 }
 
-                // 7. 실시간 ms 오차 텍스트 출력
-                float textElapsed = Time.time - lastHitTime;
-                if (textElapsed < duration)
+                // 7. 실시간 ms 오차 텍스트 출력 (캐싱된 문자열 사용으로 GC 할당 0)
+                float textElapsed = now - lastHitTime;
+                if (textElapsed < duration && !string.IsNullOrEmpty(cachedMsText))
                 {
-                    string msText = "";
-                    if (InputOverlay.barResponsive)
-                    {
-                        float absOffset = Math.Abs(lastHitOffsetMs);
-                        if (absOffset <= 5f) msText = "완벽해요! (0ms)";
-                        else if (absOffset <= 25f) msText = "정말 최고에요!";
-                        else if (absOffset <= 50f) msText = "퍼펙트!";
-                        else if (absOffset <= 90f) msText = "잘했어요!";
-                        else if (absOffset <= 130f) msText = "좋아요!";
-                        else if (lastHitOffsetMs < 0f) msText = "조금 빨라요!";
-                        else msText = "조금 느려요!";
-                    }
-                    else
-                    {
-                        string sign = lastHitOffsetMs >= 0f ? "+" : "";
-                        msText = $"{sign}{lastHitOffsetMs:F0} ms";
-                    }
+                    string msText = cachedMsText;
 
                     // 페이드아웃 효과 적용
                     float alpha = Mathf.Clamp01(1f - (textElapsed / duration));

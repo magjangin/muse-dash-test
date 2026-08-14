@@ -13,17 +13,39 @@ namespace muse_dash_test
     /// </summary>
     public static class ModReflection
     {
+        private readonly struct MemberCacheKey : IEquatable<MemberCacheKey>
+        {
+            public readonly Type Type;
+            public readonly string MemberName;
+
+            public MemberCacheKey(Type type, string memberName)
+            {
+                Type = type;
+                MemberName = memberName;
+            }
+
+            public bool Equals(MemberCacheKey other) => Type == other.Type && string.Equals(MemberName, other.MemberName, StringComparison.Ordinal);
+            public override bool Equals(object obj) => obj is MemberCacheKey other && Equals(other);
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return ((Type != null ? Type.GetHashCode() : 0) * 397) ^ (MemberName != null ? StringComparer.Ordinal.GetHashCode(MemberName) : 0);
+                }
+            }
+        }
+
         /// <summary>
         /// 리플렉션 탐색 부하를 최소화하기 위해 타겟 타입 및 멤버명을 기반으로 조회 완료된 MemberInfo를 캐싱합니다.
         /// 조회에 실패한 멤버도 null 상태로 캐싱하여 반복적인 실패 탐색 부하를 원천 차단합니다.
         /// </summary>
-        private static readonly Dictionary<string, MemberInfo> MemberCache = new Dictionary<string, MemberInfo>();
+        private static readonly Dictionary<MemberCacheKey, MemberInfo> MemberCache = new Dictionary<MemberCacheKey, MemberInfo>();
 
         /// <summary>
         /// 특정 멤버의 부재 또는 예외로 인해 로그 파일이 스패밍되는 현상을 방지하기 위해
         /// 에러/경고가 출력된 고유 식별자 키들을 기록하고 중복 로그 출력을 억제합니다.
         /// </summary>
-        private static readonly HashSet<string> LoggedFailures = new HashSet<string>();
+        private static readonly HashSet<MemberCacheKey> LoggedFailures = new HashSet<MemberCacheKey>();
 
         /// <summary>
         /// 캐시 딕셔너리 및 로그 기록 리스트에 안전하게 동시 접근(Thread-safe)하기 위한 크리티컬 섹션 락 객체입니다.
@@ -41,11 +63,12 @@ namespace muse_dash_test
         {
             if (target == null) return null;
             Type type = target.GetType();
-            MemberInfo member = GetCachedMember(type, memberName, out string cacheKey);
+            var key = new MemberCacheKey(type, memberName);
+            MemberInfo member = GetCachedMember(key);
 
             if (member == null)
             {
-                if (!silent && ShouldLogFailure(cacheKey))
+                if (!silent && ShouldLogFailure(key))
                 {
                     MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없습니다. (이 경고는 1회만 표시됩니다)");
                 }
@@ -59,7 +82,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                if (!silent && ShouldLogFailure($"{cacheKey}_read_err"))
+                if (!silent && ShouldLogFailure(key))
                 {
                     MelonLogger.Error($"[ModReflection] '{memberName}' 값을 읽는 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
                 }
@@ -80,11 +103,12 @@ namespace muse_dash_test
         {
             if (target == null) return false;
             Type type = target.GetType();
-            MemberInfo member = GetCachedMember(type, memberName, out string cacheKey);
+            var key = new MemberCacheKey(type, memberName);
+            MemberInfo member = GetCachedMember(key);
 
             if (member == null)
             {
-                if (!silent && ShouldLogFailure(cacheKey))
+                if (!silent && ShouldLogFailure(key))
                 {
                     MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없어 값을 주입할 수 없습니다. (이 경고는 1회만 표시됩니다)");
                 }
@@ -109,7 +133,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                if (!silent && ShouldLogFailure($"{cacheKey}_write_err"))
+                if (!silent && ShouldLogFailure(key))
                 {
                     MelonLogger.Error($"[ModReflection] '{memberName}' 값 설정 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
                 }
@@ -121,23 +145,21 @@ namespace muse_dash_test
         /// 타입+멤버명으로 멤버를 조회하되, 결과(실패 시 null 포함)를 캐싱하여 반복 리플렉션을 방지합니다.
         /// 무거운 <see cref="ResolveMember"/> 호출은 락 바깥에서 수행합니다.
         /// </summary>
-        private static MemberInfo GetCachedMember(Type type, string memberName, out string cacheKey)
+        private static MemberInfo GetCachedMember(in MemberCacheKey key)
         {
-            cacheKey = $"{type.FullName}_{memberName}";
-
             lock (CacheLock)
             {
-                if (MemberCache.TryGetValue(cacheKey, out var cached))
+                if (MemberCache.TryGetValue(key, out var cached))
                 {
                     return cached;
                 }
             }
 
-            MemberInfo member = ResolveMember(type, memberName);
+            MemberInfo member = ResolveMember(key.Type, key.MemberName);
             lock (CacheLock)
             {
                 // 조회에 실패했더라도 null 값 그대로 캐싱하여 매 틱마다 리플렉션이 재실행되는 것을 방지합니다.
-                MemberCache[cacheKey] = member;
+                MemberCache[key] = member;
             }
             return member;
         }
@@ -145,7 +167,7 @@ namespace muse_dash_test
         /// <summary>
         /// 해당 키의 실패가 처음 기록되는 경우에만 true를 반환합니다. (로그 스패밍 억제)
         /// </summary>
-        private static bool ShouldLogFailure(string key)
+        private static bool ShouldLogFailure(in MemberCacheKey key)
         {
             lock (CacheLock)
             {
