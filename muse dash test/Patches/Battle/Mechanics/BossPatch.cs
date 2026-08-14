@@ -21,53 +21,41 @@ public class Boss_Play_Patch
             if (key != null && key.StartsWith("swap:"))
             {
                 var parts = key.Split(':');
-                if (parts.Length >= 3)
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int newScene))
                 {
                     string newName = parts[1];
-                    if (int.TryParse(parts[2], out int newScene))
+
+                    // 교체 전후 상태를 양 끝에서 찍어 둡니다. 스왑이 화면에 안 나올 때
+                    // "어느 단계에서 꺼져 있었는지"를 로그만 보고 특정할 수 있어야 합니다.
+                    LogBossState(__instance, "① swap 요청 직전");
+
+                    // out으로 비활성화된 보스 오브젝트를 깨웁니다.
+                    ForceActivateBossObjects(__instance, "InitBossObject 전");
+
+                    CustomPlaySession.Current.IsDynamicBossSwap = true;
+                    try
                     {
-                        // 보스 오브젝트와 그 부모를 강제로 활성화 (out 등으로 비활성화되었을 가능성 방지)
-                        try
-                        {
-                            var component = __instance.Cast<UnityEngine.Component>();
-                            if (component != null && component.gameObject != null)
-                            {
-                                component.gameObject.SetActive(true);
-
-                                if (component.transform != null && component.transform.parent != null)
-                                {
-                                    component.transform.parent.gameObject.SetActive(true);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            MelonLogger.Warning($"[DynamicSwap] gameObject 활성화 시도 중 경고: {ex.Message}");
-                        }
-
-                        CustomPlaySession.Current.IsDynamicBossSwap = true;
-                        try
-                        {
-                            __instance.InitBossObject(newName, newScene, true);
-                        }
-                        finally
-                        {
-                            CustomPlaySession.Current.IsDynamicBossSwap = false;
-                        }
-
-                        // 교체 후에도 다시 한번 강제 활성화
-                        try
-                        {
-                            var component = __instance.Cast<UnityEngine.Component>();
-                            if (component != null && component.gameObject != null)
-                            {
-                                component.gameObject.SetActive(true);
-                            }
-                        }
-                        catch (Exception) { }
-                        
-                        __instance.Play("in", playAnimator);
+                        __instance.InitBossObject(newName, newScene, true);
                     }
+                    finally
+                    {
+                        CustomPlaySession.Current.IsDynamicBossSwap = false;
+                    }
+
+                    LogBossState(__instance, "② InitBossObject 직후");
+
+                    // InitBossObject가 m_CurBossObject를 새 보스로 갈아끼우므로, 그 새 오브젝트를 다시 깨웁니다.
+                    ForceActivateBossObjects(__instance, "InitBossObject 후");
+
+                    __instance.Play("in", playAnimator);
+
+                    LogBossState(__instance, "③ Play(in) 직후");
+                }
+                else
+                {
+                    // 예전에는 여기서 아무 말 없이 Play를 통째로 삼켜 버려서, 오타가 나면
+                    // 보스가 조용히 사라지기만 했습니다.
+                    MelonLogger.Warning($"[DynamicSwap] swap 키를 해석하지 못해 보스 교체를 건너뜁니다: '{key}' (형식: swap:보스이름:씬번호)");
                 }
                 return false; // 원래 Play("swap:...") 호출은 무시 및 중단
             }
@@ -77,6 +65,120 @@ public class Boss_Play_Patch
             MelonLogger.Error($"Boss.Play Prefix 예외: {ex}");
         }
         return true;
+    }
+
+    /// <summary>
+    /// 보스 오브젝트와 그 부모를 강제로 활성화합니다. <c>out</c> 액션으로 꺼진 상태를 되살리는 용도입니다.
+    ///
+    /// <para><b>왜 <c>Cast&lt;Component&gt;</c>가 아닌가</b>: <c>Il2Cpp.Boss</c>는 MonoBehaviour가 아니라
+    /// <c>Il2CppSystem.Object</c>를 직접 상속합니다(디컴파일 확인: <c>public class Boss : Il2CppSystem.Object</c>).
+    /// 그래서 예전 코드의 <c>__instance.Cast&lt;UnityEngine.Component&gt;()</c>는 항상
+    /// <i>Can't cast object of type Boss to type UnityEngine.Component</i>로 던졌고,
+    /// 바깥 catch가 경고만 남기는 바람에 <b>활성화가 한 번도 실행되지 않았습니다</b>.
+    /// Boss가 실제로 내놓는 GameObject는 <c>go</c>(프로퍼티)와 <c>m_CurBossObject</c>(필드) 둘입니다.</para>
+    /// </summary>
+    private static void ForceActivateBossObjects(Il2Cpp.Boss boss, string phase)
+    {
+        if (boss == null) return;
+
+        ActivateWithParent(SafeGet(() => boss.go, "go"), $"{phase}/go");
+        ActivateWithParent(SafeGet(() => boss.m_CurBossObject, "m_CurBossObject"), $"{phase}/m_CurBossObject");
+    }
+
+    private static void ActivateWithParent(UnityEngine.GameObject target, string label)
+    {
+        if (target == null) return;
+
+        try
+        {
+            bool wasActive = target.activeSelf;
+            if (!wasActive)
+            {
+                target.SetActive(true);
+                MelonLogger.Msg($"[DynamicSwap] {label}: '{target.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+            }
+
+            var parent = target.transform != null ? target.transform.parent : null;
+            if (parent != null && !parent.gameObject.activeSelf)
+            {
+                parent.gameObject.SetActive(true);
+                MelonLogger.Msg($"[DynamicSwap] {label}: 부모 '{parent.gameObject.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Warning($"[DynamicSwap] {label} 활성화 실패: {ex.Message}");
+        }
+    }
+
+    /// <summary>보스 교체 각 단계의 실제 상태를 한 줄로 남깁니다. 스왑이 안 보일 때 원인 지점을 특정하기 위한 계측입니다.</summary>
+    private static void LogBossState(Il2Cpp.Boss boss, string phase)
+    {
+        if (boss == null)
+        {
+            MelonLogger.Msg($"[DynamicSwap.State] {phase}: boss=(null)");
+            return;
+        }
+
+        MelonLogger.Msg(
+            $"[DynamicSwap.State] {phase}: " +
+            $"go={Describe(SafeGet(() => boss.go, "go"))}, " +
+            $"curBossObject={Describe(SafeGet(() => boss.m_CurBossObject, "m_CurBossObject"))}, " +
+            $"curBossIndex={SafeGet(() => boss.m_CurBossIndex.ToString(), "m_CurBossIndex") ?? "?"}, " +
+            $"bossObjects={DescribeBossObjects(boss)}, " +
+            $"curBossIsIn={SafeGet(() => boss.curBossIsIn.ToString(), "curBossIsIn") ?? "?"}, " +
+            $"hasEntered={SafeGet(() => boss.BossHasEntered.ToString(), "BossHasEntered") ?? "?"}, " +
+            $"disappear={SafeGet(() => boss.m_DisappearBoss.ToString(), "m_DisappearBoss") ?? "?"}");
+    }
+
+    private static string Describe(UnityEngine.GameObject go)
+    {
+        if (go == null) return "(null)";
+        try
+        {
+            string parentName = (go.transform != null && go.transform.parent != null)
+                ? go.transform.parent.gameObject.name
+                : "(root)";
+            return $"'{go.name}'(self={go.activeSelf}, hierarchy={go.activeInHierarchy}, parent='{parentName}')";
+        }
+        catch (Exception ex)
+        {
+            return $"(읽기 실패: {ex.Message})";
+        }
+    }
+
+    private static string DescribeBossObjects(Il2Cpp.Boss boss)
+    {
+        try
+        {
+            var map = boss.m_BossObjects;
+            if (map == null) return "(null)";
+
+            var keys = new System.Collections.Generic.List<string>();
+            foreach (var key in map.Keys)
+            {
+                keys.Add(key.ToString());
+            }
+            return $"{map.Count}개[{string.Join(",", keys)}]";
+        }
+        catch (Exception ex)
+        {
+            return $"(읽기 실패: {ex.Message})";
+        }
+    }
+
+    /// <summary>IL2CPP 멤버 접근이 던져도 진단 로그 전체가 죽지 않도록 감쌉니다.</summary>
+    private static T SafeGet<T>(Func<T> getter, string memberName) where T : class
+    {
+        try
+        {
+            return getter();
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Warning($"[DynamicSwap] Boss.{memberName} 접근 실패: {ex.Message}");
+            return null;
+        }
     }
 }
 

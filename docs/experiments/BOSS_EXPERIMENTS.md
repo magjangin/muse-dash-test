@@ -294,7 +294,27 @@ new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0
 1. **`swap:[보스이름]:[씬]` 키워드 사용**:
    차트의 보스 액션(`BossAction`) 속성에 `swap:보스이름:씬번호` (예: `swap:0401_boss:4`)를 작성하면 모드가 이를 감지합니다.
 2. **`out` 퇴장으로 인한 비활성화 자동 복구**:
-   이전 보스가 `out` 액션을 플레이해 화면 밖으로 퇴장하면, 게임 엔진은 보스 관리 오브젝트(`Il2Cpp.Boss`)를 내부적으로 비활성화(`gameObject.SetActive(false)`) 처리합니다. 모드에서는 `swap:` 키워드가 들어오는 즉시 유니티 컴포넌트 캐스팅을 통해 보스 및 부모 오브젝트를 강제로 깨워 활성화(`SetActive(true)`)시킨 후 새 보스를 주입합니다.
+   이전 보스가 `out` 액션을 플레이해 화면 밖으로 퇴장하면, 보스 오브젝트가 비활성화(`SetActive(false)`)됩니다. 모드는 `swap:` 키워드가 들어오는 즉시 보스 오브젝트와 그 부모를 강제로 켠(`SetActive(true)`) 뒤 새 보스를 주입합니다.
+
+   > ⚠️ **`Il2Cpp.Boss`는 MonoBehaviour가 아닙니다.**
+   > 디컴파일 확인 결과 `public class Boss : Il2CppSystem.Object`입니다. 따라서
+   > `boss.Cast<UnityEngine.Component>()`는 성립할 수 없고, 항상
+   > `Can't cast object of type Boss to type UnityEngine.Component`로 던집니다.
+   > (이 문서도 한동안 "유니티 컴포넌트 캐스팅으로 깨운다"고 적혀 있었지만, 그 코드는
+   > 예외가 catch에 먹혀 **한 번도 실행된 적이 없었습니다.**)
+   >
+   > 보스의 GameObject는 아래 두 멤버로 얻습니다.
+   >
+   > | 멤버 | 형 | 뜻 |
+   > |---|---|---|
+   > | `boss.go` | `GameObject` (프로퍼티) | 보스 관리 오브젝트 본체 |
+   > | `boss.m_CurBossObject` | `GameObject` (필드) | 지금 화면에 있는 보스 인스턴스 |
+   >
+   > 함께 쓸 수 있는 상태 멤버: `m_BossObjects`(`Dictionary<int, GameObject>`),
+   > `m_CurBossIndex`, `curBossIsIn`, `BossHasEntered`, `m_DisappearBoss`, `SetDisappear(bool)`.
+   >
+   > `InitBossObject`는 `m_CurBossObject`를 새 보스로 갈아끼우므로,
+   > **활성화는 `InitBossObject` 앞뒤로 두 번** 해야 새 오브젝트까지 켜집니다.
 3. **리디렉션 필터 우회**:
    `BossPatch.cs`에 등록된 글로벌 리디렉션 룰(`OrigName = "*"`)에 걸려 교체하려는 보스가 강제로 첫 번째 보스로 덮어써지는 일을 임시 플래그(`isDynamicSwapping`)를 통해 우회 차단합니다.
 4. **자동 등장 연출**:
