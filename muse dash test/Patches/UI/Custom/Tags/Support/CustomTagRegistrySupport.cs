@@ -326,8 +326,9 @@ namespace muse_dash_test
             var wrapper = new MusicInfoWrapper(clonedInfo);
             wrapper.uid = uid;
             wrapper.name = name;
-            wrapper.music = name;
-            wrapper.musicName = name;
+            // music(음원 에셋 키)은 복제 원본의 값을 그대로 물려받게 둡니다. 위 remarks의 약속대로이며,
+            // 표시용 제목("화영왕 1")으로 덮어쓰면 그런 이름의 오디오 에셋이 없어 곡에 음원이 사라집니다.
+            // musicName은 필드에 써도 화면에 반영되지 않아(렌더링은 아래 마스크가 담당) 제거했습니다.
             wrapper.author = author;
             wrapper.levelDesigner = levelDesigner;
             wrapper.difficulty1 = diff1;
@@ -336,7 +337,8 @@ namespace muse_dash_test
             wrapper.difficulty4 = diff4;
             wrapper.difficulty5 = diff5;
 
-            wrapper.AddMaskValue("music", (Il2CppSystem.String)name);
+            // 제목 렌더링용 마스크만 남깁니다. "music"은 제목이 아니라 음원 에셋 키라서
+            // 마스크로 덮으면 필드를 덮어쓴 것과 같은 효과가 나므로 넣지 않습니다.
             wrapper.AddMaskValue("musicName", (Il2CppSystem.String)name);
             wrapper.AddMaskValue("music_name", (Il2CppSystem.String)name);
 
