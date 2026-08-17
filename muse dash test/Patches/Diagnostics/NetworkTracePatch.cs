@@ -1,20 +1,75 @@
 using System;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using HarmonyLib;
+using Il2CppAssets.Scripts.Structs.Network;
 using MelonLoader;
 using UnityEngine.Networking;
 
 namespace muse_dash_test
 {
     /// <summary>
-    /// UnityWebRequest 및 HttpClient의 네트워크 요청 URL을 가로채어 로그에 출력하는 진단 패치입니다.
+    /// UnityWebRequest, StandardNetworkRequest 및 HttpClient의 네트워크 요청 URL과 Payload(Body)를 가로채어 로그에 출력하는 진단 패치입니다.
     /// </summary>
     [HarmonyPatch]
     public static class NetworkTracePatch
     {
         // -------------------------------------------------------------
-        // 1. UnityEngine.Networking.UnityWebRequest Hook
+        // 1. MuseDash 전용 NetworkRequest / StandardNetworkRequest Hook
+        // -------------------------------------------------------------
+
+        [HarmonyPatch(typeof(StandardNetworkRequest), MethodType.Constructor, new Type[] {
+            typeof(string),
+            typeof(ulong),
+            typeof(uint),
+            typeof(uint),
+            typeof(string),
+            typeof(Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object>),
+            typeof(Il2CppSystem.Collections.Generic.Dictionary<string, string>),
+            typeof(Il2CppSystem.Action<Il2CppNewtonsoft.Json.Linq.JObject>),
+            typeof(Il2CppSystem.Action<NetworkRequest>)
+        })]
+        [HarmonyPostfix]
+        public static void StandardNetworkRequest_Ctor_Postfix(
+            string url,
+            ulong id,
+            uint retryCount,
+            uint interval,
+            string method,
+            Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object> datas,
+            Il2CppSystem.Collections.Generic.Dictionary<string, string> headers)
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"[NetworkTrace.StandardNetworkRequest] ({method ?? "GET"}) URL: {url}");
+
+                if (datas != null && datas.Count > 0)
+                {
+                    sb.AppendLine("  [Payload Data Key-Values]:");
+                    foreach (var pair in datas)
+                    {
+                        string key = pair.Key;
+                        string val = pair.Value != null ? pair.Value.ToString() : "(null)";
+                        sb.AppendLine($"    - {key}: {val}");
+                    }
+                }
+                else
+                {
+                    sb.AppendLine("  [Payload Data]: (empty/null)");
+                }
+
+                MelonLogger.Msg(sb.ToString().TrimEnd());
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[NetworkTrace.StandardNetworkRequest] 페이로드 덤프 에러: {ex.Message}");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 2. UnityEngine.Networking.UnityWebRequest Hook
         // -------------------------------------------------------------
 
         [HarmonyPatch(typeof(UnityWebRequest), nameof(UnityWebRequest.SendWebRequest))]
@@ -26,14 +81,15 @@ namespace muse_dash_test
                 string url = __instance?.url;
                 string method = __instance?.method;
                 string body = null;
-                if (__instance?.uploadHandler != null && __instance.uploadHandler.data != null)
+
+                if (__instance?.uploadHandler != null)
                 {
                     try
                     {
-                        byte[] raw = __instance.uploadHandler.data;
-                        if (raw.Length > 0)
+                        var data = __instance.uploadHandler.data;
+                        if (data != null && data.Length > 0)
                         {
-                            body = System.Text.Encoding.UTF8.GetString(raw);
+                            body = Encoding.UTF8.GetString(data);
                         }
                     }
                     catch { }
@@ -41,7 +97,7 @@ namespace muse_dash_test
 
                 if (!string.IsNullOrEmpty(body))
                 {
-                    MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"} | Body: {body}");
+                    MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"}\n  [Body Payload]: {body}");
                 }
                 else
                 {
@@ -54,36 +110,8 @@ namespace muse_dash_test
             }
         }
 
-        [HarmonyPatch(typeof(UnityWebRequest), MethodType.Constructor, new Type[] { typeof(string) })]
-        [HarmonyPostfix]
-        public static void UnityWebRequest_Ctor_Postfix(UnityWebRequest __instance, string url)
-        {
-            try
-            {
-                MelonLogger.Msg($"[NetworkTrace.UnityWebRequest.Ctor] 생성됨 URL: {url ?? "(null)"}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[NetworkTrace.UnityWebRequest.Ctor] 로그 추출 실패: {ex.Message}");
-            }
-        }
-
-        [HarmonyPatch(typeof(UnityWebRequest), MethodType.Constructor, new Type[] { typeof(string), typeof(string) })]
-        [HarmonyPostfix]
-        public static void UnityWebRequest_Ctor2_Postfix(UnityWebRequest __instance, string url, string method)
-        {
-            try
-            {
-                MelonLogger.Msg($"[NetworkTrace.UnityWebRequest.Ctor] 생성됨 ({method}) URL: {url ?? "(null)"}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[NetworkTrace.UnityWebRequest.Ctor] 로그 추출 실패: {ex.Message}");
-            }
-        }
-
         // -------------------------------------------------------------
-        // 2. System.Net.Http.HttpClient Hook (.NET)
+        // 3. System.Net.Http.HttpClient Hook (.NET)
         // -------------------------------------------------------------
 
         [HarmonyPatch(typeof(HttpClient), nameof(HttpClient.SendAsync), new Type[] { typeof(HttpRequestMessage), typeof(CancellationToken) })]
