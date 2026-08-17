@@ -1,9 +1,6 @@
 using System;
-using System.Net.Http;
 using System.Text;
-using System.Threading;
 using HarmonyLib;
-using Il2CppAssets.Scripts.Structs.Network;
 using Il2CppPeroPeroGames.DataStatistics;
 using MelonLoader;
 using UnityEngine.Networking;
@@ -22,12 +19,12 @@ namespace muse_dash_test
 
         [HarmonyPatch(typeof(ThinkingDataBattleHelper), nameof(ThinkingDataBattleHelper.PushDataByTrack), new Type[] { typeof(string), typeof(Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object>) })]
         [HarmonyPrefix]
-        public static void ThinkingData_PushDataByTrack_Prefix(string eventName, Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object> data)
+        public static void ThinkingData_PushDataByTrack_Prefix(string dataStatisticsName, Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object> data)
         {
             try
             {
                 var sb = new StringBuilder();
-                sb.AppendLine($"[NetworkTrace.BattleStatistics] 이벤트 전송: '{eventName}'");
+                sb.AppendLine($"[NetworkTrace.BattleStatistics] 이벤트 전송: '{dataStatisticsName ?? "(null)"}'");
 
                 if (data != null && data.Count > 0)
                 {
@@ -49,12 +46,12 @@ namespace muse_dash_test
 
         [HarmonyPatch(typeof(ThinkingDataBattleHelper), nameof(ThinkingDataBattleHelper.SendMDPlayEvent))]
         [HarmonyPrefix]
-        public static void ThinkingData_SendMDPlayEvent_Prefix(ThinkingDataBattleHelper __instance, string eventName)
+        public static void ThinkingData_SendMDPlayEvent_Prefix(ThinkingDataBattleHelper __instance, string endtype)
         {
             try
             {
                 var sb = new StringBuilder();
-                sb.AppendLine($"[NetworkTrace.SendMDPlayEvent] 배틀 결과 이벤트 호출: '{eventName}'");
+                sb.AppendLine($"[NetworkTrace.SendMDPlayEvent] 배틀 결과 이벤트 호출: endtype='{endtype ?? "(null)"}'");
 
                 if (__instance?.m_PlayerData != null)
                 {
