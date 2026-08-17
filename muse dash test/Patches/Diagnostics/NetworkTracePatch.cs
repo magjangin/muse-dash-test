@@ -25,7 +25,28 @@ namespace muse_dash_test
             {
                 string url = __instance?.url;
                 string method = __instance?.method;
-                MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"}");
+                string body = null;
+                if (__instance?.uploadHandler != null && __instance.uploadHandler.data != null)
+                {
+                    try
+                    {
+                        byte[] raw = __instance.uploadHandler.data;
+                        if (raw.Length > 0)
+                        {
+                            body = System.Text.Encoding.UTF8.GetString(raw);
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!string.IsNullOrEmpty(body))
+                {
+                    MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"} | Body: {body}");
+                }
+                else
+                {
+                    MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"}");
+                }
             }
             catch (Exception ex)
             {
