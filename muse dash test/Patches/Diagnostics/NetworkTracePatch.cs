@@ -45,17 +45,17 @@ namespace muse_dash_test
         }
 
         [HarmonyPatch(typeof(ThinkingDataBattleHelper), nameof(ThinkingDataBattleHelper.SendMDPlayEvent))]
-        [HarmonyPrefix]
-        public static void ThinkingData_SendMDPlayEvent_Prefix(ThinkingDataBattleHelper __instance, string endtype)
+        [HarmonyPostfix]
+        public static void ThinkingData_SendMDPlayEvent_Postfix(ThinkingDataBattleHelper __instance, string endtype)
         {
             try
             {
                 var sb = new StringBuilder();
-                sb.AppendLine($"[NetworkTrace.SendMDPlayEvent] 배틀 결과 이벤트 호출: endtype='{endtype ?? "(null)"}'");
+                sb.AppendLine($"[NetworkTrace.SendMDPlayEvent] 배틀 결과 이벤트 완료 (endtype='{endtype ?? "(null)"}'):");
 
-                if (__instance?.m_PlayerData != null)
+                if (__instance?.m_PlayerData != null && __instance.m_PlayerData.Count > 0)
                 {
-                    sb.AppendLine("  [m_PlayerData 필드 전체 목록]:");
+                    sb.AppendLine("  [m_PlayerData 서버 전송 필드 목록]:");
                     foreach (var pair in __instance.m_PlayerData)
                     {
                         string key = pair.Key;
@@ -63,10 +63,19 @@ namespace muse_dash_test
                         sb.AppendLine($"    - {key}: {val}");
                     }
                 }
+                else
+                {
+                    sb.AppendLine("  [m_PlayerData]: (empty)");
+                }
 
                 if (__instance?.m_PlayerNoteData != null)
                 {
                     sb.AppendLine($"  [m_PlayerNoteData 노트 타격 배열]: 총 {__instance.m_PlayerNoteData.Count}개 노트 기록");
+                    int previewCount = Math.Min(__instance.m_PlayerNoteData.Count, 5);
+                    for (int i = 0; i < previewCount; i++)
+                    {
+                        sb.AppendLine($"    [{i}] {__instance.m_PlayerNoteData[i]}");
+                    }
                 }
 
                 MelonLogger.Msg(sb.ToString().TrimEnd());
