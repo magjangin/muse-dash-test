@@ -57,14 +57,14 @@ namespace muse_dash_test
             {
                 MelonLogger.Msg($"[OfflineSandbox.PnlRank] 🛡️ 오프라인 샌드박스: 원격 랭킹 조회 스킵 (Target UID='{uid}')");
 
-                // 로딩 인디케이터 즉시 끄고 로컬 UI 상태로 전환
+                // 로딩 인디케이터 즉시 끄고 "서버 연결 없음(noNet)" 상태로 전환
                 if (__instance != null)
                 {
                     if (__instance.loading != null) __instance.loading.SetActive(false);
                     if (__instance.loadingTipSwitch != null) __instance.loadingTipSwitch.SetActive(false);
-                    if (__instance.noNet != null) __instance.noNet.SetActive(false);
+                    if (__instance.noNet != null) __instance.noNet.SetActive(true);
+                    if (__instance.noRank != null) __instance.noRank.SetActive(false);
                     if (__instance.scrollView != null) __instance.scrollView.SetActive(false);
-                    if (__instance.noRank != null) __instance.noRank.SetActive(true);
                     if (__instance.server != null) __instance.server.SetActive(true);
                 }
 
