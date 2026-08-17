@@ -4,19 +4,106 @@ using System.Text;
 using System.Threading;
 using HarmonyLib;
 using Il2CppAssets.Scripts.Structs.Network;
+using Il2CppPeroPeroGames.DataStatistics;
 using MelonLoader;
 using UnityEngine.Networking;
 
 namespace muse_dash_test
 {
     /// <summary>
-    /// UnityWebRequest, StandardNetworkRequest 및 HttpClient의 네트워크 요청 URL과 Payload(Body)를 가로채어 로그에 출력하는 진단 패치입니다.
+    /// 네트워크 요청 및 배틀 결과 데이터(판정/점수/통계)의 페이로드를 가로채어 완벽하게 덤프하는 진단 패치입니다.
     /// </summary>
     [HarmonyPatch]
     public static class NetworkTracePatch
     {
         // -------------------------------------------------------------
-        // 1. MuseDash 전용 NetworkRequest / StandardNetworkRequest Hook
+        // 1. UploadHandlerRaw Hook (UnityWebRequest POST 바디 원천 포획)
+        // -------------------------------------------------------------
+
+        [HarmonyPatch(typeof(UploadHandlerRaw), MethodType.Constructor, new Type[] { typeof(byte[]) })]
+        [HarmonyPostfix]
+        public static void UploadHandlerRaw_Ctor_Postfix(byte[] data)
+        {
+            try
+            {
+                if (data != null && data.Length > 0)
+                {
+                    string body = Encoding.UTF8.GetString(data);
+                    MelonLogger.Msg($"[NetworkTrace.UploadHandlerRaw] 생성된 POST Payload ({data.Length} bytes):\n{body}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[NetworkTrace.UploadHandlerRaw] 덤프 에러: {ex.Message}");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 2. ThinkingDataBattleHelper & Analytics Hook (게임 내 배틀 통계 및 전송 데이터 덤프)
+        // -------------------------------------------------------------
+
+        [HarmonyPatch(typeof(ThinkingDataBattleHelper), nameof(ThinkingDataBattleHelper.PushDataByTrack), new Type[] { typeof(string), typeof(Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object>) })]
+        [HarmonyPrefix]
+        public static void ThinkingData_PushDataByTrack_Prefix(string eventName, Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object> data)
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"[NetworkTrace.BattleStatistics] 이벤트 전송: '{eventName}'");
+
+                if (data != null && data.Count > 0)
+                {
+                    sb.AppendLine("  [전송 필드 목록]:");
+                    foreach (var pair in data)
+                    {
+                        string key = pair.Key;
+                        string val = pair.Value != null ? pair.Value.ToString() : "(null)";
+                        sb.AppendLine($"    - {key}: {val}");
+                    }
+                }
+                MelonLogger.Msg(sb.ToString().TrimEnd());
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[NetworkTrace.BattleStatistics] 덤프 에러: {ex.Message}");
+            }
+        }
+
+        [HarmonyPatch(typeof(ThinkingDataBattleHelper), nameof(ThinkingDataBattleHelper.SendMDPlayEvent))]
+        [HarmonyPrefix]
+        public static void ThinkingData_SendMDPlayEvent_Prefix(ThinkingDataBattleHelper __instance, string eventName)
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"[NetworkTrace.SendMDPlayEvent] 배틀 결과 이벤트 호출: '{eventName}'");
+
+                if (__instance?.m_PlayerData != null)
+                {
+                    sb.AppendLine("  [m_PlayerData 필드 전체 목록]:");
+                    foreach (var pair in __instance.m_PlayerData)
+                    {
+                        string key = pair.Key;
+                        string val = pair.Value != null ? pair.Value.ToString() : "(null)";
+                        sb.AppendLine($"    - {key}: {val}");
+                    }
+                }
+
+                if (__instance?.m_PlayerNoteData != null)
+                {
+                    sb.AppendLine($"  [m_PlayerNoteData 노트 타격 배열]: 총 {__instance.m_PlayerNoteData.Count}개 노트 기록");
+                }
+
+                MelonLogger.Msg(sb.ToString().TrimEnd());
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning($"[NetworkTrace.SendMDPlayEvent] 덤프 에러: {ex.Message}");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 3. MuseDash StandardNetworkRequest Hook
         // -------------------------------------------------------------
 
         [HarmonyPatch(typeof(StandardNetworkRequest), MethodType.Constructor, new Type[] {
@@ -37,8 +124,7 @@ namespace muse_dash_test
             uint retryCount,
             uint interval,
             string method,
-            Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object> datas,
-            Il2CppSystem.Collections.Generic.Dictionary<string, string> headers)
+            Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object> datas)
         {
             try
             {
@@ -55,10 +141,6 @@ namespace muse_dash_test
                         sb.AppendLine($"    - {key}: {val}");
                     }
                 }
-                else
-                {
-                    sb.AppendLine("  [Payload Data]: (empty/null)");
-                }
 
                 MelonLogger.Msg(sb.ToString().TrimEnd());
             }
@@ -69,7 +151,7 @@ namespace muse_dash_test
         }
 
         // -------------------------------------------------------------
-        // 2. UnityEngine.Networking.UnityWebRequest Hook
+        // 4. UnityEngine.Networking.UnityWebRequest Hook
         // -------------------------------------------------------------
 
         [HarmonyPatch(typeof(UnityWebRequest), nameof(UnityWebRequest.SendWebRequest))]
@@ -80,54 +162,11 @@ namespace muse_dash_test
             {
                 string url = __instance?.url;
                 string method = __instance?.method;
-                string body = null;
-
-                if (__instance?.uploadHandler != null)
-                {
-                    try
-                    {
-                        var data = __instance.uploadHandler.data;
-                        if (data != null && data.Length > 0)
-                        {
-                            body = Encoding.UTF8.GetString(data);
-                        }
-                    }
-                    catch { }
-                }
-
-                if (!string.IsNullOrEmpty(body))
-                {
-                    MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"}\n  [Body Payload]: {body}");
-                }
-                else
-                {
-                    MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"}");
-                }
+                MelonLogger.Msg($"[NetworkTrace.UnityWebRequest] ({method ?? "GET"}) URL: {url ?? "(null)"}");
             }
             catch (Exception ex)
             {
                 MelonLogger.Warning($"[NetworkTrace.UnityWebRequest] 로그 추출 실패: {ex.Message}");
-            }
-        }
-
-        // -------------------------------------------------------------
-        // 3. System.Net.Http.HttpClient Hook (.NET)
-        // -------------------------------------------------------------
-
-        [HarmonyPatch(typeof(HttpClient), nameof(HttpClient.SendAsync), new Type[] { typeof(HttpRequestMessage), typeof(CancellationToken) })]
-        [HarmonyPrefix]
-        public static void HttpClient_SendAsync_Prefix(HttpClient __instance, HttpRequestMessage request)
-        {
-            try
-            {
-                string url = request?.RequestUri?.ToString();
-                string method = request?.Method?.Method;
-                string baseAddr = __instance?.BaseAddress?.ToString();
-                MelonLogger.Msg($"[NetworkTrace.HttpClient] ({method ?? "GET"}) URL: {url ?? baseAddr ?? "(null)"}");
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[NetworkTrace.HttpClient] 로그 추출 실패: {ex.Message}");
             }
         }
     }
