@@ -17,29 +17,7 @@ namespace muse_dash_test
     public static class NetworkTracePatch
     {
         // -------------------------------------------------------------
-        // 1. UploadHandlerRaw Hook (UnityWebRequest POST 바디 원천 포획)
-        // -------------------------------------------------------------
-
-        [HarmonyPatch(typeof(UploadHandlerRaw), MethodType.Constructor, new Type[] { typeof(byte[]) })]
-        [HarmonyPostfix]
-        public static void UploadHandlerRaw_Ctor_Postfix(byte[] data)
-        {
-            try
-            {
-                if (data != null && data.Length > 0)
-                {
-                    string body = Encoding.UTF8.GetString(data);
-                    MelonLogger.Msg($"[NetworkTrace.UploadHandlerRaw] 생성된 POST Payload ({data.Length} bytes):\n{body}");
-                }
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[NetworkTrace.UploadHandlerRaw] 덤프 에러: {ex.Message}");
-            }
-        }
-
-        // -------------------------------------------------------------
-        // 2. ThinkingDataBattleHelper & Analytics Hook (게임 내 배틀 통계 및 전송 데이터 덤프)
+        // 1. ThinkingDataBattleHelper & Analytics Hook (게임 내 배틀 통계 및 전송 데이터 덤프)
         // -------------------------------------------------------------
 
         [HarmonyPatch(typeof(ThinkingDataBattleHelper), nameof(ThinkingDataBattleHelper.PushDataByTrack), new Type[] { typeof(string), typeof(Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object>) })]
@@ -103,55 +81,7 @@ namespace muse_dash_test
         }
 
         // -------------------------------------------------------------
-        // 3. MuseDash StandardNetworkRequest Hook
-        // -------------------------------------------------------------
-
-        [HarmonyPatch(typeof(StandardNetworkRequest), MethodType.Constructor, new Type[] {
-            typeof(string),
-            typeof(ulong),
-            typeof(uint),
-            typeof(uint),
-            typeof(string),
-            typeof(Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object>),
-            typeof(Il2CppSystem.Collections.Generic.Dictionary<string, string>),
-            typeof(Il2CppSystem.Action<Il2CppNewtonsoft.Json.Linq.JObject>),
-            typeof(Il2CppSystem.Action<NetworkRequest>)
-        })]
-        [HarmonyPostfix]
-        public static void StandardNetworkRequest_Ctor_Postfix(
-            string url,
-            ulong id,
-            uint retryCount,
-            uint interval,
-            string method,
-            Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object> datas)
-        {
-            try
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine($"[NetworkTrace.StandardNetworkRequest] ({method ?? "GET"}) URL: {url}");
-
-                if (datas != null && datas.Count > 0)
-                {
-                    sb.AppendLine("  [Payload Data Key-Values]:");
-                    foreach (var pair in datas)
-                    {
-                        string key = pair.Key;
-                        string val = pair.Value != null ? pair.Value.ToString() : "(null)";
-                        sb.AppendLine($"    - {key}: {val}");
-                    }
-                }
-
-                MelonLogger.Msg(sb.ToString().TrimEnd());
-            }
-            catch (Exception ex)
-            {
-                MelonLogger.Warning($"[NetworkTrace.StandardNetworkRequest] 페이로드 덤프 에러: {ex.Message}");
-            }
-        }
-
-        // -------------------------------------------------------------
-        // 4. UnityEngine.Networking.UnityWebRequest Hook
+        // 2. UnityEngine.Networking.UnityWebRequest Hook
         // -------------------------------------------------------------
 
         [HarmonyPatch(typeof(UnityWebRequest), nameof(UnityWebRequest.SendWebRequest))]
