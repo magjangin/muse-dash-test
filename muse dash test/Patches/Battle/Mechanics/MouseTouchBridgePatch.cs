@@ -22,6 +22,13 @@ namespace muse_dash_test.Patches.Battle.Mechanics
         private static bool _btn0IsAir = true;
         private static bool _btn1IsAir = false;
 
+        /// <summary>
+        /// 터치 슬롯별로 "누르기 시작한 순간"의 레인(공중/지상)을 기억합니다.
+        /// 누른 뒤 손가락을 반대 영역으로 끌어도 판정 레인이 바뀌지 않도록 하기 위함이며,
+        /// 마우스의 _btn0IsAir / _btn1IsAir와 같은 역할입니다.
+        /// </summary>
+        private static readonly bool[] _touchSlotIsAir = new bool[16];
+
         #region Cursor & Controller Override Patches
 
         /// <summary>
@@ -125,8 +132,12 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
                 bool shouldLog = (Time.frameCount != _lastLoggedFrameDown);
 
-                // 1. 마우스 좌클릭 처리 (또는 터치로 인한 마우스 에뮬레이션)
-                if (Input.GetMouseButtonDown(0))
+                // 화면에 손가락이 닿아 있는 동안 Windows가 승격시킨 마우스는 버립니다.
+                // 그대로 두면 손가락 하나가 터치와 마우스 양쪽으로 세어져 이중 판정이 납니다.
+                bool ignoreMouse = TouchInput.ShouldIgnoreMouse();
+
+                // 1. 마우스 좌클릭 처리
+                if (!ignoreMouse && Input.GetMouseButtonDown(0))
                 {
                     _btn0IsAir = CalculateIsAir(Input.mousePosition);
 
@@ -150,8 +161,8 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     }
                 }
 
-                // 2. 마우스 우클릭 (두 번째 손가락 / 연타)
-                if (Input.GetMouseButtonDown(1))
+                // 2. 마우스 우클릭 (연타)
+                if (!ignoreMouse && Input.GetMouseButtonDown(1))
                 {
                     _btn1IsAir = CalculateIsAir(Input.mousePosition);
 
@@ -175,33 +186,33 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     }
                 }
 
-                // 3. 터치스크린 하드웨어 (스팀덱, 액정 태블릿, ROG Ally, 서피스 등) 직접 화면 터치 지원
-                if (Input.touchCount > 0)
+                // 3. 터치스크린 하드웨어 (ROG Ally, 스팀덱, 액정 태블릿, 서피스 등) 직접 화면 터치
+                //    레거시 Input.touches는 Windows 스탠드얼론에서 동작하지 않으므로
+                //    새 Input System의 Touchscreen을 통해 읽습니다.
+                foreach (var contact in TouchInput.GetContacts())
                 {
-                    for (int i = 0; i < Input.touchCount; i++)
+                    if (!contact.Began) continue;
+
+                    bool isAir = CalculateIsAir(contact.Position);
+                    if (contact.Id >= 0 && contact.Id < _touchSlotIsAir.Length)
+                        _touchSlotIsAir[contact.Id] = isAir;
+
+                    if (isAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
-                        Touch touch = Input.GetTouch(i);
-                        if (touch.phase == TouchPhase.Began)
+                        if (!result.Contains(contact.Id)) result.Add(contact.Id);
+                        if (shouldLog)
                         {
-                            bool isAir = CalculateIsAir(touch.position);
-                            if (isAir && buttonName == MDButtonType.BATTLE_AIR)
-                            {
-                                if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
-                                if (shouldLog)
-                                {
-                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Down] 공중(AIR) 직접 화면 터치 (X={touch.position.x:F0}, Y={touch.position.y:F0}, Phase={touch.phase})");
-                                    _lastLoggedFrameDown = Time.frameCount;
-                                }
-                            }
-                            else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
-                            {
-                                if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
-                                if (shouldLog)
-                                {
-                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Down] 지상(GROUND) 직접 화면 터치 (X={touch.position.x:F0}, Y={touch.position.y:F0}, Phase={touch.phase})");
-                                    _lastLoggedFrameDown = Time.frameCount;
-                                }
-                            }
+                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Down] 공중(AIR) 직접 화면 터치 (X={contact.Position.x:F0}, Y={contact.Position.y:F0}, Backend={TouchInput.ActiveBackend})");
+                            _lastLoggedFrameDown = Time.frameCount;
+                        }
+                    }
+                    else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
+                    {
+                        if (!result.Contains(contact.Id)) result.Add(contact.Id);
+                        if (shouldLog)
+                        {
+                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Down] 지상(GROUND) 직접 화면 터치 (X={contact.Position.x:F0}, Y={contact.Position.y:F0}, Backend={TouchInput.ActiveBackend})");
+                            _lastLoggedFrameDown = Time.frameCount;
                         }
                     }
                 }
@@ -223,8 +234,10 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                 // 패드 및 기본 키 매핑 간섭 차단
                 result.Clear();
 
+                bool ignoreMouse = TouchInput.ShouldIgnoreMouse();
+
                 // 마우스 좌클릭 홀드 (점프 체공 및 롱노트 유지)
-                if (Input.GetMouseButton(0))
+                if (!ignoreMouse && Input.GetMouseButton(0))
                 {
                     if (_btn0IsAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
@@ -237,7 +250,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                 }
 
                 // 마우스 우클릭 홀드
-                if (Input.GetMouseButton(1))
+                if (!ignoreMouse && Input.GetMouseButton(1))
                 {
                     if (_btn1IsAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
@@ -249,24 +262,22 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     }
                 }
 
-                // 터치스크린 하드웨어 홀드 지원
-                if (Input.touchCount > 0)
+                // 터치스크린 홀드 지원 (롱노트 유지)
+                foreach (var contact in TouchInput.GetContacts())
                 {
-                    for (int i = 0; i < Input.touchCount; i++)
+                    if (!contact.Held) continue;
+
+                    // 누른 순간 확정된 레인을 유지합니다. 손가락을 반대편으로 끌어도
+                    // 판정 레인이 도중에 바뀌면 롱노트가 끊기기 때문입니다.
+                    bool isAir = LaneOf(contact);
+
+                    if (isAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
-                        Touch touch = Input.GetTouch(i);
-                        if (touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
-                        {
-                            bool isAir = CalculateIsAir(touch.position);
-                            if (isAir && buttonName == MDButtonType.BATTLE_AIR)
-                            {
-                                if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
-                            }
-                            else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
-                            {
-                                if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
-                            }
-                        }
+                        if (!result.Contains(contact.Id)) result.Add(contact.Id);
+                    }
+                    else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
+                    {
+                        if (!result.Contains(contact.Id)) result.Add(contact.Id);
                     }
                 }
             }
@@ -288,9 +299,10 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                 result.Clear();
 
                 bool shouldLog = (Time.frameCount != _lastLoggedFrameUp);
+                bool ignoreMouse = TouchInput.ShouldIgnoreMouse();
 
                 // 마우스 좌클릭 릴리즈
-                if (Input.GetMouseButtonUp(0))
+                if (!ignoreMouse && Input.GetMouseButtonUp(0))
                 {
                     if (_btn0IsAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
@@ -313,7 +325,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                 }
 
                 // 마우스 우클릭 릴리즈
-                if (Input.GetMouseButtonUp(1))
+                if (!ignoreMouse && Input.GetMouseButtonUp(1))
                 {
                     if (_btn1IsAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
@@ -325,33 +337,29 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     }
                 }
 
-                // 터치스크린 하드웨어 릴리즈 지원
-                if (Input.touchCount > 0)
+                // 터치스크린 릴리즈 지원
+                foreach (var contact in TouchInput.GetContacts())
                 {
-                    for (int i = 0; i < Input.touchCount; i++)
+                    if (!contact.Ended) continue;
+
+                    bool isAir = LaneOf(contact);
+
+                    if (isAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
-                        Touch touch = Input.GetTouch(i);
-                        if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                        if (!result.Contains(contact.Id)) result.Add(contact.Id);
+                        if (shouldLog)
                         {
-                            bool isAir = CalculateIsAir(touch.position);
-                            if (isAir && buttonName == MDButtonType.BATTLE_AIR)
-                            {
-                                if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
-                                if (shouldLog)
-                                {
-                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Up] 공중(AIR) 릴리즈");
-                                    _lastLoggedFrameUp = Time.frameCount;
-                                }
-                            }
-                            else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
-                            {
-                                if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
-                                if (shouldLog)
-                                {
-                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Up] 지상(GROUND) 릴리즈");
-                                    _lastLoggedFrameUp = Time.frameCount;
-                                }
-                            }
+                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Up] 공중(AIR) 릴리즈");
+                            _lastLoggedFrameUp = Time.frameCount;
+                        }
+                    }
+                    else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
+                    {
+                        if (!result.Contains(contact.Id)) result.Add(contact.Id);
+                        if (shouldLog)
+                        {
+                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Up] 지상(GROUND) 릴리즈");
+                            _lastLoggedFrameUp = Time.frameCount;
                         }
                     }
                 }
@@ -360,6 +368,19 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             {
                 MelonLogger.Error($"[MouseTouchBridge] InjectButtonUp 에러: {ex}");
             }
+        }
+
+        /// <summary>
+        /// 접점이 속한 판정 레인을 돌려줍니다.
+        /// 누르기 시작할 때 확정해 둔 값을 우선 쓰고, 슬롯 범위를 벗어난 예외적인 경우에만
+        /// 현재 좌표로 계산합니다.
+        /// </summary>
+        private static bool LaneOf(TouchContact contact)
+        {
+            if (contact.Id >= 0 && contact.Id < _touchSlotIsAir.Length)
+                return _touchSlotIsAir[contact.Id];
+
+            return CalculateIsAir(contact.Position);
         }
 
         /// <summary>

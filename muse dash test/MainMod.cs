@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.9.7", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.9.8", "화영왕")]
 [assembly: MelonColor(255, 147, 112, 219)] // 모드 이름 색상: 보라색(MediumPurple #9370DB)
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
@@ -211,9 +211,18 @@ namespace muse_dash_test
                 // 터치 입력이 어느 계층에서 끊기는지 확정하는 1회성 진단 (기동 3초 후 1회)
                 FeatureGuard.Run("TouchBackendProbe", TouchBackendProbe.Tick);
 
-                if (UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.GetMouseButtonDown(1) || UnityEngine.Input.touchCount > 0)
+                var contacts = TouchInput.GetContacts();
+                if (UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.GetMouseButtonDown(1) || contacts.Count > 0)
                 {
-                    MelonLogger.Msg($"🔍 [Raw Input] touchCount={UnityEngine.Input.touchCount}, mouse0Down={UnityEngine.Input.GetMouseButtonDown(0)}, mouse0Hold={UnityEngine.Input.GetMouseButton(0)}, pos=({UnityEngine.Input.mousePosition.x:F0}, {UnityEngine.Input.mousePosition.y:F0}), Screen=({UnityEngine.Screen.width}x{UnityEngine.Screen.height}), 출처={TouchBackendProbe.DescribeMouseOrigin()}");
+                    MelonLogger.Msg($"🔍 [Raw Input] 접점={contacts.Count}개(backend={TouchInput.ActiveBackend}, 레거시 touchCount={UnityEngine.Input.touchCount}), " +
+                                    $"mouse0Down={UnityEngine.Input.GetMouseButtonDown(0)}, 마우스무시={TouchInput.ShouldIgnoreMouse()}, " +
+                                    $"pos=({UnityEngine.Input.mousePosition.x:F0}, {UnityEngine.Input.mousePosition.y:F0}), Screen=({UnityEngine.Screen.width}x{UnityEngine.Screen.height})");
+
+                    for (int i = 0; i < contacts.Count; i++)
+                    {
+                        var c = contacts[i];
+                        MelonLogger.Msg($"      └ 접점 #{c.Id}: pos=({c.Position.x:F0}, {c.Position.y:F0}), Began={c.Began}, Held={c.Held}, Ended={c.Ended}");
+                    }
                 }
             }
         }
