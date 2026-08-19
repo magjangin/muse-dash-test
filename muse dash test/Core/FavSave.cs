@@ -51,8 +51,6 @@ namespace muse_dash_test
                 MelonLogger.Msg("[FavSave] 즐겨찾기 소녀가 정의되지 않음");
                 FavGirl = GirlID.NONE;
             }
-
-            try { favCategory?.SaveToFile(false); } catch (Exception) { }
         }
     }
 
