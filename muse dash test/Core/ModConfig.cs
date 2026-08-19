@@ -66,7 +66,73 @@ namespace muse_dash_test
             VerboseLogEntry = Category.CreateEntry("EnableVerboseLog", false, description: "진단 로그 상세 출력 활성화 (개발/디버깅용, 평소에는 꺼두세요)");
 
             RegisterFeatureMapping();
-            MelonLogger.Msg("[ModConfig] 개별 기능 토글 설정 로드 완료.");
+
+            // 신규 추가된 항목이나 주석 설명을 MelonPreferences.cfg에 즉시 반영 저장
+            Save(false);
+            MelonLogger.Msg("[ModConfig] 개별 기능 토글 설정 로드 및 동기화 완료.");
+        }
+
+        /// <summary>
+        /// 현재 설정된 모든 항목과 주석 설명을 UserData/MelonPreferences.cfg 파일에 저장합니다.
+        /// </summary>
+        public static void Save(bool printLog = true)
+        {
+            try
+            {
+                Category?.SaveToFile(false);
+                if (printLog)
+                {
+                    MelonLogger.Msg("[ModConfig] MelonPreferences.cfg 설정 파일이 성공적으로 저장/업데이트되었습니다.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[ModConfig] MelonPreferences.cfg 저장 중 에러 발생: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 디스크의 UserData/MelonPreferences.cfg 파일로부터 최신 설정값을 다시 읽어옵니다.
+        /// </summary>
+        public static void Reload(bool printLog = true)
+        {
+            try
+            {
+                Category?.LoadFromFile(false);
+                if (printLog)
+                {
+                    MelonLogger.Msg("[ModConfig] MelonPreferences.cfg 설정 파일을 다시 로드했습니다.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[ModConfig] MelonPreferences.cfg 재로드 중 에러 발생: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 특정 기능의 토글 값을 프로그래밍 방식으로 변경하고 설정 파일에 즉시 저장합니다.
+        /// </summary>
+        public static bool TrySetEntry(string entryName, bool value)
+        {
+            try
+            {
+                if (Category == null) return false;
+
+                var entry = Category.GetEntry<bool>(entryName);
+                if (entry != null)
+                {
+                    entry.Value = value;
+                    Save(false);
+                    MelonLogger.Msg($"[ModConfig] '{entryName}' 설정값이 '{value}'(으)로 갱신되었습니다.");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[ModConfig] '{entryName}' 설정값 변경 실패: {ex.Message}");
+            }
+            return false;
         }
 
         private static void RegisterFeatureMapping()
