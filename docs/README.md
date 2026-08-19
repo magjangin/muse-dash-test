@@ -31,6 +31,7 @@
 | [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md) | 오프라인 샌드박스 구성 및 플래그 설정 |
 | [DISCORD_RICH_PRESENCE.md](guides/DISCORD_RICH_PRESENCE.md) | 디스코드 리치 프레젠스 연동 명세 |
 | [LOGGING_AND_TROUBLESHOOTING.md](guides/LOGGING_AND_TROUBLESHOOTING.md) | 로그 읽는 법과 문제 해결 순서 |
+| [MOBILE_TOUCH_AND_INPUT_GUIDE.md](guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md) | 모바일 터치 설정창 복원 및 인게임 마우스/터치 브릿지 명세 |
 | [CHECKLIST.md](guides/CHECKLIST.md) | 변경·릴리즈 전 검토 체크리스트 (실제 사고 지점만 수록) |
 
 ## 🧪 experiments/ — 기능별 실험 기록
