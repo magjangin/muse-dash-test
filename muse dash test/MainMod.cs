@@ -23,6 +23,7 @@ namespace muse_dash_test
         {
             MelonLogger.Msg("모드가 로드되었습니다.");
             ModConfig.Load();
+            try { UnityEngine.Input.multiTouchEnabled = true; } catch (Exception) { }
             MelonLogger.Msg("HywHpTextMod - 체력바 텍스트 모드가 성공적으로 연동 활성화되었습니다!");
 
             // 게임 업데이트로 깨진 패치 대상이 있는지 시작 시 점검하여 요약 로그로 표시합니다.
@@ -203,6 +204,15 @@ namespace muse_dash_test
             FeatureGuard.Run("ExperimentStage", HandleExperimentStageUpdate);
             FeatureGuard.Run("ExperimentHitPoint", UpdateExperimentHitPoint);
             FeatureGuard.Run("DiscordRPC.Update", DiscordPresenceManager.Update);
+
+            // 모바일 터치 모드 진단 로그 (화면 터치/마우스 클릭 발생 시 실시간 좌표 및 상태 출력)
+            if (ModConfig.EnableMobileTouch && InputOverlay.enableMobileTouch)
+            {
+                if (UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.GetMouseButtonDown(1) || UnityEngine.Input.touchCount > 0)
+                {
+                    MelonLogger.Msg($"🔍 [Raw Input] touchCount={UnityEngine.Input.touchCount}, mouse0Down={UnityEngine.Input.GetMouseButtonDown(0)}, mouse0Hold={UnityEngine.Input.GetMouseButton(0)}, pos=({UnityEngine.Input.mousePosition.x:F0}, {UnityEngine.Input.mousePosition.y:F0}), Screen=({UnityEngine.Screen.width}x{UnityEngine.Screen.height})");
+                }
+            }
         }
 
         private static void UpdateRealTimeSwap()

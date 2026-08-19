@@ -125,7 +125,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
                 bool shouldLog = (Time.frameCount != _lastLoggedFrameDown);
 
-                // 1. 마우스 좌클릭 처리
+                // 1. 마우스 좌클릭 처리 (또는 터치로 인한 마우스 에뮬레이션)
                 if (Input.GetMouseButtonDown(0))
                 {
                     _btn0IsAir = CalculateIsAir(Input.mousePosition);
@@ -135,7 +135,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                         if (!result.Contains(0)) result.Add(0);
                         if (shouldLog)
                         {
-                            MelonLogger.Msg($"🖱️ [Touch Down] 공중(AIR) 마우스 클릭 (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
+                            MelonLogger.Msg($"🖱️ [Touch/Mouse Down] 공중(AIR) (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0}, LeftRight={GameTouchPlay.isTouchLeftRight}, Reverse={GameTouchPlay.isTouchReverse || GameTouchPlay.isReverse})");
                             _lastLoggedFrameDown = Time.frameCount;
                         }
                     }
@@ -144,7 +144,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                         if (!result.Contains(0)) result.Add(0);
                         if (shouldLog)
                         {
-                            MelonLogger.Msg($"🖱️ [Touch Down] 지상(GROUND) 마우스 클릭 (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
+                            MelonLogger.Msg($"🖱️ [Touch/Mouse Down] 지상(GROUND) (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0}, LeftRight={GameTouchPlay.isTouchLeftRight}, Reverse={GameTouchPlay.isTouchReverse || GameTouchPlay.isReverse})");
                             _lastLoggedFrameDown = Time.frameCount;
                         }
                     }
@@ -175,7 +175,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     }
                 }
 
-                // 3. 터치스크린 하드웨어 (스팀덱, 액정 태블릿, 서피스 등) 직접 화면 터치 지원
+                // 3. 터치스크린 하드웨어 (스팀덱, 액정 태블릿, ROG Ally, 서피스 등) 직접 화면 터치 지원
                 if (Input.touchCount > 0)
                 {
                     for (int i = 0; i < Input.touchCount; i++)
@@ -189,7 +189,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                                 if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
                                 if (shouldLog)
                                 {
-                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Down] 공중(AIR) 직접 화면 터치 (X={touch.position.x:F0}, Y={touch.position.y:F0})");
+                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Down] 공중(AIR) 직접 화면 터치 (X={touch.position.x:F0}, Y={touch.position.y:F0}, Phase={touch.phase})");
                                     _lastLoggedFrameDown = Time.frameCount;
                                 }
                             }
@@ -198,7 +198,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                                 if (!result.Contains(touch.fingerId)) result.Add(touch.fingerId);
                                 if (shouldLog)
                                 {
-                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Down] 지상(GROUND) 직접 화면 터치 (X={touch.position.x:F0}, Y={touch.position.y:F0})");
+                                    MelonLogger.Msg($"👆 [Screen Touch #{touch.fingerId} Down] 지상(GROUND) 직접 화면 터치 (X={touch.position.x:F0}, Y={touch.position.y:F0}, Phase={touch.phase})");
                                     _lastLoggedFrameDown = Time.frameCount;
                                 }
                             }
