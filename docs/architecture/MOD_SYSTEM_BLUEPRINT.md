@@ -57,6 +57,8 @@ graph TD
 | `StageBattleComponent.Dead` | **Postfix** | [ChangeHealthValuePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 인게임 사망 이벤트 및 체력 강제 오버라이드(체력 무한 모드 등) |
 | `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 |
 | `PnlPreparation.OnEnable` | **Prefix/Postfix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 |
+| `PnlPlaySetting.OnAwake` | **Postfix** | [PnlInputMobilePatch.cs](../../muse%20dash%20test/Patches/UI/Setting/PnlInputMobilePatch.cs) | PC 입력 설정 클릭 시 모바일 전용 터치 조작 설정창(`PnlInputMobile`) 강제 복원 |
+| `StandloneController.GetButtonDown/GetButton/GetButtonUp` | **Postfix** | [MouseTouchBridgePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs) | 마우스 클릭/터치를 공중/지상으로 변환 주입 및 상호 배타적 필터링으로 PC 키 충돌 차단 |
 
 ---
 

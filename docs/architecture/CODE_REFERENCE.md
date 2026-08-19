@@ -17,12 +17,14 @@ graph TD
     MainMod --> HookUI[UI 및 스테이지 감지]
     HookUI --> CustomTag[CustomTagRegistry 가상 앨범 주입]
     HookUI --> HpTextMod[HywStageManager 체력바 텍스트 스타일러]
+    HookUI --> MobileUI[PnlInputMobilePatch 모바일 입력 설정창 복원]
     
     MainMod --> HookBattle[인게임 배틀 제어]
     HookBattle --> AutoPlay[AutoPlayPatch 오토플레이 모니터링]
     HookBattle --> FeverCtrl[ChangeFeverValuePatch 피버 선택적 차단]
     HookBattle --> VideoPlay[PnlBattleGameStartPatch 배경 영상 재생]
     HookBattle --> APMod[APModPatch 올 퍼펙트 판단 & 골드 배너 동적 주입]
+    HookBattle --> TouchBridge[MouseTouchBridgePatch 마우스/터치 배틀 입력 브릿지]
 ```
 
 ---
@@ -108,6 +110,19 @@ MelonLoader 모드 진입점 클래스입니다.
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.
 * **`AbstractFeverManager_AddFever_Patch`**: 캐릭터 피버 충전(`AbstractFeverManager.AddFever`)을 가로채 설정(`InputOverlay.blockFever`)에 따라 게이지 충전량을 0으로 차단합니다.
 
+### 📂 [Mechanics/MouseTouchBridgePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs) [NEW]
+PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모바일 터치 조작감으로 실시간 변환 주입하는 핵심 입력 브릿지 패치입니다.
+* **`StandloneController` & `InputManager` 3대 입력 메서드 후킹**:
+  * `GetButtonDown`: 마우스 클릭 및 터치 시작 시 화면 분할 좌표(좌우/상하, 반전 모드)를 계산하여 `BATTLE_AIR` 또는 `BATTLE_GROUND`에 정규 키 인덱스(`0`, `1`)를 주입합니다.
+  * `GetButton`: 마우스 좌클릭/우클릭 홀드 시 점프 체공 상태 및 롱노트 타격을 안정적으로 유지합니다.
+  * `GetButtonUp`: 마우스 릴리즈 시 정확한 타이밍에 입력을 해제합니다.
+* **상호 배타적 필터링 (Mutual Exclusion)**:
+  * PC 기본 키 매핑으로 인해 마우스 클릭 시 `BATTLE_GROUND` 신호가 동시 유입되는 충돌을 감지하여, 공중(Air) 클릭 중에는 지상 신호를 `result.Clear()`로 완전 차단함으로써 점프 후 즉시 낙하하는 버그를 완벽하게 방지합니다.
+* **멀티터치 & 마우스 우클릭 연타 지원**: 마우스 좌클릭(Finger 0)과 우클릭(Finger 1)을 독립된 터치 손가락으로 처리하여 고난도 롱노트 동시치기 및 연타 플레이를 지원합니다.
+
+> [!TIP]
+> 모바일 터치 설정 복원 및 배틀 입력 파이프라인에 관한 정밀 명세는 **[📱 MOBILE_TOUCH_AND_INPUT_GUIDE.md](../guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md)** 문서를 참조하세요.
+
 ### 📂 [Mechanics/BossPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/BossPatch.cs)
 * **`Boss_InitBossObject_Patch`**: 보스 렌더링용 캐릭터 프리팹 명칭 및 씬을 교체 적용하는 룰 시스템입니다.
 * **`Boss_Play_Patch`**: 인게임 도중 `swap:[보스명]:[씬번호]` 키워드가 삽입된 보스 액션을 만나면, 현재 보스 오브젝트와 상위 부모 트랜스폼을 감지해 실시간 보스 캐릭터 스왑을 연출합니다.
@@ -189,6 +204,13 @@ MelonLoader 모드 진입점 클래스입니다.
 
 ### 📂 [UI/Pnl/SetSelectedMusicNameTxtPatch.cs](../../muse%20dash%20test/Patches/UI/Pnl/SetSelectedMusicNameTxtPatch.cs) [NEW]
 곡 선택 UI에서 가상 커스텀 곡을 감지하여 제목과 아티스트 텍스트 UI 컴포넌트(`SetSelectedMusicNameTxt`)의 출력 텍스트를 원본 곡 명이 아닌 가상 커스텀 곡 데이터로 알맞게 대치 적용하는 패치입니다.
+
+### 📂 [UI/Setting/PnlInputMobilePatch.cs](../../muse%20dash%20test/Patches/UI/Setting/PnlInputMobilePatch.cs) [NEW]
+PC 스팀 빌드 내부에서 비활성화되어 있던 모바일 전용 터치 조작 설정창(`PnlInputMobile`)을 복원하고 설정 이벤트를 연동하는 패치입니다.
+* **`PnlPlaySetting_MobileInputPatch` (Postfix)**:
+  * 게임 옵션창(`PnlPlaySetting`)의 '입력 설정' 버튼 클릭 시, 기본 PC 키설정 패널(`m_PnlInputSettingStandlone`)을 숨기고 모바일 전용 설정 패널(`m_PnlInputSettingMobile`)을 강제 활성화합니다.
+* **`PnlInputMobile_LifecyclePatch` (Postfix)**:
+  * `SetLeftRight`(좌우/상하 모드), `SetTouchReverse`(되돌리기 반전), `SetAutoFever`(수동/자동 피버) 메서드를 후킹하여 플레이어가 UI에서 변경한 모바일 설정값을 실시간으로 감지하고 로깅합니다.
 
 ### 📂 [Common/ModReflection.cs](../../muse%20dash%20test/Patches/Common/ModReflection.cs)
 IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 리플렉션·캐스팅으로 읽어오는 래퍼 도구입니다. 유니티 메인 스레드에서 런타임 오브젝트를 안전하게 추출합니다.

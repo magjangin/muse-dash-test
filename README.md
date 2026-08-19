@@ -52,8 +52,9 @@
 
 * **Menu & Prep BGM Hot-Swapping (곡 선택/준비 화면 BGM 실시간 핫스왑) [NEW]** ✅
   * 가상/커스텀 곡(`1999-*`)을 선택하거나 플레이 준비 화면(`PnlPreparation`)에 진입할 때, 현재 씬에서 재생 중인 BGM/데모용 `AudioSource`를 실시간으로 탐색하여 로컬 디렉터리의 OGG 파일(`music.ogg`)로 오디오 클립을 비동기 핫스왑(Hot-swap) 적용합니다.
-  * 빠른 스크롤 스킵 및 오디오 재생 겹침 방지 유효성 검증 장치가 내장되어 있어 조작감이 부드럽고 안전하게 동작합니다.
-
+* **Mobile Touch Mode & Mouse Bridge (모바일 터치 설정 복원 및 마우스/터치 브릿지) [NEW]** ✅
+  * PC 스팀 빌드 내에 잠들어 있던 모바일 전용 입력 설정창(`PnlInputMobile`)을 완벽 복원하여 좌우/상하 분할 모드, 되돌리기(반전), 오토 피버 옵션을 실시간 제어합니다.
+  * 인게임 배틀에서 마우스 좌/우 클릭 및 터치스크린 입력을 공중/지상 타격 및 점프 체공(롱노트 홀드)으로 실시간 변환 주입하며, PC 기본 키 매핑 간섭을 원천 차단하는 상호 배타적 필터링이 적용되었습니다. (→ [MOBILE_TOUCH_AND_INPUT_GUIDE.md](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md))
 
 ---
 
@@ -84,6 +85,7 @@
 | **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (`music.ogg`)** | ✅ 완료 |
 | **로컬 `cover.png` 기반 커스텀 곡 셀/디스크 앨범 아트 주입** | ✅ 완료 |
 | **가상 곡 플레이 기록(정확도·스코어·최대 콤보·풀콤보) 로컬 JSON 저장 및 결과/기록 카드 표시** | ✅ 완료 |
+| **모바일 전용 터치 조작 패널(`PnlInputMobile`) 복원 및 마우스/터치 배틀 입력 브릿지** | ✅ 완료 ([상세 문서](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md)) |
 | **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](docs/guides/DISCORD_RICH_PRESENCE.md)) |
 
 
