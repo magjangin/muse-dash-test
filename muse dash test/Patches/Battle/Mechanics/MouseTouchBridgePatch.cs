@@ -114,9 +114,6 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         #endregion
 
-        private static int _lastLoggedFrameDown = -1;
-        private static int _lastLoggedFrameUp = -1;
-
         #region Core Injection Logic
 
         private static void InjectButtonDown(MDButtonType buttonName, ref List<int> result)
@@ -130,8 +127,6 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                 // 패드(조이스틱) 및 기본 키 매핑 간섭을 100% 차단하고 마우스/터치 전용으로 동작하도록 초기화
                 result.Clear();
 
-                bool shouldLog = (Time.frameCount != _lastLoggedFrameDown);
-
                 // 화면에 손가락이 닿아 있는 동안 Windows가 승격시킨 마우스는 버립니다.
                 // 그대로 두면 손가락 하나가 터치와 마우스 양쪽으로 세어져 이중 판정이 납니다.
                 bool ignoreMouse = TouchInput.ShouldIgnoreMouse();
@@ -144,20 +139,10 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     if (_btn0IsAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
                         if (!result.Contains(0)) result.Add(0);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"🖱️ [Touch/Mouse Down] 공중(AIR) (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0}, LeftRight={GameTouchPlay.isTouchLeftRight}, Reverse={GameTouchPlay.isTouchReverse || GameTouchPlay.isReverse})");
-                            _lastLoggedFrameDown = Time.frameCount;
-                        }
                     }
                     else if (!_btn0IsAir && buttonName == MDButtonType.BATTLE_GROUND)
                     {
                         if (!result.Contains(0)) result.Add(0);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"🖱️ [Touch/Mouse Down] 지상(GROUND) (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0}, LeftRight={GameTouchPlay.isTouchLeftRight}, Reverse={GameTouchPlay.isTouchReverse || GameTouchPlay.isReverse})");
-                            _lastLoggedFrameDown = Time.frameCount;
-                        }
                     }
                 }
 
@@ -169,20 +154,10 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     if (_btn1IsAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
                         if (!result.Contains(1)) result.Add(1);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"🖱️ [Touch Down (Right)] 공중(AIR) 우클릭 연타 (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
-                            _lastLoggedFrameDown = Time.frameCount;
-                        }
                     }
                     else if (!_btn1IsAir && buttonName == MDButtonType.BATTLE_GROUND)
                     {
                         if (!result.Contains(1)) result.Add(1);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"🖱️ [Touch Down (Right)] 지상(GROUND) 우클릭 연타 (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
-                            _lastLoggedFrameDown = Time.frameCount;
-                        }
                     }
                 }
 
@@ -200,20 +175,10 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     if (isAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
                         if (!result.Contains(contact.Id)) result.Add(contact.Id);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Down] 공중(AIR) 직접 화면 터치 (X={contact.Position.x:F0}, Y={contact.Position.y:F0}, Backend={TouchInput.ActiveBackend})");
-                            _lastLoggedFrameDown = Time.frameCount;
-                        }
                     }
                     else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
                     {
                         if (!result.Contains(contact.Id)) result.Add(contact.Id);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Down] 지상(GROUND) 직접 화면 터치 (X={contact.Position.x:F0}, Y={contact.Position.y:F0}, Backend={TouchInput.ActiveBackend})");
-                            _lastLoggedFrameDown = Time.frameCount;
-                        }
                     }
                 }
             }
@@ -298,7 +263,6 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                 // 패드 및 기본 키 매핑 간섭 차단
                 result.Clear();
 
-                bool shouldLog = (Time.frameCount != _lastLoggedFrameUp);
                 bool ignoreMouse = TouchInput.ShouldIgnoreMouse();
 
                 // 마우스 좌클릭 릴리즈
@@ -307,20 +271,10 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     if (_btn0IsAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
                         if (!result.Contains(0)) result.Add(0);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"🖱️ [Touch Up] 공중(AIR) 릴리즈");
-                            _lastLoggedFrameUp = Time.frameCount;
-                        }
                     }
                     else if (!_btn0IsAir && buttonName == MDButtonType.BATTLE_GROUND)
                     {
                         if (!result.Contains(0)) result.Add(0);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"🖱️ [Touch Up] 지상(GROUND) 릴리즈");
-                            _lastLoggedFrameUp = Time.frameCount;
-                        }
                     }
                 }
 
@@ -347,20 +301,10 @@ namespace muse_dash_test.Patches.Battle.Mechanics
                     if (isAir && buttonName == MDButtonType.BATTLE_AIR)
                     {
                         if (!result.Contains(contact.Id)) result.Add(contact.Id);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Up] 공중(AIR) 릴리즈");
-                            _lastLoggedFrameUp = Time.frameCount;
-                        }
                     }
                     else if (!isAir && buttonName == MDButtonType.BATTLE_GROUND)
                     {
                         if (!result.Contains(contact.Id)) result.Add(contact.Id);
-                        if (shouldLog)
-                        {
-                            MelonLogger.Msg($"👆 [Screen Touch #{contact.Id} Up] 지상(GROUND) 릴리즈");
-                            _lastLoggedFrameUp = Time.frameCount;
-                        }
                     }
                 }
             }

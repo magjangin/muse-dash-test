@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.9.8", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.9.9", "화영왕")]
 [assembly: MelonColor(255, 147, 112, 219)] // 모드 이름 색상: 보라색(MediumPurple #9370DB)
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
@@ -204,27 +204,6 @@ namespace muse_dash_test
             FeatureGuard.Run("ExperimentStage", HandleExperimentStageUpdate);
             FeatureGuard.Run("ExperimentHitPoint", UpdateExperimentHitPoint);
             FeatureGuard.Run("DiscordRPC.Update", DiscordPresenceManager.Update);
-
-            // 모바일 터치 모드 진단 로그 (화면 터치/마우스 클릭 발생 시 실시간 좌표 및 상태 출력)
-            if (ModConfig.EnableMobileTouch && InputOverlay.enableMobileTouch)
-            {
-                // 터치 입력이 어느 계층에서 끊기는지 확정하는 1회성 진단 (기동 3초 후 1회)
-                FeatureGuard.Run("TouchBackendProbe", TouchBackendProbe.Tick);
-
-                var contacts = TouchInput.GetContacts();
-                if (UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.GetMouseButtonDown(1) || contacts.Count > 0)
-                {
-                    MelonLogger.Msg($"🔍 [Raw Input] 접점={contacts.Count}개(backend={TouchInput.ActiveBackend}, 레거시 touchCount={UnityEngine.Input.touchCount}), " +
-                                    $"mouse0Down={UnityEngine.Input.GetMouseButtonDown(0)}, 마우스무시={TouchInput.ShouldIgnoreMouse()}, " +
-                                    $"pos=({UnityEngine.Input.mousePosition.x:F0}, {UnityEngine.Input.mousePosition.y:F0}), Screen=({UnityEngine.Screen.width}x{UnityEngine.Screen.height})");
-
-                    for (int i = 0; i < contacts.Count; i++)
-                    {
-                        var c = contacts[i];
-                        MelonLogger.Msg($"      └ 접점 #{c.Id}: pos=({c.Position.x:F0}, {c.Position.y:F0}), Began={c.Began}, Held={c.Held}, Ended={c.Ended}");
-                    }
-                }
-            }
         }
 
         private static void UpdateRealTimeSwap()

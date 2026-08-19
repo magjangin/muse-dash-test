@@ -34,6 +34,7 @@ namespace muse_dash_test
         private static readonly List<TouchContact> _contacts = new List<TouchContact>(10);
         private static int _cachedFrame = -1;
         private static bool _errorLogged;
+        private static bool _backendLogged;
         private static float _lastContactTime = float.NegativeInfinity;
 
         /// <summary>
@@ -64,7 +65,18 @@ namespace muse_dash_test
                 ReadLegacy();
             }
 
-            if (_contacts.Count > 0) _lastContactTime = Time.unscaledTime;
+            if (_contacts.Count > 0)
+            {
+                _lastContactTime = Time.unscaledTime;
+
+                // 어느 백엔드로 터치가 처리되는지 세션당 한 줄만 남깁니다.
+                // 나중에 문제 제보를 받았을 때 경로를 되짚을 최소한의 단서입니다.
+                if (!_backendLogged)
+                {
+                    _backendLogged = true;
+                    MelonLogger.Msg($"[TouchInput] 터치스크린 입력을 {ActiveBackend} 백엔드로 처리합니다.");
+                }
+            }
 
             return _contacts;
         }
