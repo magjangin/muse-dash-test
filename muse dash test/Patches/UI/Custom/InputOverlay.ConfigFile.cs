@@ -51,7 +51,7 @@ namespace muse_dash_test
             "판정바글자크기", "판정바틱유지시간", "판정바반응형",
             "오토플레이", "피버충전금지", "시네마", "강제퍼펙트",
             GhostNotesKey,
-            "모바일터치조작", "모바일좌우모드", "모바일반전모드", "모바일오토피버",
+            "모바일터치조작",
         };
 
         /// <summary>
@@ -254,16 +254,12 @@ namespace muse_dash_test
                 sb.AppendLine(Rule);
                 sb.AppendLine("#  [6] 모바일 터치 조작 (Mobile Touch & Mouse Bridge)");
                 sb.AppendLine(Rule);
-                sb.AppendLine("#  모바일터치조작 : 마우스 클릭 및 터치스크린 입력을 모바일 터치(공중/지상)로 인식합니다.");
-                sb.AppendLine("#  모바일좌우모드 : true면 화면 좌우 분할(왼쪽:공중, 오른쪽:지상), false면 상하 분할(위:공중, 아래:지상)");
-                sb.AppendLine("#  모바일반전모드 : true면 터치/클릭 영역이 반대로(좌우/상하 반전) 바뀝니다.");
-                sb.AppendLine("#  모바일오토피버 : 모바일 자동 피버 활성화 여부입니다.");
+                sb.AppendLine("#  모바일터치조작 : true면 인게임 '입력 설정'이 모바일 UI(PnlInputMobile)로 열리고,");
+                sb.AppendLine("#                   마우스 클릭 및 터치스크린 입력을 모바일 터치(공중/지상)로 인식합니다.");
+                sb.AppendLine("#                   (좌우/상하 분할 모드, 되돌리기 반전 설정은 인게임 설정창에서 직접 조절 가능)");
                 sb.AppendLine($"#  값 형식        : {onOff}");
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"모바일터치조작={enableMobileTouch.ToString().ToLower()}");
-                sb.AppendLine($"모바일좌우모드={mobileLeftRight.ToString().ToLower()}");
-                sb.AppendLine($"모바일반전모드={mobileReverse.ToString().ToLower()}");
-                sb.AppendLine($"모바일오토피버={mobileAutoFever.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 MelonLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");
