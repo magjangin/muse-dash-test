@@ -39,7 +39,7 @@ namespace muse_dash_test
         public static bool EnableForcePerfect => ForcePerfectEntry?.Value ?? true;
         public static bool EnableBattleMedia => BattleMediaEntry?.Value ?? true;
         public static bool EnableSpineSkin => SpineSkinEntry?.Value ?? true;
-        public static bool EnableMobileTouch => MobileTouchEntry?.Value ?? false;
+        public static bool EnableMobileTouch => MobileTouchEntry?.Value ?? true;
         public static bool EnableVerboseLog => VerboseLogEntry?.Value ?? false;
 
         private static readonly Dictionary<string, Func<bool>> FeatureMap = new Dictionary<string, Func<bool>>(StringComparer.OrdinalIgnoreCase);
@@ -62,7 +62,7 @@ namespace muse_dash_test
             ForcePerfectEntry = Category.CreateEntry("EnableForcePerfect", true, description: "강제 올 퍼펙트 (All-Perfect Parameter Mod) 기능 활성화");
             BattleMediaEntry = Category.CreateEntry("EnableBattleMedia", true, description: "배틀 커스텀 BGA 비디오/미디어 재생기 활성화");
             SpineSkinEntry = Category.CreateEntry("EnableSpineSkin", true, description: "Spine 커스텀 스킨 텍스처/아틀라스 주입 활성화");
-            MobileTouchEntry = Category.CreateEntry("EnableMobileTouch", false, description: "모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화");
+            MobileTouchEntry = Category.CreateEntry("EnableMobileTouch", true, description: "모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화");
             VerboseLogEntry = Category.CreateEntry("EnableVerboseLog", false, description: "진단 로그 상세 출력 활성화 (개발/디버깅용, 평소에는 꺼두세요)");
 
             RegisterFeatureMapping();
