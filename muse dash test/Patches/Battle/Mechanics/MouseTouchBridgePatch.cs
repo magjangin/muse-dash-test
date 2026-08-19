@@ -57,6 +57,103 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         #endregion
 
+        #region GameTouchPlay Direct Injection Patches
+
+        /// <summary>
+        /// 배틀 터치 엔진(GameTouchPlay.TimeStep)의 매 프레임 실행 직전에 마우스/화면 터치를 직접 주입합니다.
+        /// ROG Ally 등 내장 패드로 인해 StandloneController 훅이 우회되는 기기에서도 100% 확실하게 배틀 입력이 반영됩니다.
+        /// </summary>
+        [HarmonyPatch(typeof(GameTouchPlay), nameof(GameTouchPlay.TimeStep))]
+        [HarmonyPrefix]
+        public static void GameTouchPlay_TimeStep_Prefix(GameTouchPlay __instance)
+        {
+            if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch || __instance == null) return;
+
+            try
+            {
+                // 1. 마우스 좌클릭 (또는 ROG Ally / 서피스 화면 터치 에뮬레이션)
+                if (Input.GetMouseButtonDown(0))
+                {
+                    bool isAir = CalculateIsAir(Input.mousePosition);
+                    __instance.AddPressKey(isAir, 0);
+                    MelonLogger.Msg($"🎯 [GameTouchPlay Direct Down] {(isAir ? "공중(AIR)" : "지상(GROUND)")} 직접 주입! (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
+                }
+                if (Input.GetMouseButtonUp(0))
+                {
+                    bool isAir = CalculateIsAir(Input.mousePosition);
+                    __instance.RemovePressKey(isAir, 0);
+                    __instance.RemovePressKey(!isAir, 0);
+                    MelonLogger.Msg($"🎯 [GameTouchPlay Direct Up] {(isAir ? "공중(AIR)" : "지상(GROUND)")} 릴리즈!");
+                }
+
+                // 2. 마우스 우클릭 (두 번째 손가락 / 연타)
+                if (Input.GetMouseButtonDown(1))
+                {
+                    bool isAir = CalculateIsAir(Input.mousePosition);
+                    __instance.AddPressKey(isAir, 1);
+                    MelonLogger.Msg($"🎯 [GameTouchPlay Direct Down (Right)] {(isAir ? "공중(AIR)" : "지상(GROUND)")} 직접 주입! (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
+                }
+                if (Input.GetMouseButtonUp(1))
+                {
+                    bool isAir = CalculateIsAir(Input.mousePosition);
+                    __instance.RemovePressKey(isAir, 1);
+                    __instance.RemovePressKey(!isAir, 1);
+                }
+
+                // 3. 하드웨어 멀티터치 (Input.touches)
+                if (Input.touchCount > 0)
+                {
+                    for (int i = 0; i < Input.touchCount; i++)
+                    {
+                        Touch touch = Input.GetTouch(i);
+                        bool isAir = CalculateIsAir(touch.position);
+                        if (touch.phase == TouchPhase.Began)
+                        {
+                            __instance.AddPressKey(isAir, touch.fingerId);
+                            MelonLogger.Msg($"🎯 [GameTouchPlay Direct ScreenTouch Down #{touch.fingerId}] {(isAir ? "공중(AIR)" : "지상(GROUND)")} 직접 주입!");
+                        }
+                        else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                        {
+                            __instance.RemovePressKey(isAir, touch.fingerId);
+                            __instance.RemovePressKey(!isAir, touch.fingerId);
+                            MelonLogger.Msg($"🎯 [GameTouchPlay Direct ScreenTouch Up #{touch.fingerId}] 릴리즈!");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"[GameTouchPlay_TimeStep_Prefix] 직접 주입 에러: {ex}");
+            }
+        }
+
+        #endregion
+
+        #region IControlable & Controller Patches
+
+        [HarmonyPatch(typeof(IControlable), nameof(IControlable.GetButtonDown))]
+        [HarmonyPostfix]
+        public static void IControlable_GetButtonDown_Postfix(IControlable __instance, MDButtonType buttonType, ref List<int> __result)
+        {
+            InjectButtonDown(buttonType, ref __result);
+        }
+
+        [HarmonyPatch(typeof(IControlable), nameof(IControlable.GetButton))]
+        [HarmonyPostfix]
+        public static void IControlable_GetButton_Postfix(IControlable __instance, MDButtonType buttonType, ref List<int> __result)
+        {
+            InjectButtonHold(buttonType, ref __result);
+        }
+
+        [HarmonyPatch(typeof(IControlable), nameof(IControlable.GetButtonUp))]
+        [HarmonyPostfix]
+        public static void IControlable_GetButtonUp_Postfix(IControlable __instance, MDButtonType buttonType, ref List<int> __result)
+        {
+            InjectButtonUp(buttonType, ref __result);
+        }
+
+        #endregion
+
         #region StandloneController Patches
 
         [HarmonyPatch(typeof(StandloneController), nameof(StandloneController.GetButtonDown))]
