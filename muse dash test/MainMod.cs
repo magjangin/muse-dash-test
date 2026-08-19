@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.9.6", "화영왕")]
+[assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.9.7", "화영왕")]
 [assembly: MelonColor(255, 147, 112, 219)] // 모드 이름 색상: 보라색(MediumPurple #9370DB)
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
@@ -208,9 +208,12 @@ namespace muse_dash_test
             // 모바일 터치 모드 진단 로그 (화면 터치/마우스 클릭 발생 시 실시간 좌표 및 상태 출력)
             if (ModConfig.EnableMobileTouch && InputOverlay.enableMobileTouch)
             {
+                // 터치 입력이 어느 계층에서 끊기는지 확정하는 1회성 진단 (기동 3초 후 1회)
+                FeatureGuard.Run("TouchBackendProbe", TouchBackendProbe.Tick);
+
                 if (UnityEngine.Input.GetMouseButtonDown(0) || UnityEngine.Input.GetMouseButtonDown(1) || UnityEngine.Input.touchCount > 0)
                 {
-                    MelonLogger.Msg($"🔍 [Raw Input] touchCount={UnityEngine.Input.touchCount}, mouse0Down={UnityEngine.Input.GetMouseButtonDown(0)}, mouse0Hold={UnityEngine.Input.GetMouseButton(0)}, pos=({UnityEngine.Input.mousePosition.x:F0}, {UnityEngine.Input.mousePosition.y:F0}), Screen=({UnityEngine.Screen.width}x{UnityEngine.Screen.height})");
+                    MelonLogger.Msg($"🔍 [Raw Input] touchCount={UnityEngine.Input.touchCount}, mouse0Down={UnityEngine.Input.GetMouseButtonDown(0)}, mouse0Hold={UnityEngine.Input.GetMouseButton(0)}, pos=({UnityEngine.Input.mousePosition.x:F0}, {UnityEngine.Input.mousePosition.y:F0}), Screen=({UnityEngine.Screen.width}x{UnityEngine.Screen.height}), 출처={TouchBackendProbe.DescribeMouseOrigin()}");
                 }
             }
         }
