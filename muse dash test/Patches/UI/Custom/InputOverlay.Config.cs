@@ -52,7 +52,7 @@ namespace muse_dash_test
         public static bool showGhostNotes = true;
 
         // 모바일 터치 및 마우스-터치 브릿지 설정 필드 (세부 좌우/반전 설정은 인게임 PnlInputMobile UI에서 직접 제어)
-        public static bool enableMobileTouch = true;
+        public static bool enableMobileTouch = false;
 
         private static string airColorName = "파랑";
         private static float airAlpha = 85f;

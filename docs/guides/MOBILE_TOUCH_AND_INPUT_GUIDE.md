@@ -126,14 +126,14 @@ private static bool CalculateIsAir(Vector2 screenPos)
 #                   (좌우/상하 분할 모드, 되돌리기 반전 설정은 인게임 설정창에서 직접 조절 가능)
 #  값 형식        : true / false  (on/off, 켜짐/끔, 1/0 도 됩니다)
 # ----------------------------------------------------------------------------
-모바일터치조작=true
+모바일터치조작=false
 ```
 
 ### 5.2 `UserData/MelonPreferences.cfg`
-MelonLoader의 통합 기능 토글 설정에도 모바일 터치 기능 On/Off 항목이 등록되어 있습니다.
+MelonLoader의 통합 기능 토글 설정에도 모바일 터치 기능 On/Off 항목이 등록되어 있습니다. (기본값: `false`)
 ```toml
 [muse-dash-custom-chart-features]
-EnableMobileTouch = true
+EnableMobileTouch = false
 ```
 
 ---
