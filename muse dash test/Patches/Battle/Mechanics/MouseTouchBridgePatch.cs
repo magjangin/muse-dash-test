@@ -11,14 +11,13 @@ using Il2CppSystem.Collections.Generic;
 namespace muse_dash_test.Patches.Battle.Mechanics
 {
     /// <summary>
-    /// PC 환경의 StandloneController 및 InputManager에서 마우스 클릭 및 화면 터치 입력을 가로채어
-    /// BATTLE_AIR / BATTLE_GROUND 판정 및 체공(Hold)으로 직접 주입하는 브릿지 패치 클래스입니다.
-    /// PnlInputMobile의 좌우/상하 분할 모드 및 반전 설정이 100% 반영됩니다.
+    /// PC 환경에서 마우스 클릭 및 화면 터치 입력을 가로채어
+    /// BATTLE_AIR / BATTLE_GROUND의 상호 배타적(동시 입력 충돌 방지) 판정을 보장하는 브릿지 패치 클래스입니다.
+    /// PC 기본 마우스 키 매핑에 의한 Ground/Air 동시 발동 버그를 완벽하게 차단합니다.
     /// </summary>
     [HarmonyPatch]
     public static class MouseTouchBridgePatch
     {
-        // 마우스 버튼별 현재 입력된 Air 상태 추적
         private static bool _btn0IsAir = true;
         private static bool _btn1IsAir = false;
 
@@ -80,41 +79,66 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             {
                 if (result == null) result = new List<int>();
 
-                // 1. 마우스 좌클릭 (Finger 0)
+                // 마우스 좌클릭 처리
                 if (Input.GetMouseButtonDown(0))
                 {
                     _btn0IsAir = CalculateIsAir(Input.mousePosition);
-                    if (IsMatchingButton(_btn0IsAir, buttonName))
+
+                    // 클릭한 위치가 공중(Air)일 때
+                    if (_btn0IsAir)
                     {
-                        if (!result.Contains(0)) result.Add(0);
-                        MelonLogger.Msg($"🖱️ [MouseTouch Down] 좌클릭 -> {buttonName} (Air: {_btn0IsAir}, X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
+                        if (buttonName == MDButtonType.BATTLE_AIR)
+                        {
+                            if (!result.Contains(0)) result.Add(0);
+                            MelonLogger.Msg($"🖱️ [Touch Down] 공중(AIR) 단독 입력 (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            // 기본 PC 마우스 매핑으로 인한 지상 동시 발동 차단!
+                            result.Clear();
+                        }
+                    }
+                    // 클릭한 위치가 지상(Ground)일 때
+                    else
+                    {
+                        if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            if (!result.Contains(0)) result.Add(0);
+                            MelonLogger.Msg($"🖱️ [Touch Down] 지상(GROUND) 단독 입력 (X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_AIR)
+                        {
+                            // 공중 동시 발동 차단!
+                            result.Clear();
+                        }
                     }
                 }
 
-                // 2. 마우스 우클릭 (Finger 1, 연타 및 멀티터치 지원)
+                // 마우스 우클릭 (두 번째 손가락 / 연타)
                 if (Input.GetMouseButtonDown(1))
                 {
                     _btn1IsAir = CalculateIsAir(Input.mousePosition);
-                    if (IsMatchingButton(_btn1IsAir, buttonName))
-                    {
-                        if (!result.Contains(1)) result.Add(1);
-                        MelonLogger.Msg($"🖱️ [MouseTouch Down] 우클릭 -> {buttonName} (Air: {_btn1IsAir}, X={Input.mousePosition.x:F0}, Y={Input.mousePosition.y:F0})");
-                    }
-                }
 
-                // 3. 실제 터치스크린 터치
-                int touchCount = Input.touchCount;
-                for (int i = 0; i < touchCount; i++)
-                {
-                    Touch touch = Input.GetTouch(i);
-                    if (touch.phase == TouchPhase.Began)
+                    if (_btn1IsAir)
                     {
-                        bool isAir = CalculateIsAir(touch.position);
-                        if (IsMatchingButton(isAir, buttonName))
+                        if (buttonName == MDButtonType.BATTLE_AIR)
                         {
-                            int fingerKey = touch.fingerId % 2;
-                            if (!result.Contains(fingerKey)) result.Add(fingerKey);
-                            MelonLogger.Msg($"📱 [ScreenTouch Down] 터치 ID {touch.fingerId} -> {buttonName} (Air: {isAir})");
+                            if (!result.Contains(1)) result.Add(1);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_GROUND && !Input.GetMouseButton(0))
+                        {
+                            result.Clear();
+                        }
+                    }
+                    else
+                    {
+                        if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            if (!result.Contains(1)) result.Add(1);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_AIR && !Input.GetMouseButton(0))
+                        {
+                            result.Clear();
                         }
                     }
                 }
@@ -131,36 +155,57 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             {
                 if (result == null) result = new List<int>();
 
-                // 1. 마우스 좌클릭 홀드 (점프 체공 및 롱노트 유지)
+                // 마우스 좌클릭 홀드 (점프 체공 및 롱노트 유지)
                 if (Input.GetMouseButton(0))
                 {
-                    if (IsMatchingButton(_btn0IsAir, buttonName))
+                    if (_btn0IsAir)
                     {
-                        if (!result.Contains(0)) result.Add(0);
+                        if (buttonName == MDButtonType.BATTLE_AIR)
+                        {
+                            if (!result.Contains(0)) result.Add(0);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            // 체공 중 지상 홀드 신호 완전 차단 (지상으로 떨어지는 버그 방지)
+                            result.Clear();
+                        }
+                    }
+                    else
+                    {
+                        if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            if (!result.Contains(0)) result.Add(0);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_AIR)
+                        {
+                            result.Clear();
+                        }
                     }
                 }
 
-                // 2. 마우스 우클릭 홀드
+                // 마우스 우클릭 홀드
                 if (Input.GetMouseButton(1))
                 {
-                    if (IsMatchingButton(_btn1IsAir, buttonName))
+                    if (_btn1IsAir)
                     {
-                        if (!result.Contains(1)) result.Add(1);
-                    }
-                }
-
-                // 3. 터치스크린 홀드
-                int touchCount = Input.touchCount;
-                for (int i = 0; i < touchCount; i++)
-                {
-                    Touch touch = Input.GetTouch(i);
-                    if (touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
-                    {
-                        bool isAir = CalculateIsAir(touch.position);
-                        if (IsMatchingButton(isAir, buttonName))
+                        if (buttonName == MDButtonType.BATTLE_AIR)
                         {
-                            int fingerKey = touch.fingerId % 2;
-                            if (!result.Contains(fingerKey)) result.Add(fingerKey);
+                            if (!result.Contains(1)) result.Add(1);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_GROUND && !Input.GetMouseButton(0))
+                        {
+                            result.Clear();
+                        }
+                    }
+                    else
+                    {
+                        if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            if (!result.Contains(1)) result.Add(1);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_AIR && !Input.GetMouseButton(0))
+                        {
+                            result.Clear();
                         }
                     }
                 }
@@ -177,39 +222,58 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             {
                 if (result == null) result = new List<int>();
 
-                // 1. 마우스 좌클릭 릴리즈
+                // 마우스 좌클릭 릴리즈
                 if (Input.GetMouseButtonUp(0))
                 {
-                    if (IsMatchingButton(_btn0IsAir, buttonName))
+                    if (_btn0IsAir)
                     {
-                        if (!result.Contains(0)) result.Add(0);
-                        MelonLogger.Msg($"🖱️ [MouseTouch Up] 좌클릭 릴리즈 -> {buttonName}");
+                        if (buttonName == MDButtonType.BATTLE_AIR)
+                        {
+                            if (!result.Contains(0)) result.Add(0);
+                            MelonLogger.Msg($"🖱️ [Touch Up] 공중(AIR) 릴리즈");
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            result.Clear();
+                        }
+                    }
+                    else
+                    {
+                        if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            if (!result.Contains(0)) result.Add(0);
+                            MelonLogger.Msg($"🖱️ [Touch Up] 지상(GROUND) 릴리즈");
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_AIR)
+                        {
+                            result.Clear();
+                        }
                     }
                 }
 
-                // 2. 마우스 우클릭 릴리즈
+                // 마우스 우클릭 릴리즈
                 if (Input.GetMouseButtonUp(1))
                 {
-                    if (IsMatchingButton(_btn1IsAir, buttonName))
+                    if (_btn1IsAir)
                     {
-                        if (!result.Contains(1)) result.Add(1);
-                        MelonLogger.Msg($"🖱️ [MouseTouch Up] 우클릭 릴리즈 -> {buttonName}");
-                    }
-                }
-
-                // 3. 터치스크린 릴리즈
-                int touchCount = Input.touchCount;
-                for (int i = 0; i < touchCount; i++)
-                {
-                    Touch touch = Input.GetTouch(i);
-                    if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
-                    {
-                        bool isAir = CalculateIsAir(touch.position);
-                        if (IsMatchingButton(isAir, buttonName))
+                        if (buttonName == MDButtonType.BATTLE_AIR)
                         {
-                            int fingerKey = touch.fingerId % 2;
-                            if (!result.Contains(fingerKey)) result.Add(fingerKey);
-                            MelonLogger.Msg($"📱 [ScreenTouch Up] 터치 ID {touch.fingerId} 릴리즈 -> {buttonName}");
+                            if (!result.Contains(1)) result.Add(1);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_GROUND && !Input.GetMouseButton(0))
+                        {
+                            result.Clear();
+                        }
+                    }
+                    else
+                    {
+                        if (buttonName == MDButtonType.BATTLE_GROUND)
+                        {
+                            if (!result.Contains(1)) result.Add(1);
+                        }
+                        else if (buttonName == MDButtonType.BATTLE_AIR && !Input.GetMouseButton(0))
+                        {
+                            result.Clear();
                         }
                     }
                 }
@@ -218,13 +282,6 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             {
                 MelonLogger.Error($"[MouseTouchBridge] InjectButtonUp 에러: {ex}");
             }
-        }
-
-        private static bool IsMatchingButton(bool isAir, MDButtonType buttonName)
-        {
-            if (isAir && buttonName == MDButtonType.BATTLE_AIR) return true;
-            if (!isAir && buttonName == MDButtonType.BATTLE_GROUND) return true;
-            return false;
         }
 
         /// <summary>
