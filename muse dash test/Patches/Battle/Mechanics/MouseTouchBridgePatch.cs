@@ -75,6 +75,8 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         private static void InjectButtonDown(MDButtonType buttonName, ref List<int> result)
         {
+            if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch) return;
+
             try
             {
                 if (result == null) result = new List<int>();
@@ -151,6 +153,8 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         private static void InjectButtonHold(MDButtonType buttonName, ref List<int> result)
         {
+            if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch) return;
+
             try
             {
                 if (result == null) result = new List<int>();
@@ -218,6 +222,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         private static void InjectButtonUp(MDButtonType buttonName, ref List<int> result)
         {
+            if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch) return;
             try
             {
                 if (result == null) result = new List<int>();

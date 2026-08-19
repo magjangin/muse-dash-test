@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -33,7 +33,7 @@ namespace muse_dash_test
         /// 설정값은 그대로 둔 채 파일 전체를 새 레이아웃으로 다시 씁니다.
         /// (레이아웃만 바뀌면 키 목록은 그대로라 '누락/중복' 검사만으로는 갱신되지 않기 때문입니다.)
         /// </summary>
-        private const int ConfigFormatVersion = 2;
+        private const int ConfigFormatVersion = 3;
 
         /// <summary>레이아웃 버전을 기록하는 주석 줄의 앞부분.</summary>
         private const string ConfigFormatMarkerPrefix = "config-format:";
@@ -51,6 +51,7 @@ namespace muse_dash_test
             "판정바글자크기", "판정바틱유지시간", "판정바반응형",
             "오토플레이", "피버충전금지", "시네마", "강제퍼펙트",
             GhostNotesKey,
+            "모바일터치조작", "모바일좌우모드", "모바일반전모드", "모바일오토피버",
         };
 
         /// <summary>
@@ -247,6 +248,22 @@ namespace muse_dash_test
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
                 sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}");
+                sb.AppendLine();
+                sb.AppendLine();
+
+                sb.AppendLine(Rule);
+                sb.AppendLine("#  [6] 모바일 터치 조작 (Mobile Touch & Mouse Bridge)");
+                sb.AppendLine(Rule);
+                sb.AppendLine("#  모바일터치조작 : 마우스 클릭 및 터치스크린 입력을 모바일 터치(공중/지상)로 인식합니다.");
+                sb.AppendLine("#  모바일좌우모드 : true면 화면 좌우 분할(왼쪽:공중, 오른쪽:지상), false면 상하 분할(위:공중, 아래:지상)");
+                sb.AppendLine("#  모바일반전모드 : true면 터치/클릭 영역이 반대로(좌우/상하 반전) 바뀝니다.");
+                sb.AppendLine("#  모바일오토피버 : 모바일 자동 피버 활성화 여부입니다.");
+                sb.AppendLine($"#  값 형식        : {onOff}");
+                sb.AppendLine(ThinRule);
+                sb.AppendLine($"모바일터치조작={enableMobileTouch.ToString().ToLower()}");
+                sb.AppendLine($"모바일좌우모드={mobileLeftRight.ToString().ToLower()}");
+                sb.AppendLine($"모바일반전모드={mobileReverse.ToString().ToLower()}");
+                sb.AppendLine($"모바일오토피버={mobileAutoFever.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 MelonLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");

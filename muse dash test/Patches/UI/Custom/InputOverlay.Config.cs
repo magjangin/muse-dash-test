@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -50,6 +50,12 @@ namespace muse_dash_test
         // 공식곡의 고스트 노트(UID xx=17)가 판정선 근처에서 사라지지 않도록 알파를 되돌립니다.
         // 커스텀 곡은 이 값 대신 각자의 `hwa info.txt`에 적은 '커스텀 곡 고스트 노트 보이기'를 따릅니다.
         public static bool showGhostNotes = true;
+
+        // 모바일 터치 및 마우스-터치 브릿지 설정 필드
+        public static bool enableMobileTouch = true;
+        public static bool mobileLeftRight = true;
+        public static bool mobileReverse = false;
+        public static bool mobileAutoFever = false;
 
         private static string airColorName = "파랑";
         private static float airAlpha = 85f;
@@ -306,10 +312,34 @@ namespace muse_dash_test
                             }
                             break;
                         }
+                        case "모바일터치조작":
+                        case "모바일터치":
+                            enableMobileTouch = ParseBool(val, key, enableMobileTouch);
+                            break;
+                        case "모바일좌우모드":
+                        case "모바일좌우분할":
+                            mobileLeftRight = ParseBool(val, key, mobileLeftRight);
+                            try { Il2CppGameLogic.GameTouchPlay.isTouchLeftRight = mobileLeftRight; } catch (Exception) { }
+                            break;
+                        case "모바일반전모드":
+                        case "모바일되돌리기":
+                        case "모바일반전":
+                            mobileReverse = ParseBool(val, key, mobileReverse);
+                            try
+                            {
+                                Il2CppGameLogic.GameTouchPlay.isTouchReverse = mobileReverse;
+                                Il2CppGameLogic.GameTouchPlay.isReverse = mobileReverse;
+                            }
+                            catch (Exception) { }
+                            break;
+                        case "모바일오토피버":
+                        case "모바일자동피버":
+                            mobileAutoFever = ParseBool(val, key, mobileAutoFever);
+                            break;
                     }
                 }
 
-                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 판정바여백={barOffsetFromBottom}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 공식곡고스트노트보이기={showGhostNotes})");
+                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 모바일터치={enableMobileTouch}[좌우={mobileLeftRight}, 반전={mobileReverse}, 피버={mobileAutoFever}])");
                 UpdateTextures();
             }
             catch (Exception ex)

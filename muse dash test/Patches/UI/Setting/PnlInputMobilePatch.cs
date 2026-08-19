@@ -29,6 +29,12 @@ namespace muse_dash_test.Patches.UI.Setting
                     {
                         try
                         {
+                            if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch)
+                            {
+                                MelonLogger.Msg("📱 [MobileSetting] 모바일 터치 설정이 꺼져 있어 PC 기본 키설정 패널을 유지합니다.");
+                                return;
+                            }
+
                             MelonLogger.Msg("📱 [MobileSetting] 입력 설정 버튼 클릭됨! -> PnlInputMobile 강제 표시 시도");
 
                             if (__instance.m_PnlInputSettingStandlone != null)
@@ -77,6 +83,7 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void SetAutoFever_Postfix(bool autoFever)
         {
+            InputOverlay.mobileAutoFever = autoFever;
             MelonLogger.Msg($"📱 [PnlInputMobile] 오토 피버(AutoFever) 설정 변경됨: {autoFever}");
         }
 
@@ -84,6 +91,7 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void SetTouchReverse_Postfix(bool reverse)
         {
+            InputOverlay.mobileReverse = reverse;
             MelonLogger.Msg($"📱 [PnlInputMobile] 터치 좌우 반전(TouchReverse) 설정 변경됨: {reverse}");
         }
 
@@ -91,6 +99,7 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void SetLeftRight_Postfix(bool leftRight)
         {
+            InputOverlay.mobileLeftRight = leftRight;
             MelonLogger.Msg($"📱 [PnlInputMobile] 좌우 분할 모드(LeftRight) 설정 변경됨: {leftRight}");
         }
     }
