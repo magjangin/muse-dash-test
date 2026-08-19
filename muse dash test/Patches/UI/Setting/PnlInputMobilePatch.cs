@@ -83,7 +83,6 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void SetAutoFever_Postfix(bool autoFever)
         {
-            InputOverlay.mobileAutoFever = autoFever;
             MelonLogger.Msg($"📱 [PnlInputMobile] 오토 피버(AutoFever) 설정 변경됨: {autoFever}");
         }
 
@@ -91,7 +90,6 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void SetTouchReverse_Postfix(bool reverse)
         {
-            InputOverlay.mobileReverse = reverse;
             MelonLogger.Msg($"📱 [PnlInputMobile] 터치 좌우 반전(TouchReverse) 설정 변경됨: {reverse}");
         }
 
@@ -99,7 +97,6 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void SetLeftRight_Postfix(bool leftRight)
         {
-            InputOverlay.mobileLeftRight = leftRight;
             MelonLogger.Msg($"📱 [PnlInputMobile] 좌우 분할 모드(LeftRight) 설정 변경됨: {leftRight}");
         }
     }
