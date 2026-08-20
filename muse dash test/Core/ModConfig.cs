@@ -66,7 +66,7 @@ namespace muse_dash_test
             SpineSkinEntry = Category.CreateEntry("EnableSpineSkin", true, description: "Spine 커스텀 스킨 텍스처/아틀라스 주입 활성화");
             MobileTouchEntry = Category.CreateEntry("EnableMobileTouch", true, description: "모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화");
             VerboseLogEntry = Category.CreateEntry("EnableVerboseLog", false, description: "진단 로그 상세 출력 활성화 (개발/디버깅용, 평소에는 꺼두세요)");
-            LogLevelEntry = Category.CreateEntry("LogLevel", "Auto", description: "로그 출력 수준 ('Auto', 'Silent', 'Error', 'Warning', 'Info', 'Verbose'). Auto 설정 시 UMPC(ROG Ally, Steam Deck 등)에서는 자동으로 경고/오류만 출력하여 프레임 드랍을 방지합니다.");
+            LogLevelEntry = Category.CreateEntry("LogLevel", "Auto", description: "로그 출력 수준 ('Auto', 'Silent', 'Error', 'Warning', 'Info', 'Verbose'). Auto 설정 시 UMPC(ROG Ally, Steam Deck 등)에서는 자동으로 Error(치명적 오류만) 레벨로 작동하여 불필요한 로그 출력이 완전히 차단(음소거)됩니다.");
 
             ConfigureLogLevel();
             RegisterFeatureMapping();
@@ -81,8 +81,8 @@ namespace muse_dash_test
             {
                 if (DeviceDetector.IsUmpc)
                 {
-                    // UMPC에서는 렉/디스크 I/O 방지를 위해 Warning 이하(경고 및 에러만) 출력
-                    ModLogger.CurrentLogLevel = ModLogLevel.Warning;
+                    // UMPC에서는 콘솔/디스크 I/O 렉을 원천 방지하기 위해 Error(치명적 오류)만 출력하고 일반 로그/경고는 완전히 음소거
+                    ModLogger.CurrentLogLevel = ModLogLevel.Error;
                 }
                 else if (EnableVerboseLog)
                 {

@@ -105,12 +105,28 @@ namespace muse_dash_test
             }
         }
 
+        [ThreadStatic]
+        private static bool _isBypassing = false;
+
+        /// <summary>
+        /// 현재 필터링을 우회하여 강제 출력 중인지 여부입니다.
+        /// </summary>
+        public static bool IsBypassing => _isBypassing;
+
         /// <summary>
         /// 로그 레벨과 무관하게 최초 1회 필수 안내(예: UMPC 최적화 적용 알림)를 출력합니다.
         /// </summary>
         public static void LogAlways(string msg)
         {
-            MelonLogger.Msg(msg);
+            _isBypassing = true;
+            try
+            {
+                MelonLogger.Msg(msg);
+            }
+            finally
+            {
+                _isBypassing = false;
+            }
         }
     }
 }
