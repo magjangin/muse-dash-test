@@ -10,7 +10,7 @@
 ```text
 Muse Dash/
 ├── Mods/
-│   └── muse dash custom chart.dll      # 빌드 완료된 모드 DLL (AssemblyName 그대로, 공백 포함)
+│   └── muse-dash-custom-chart.dll   # 빌드 완료된 모드 DLL (릴리즈 첨부 파일과 같은 이름)
 └── hwa/                            # 커스텀 리소스 루트 디렉터리 (오프라인 모드)
 ```
 

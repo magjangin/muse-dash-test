@@ -294,7 +294,7 @@
 dotnet build "muse dash test\muse dash test.csproj" --configuration Debug
 ```
 
-* **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse dash custom chart.dll` (또는 Release 빌드 시 `bin/Release/net6.0/muse dash custom chart.dll`)
+* **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse-dash-custom-chart.dll` (또는 Release 빌드 시 `bin/Release/net6.0/muse-dash-custom-chart.dll`)
 * **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉토리
 
 ---

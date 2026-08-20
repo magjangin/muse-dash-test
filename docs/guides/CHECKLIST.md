@@ -39,14 +39,16 @@
       MelonLoader는 폴더 안의 `.dll`을 전부 로드합니다. 이름만 다른 같은 모드가 두 개 있으면
       Harmony 패치와 가상 곡 등록이 중복됩니다.
 
-- [ ] **릴리즈 첨부는 ZIP으로 올렸는가?**
-      **GitHub는 릴리즈 첨부 파일 이름의 공백을 점으로 자동 변환합니다.** `AssemblyName`이
-      `muse dash custom chart`(공백 포함)라서, DLL을 그대로 올리면 `muse.dash.custom.chart.dll`로
-      바뀌어 올라갑니다. `gh release upload`의 `#표시이름` 문법으로도 못 막습니다(v0.10.1에서 실측).
+- [ ] **`AssemblyName`에 공백을 넣지 않았는가?**
+      **GitHub는 릴리즈 첨부 파일 이름의 공백을 점으로 자동 변환합니다.** `gh release upload`의
+      `#표시이름` 문법으로도 못 막습니다(v0.10.1에서 실측). `AssemblyName`이
+      `muse dash custom chart`(공백)이던 시절, 릴리즈 에셋은 매번 `muse.dash.custom.chart.dll`로
+      바뀌어 올라갔고, **내려받은 DLL과 직접 빌드한 DLL이 이름이 달라 `Mods` 폴더에 나란히 남았습니다.**
+      (2026-08-20: v0.9.6 에셋이 빌드본 옆에 461,824바이트로 남아 있었습니다.)
 
-      그러면 내려받은 DLL과 직접 빌드한 DLL이 이름이 달라 **`Mods` 폴더에 나란히 남습니다.**
-      (2026-08-20: v0.9.6 에셋 `muse.dash.custom.chart.dll`이 빌드본 옆에 461,824바이트로 남아 있었습니다.)
-      ZIP으로 감싸면 압축 해제 시 실제 이름이 복원되어 기존 파일을 덮어씁니다.
+      v0.10.1에서 `AssemblyName`을 `muse-dash-custom-chart`(하이픈)로 바꿔 해결했습니다.
+      하이픈은 변환되지 않으므로 릴리즈 에셋 이름과 빌드 산출물 이름이 항상 같습니다.
+      **이름을 다시 건드릴 일이 있으면 공백을 넣지 마십시오.**
 
 - [ ] **릴리즈에 올릴 산출물은 `-c Release`로 빌드했는가?**
       Debug는 `DEBUG` 상수가 정의되고 최적화가 꺼집니다. 크기로 구분됩니다 — v0.10.1 기준 Release 469KB / Debug 503KB.
