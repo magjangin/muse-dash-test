@@ -116,9 +116,26 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         #region Core Injection Logic
 
+        /// <summary>
+        /// 이 브릿지가 손대는 버튼인지 판정합니다. <b>공중/지상 판정만</b> 다룹니다.
+        ///
+        /// <para><b>왜 필요한가</b>: 아래 Inject 메서드들은 원본 결과를 <c>result.Clear()</c>로 통째로 버리고
+        /// 마우스·터치 입력으로 다시 채웁니다. 그런데 다시 채우는 분기는 <c>BATTLE_AIR</c>/<c>BATTLE_GROUND</c>
+        /// 뿐이라, 이 가드가 없으면 <c>MDButtonType</c>의 나머지 값인 <b><c>BATTLE_FEVER</c>는 비워지기만 하고
+        /// 아무도 채우지 않습니다.</b> 모바일 터치를 켠 동안 게임이 피버 입력을 영영 빈 목록으로 읽게 됩니다.</para>
+        ///
+        /// <para>피버는 이 모드에서 <c>AbstractFeverManager.AddFever</c>(게이지)와 인게임 UI가 따로 관리합니다.
+        /// 입력 브릿지와 피버는 별개로 두고, 여기서는 원본 결과를 그대로 통과시킵니다.</para>
+        /// </summary>
+        private static bool IsBridgedButton(MDButtonType buttonName)
+        {
+            return buttonName == MDButtonType.BATTLE_AIR || buttonName == MDButtonType.BATTLE_GROUND;
+        }
+
         private static void InjectButtonDown(MDButtonType buttonName, ref List<int> result)
         {
             if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch) return;
+            if (!IsBridgedButton(buttonName)) return;
 
             try
             {
@@ -191,6 +208,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
         private static void InjectButtonHold(MDButtonType buttonName, ref List<int> result)
         {
             if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch) return;
+            if (!IsBridgedButton(buttonName)) return;
 
             try
             {
@@ -255,6 +273,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
         private static void InjectButtonUp(MDButtonType buttonName, ref List<int> result)
         {
             if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch) return;
+            if (!IsBridgedButton(buttonName)) return;
 
             try
             {
