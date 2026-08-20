@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -112,10 +112,13 @@ namespace muse_dash_test
                 int finalMiss = isNewHighScore ? miss : existing.miss;
                 string finalSavedAt = isNewHighScore ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) : existing.savedAtUtc;
 
+                // 방금 플레이한 채보의 지문을 함께 남깁니다. 계산에 실패해도(null) 기록 저장 자체는 막지 않습니다.
+                string fingerprint = ChartFingerprint.ForUid(uid) ?? ChartFingerprint.NoChart;
+
                 string filePath = Path.Combine(RecordFolderPath, $"{SanitizeFileName(uid)}_{difficulty}.json");
                 string json = BuildJson(uid, finalNoteCount, finalStandard, finalGears, finalHearts, finalBlueNotes,
                     finalPerfect, finalGreat, finalMiss, finalScore, finalMaxCombo, finalAccuracy,
-                    finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt);
+                    finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt, fingerprint);
 
                 File.WriteAllText(filePath, json, Encoding.UTF8);
                 ModLogger.Msg($"[CustomRecordStore] 기록 저장 완료 (신규 최고기록: {isNewHighScore}) → {filePath} (playCount={updatedPlayCount}, score={finalScore}, maxCombo={finalMaxCombo}, acc={finalAccuracy:0.0000}, FC={finalIsFullCombo}, AP={finalIsAllPerfect})");
@@ -154,10 +157,65 @@ namespace muse_dash_test
             public bool isAllPerfect;
             public int playCount = 1;
             public string savedAtUtc = string.Empty;
+
+            /// <summary>이 기록을 만든 채보의 지문입니다. 지문을 적기 전(v0.10.1 이하)의 기록은 비어 있습니다.</summary>
+            public string chartFingerprint = string.Empty;
+        }
+
+        /// <summary>같은 사유를 매 패널 갱신마다 찍지 않도록, 슬롯별로 한 번만 경고합니다(실측 세션당 86회 로드).</summary>
+        private static readonly System.Collections.Generic.HashSet<string> WarnedSlots =
+            new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// 읽어온 기록이 <b>지금 그 슬롯에 들어 있는 채보</b>의 것인지 판정합니다.
+        ///
+        /// <para>기록 파일은 uid(= hwa 폴더 순번)로만 묶이므로, 폴더 안 BMS를 갈아끼우거나
+        /// 곡 폴더를 추가·삭제해 순번이 밀리면 남의 기록이 그대로 표시됩니다. 그래서 채보 지문으로 걸러냅니다.
+        /// 자세한 배경은 <see cref="ChartFingerprint"/> 참고.</para>
+        ///
+        /// <para>판정에 실패했을 때(지문 계산 예외)는 <b>통과시킵니다</b>. 일시적인 파일 읽기 실패로
+        /// 멀쩡한 기록을 숨기는 쪽이 더 나쁘기 때문입니다.</para>
+        /// </summary>
+        private static bool BelongsToCurrentChart(PlayRecord record, string uid, int difficulty, string filePath)
+        {
+            if (record == null) return false;
+
+            string current = ChartFingerprint.ForUid(uid);
+            if (current == null) return true; // 지문 계산 실패 → 판정 불가, 통과
+
+            if (string.IsNullOrEmpty(record.chartFingerprint))
+            {
+                WarnOnce(uid, difficulty,
+                    $"[CustomRecordStore] 채보 지문이 없는 옛 기록이라 표시하지 않습니다 → {filePath} "
+                    + "(v0.10.1 이하에서 저장된 기록입니다. 이 채보를 한 번 플레이하면 지문과 함께 새로 기록됩니다. 파일은 지우지 않았습니다.)");
+                return false;
+            }
+
+            if (!string.Equals(record.chartFingerprint, current, StringComparison.OrdinalIgnoreCase))
+            {
+                WarnOnce(uid, difficulty,
+                    $"[CustomRecordStore] 다른 채보의 기록이라 표시하지 않습니다 → {filePath} "
+                    + $"(기록 지문={record.chartFingerprint}, 현재 채보 지문={current}, 기록 노트수={record.noteCount}). "
+                    + "이 슬롯의 BMS가 바뀌었거나 곡 폴더 순번이 밀린 것입니다.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void WarnOnce(string uid, int difficulty, string message)
+        {
+            string key = uid + "_" + difficulty;
+            lock (WarnedSlots)
+            {
+                if (!WarnedSlots.Add(key)) return;
+            }
+            ModLogger.Warning(message);
         }
 
         /// <summary>
         /// record/{uid}_{difficulty}.json 에서 플레이 기록을 로드합니다.
+        /// 지금 채보의 기록이 아니면 null을 돌려줍니다(<see cref="BelongsToCurrentChart"/>).
         /// </summary>
         public static PlayRecord LoadResult(string uid, int difficulty)
         {
@@ -184,6 +242,9 @@ namespace muse_dash_test
                 string content = File.ReadAllText(filePath, Encoding.UTF8);
                 var record = ParseJson(content);
                 if (record != null && record.playCount <= 0) record.playCount = 1;
+
+                if (!BelongsToCurrentChart(record, uid, difficulty, filePath)) return null;
+
                 ModLogger.Msg($"[CustomRecordStore] 기록 로드 성공 → {filePath} (playCount={record?.playCount}, score={record?.score}, acc={record?.accuracy:0.0000}, FC={record?.isFullCombo})");
                 return record;
             }
@@ -256,6 +317,9 @@ namespace muse_dash_test
                     case "savedAtUtc":
                         record.savedAtUtc = val.Replace("\"", "").Trim();
                         break;
+                    case "chartFingerprint":
+                        record.chartFingerprint = val.Replace("\"", "").Trim();
+                        break;
                 }
             }
             return record;
@@ -268,7 +332,7 @@ namespace muse_dash_test
             int perfect, int great, int miss,
             int score, int maxCombo,
             float accuracy, bool isFullCombo, bool isAllPerfect,
-            int playCount, string savedAtUtc)
+            int playCount, string savedAtUtc, string chartFingerprint)
         {
             var ci = CultureInfo.InvariantCulture;
             var sb = new StringBuilder();

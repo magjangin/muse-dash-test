@@ -268,6 +268,13 @@ IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 �
 가상 곡의 난이도별 플레이 기록을 로컬 JSON 파일로 저장하고 로드하는 데이터 관리 클래스입니다.
 * **`SaveResult(string uid, int difficulty, PlayRecord record)`**: 기록을 `{uid}_{difficulty}.json` 파일로 직렬화하여 영구 저장합니다.
 * **`LoadResult(string uid, int difficulty)`**: 해당 난이도 전용 기록 파일을 읽어오며, 레거시 지원을 위해 `{uid}.json` 형식의 백업 폴백 로더도 지원합니다.
+* **채보 지문 대조 [v0.10.2]**: 읽어온 기록이 **지금 그 슬롯에 들어 있는 채보**의 것인지 `ChartFingerprint`로 확인하고, 아니면 `null`을 돌려줍니다. 파일은 지우지 않습니다.
+
+### 📂 [Core/ChartFingerprint.cs](../../muse%20dash%20test/Core/ChartFingerprint.cs) [v0.10.2]
+BMS 파일 내용의 SHA-256 앞 16자리로 "지금 그 슬롯의 채보"를 식별합니다. BMS가 없는 슬롯은 `none`입니다.
+* **왜 필요한가**: 기록 파일 키는 `{uid}_{난이도}`인데 이 uid는 `hwa` 폴더를 이름순 정렬한 **순번**입니다(`HwaResourceManager.PreloadHwaManifest`). 채보 내용도 폴더 이름도 기록과 묶여 있지 않아서, 폴더 안 BMS만 갈아끼우거나 곡 폴더를 추가·삭제해 순번이 밀리면 **예전 채보의 기록이 다른 채보에 그대로 붙습니다.** (2026-08-20 실측: 319노트 채보의 FC/AP 기록이 43노트짜리 새 채보의 최고 기록으로 표시됐습니다.)
+* 곡 선택/준비 패널이 기록을 세션당 수십 번 다시 읽으므로(실측 86회), 경로·크기·수정시각으로 캐시합니다.
+* 지문 계산에 실패하면(`null`) 판정을 건너뛰고 통과시킵니다. 일시적인 읽기 실패로 멀쩡한 기록을 숨기는 쪽이 더 나쁘기 때문입니다.
 
 ### 📂 [Patches/UI/Stage/CustomRecordUiPatchHelper.cs](../../muse%20dash%20test/Patches/UI/Stage/CustomRecordUiPatchHelper.cs) [NEW]
 가상 곡 플레이 데이터(정확도, 점수, 최대 콤보, 풀콤보 등)를 게임 내 각 UI 패널에 바인딩해 주는 전용 도우미입니다.
