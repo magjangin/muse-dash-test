@@ -54,7 +54,8 @@
   * 가상/커스텀 곡(`1999-*`)을 선택하거나 플레이 준비 화면(`PnlPreparation`)에 진입할 때, 현재 씬에서 재생 중인 BGM/데모용 `AudioSource`를 실시간으로 탐색하여 로컬 디렉터리의 OGG 파일(`music.ogg`)로 오디오 클립을 비동기 핫스왑(Hot-swap) 적용합니다.
 * **Mobile Touch Mode & Mouse Bridge (모바일 터치 설정 복원 및 마우스/터치 브릿지) [NEW]** ✅
   * PC 스팀 빌드 내에 잠들어 있던 모바일 전용 입력 설정창(`PnlInputMobile`)을 완벽 복원하여 좌우/상하 분할 모드, 되돌리기(반전), 오토 피버 옵션을 실시간 제어합니다.
-  * 인게임 배틀에서 마우스 좌/우 클릭 및 터치스크린 입력을 공중/지상 타격 및 점프 체공(롱노트 홀드)으로 실시간 변환 주입하며, PC 기본 키 매핑 간섭을 원천 차단하는 상호 배타적 필터링이 적용되었습니다. (→ [MOBILE_TOUCH_AND_INPUT_GUIDE.md](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md))
+  * 인게임 배틀에서 마우스 좌/우 클릭 및 터치스크린 입력을 공중/지상 타격 및 점프 체공(롱노트 홀드)으로 실시간 변환 주입하며, PC 기본 키 매핑 간섭을 원천 차단하는 상호 배타적 필터링이 적용되었습니다.
+  * **터치스크린 10접점 멀티터치 지원**: ROG Ally, 스팀덱, 서피스 등에서 두 손가락으로 공중/지상 동시 입력이 가능합니다. 레거시 `UnityEngine.Input`이 Windows 스탠드얼론에서 터치를 읽지 못하는 문제를 새 Input System 전환으로 해결했으며, Windows의 마우스 승격으로 인한 이중 판정도 차단합니다. (→ [MOBILE_TOUCH_AND_INPUT_GUIDE.md](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md))
 
 ---
 
@@ -133,7 +134,7 @@
 ```text
 ├── muse dash test/           # C# 모드 프로젝트 폴더
 │   ├── Bms/                  # BMS 파서/렉서, WAV 코드 해석, 노트 매칭, 보스 스왑 플래너
-│   ├── Core/                 # 게임 바인딩, 예외 격리, 세션/기록 저장소, ModConfig 통합 설정
+│   ├── Core/                 # 게임 바인딩, 예외 격리, 터치 입력 판독, 세션/기록 저장소, ModConfig 통합 설정
 │   │   ├── ModConfig.cs      # MelonPreferences 기반 12개 개별 기능 동적 On/Off 제어
 │   │   └── ...
 │   ├── Integration/          # Discord RPC 연동 및 실시간 리소스/스킨 스와퍼 (P/O 단축키)

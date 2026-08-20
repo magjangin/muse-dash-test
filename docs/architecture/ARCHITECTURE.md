@@ -113,7 +113,7 @@ flowchart TD
 | 메뉴 BGM | `HwaMenuBgmController` | 곡 선택/준비 화면에서 `music.ogg` 핫스왑 |
 | 보스 | `BossPatch`, `BmsBossSwapPlanner` | BMS 이벤트 기반 보스 교체/액션 |
 | 정확도/결과 | `APModPatch`, `CustomRecordStore` | 커스텀 차트 정확도, AP 배너, 기록 저장 |
-| 모바일 터치/입력 | `MouseTouchBridgePatch`, `PnlInputMobilePatch` | 모바일 터치 설정 복원, 마우스/터치 배틀 입력 변환 및 키 충돌 방지 |
+| 모바일 터치/입력 | `MouseTouchBridgePatch`, `PnlInputMobilePatch`, `TouchInput` | 모바일 터치 설정 복원, 마우스/터치 배틀 입력 변환 및 키 충돌 방지. 터치 접점은 새 Input System으로 판독 (레거시 `UnityEngine.Input`은 Windows에서 동작하지 않음) |
 | UI 보조 | `InputOverlay`, `JudgmentBar`, `ProgressBarPatch` | 입력 표시, 판정바, 진행바 제어 |
 | 씬/렌더 보정 | `SceneZzTransformTracker*`, `SceneFlowPatch` | 씬 전환, 노트/배경 관련 런타임 보정 |
 
