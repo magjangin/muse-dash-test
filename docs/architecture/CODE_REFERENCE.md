@@ -266,9 +266,11 @@ IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 �
 
 ### 📂 [Core/CustomRecordStore.cs](../../muse%20dash%20test/Core/CustomRecordStore.cs) [NEW]
 가상 곡의 난이도별 플레이 기록을 로컬 JSON 파일로 저장하고 로드하는 데이터 관리 클래스입니다.
-* **`SaveResult(string uid, int difficulty, PlayRecord record)`**: 기록을 `{uid}_{difficulty}.json` 파일로 직렬화하여 영구 저장합니다.
-* **`LoadResult(string uid, int difficulty)`**: 해당 난이도 전용 기록 파일을 읽어오며, 레거시 지원을 위해 `{uid}.json` 형식의 백업 폴백 로더도 지원합니다.
+* **`SaveResult(...)`**: 기록을 `{곡 폴더 이름}_{difficulty}.json` 파일로 직렬화하여 영구 저장합니다.
+* **`LoadResult(string uid, int difficulty)`**: 폴더 이름 키 → (구버전) `{uid}_{difficulty}.json` → (더 옛날) `{uid}.json` 순으로 훑어 읽습니다.
+* **`ResolveRecordKey(string uid)` [v0.10.2]**: 기록 파일의 키를 **uid가 아니라 곡 폴더 이름으로** 해석합니다. uid(`1999-N`)는 `hwa` 폴더를 이름순 정렬한 **순번**이라(`HwaResourceManager.PreloadHwaManifest`) 곡 폴더를 추가·삭제·개명하면 통째로 밀리고, 그러면 남의 곡 기록이 붙습니다. 폴더를 해석할 수 없거나 결과가 `hwa` 루트 자체이면(테스트 슬롯 3개가 전부 같은 이름이 됨) uid로 돌아갑니다.
 * **채보 지문 대조 [v0.10.2]**: 읽어온 기록이 **지금 그 슬롯에 들어 있는 채보**의 것인지 `ChartFingerprint`로 확인하고, 아니면 `null`을 돌려줍니다. 파일은 지우지 않습니다.
+* 두 장치는 서로 다른 사고를 막습니다 — **폴더 이름 키**는 순번이 밀려 기록이 다른 곡에 붙는 것을, **채보 지문**은 같은 폴더 안에서 BMS만 갈아끼웠을 때 옛 기록이 남는 것을 막습니다. JSON에는 `chartFingerprint`와 `songFolder`가 함께 기록됩니다.
 
 ### 📂 [Core/ChartFingerprint.cs](../../muse%20dash%20test/Core/ChartFingerprint.cs) [v0.10.2]
 BMS 파일 내용의 SHA-256 앞 16자리로 "지금 그 슬롯의 채보"를 식별합니다. BMS가 없는 슬롯은 `none`입니다.

@@ -42,7 +42,68 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 한 판의 플레이 결과를 record/{uid}_{difficulty}.json 에 기록합니다.
+        /// 기록 파일의 키를 해석합니다. <b>uid가 아니라 곡 폴더 이름</b>입니다.
+        ///
+        /// <para>uid(<c>1999-N</c>)는 <c>hwa</c> 폴더를 이름순 정렬한 <b>순번</b>이라서
+        /// (<c>HwaResourceManager.PreloadHwaManifest</c>), 곡 폴더를 추가·삭제·개명하면 통째로 밀립니다.
+        /// uid를 키로 쓰면 그때마다 <b>남의 곡 기록이 붙습니다.</b> 폴더 이름은 순번과 무관하므로
+        /// 폴더를 어디에 끼워 넣어도 기록이 따라다니지 않습니다.</para>
+        ///
+        /// <para>폴더를 해석할 수 없거나(테스트 슬롯 등) 해석 결과가 <c>hwa</c> 루트 자체이면
+        /// 슬롯을 구분할 수 없으므로 예전처럼 uid로 돌아갑니다.</para>
+        /// </summary>
+        public static string ResolveRecordKey(string uid)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(uid)) return uid;
+                if (!HwaResourceManager.TryGetSongDirectory(uid, out string dir) || string.IsNullOrEmpty(dir)) return uid;
+
+                // hwa 루트 자체는 테스트 슬롯 3개가 전부 같은 이름으로 해석되므로 키가 될 수 없습니다.
+                if (string.Equals(TrimSeparators(dir), TrimSeparators(HwaResourceManager.HwaFolderPath), StringComparison.OrdinalIgnoreCase))
+                {
+                    return uid;
+                }
+
+                string folderName = Path.GetFileName(TrimSeparators(dir));
+                return string.IsNullOrWhiteSpace(folderName) ? uid : folderName;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[CustomRecordStore] uid={uid} 곡 폴더 해석 실패, uid를 키로 씁니다: {ex.Message}");
+                return uid;
+            }
+        }
+
+        private static string TrimSeparators(string path)
+        {
+            return string.IsNullOrEmpty(path)
+                ? path
+                : path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        private static string RecordPathFor(string key, int difficulty)
+        {
+            return Path.Combine(RecordFolderPath, $"{SanitizeFileName(key)}_{difficulty}.json");
+        }
+
+        /// <summary>
+        /// 읽을 기록 파일을 찾습니다. 폴더 이름 키 → (구버전) uid 키 → (더 옛날) uid.json 순으로 훑습니다.
+        /// </summary>
+        private static string FindExistingRecordPath(string uid, int difficulty)
+        {
+            string keyPath = RecordPathFor(ResolveRecordKey(uid), difficulty);
+            if (File.Exists(keyPath)) return keyPath;
+
+            string uidPath = RecordPathFor(uid, difficulty);
+            if (File.Exists(uidPath)) return uidPath;
+
+            string legacyPath = Path.Combine(RecordFolderPath, SanitizeFileName(uid) + ".json");
+            return File.Exists(legacyPath) ? legacyPath : null;
+        }
+
+        /// <summary>
+        /// 한 판의 플레이 결과를 record/{곡 폴더 이름}_{difficulty}.json 에 기록합니다.
         /// (최고 점수 갱신 비교 및 플레이 횟수 누적을 수행합니다.)
         /// </summary>
         public static void SaveResult(
@@ -115,10 +176,11 @@ namespace muse_dash_test
                 // 방금 플레이한 채보의 지문을 함께 남깁니다. 계산에 실패해도(null) 기록 저장 자체는 막지 않습니다.
                 string fingerprint = ChartFingerprint.ForUid(uid) ?? ChartFingerprint.NoChart;
 
-                string filePath = Path.Combine(RecordFolderPath, $"{SanitizeFileName(uid)}_{difficulty}.json");
+                string recordKey = ResolveRecordKey(uid);
+                string filePath = RecordPathFor(recordKey, difficulty);
                 string json = BuildJson(uid, finalNoteCount, finalStandard, finalGears, finalHearts, finalBlueNotes,
                     finalPerfect, finalGreat, finalMiss, finalScore, finalMaxCombo, finalAccuracy,
-                    finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt, fingerprint);
+                    finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt, fingerprint, recordKey);
 
                 File.WriteAllText(filePath, json, Encoding.UTF8);
                 ModLogger.Msg($"[CustomRecordStore] 기록 저장 완료 (신규 최고기록: {isNewHighScore}) → {filePath} (playCount={updatedPlayCount}, score={finalScore}, maxCombo={finalMaxCombo}, acc={finalAccuracy:0.0000}, FC={finalIsFullCombo}, AP={finalIsAllPerfect})");
@@ -160,6 +222,9 @@ namespace muse_dash_test
 
             /// <summary>이 기록을 만든 채보의 지문입니다. 지문을 적기 전(v0.10.1 이하)의 기록은 비어 있습니다.</summary>
             public string chartFingerprint = string.Empty;
+
+            /// <summary>기록 파일의 키로 쓰인 곡 폴더 이름입니다(파일을 열었을 때 어느 곡인지 알아보기 위한 것).</summary>
+            public string songFolder = string.Empty;
         }
 
         /// <summary>같은 사유를 매 패널 갱신마다 찍지 않도록, 슬롯별로 한 번만 경고합니다(실측 세션당 86회 로드).</summary>
@@ -223,21 +288,8 @@ namespace muse_dash_test
             {
                 if (string.IsNullOrEmpty(uid)) return null;
 
-                string filename = $"{SanitizeFileName(uid)}_{difficulty}.json";
-                string filePath = Path.Combine(RecordFolderPath, filename);
-                if (!File.Exists(filePath))
-                {
-                    // Fallback to legacy {uid}.json if {uid}_{difficulty}.json doesn't exist
-                    string fallbackPath = Path.Combine(RecordFolderPath, SanitizeFileName(uid) + ".json");
-                    if (File.Exists(fallbackPath))
-                    {
-                        filePath = fallbackPath;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
+                string filePath = FindExistingRecordPath(uid, difficulty);
+                if (filePath == null) return null;
 
                 string content = File.ReadAllText(filePath, Encoding.UTF8);
                 var record = ParseJson(content);
@@ -320,6 +372,9 @@ namespace muse_dash_test
                     case "chartFingerprint":
                         record.chartFingerprint = val.Replace("\"", "").Trim();
                         break;
+                    case "songFolder":
+                        record.songFolder = val.Replace("\"", "").Trim();
+                        break;
                 }
             }
             return record;
@@ -332,7 +387,7 @@ namespace muse_dash_test
             int perfect, int great, int miss,
             int score, int maxCombo,
             float accuracy, bool isFullCombo, bool isAllPerfect,
-            int playCount, string savedAtUtc, string chartFingerprint)
+            int playCount, string savedAtUtc, string chartFingerprint, string songFolder)
         {
             var ci = CultureInfo.InvariantCulture;
             var sb = new StringBuilder();
@@ -352,7 +407,9 @@ namespace muse_dash_test
             sb.Append("  \"isFullCombo\": ").Append(isFullCombo ? "true" : "false").Append(",\n");
             sb.Append("  \"isAllPerfect\": ").Append(isAllPerfect ? "true" : "false").Append(",\n");
             sb.Append("  \"playCount\": ").Append(playCount).Append(",\n");
-            sb.Append("  \"savedAtUtc\": \"").Append(string.IsNullOrEmpty(savedAtUtc) ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", ci) : savedAtUtc).Append("\"\n");
+            sb.Append("  \"savedAtUtc\": \"").Append(string.IsNullOrEmpty(savedAtUtc) ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", ci) : savedAtUtc).Append("\",\n");
+            sb.Append("  \"chartFingerprint\": \"").Append(EscapeJson(string.IsNullOrEmpty(chartFingerprint) ? ChartFingerprint.NoChart : chartFingerprint)).Append("\",\n");
+            sb.Append("  \"songFolder\": \"").Append(EscapeJson(songFolder)).Append("\"\n");
             sb.Append('}').Append('\n');
             return sb.ToString();
         }
