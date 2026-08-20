@@ -11,6 +11,28 @@ namespace muse_dash_test
     /// </summary>
     internal static partial class SceneZzTransformTracker
     {
+        /// <summary>
+        /// 씬에 생성된 실제 런타임 컨트롤러 객체들을 깊게 탐색하여 원래의 원본 값(uid, scene 등)으로 되돌려놓습니다.
+        ///
+        /// <para><b>진단 덤프는 제거됐습니다(2026-08-20).</b> 예전에는 복구가 끝나면 non-07 노트마다
+        /// 런타임 객체를 리플렉션으로 깊이 2까지 훑어 <c>runtime object dump</c> / <c>MusicData prop depth=2</c>
+        /// 줄을 찍었는데, 노트가 많은 곡(objCtrls 501개)에서 <b>게임이 통째로 죽었습니다</b> —
+        /// 로그가 objCtrls 193번째에서 끊기고 종료 로그도 남지 않는 네이티브 크래시였습니다.
+        /// IL2CPP 객체를 리플렉션으로 깊게 파는 탐침이 이 게임에서 조용히 프로세스를 날리는 건
+        /// 전력이 있습니다(<c>SpineActionController</c>). 게임 동작에 기여하지 않는 진단이라 걷어냈고,
+        /// 규모 파악에 필요한 요약(<c>runtime list scan</c>, zz 분포)은 그대로 남깁니다.</para>
+        /// </summary>
+        public static int RestoreRuntimeObjects(GameMusicScene scene)
+        {
+            if (scene == null || OriginalsByObjId.Count == 0) return 0;
+
+            int restored = 0;
+            restored += RestoreObjectList("objCtrls", SafeGet(() => scene.objCtrls));
+            restored += RestoreObjectList("preloads", SafeGet(() => scene.preloads));
+            restored += RestoreObjectList("preloads1", SafeGet(() => scene.preloads1));
+            return restored;
+        }
+
         private static int RestoreObjectList(string label, object listObj)
         {
             if (listObj == null) return 0;
