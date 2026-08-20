@@ -1,4 +1,4 @@
-# 코드 파일별 레퍼런스
+﻿# 코드 파일별 레퍼런스
 
 이 문서는 `muse dash test` 프로젝트의 C# 파일별 역할, 주요 클래스·메서드, 상호 작용 흐름을 정리한 코드 레퍼런스입니다.
 
@@ -52,9 +52,8 @@ MelonLoader 모드 진입점 클래스입니다.
 ### 📂 [Core/ModLogger.cs](../../muse%20dash%20test/Core/ModLogger.cs) [v0.10.0]
 * 로그 레벨(`Silent`, `Error`, `Warning`, `Info`, `Verbose`)에 따라 로그 출력을 동적으로 제어하는 통합 로거입니다.
 * UMPC 환경에서는 콘솔/디스크 I/O 렉을 원천 방지하기 위해 기본 레벨을 `Error`로 낮추며, `LogAlways()`는 필터링을 우회하여 최초 필수 시작 배너를 보장합니다.
-
-### 📂 [Core/MelonLoggerInterceptor.cs](../../muse%20dash%20test/Core/MelonLoggerInterceptor.cs) [v0.10.0]
-* MelonLoader의 `MelonLogger.Msg`, `Warning`, `Error` 메서드를 Harmony Prefix로 가로채 `ModLogger.CurrentLogLevel`에 맞춰 불필요한 로그 출력을 프레임워크 레벨에서 완전히 차단(음소거)하는 인터셉터 패치입니다.
+* **모드의 모든 로그는 이 클래스만 거칩니다.** `MelonLogger`를 직접 호출하는 코드는 `ModLogger` 내부뿐입니다.
+* v0.10.0에는 `MelonLogger.Msg/Warning/Error`를 Harmony Prefix로 전역 가로채는 `MelonLoggerInterceptor`가 있었으나, MelonLoader 0.7.3의 HarmonyX가 **순수 관리 메서드**를 디투어하는 경로(`ManagedMethodPatcher.DetourTo` → `ILHookExtensions.GetCurrentTarget`)에서 NRE로 터지면서 해당 클래스의 `PatchAll`이 통째로 중단됐습니다. IL2CPP 대상 패치는 Il2CppInterop의 네이티브 경로를 타므로 영향이 없었고, 관리 메서드를 노린 이 패치만 실패해 **음소거가 전혀 걸리지 않았습니다.** 그래서 인터셉터를 제거하고 호출부 판정으로 되돌렸습니다.
 
 ### 📂 [Core/TouchInput.cs](../../muse%20dash%20test/Core/TouchInput.cs) [NEW]
 * 터치스크린 접점을 판독하는 단일 창구입니다. **새 Input System의 `Touchscreen.current.touches`에서 읽습니다.**

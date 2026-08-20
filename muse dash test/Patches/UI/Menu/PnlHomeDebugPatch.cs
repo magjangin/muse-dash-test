@@ -37,14 +37,14 @@ namespace muse_dash_test.Patches.UI.Menu
                 var pnlMenu = UnityEngine.Object.FindObjectOfType<PnlMenu>();
                 bool menuActive = pnlMenu != null && pnlMenu.gameObject != null && pnlMenu.gameObject.activeInHierarchy;
 
-                MelonLogger.Msg($"🔍 [UI.PanelDebug] ===== {eventName} =====");
-                MelonLogger.Msg($"  - Selected UID: {selectedUid ?? "(null)"} (VirtualSong: {CustomContentIds.IsVirtualSong(selectedUid)})");
-                MelonLogger.Msg($"  - BGM State: clip='{clipName}', playing={isPlaying}, vol={volume:F2}");
-                MelonLogger.Msg($"==============================================");
+                ModLogger.Msg($"🔍 [UI.PanelDebug] ===== {eventName} =====");
+                ModLogger.Msg($"  - Selected UID: {selectedUid ?? "(null)"} (VirtualSong: {CustomContentIds.IsVirtualSong(selectedUid)})");
+                ModLogger.Msg($"  - BGM State: clip='{clipName}', playing={isPlaying}, vol={volume:F2}");
+                ModLogger.Msg($"==============================================");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[UI.PanelDebug] {eventName} 추적 에러: {ex}");
+                ModLogger.Error($"[UI.PanelDebug] {eventName} 추적 에러: {ex}");
             }
         }
     }

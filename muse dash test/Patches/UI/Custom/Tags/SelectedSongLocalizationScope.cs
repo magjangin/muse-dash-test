@@ -57,7 +57,7 @@ namespace muse_dash_test
         {
             if (!_loggedRefusals.Add(caller)) return;
 
-            MelonLogger.Msg($"[{caller}] 스코프 밖에서 들어온 index={index} 조회는 가로채지 않고 원본에 넘겼습니다 " +
+            ModLogger.Msg($"[{caller}] 스코프 밖에서 들어온 index={index} 조회는 가로채지 않고 원본에 넘겼습니다 " +
                             $"({detail}). 이 로그는 호출 지점당 1회만 표시됩니다.");
         }
     }

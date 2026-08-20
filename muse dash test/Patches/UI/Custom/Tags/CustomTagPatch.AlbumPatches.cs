@@ -30,7 +30,7 @@ namespace muse_dash_test
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"m_MaxAlbumUid 성능 최적화 패치 적용 중 예외 발생 (비치명적): {ex.Message}");
+                    ModLogger.Warning($"m_MaxAlbumUid 성능 최적화 패치 적용 중 예외 발생 (비치명적): {ex.Message}");
                 }
             }
         }
@@ -88,7 +88,7 @@ namespace muse_dash_test
                 if (!_logged)
                 {
                     _logged = true;
-                    MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 앨범 UID 응답: uid={__instance.uid} → '{__result}' (이 로그는 1회만 표시됩니다)");
+                    ModLogger.Msg($"[CustomTagRegistry] 가상 곡 앨범 UID 응답: uid={__instance.uid} → '{__result}' (이 로그는 1회만 표시됩니다)");
                 }
                 return false;
             }
@@ -122,7 +122,7 @@ namespace muse_dash_test
                 if (!_logged)
                 {
                     _logged = true;
-                    MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 앨범 인덱스 응답: uid={__instance.uid} → {__result} (이 로그는 1회만 표시됩니다)");
+                    ModLogger.Msg($"[CustomTagRegistry] 가상 곡 앨범 인덱스 응답: uid={__instance.uid} → {__result} (이 로그는 1회만 표시됩니다)");
                 }
                 return false;
             }
@@ -177,7 +177,7 @@ namespace muse_dash_test
                 if (!_logged)
                 {
                     _logged = true;
-                    MelonLogger.Msg($"[CustomTagRegistry] 앨범 이름 현지화 응답: index={index} → '{__result}' (이 로그는 1회만 표시됩니다)");
+                    ModLogger.Msg($"[CustomTagRegistry] 앨범 이름 현지화 응답: index={index} → '{__result}' (이 로그는 1회만 표시됩니다)");
                 }
                 return false;
             }
@@ -228,7 +228,7 @@ namespace muse_dash_test
                         localInfo.name = title;
                         localInfo.author = artist;
                         __result = localInfo;
-                        MelonLogger.Msg($"[MusicInfo.GetLocal Patch] 가상 곡 로컬 라이브러리 가로채기 성공: uid={__instance.uid}, title={title}, artist={artist}");
+                        ModLogger.Msg($"[MusicInfo.GetLocal Patch] 가상 곡 로컬 라이브러리 가로채기 성공: uid={__instance.uid}, title={title}, artist={artist}");
                         return false;
                     }
                 }
@@ -291,7 +291,7 @@ namespace muse_dash_test
                     localInfo.name = title;
                     localInfo.author = artist;
                     __result = localInfo;
-                    MelonLogger.Msg($"[DBConfigLocalALBUM Patch] Index={index} 쿼리를 가상 곡 로컬 정보로 응답: uid={currentUid}, title={title}, artist={artist}");
+                    ModLogger.Msg($"[DBConfigLocalALBUM Patch] Index={index} 쿼리를 가상 곡 로컬 정보로 응답: uid={currentUid}, title={title}, artist={artist}");
                     return false;
                 }
 
@@ -331,7 +331,7 @@ namespace muse_dash_test
                     if (!_loggedIndexResolveFailure)
                     {
                         _loggedIndexResolveFailure = true;
-                        MelonLogger.Warning($"[DBConfigLocalALBUM Patch] '{uid}'의 musicIndex를 읽지 못해 인덱스 검사 없이 응답합니다. " +
+                        ModLogger.Warning($"[DBConfigLocalALBUM Patch] '{uid}'의 musicIndex를 읽지 못해 인덱스 검사 없이 응답합니다. " +
                                             "(이 경고는 1회만 표시됩니다. 게임 업데이트로 멤버명이 바뀌었을 수 있습니다.)");
                     }
                     return true;
@@ -368,7 +368,7 @@ namespace muse_dash_test
                     }
                 }
 
-                MelonLogger.Msg($"[DBConfigLocalALBUM 진단] 게임이 넘긴 index={index} vs 가상 곡 후보값 [{string.Join(", ", parts)}] " +
+                ModLogger.Msg($"[DBConfigLocalALBUM 진단] 게임이 넘긴 index={index} vs 가상 곡 후보값 [{string.Join(", ", parts)}] " +
                                 $"(uid={uid}, 앨범 인덱스 상수 TagUid={CustomTagRegistry.TagUid}). 이 진단은 1회만 표시됩니다.");
             }
         }

@@ -17,14 +17,14 @@ namespace muse_dash_test
             if (!ModConfig.EnableAutoPlay) return;
             try
             {
-                MelonLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay Prefix 호출 감지: 원래 인자 enable={enable}, 강제 설정값={InputOverlay.forceAutoPlay}");
+                ModLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay Prefix 호출 감지: 원래 인자 enable={enable}, 강제 설정값={InputOverlay.forceAutoPlay}");
                 // 설정 파일에 적힌 오토플레이 강제 값으로 덮어씌웁니다.
                 enable = InputOverlay.forceAutoPlay;
-                MelonLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay 강제 조작 적용 완료: enable -> {enable}");
+                ModLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay 강제 조작 적용 완료: enable -> {enable}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DBSkill.SetAutoPlay.Prefix] Prefix 예외 발생: {ex}");
+                ModLogger.Error($"[DBSkill.SetAutoPlay.Prefix] Prefix 예외 발생: {ex}");
             }
         }
 
@@ -32,11 +32,11 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay Postfix 최종 설정 적용 완료: enable={enable}, instance={__instance}");
+                ModLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay Postfix 최종 설정 적용 완료: enable={enable}, instance={__instance}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DBSkill.SetAutoPlay.Postfix] Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[DBSkill.SetAutoPlay.Postfix] Postfix 예외 발생: {ex}");
             }
         }
     }

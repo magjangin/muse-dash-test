@@ -15,7 +15,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         var musicList = __instance._musicList_k__BackingField;
         if (musicList == null || musicList.Count <= SourceNoteIndex)
         {
-            MelonLogger.Warning("실험 차트 적용 실패: 원본 노트가 부족합니다.");
+            ModLogger.Warning("실험 차트 적용 실패: 원본 노트가 부족합니다.");
             return;
         }
 
@@ -49,11 +49,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             if (bmsSpecs.Count > 0)
             {
                 runtimeSpecs = BuildRuntimeExperimentNotes(bmsSpecs);
-                MelonLogger.Msg($"[ExperimentChart.Bms] BMS 차트 주입 사용: specs={runtimeSpecs.Count}, {bmsDescription}");
+                ModLogger.Msg($"[ExperimentChart.Bms] BMS 차트 주입 사용: specs={runtimeSpecs.Count}, {bmsDescription}");
             }
             else
             {
-                MelonLogger.Warning($"[ExperimentChart.Bms] BMS 차트를 찾았지만 변환된 노트가 없어 기존 ExperimentNotes를 사용합니다: {bmsDescription}");
+                ModLogger.Warning($"[ExperimentChart.Bms] BMS 차트를 찾았지만 변환된 노트가 없어 기존 ExperimentNotes를 사용합니다: {bmsDescription}");
             }
         }
 
@@ -67,7 +67,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 롱노트는 ceil(length / LongMiddleStep)개로 전개되어 노트 수가 빠르게 불어나므로 상한을 감시합니다.
         if (musicList.Count > short.MaxValue)
         {
-            MelonLogger.Error($"[ExperimentChart] 노트 수 {musicList.Count}개가 objId(short) 상한 {short.MaxValue}을 초과했습니다. " +
+            ModLogger.Error($"[ExperimentChart] 노트 수 {musicList.Count}개가 objId(short) 상한 {short.MaxValue}을 초과했습니다. " +
                               "노트 간 상호참조가 깨져 채보가 정상 동작하지 않습니다. 롱노트 길이나 노트 수를 줄이세요.");
         }
 
@@ -82,7 +82,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 인게임 정확도 오버라이드를 위해 노트 타입별 개수를 집계해 세션에 저장합니다.
         RecountNoteTypes(musicList);
 
-        MelonLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
+        ModLogger.Msg($"실험 차트 적용 완료: {musicList.Count}개 노트 ([0] 원본 유지, 원본 index {SourceNoteIndex} 복사 후 지정 노트로 변형)");
     }
 
     /// <summary>
@@ -170,9 +170,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         CustomPlaySession.Current.TotalHearts = totalHearts;
         CustomPlaySession.Current.TotalBlueNotes = totalBlueNotes;
 
-        MelonLogger.Msg($"[APMod.Accuracy] Custom chart note counts: Standard={totalStandard}, Gears={totalGears}, Hearts={totalHearts}, BlueNotes={totalBlueNotes}");
-        MelonLogger.Msg($"[APMod.Accuracy.LongDiag] Long 노트 진단: type==Long 총 {longCount}개 (머리={longHeadCount}, 몸통={longBodyCount}, 꼬리={longTailCount}) -> 분모 인정 {longDenominatorCount}개 (머리 및 꼬리만 분모로 인정)");
-        MelonLogger.Msg($"[APMod.Accuracy.Diag] 추가 집계 진단: Heart(유형/UID)={heartCount}개, BlueNote(유형/UID)={blueNoteCount}개");
+        ModLogger.Msg($"[APMod.Accuracy] Custom chart note counts: Standard={totalStandard}, Gears={totalGears}, Hearts={totalHearts}, BlueNotes={totalBlueNotes}");
+        ModLogger.Msg($"[APMod.Accuracy.LongDiag] Long 노트 진단: type==Long 총 {longCount}개 (머리={longHeadCount}, 몸통={longBodyCount}, 꼬리={longTailCount}) -> 분모 인정 {longDenominatorCount}개 (머리 및 꼬리만 분모로 인정)");
+        ModLogger.Msg($"[APMod.Accuracy.Diag] 추가 집계 진단: Heart(유형/UID)={heartCount}개, BlueNote(유형/UID)={blueNoteCount}개");
     }
 
     public static void AddExperimentNotes(Il2CppSystem.Collections.Generic.List<MusicData> outputList, MusicData sourceNote, ExperimentNoteSpec spec)

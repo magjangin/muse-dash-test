@@ -51,13 +51,13 @@ namespace muse_dash_test
                         __instance.offset = customOffset;
                         
                         if (LogOnce($"FixedOffset:{uid}"))
-                            MelonLogger.Msg($"[OffsetInject] FixedOffset 오버라이드 완료. 곡={uid}, 기존={originalOffset}초 -> 주입={customOffset}초");
+                            ModLogger.Msg($"[OffsetInject] FixedOffset 오버라이드 완료. 곡={uid}, 기존={originalOffset}초 -> 주입={customOffset}초");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OffsetInject] FixedOffset Postfix 예외: {ex.Message}");
+                ModLogger.Error($"[OffsetInject] FixedOffset Postfix 예외: {ex.Message}");
             }
         }
 
@@ -82,14 +82,14 @@ namespace muse_dash_test
                         if (LogOnce($"FixedMusicOffset:{uid}"))
                         {
                             string bgmName = bgm != null ? bgm.name : "(null)";
-                            MelonLogger.Msg($"[OffsetInject] FixedMusicOffset 오버라이드 완료. BGM={bgmName}, 곡={uid}, 기존={originalOffset}초 -> 주입={customOffset}초");
+                            ModLogger.Msg($"[OffsetInject] FixedMusicOffset 오버라이드 완료. BGM={bgmName}, 곡={uid}, 기존={originalOffset}초 -> 주입={customOffset}초");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OffsetInject] FixedMusicOffset Postfix 예외: {ex.Message}");
+                ModLogger.Error($"[OffsetInject] FixedMusicOffset Postfix 예외: {ex.Message}");
             }
         }
 
@@ -113,13 +113,13 @@ namespace muse_dash_test
                         __result = (Il2CppSystem.Decimal)customDelay;
                         
                         if (shouldLogDelay)
-                            MelonLogger.Msg($"[OffsetInject] DBStageInfo.delay Getter 오버라이드 완료. 곡={uid}, 기존={originalStr} -> 주입={customDelay}");
+                            ModLogger.Msg($"[OffsetInject] DBStageInfo.delay Getter 오버라이드 완료. 곡={uid}, 기존={originalStr} -> 주입={customDelay}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OffsetInject] DBStageInfo.delay Getter Postfix 예외: {ex.Message}");
+                ModLogger.Error($"[OffsetInject] DBStageInfo.delay Getter Postfix 예외: {ex.Message}");
             }
         }
 
@@ -131,11 +131,11 @@ namespace muse_dash_test
             try
             {
                 if (LogOnce("DataHelper.offset"))
-                    MelonLogger.Msg($"[OffsetInject] DataHelper.offset Getter 호출됨: {__result}ms");
+                    ModLogger.Msg($"[OffsetInject] DataHelper.offset Getter 호출됨: {__result}ms");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OffsetInject] DataHelper.offset Getter Postfix 예외: {ex.Message}");
+                ModLogger.Error($"[OffsetInject] DataHelper.offset Getter Postfix 예외: {ex.Message}");
             }
         }
     }

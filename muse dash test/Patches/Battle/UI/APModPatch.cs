@@ -26,7 +26,7 @@ namespace muse_dash_test.Patches
                 if (VictoryDataCache.ActiveTarget != __instance)
                 {
                     VictoryDataCache.ActiveTarget = __instance;
-                    MelonLogger.Msg($"[APMod] AddScore를 통해 TaskStageTarget 캐싱 완료. Pointer={__instance.Pointer}");
+                    ModLogger.Msg($"[APMod] AddScore를 통해 TaskStageTarget 캐싱 완료. Pointer={__instance.Pointer}");
                 }
 
                 // Cache the premium stylized gameplay font from the HUD
@@ -46,39 +46,39 @@ namespace muse_dash_test.Patches
                         VictoryDataCache.AttemptedFontCache = true;
                         Font font = null;
                         
-                        MelonLogger.Msg($"[APMod.Debug.Font] HUD 폰트 캐싱 시도 시작 - textObj={scoreValue.text != null}, djmaxTextObj={scoreValue.djmaxText != null}, arkNightTextObj={scoreValue.arkNightText != null}");
+                        ModLogger.Msg($"[APMod.Debug.Font] HUD 폰트 캐싱 시도 시작 - textObj={scoreValue.text != null}, djmaxTextObj={scoreValue.djmaxText != null}, arkNightTextObj={scoreValue.arkNightText != null}");
                         
                         if (scoreValue.text != null) 
                         {
                             font = scoreValue.text.font;
-                            if (font != null) MelonLogger.Msg($"[APMod.Debug.Font] 일반 폰트 획득 완료: '{font.name}'");
+                            if (font != null) ModLogger.Msg($"[APMod.Debug.Font] 일반 폰트 획득 완료: '{font.name}'");
                         }
                         if (font == null && scoreValue.djmaxText != null) 
                         {
                             font = scoreValue.djmaxText.font;
-                            if (font != null) MelonLogger.Msg($"[APMod.Debug.Font] DJMAX 폰트 획득 완료: '{font.name}'");
+                            if (font != null) ModLogger.Msg($"[APMod.Debug.Font] DJMAX 폰트 획득 완료: '{font.name}'");
                         }
                         if (font == null && scoreValue.arkNightText != null) 
                         {
                             font = scoreValue.arkNightText.font;
-                            if (font != null) MelonLogger.Msg($"[APMod.Debug.Font] 아크나이츠 폰트 획득 완료: '{font.name}'");
+                            if (font != null) ModLogger.Msg($"[APMod.Debug.Font] 아크나이츠 폰트 획득 완료: '{font.name}'");
                         }
 
                         if (font != null)
                         {
                             VictoryDataCache.PremiumFont = font;
-                            MelonLogger.Msg($"[APMod] 게임플레이 HUD에서 최종 메인 시그니처 폰트 캐싱 완료: '{font.name}'");
+                            ModLogger.Msg($"[APMod] 게임플레이 HUD에서 최종 메인 시그니처 폰트 캐싱 완료: '{font.name}'");
                         }
                         else
                         {
-                            MelonLogger.Warning("[APMod.Debug.Font] HUD 텍스트 컴포넌트들을 찾았으나 Font 리소스가 null 상태입니다.");
+                            ModLogger.Warning("[APMod.Debug.Font] HUD 텍스트 컴포넌트들을 찾았으나 Font 리소스가 null 상태입니다.");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod] AddScore Prefix 예외 발생: {ex}");
+                ModLogger.Error($"[APMod] AddScore Prefix 예외 발생: {ex}");
             }
         }
     }
@@ -94,7 +94,7 @@ namespace muse_dash_test.Patches
                 if (VictoryDataCache.ActiveTarget != __instance)
                 {
                     VictoryDataCache.ActiveTarget = __instance;
-                    MelonLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
+                    ModLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
 
                 // 버그 분석을 위해 TaskStageTarget의 원래 변수 값들을 캡처합니다.
@@ -109,7 +109,7 @@ namespace muse_dash_test.Patches
                 }
 
                 // 원래의 로깅 형식 요구사항에 맞춰 그대로 한 줄 출력합니다.
-                MelonLogger.Msg($"[APMod.Debug.Accuracy] " +
+                ModLogger.Msg($"[APMod.Debug.Accuracy] " +
                                 $"m_MusicCount={__instance.m_MusicCount}, " +
                                 $"m_PerfectResult={__instance.m_PerfectResult}, " +
                                 $"m_GreatResult={__instance.m_GreatResult}, " +
@@ -125,7 +125,7 @@ namespace muse_dash_test.Patches
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod] GetAccuracy Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[APMod] GetAccuracy Postfix 예외 발생: {ex}");
             }
         }
     }
@@ -144,7 +144,7 @@ namespace muse_dash_test.Patches
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod] GetTrueAccuracy Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[APMod] GetTrueAccuracy Postfix 예외 발생: {ex}");
             }
         }
     }
@@ -163,7 +163,7 @@ namespace muse_dash_test.Patches
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod] GetTrueAccuracyNew Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[APMod] GetTrueAccuracyNew Postfix 예외 발생: {ex}");
             }
         }
     }
@@ -180,12 +180,12 @@ namespace muse_dash_test.Patches
                 if (VictoryDataCache.ActiveTarget != __instance)
                 {
                     VictoryDataCache.ActiveTarget = __instance;
-                    MelonLogger.Msg($"[APMod] IsFullCombo를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
+                    ModLogger.Msg($"[APMod] IsFullCombo를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod] IsFullCombo Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[APMod] IsFullCombo Postfix 예외 발생: {ex}");
             }
         }
     }

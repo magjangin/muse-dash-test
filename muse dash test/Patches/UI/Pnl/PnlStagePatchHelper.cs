@@ -85,7 +85,7 @@ public static partial class PnlStagePatchHelper
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"{source} 커스텀 태그 접근자 적용 예외: {ex}");
+            ModLogger.Error($"{source} 커스텀 태그 접근자 적용 예외: {ex}");
         }
     }
 
@@ -123,7 +123,7 @@ public static partial class PnlStagePatchHelper
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"{source} 강제 커스텀 태그 접근자 적용 예외: {ex}");
+            ModLogger.Error($"{source} 강제 커스텀 태그 접근자 적용 예외: {ex}");
         }
     }
 
@@ -145,12 +145,12 @@ public static partial class PnlStagePatchHelper
 
             var musicText = stage.musicNameTitle;
             var artistText = stage.artistNameTitle;
-            MelonLogger.Msg($"{source}: musicInfo.uid={musicInfo.uid} direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
+            ModLogger.Msg($"{source}: musicInfo.uid={musicInfo.uid} direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
             return true;
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"{source} musicInfo 직접 커스텀 태그 적용 예외: {ex}");
+            ModLogger.Error($"{source} musicInfo 직접 커스텀 태그 적용 예외: {ex}");
             return false;
         }
     }

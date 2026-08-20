@@ -14,23 +14,23 @@ namespace muse_dash_test
             {
                 if (info == null)
                 {
-                    MelonLogger.Msg($"{label}: (null)");
+                    ModLogger.Msg($"{label}: (null)");
                     return;
                 }
 
-                MelonLogger.Msg($"{label}: uid={info.uid ?? "(null)"}, name={info.name ?? "(null)"}, author={info.author ?? "(null)"}, levelDesigner={info.levelDesigner ?? "(null)"}, cover={info.cover ?? "(null)"}, noteJson={info.noteJson ?? "(null)"}, music={info.music ?? "(null)"}, albumUidName={info.albumUidName ?? "(null)"}, albumJsonName={info.albumJsonName ?? "(null)"}, albumIndex={info.albumIndex}");
+                ModLogger.Msg($"{label}: uid={info.uid ?? "(null)"}, name={info.name ?? "(null)"}, author={info.author ?? "(null)"}, levelDesigner={info.levelDesigner ?? "(null)"}, cover={info.cover ?? "(null)"}, noteJson={info.noteJson ?? "(null)"}, music={info.music ?? "(null)"}, albumUidName={info.albumUidName ?? "(null)"}, albumJsonName={info.albumJsonName ?? "(null)"}, albumIndex={info.albumIndex}");
 
                 var type = info.GetType();
                 foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
                 {
                     if (!prop.CanRead || prop.GetIndexParameters().Length != 0) continue;
                     object value = SafeRead(() => prop.GetValue(info));
-                    MelonLogger.Msg($"{label}: prop {prop.Name}={FormatValue(value)}");
+                    ModLogger.Msg($"{label}: prop {prop.Name}={FormatValue(value)}");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"{label} 덤프 예외: {ex}");
+                ModLogger.Error($"{label} 덤프 예외: {ex}");
             }
         }
 
@@ -41,12 +41,12 @@ namespace muse_dash_test
                 var musicExInfo = ModReflection.GetValue(info, "m_MusicExInfo", silent: true) ?? ModReflection.GetValue(info, "MusicExInfo", silent: true);
                 if (musicExInfo == null)
                 {
-                    MelonLogger.Msg($"{label}: (null)");
+                    ModLogger.Msg($"{label}: (null)");
                     return;
                 }
 
                 var type = musicExInfo.GetType();
-                MelonLogger.Msg($"{label}: type={type.FullName}");
+                ModLogger.Msg($"{label}: type={type.FullName}");
 
                 foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
                 {
@@ -55,7 +55,7 @@ namespace muse_dash_test
                     if (name.IndexOf("album", StringComparison.OrdinalIgnoreCase) < 0 && name.IndexOf("cover", StringComparison.OrdinalIgnoreCase) < 0) continue;
 
                     object value = SafeRead(() => prop.GetValue(musicExInfo));
-                    MelonLogger.Msg($"{label}: prop {name}={FormatValue(value)}");
+                    ModLogger.Msg($"{label}: prop {name}={FormatValue(value)}");
                 }
 
                 foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
@@ -64,12 +64,12 @@ namespace muse_dash_test
                     if (name.IndexOf("album", StringComparison.OrdinalIgnoreCase) < 0 && name.IndexOf("cover", StringComparison.OrdinalIgnoreCase) < 0) continue;
 
                     object value = SafeRead(() => field.GetValue(musicExInfo));
-                    MelonLogger.Msg($"{label}: field {name}={FormatValue(value)}");
+                    ModLogger.Msg($"{label}: field {name}={FormatValue(value)}");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"{label} 덤프 예외: {ex.Message}");
+                ModLogger.Warning($"{label} 덤프 예외: {ex.Message}");
             }
         }
 

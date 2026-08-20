@@ -33,7 +33,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[ChangeHealthValuePatch.{hookName}] 예외 발생: {ex}");
+                ModLogger.Error($"[ChangeHealthValuePatch.{hookName}] 예외 발생: {ex}");
             }
         }
     }
@@ -50,13 +50,13 @@ namespace muse_dash_test
                 float currentTime = Time.time;
                 if (currentTime - lastLogTime >= LogCooldown)
                 {
-                    MelonLogger.Msg(message);
+                    ModLogger.Msg(message);
                     lastLogTime = currentTime;
                 }
             }
             catch
             {
-                MelonLogger.Msg(message);
+                ModLogger.Msg(message);
             }
         }
     }

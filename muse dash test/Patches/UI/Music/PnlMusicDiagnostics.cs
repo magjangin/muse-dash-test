@@ -48,7 +48,7 @@ namespace muse_dash_test
                 var info = ExtractMusicInfo(pnlInstance, resolvedUid);
                 LogCompact(source, info);
             }
-            catch (Exception ex) { MelonLogger.Error($"ApplyAndLogMusicInfo 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"ApplyAndLogMusicInfo 예외: {ex}"); }
         }
 
         public static void ApplyPrepMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
@@ -82,7 +82,7 @@ namespace muse_dash_test
                 }
                 LogCompact(source, info);
             }
-            catch (Exception ex) { MelonLogger.Error($"ApplyPrepMusicInfo 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"ApplyPrepMusicInfo 예외: {ex}"); }
         }
 
         public static void DumpMusicInfo(object pnlInstance)
@@ -91,7 +91,7 @@ namespace muse_dash_test
             {
                 ApplyAndLogMusicInfo("MusicInfo", pnlInstance);
             }
-            catch (Exception ex) { MelonLogger.Error($"DumpMusicInfo 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"DumpMusicInfo 예외: {ex}"); }
         }
 
         public static string ResolveCustomMusicUid(object pnlInstance)
@@ -180,7 +180,7 @@ namespace muse_dash_test
             string uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
             string clip = Clean(info.Clip);
             string reason = string.IsNullOrWhiteSpace(info.Clip) ? $", 클립 사유={Clean(info.ClipReason)}" : "";
-            MelonLogger.Msg($"{source}: 곡 이름={Clean(info.Title)}, UID={uid}, 음악 클립={clip}, 아티스트 이름={Clean(info.Artist)}, 레벨 디자이너=레벨 디자이너, 실제 이름={Clean(info.LevelDesigner)}{reason}");
+            ModLogger.Msg($"{source}: 곡 이름={Clean(info.Title)}, UID={uid}, 음악 클립={clip}, 아티스트 이름={Clean(info.Artist)}, 레벨 디자이너=레벨 디자이너, 실제 이름={Clean(info.LevelDesigner)}{reason}");
         }
 
         private static string Clean(string value)

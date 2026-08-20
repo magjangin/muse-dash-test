@@ -1,7 +1,8 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using System.Text;
 using Il2CppAssets.Scripts.Database;
+using muse_dash_test;
 
 public static partial class PnlStagePatchHelper
 {
@@ -85,7 +86,7 @@ public static partial class PnlStagePatchHelper
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"TryFindMusicInfoByQuery 예외: {ex}");
+            ModLogger.Error($"TryFindMusicInfoByQuery 예외: {ex}");
             musicInfo = null;
             matchedUid = null;
             return false;

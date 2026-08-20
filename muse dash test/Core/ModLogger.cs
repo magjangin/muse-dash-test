@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 
 namespace muse_dash_test
@@ -23,6 +23,13 @@ namespace muse_dash_test
     /// <summary>
     /// 실행 환경(UMPC vs 데스크톱) 및 설정에 따라 로그 출력을 동적으로 제어하는 로거 클래스입니다.
     /// UMPC에서는 디스크 I/O 및 콘솔 렌더링 병목으로 인한 순간적인 렉(Stuttering)을 방지하기 위해 일반 정보 로그를 억제합니다.
+    ///
+    /// <para><b>이 모드의 로그는 전부 이 클래스를 거칩니다.</b> <c>MelonLogger</c>를 직접 부르지 마십시오.
+    /// 예전에는 <c>MelonLogger.Msg/Warning/Error</c>를 Harmony Prefix로 전역 가로채 음소거했지만,
+    /// MelonLoader 0.7.3의 HarmonyX가 순수 관리 메서드를 디투어하는 경로에서
+    /// <c>ILHookExtensions.GetCurrentTarget</c> NRE로 터져 <c>PatchAll</c>이 통째로 중단됐습니다
+    /// (IL2CPP 대상 패치는 Il2CppInterop의 네이티브 경로를 타므로 멀쩡했고, 관리 메서드 패치만 실패했습니다).
+    /// 그래서 가로채기를 걷어내고 호출부에서 레벨을 판정하는 방식으로 되돌렸습니다.</para>
     /// </summary>
     public static class ModLogger
     {
@@ -105,28 +112,13 @@ namespace muse_dash_test
             }
         }
 
-        [ThreadStatic]
-        private static bool _isBypassing = false;
-
-        /// <summary>
-        /// 현재 필터링을 우회하여 강제 출력 중인지 여부입니다.
-        /// </summary>
-        public static bool IsBypassing => _isBypassing;
-
         /// <summary>
         /// 로그 레벨과 무관하게 최초 1회 필수 안내(예: UMPC 최적화 적용 알림)를 출력합니다.
+        /// 레벨 판정을 거치지 않고 MelonLogger로 바로 내보냅니다.
         /// </summary>
         public static void LogAlways(string msg)
         {
-            _isBypassing = true;
-            try
-            {
-                MelonLogger.Msg(msg);
-            }
-            finally
-            {
-                _isBypassing = false;
-            }
+            MelonLogger.Msg(msg);
         }
     }
 }

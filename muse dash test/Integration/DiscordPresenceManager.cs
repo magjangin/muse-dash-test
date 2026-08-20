@@ -26,19 +26,19 @@ namespace muse_dash_test
                 if (discordManager != null)
                 {
                     isInitialized = true;
-                    MelonLogger.Msg("[DiscordRPC] 내장 Il2Cpp.DiscordManager 연동 활성화 성공!");
+                    ModLogger.Msg("[DiscordRPC] 내장 Il2Cpp.DiscordManager 연동 활성화 성공!");
                     SetIdleState();
                 }
                 else
                 {
                     // 게임 시작 극초기에는 아직 DiscordManager 인스턴스가 없을 수 있으므로 추후 갱신 시 재시도
                     isInitialized = true;
-                    MelonLogger.Msg("[DiscordRPC] Discord Presence 관리자 초기화 완료 (게임 내장 인스턴스 대기 중)");
+                    ModLogger.Msg("[DiscordRPC] Discord Presence 관리자 초기화 완료 (게임 내장 인스턴스 대기 중)");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[DiscordRPC] 초기화 경고: {ex.Message}");
+                ModLogger.Warning($"[DiscordRPC] 초기화 경고: {ex.Message}");
             }
         }
 
@@ -142,11 +142,11 @@ namespace muse_dash_test
             {
                 SetIdleState();
                 isInitialized = false;
-                MelonLogger.Msg("[DiscordRPC] Discord Presence 관리자 종료.");
+                ModLogger.Msg("[DiscordRPC] Discord Presence 관리자 종료.");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DiscordRPC] Shutdown 예외: {ex.Message}");
+                ModLogger.Error($"[DiscordRPC] Shutdown 예외: {ex.Message}");
             }
         }
 
@@ -170,7 +170,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DiscordRPC] SetUpdateActivity 호출 실패: {ex.Message}");
+                ModLogger.Error($"[DiscordRPC] SetUpdateActivity 호출 실패: {ex.Message}");
             }
         }
     }

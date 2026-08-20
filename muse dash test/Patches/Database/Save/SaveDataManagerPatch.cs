@@ -22,12 +22,12 @@ namespace muse_dash_test
             {
                 if (__instance == null) return;
 
-                MelonLogger.Msg($"[SaveDataManagerPatch] DataManager.Save() 호출 감지 - 오염 방지를 위한 정밀 클렌징을 개시합니다. (persistentDataPath={Application.persistentDataPath})");
+                ModLogger.Msg($"[SaveDataManagerPatch] DataManager.Save() 호출 감지 - 오염 방지를 위한 정밀 클렌징을 개시합니다. (persistentDataPath={Application.persistentDataPath})");
 
                 var datas = __instance.datas;
                 if (datas == null)
                 {
-                    MelonLogger.Warning("[SaveDataManagerPatch] DataManager.datas가 null입니다.");
+                    ModLogger.Warning("[SaveDataManagerPatch] DataManager.datas가 null입니다.");
                     return;
                 }
 
@@ -55,7 +55,7 @@ namespace muse_dash_test
 
                             if (keysToRemove.Count > 0)
                             {
-                                MelonLogger.Msg($"[SaveDataManagerPatch] -> '{k}' 컬렉션에서 가상 필드 {keysToRemove.Count}개 제거 중: {string.Join(", ", keysToRemove)}");
+                                ModLogger.Msg($"[SaveDataManagerPatch] -> '{k}' 컬렉션에서 가상 필드 {keysToRemove.Count}개 제거 중: {string.Join(", ", keysToRemove)}");
                                 foreach (var key in keysToRemove)
                                 {
                                     fields.Remove(key);
@@ -89,7 +89,7 @@ namespace muse_dash_test
                                         int highestRemoved = CleanIDataList(highestList);
                                         if (highestRemoved > 0)
                                         {
-                                            MelonLogger.Msg($"[SaveDataManagerPatch] -> Achievement.highest 리스트에서 가상 곡 플레이 결과 {highestRemoved}개 클렌징 완료.");
+                                            ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.highest 리스트에서 가상 곡 플레이 결과 {highestRemoved}개 클렌징 완료.");
                                         }
                                     }
                                 }
@@ -107,7 +107,7 @@ namespace muse_dash_test
                                         int recentRemoved = CleanIDataList(recentList);
                                         if (recentRemoved > 0)
                                         {
-                                            MelonLogger.Msg($"[SaveDataManagerPatch] -> Achievement.recentPassLevelData 리스트에서 가상 곡 기록 {recentRemoved}개 클렌징 완료.");
+                                            ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.recentPassLevelData 리스트에서 가상 곡 기록 {recentRemoved}개 클렌징 완료.");
                                         }
                                     }
                                 }
@@ -128,7 +128,7 @@ namespace muse_dash_test
                                             int passRemoved = CleanStringList(passList);
                                             if (passRemoved > 0)
                                             {
-                                                MelonLogger.Msg($"[SaveDataManagerPatch] -> Achievement.{pk} 리스트에서 가상 클리어 {passRemoved}개 클렌징 완료.");
+                                                ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.{pk} 리스트에서 가상 클리어 {passRemoved}개 클렌징 완료.");
                                             }
                                         }
                                     }
@@ -138,11 +138,11 @@ namespace muse_dash_test
                     }
                 }
 
-                MelonLogger.Msg("[SaveDataManagerPatch] 세이브 데이터 정밀 정화 완료. 깨끗한 상태로 안전하게 저장을 계속 진행합니다.");
+                ModLogger.Msg("[SaveDataManagerPatch] 세이브 데이터 정밀 정화 완료. 깨끗한 상태로 안전하게 저장을 계속 진행합니다.");
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Error($"[SaveDataManagerPatch] Save Prefix 정화 중 예외 발생: {ex}");
+                ModLogger.Error($"[SaveDataManagerPatch] Save Prefix 정화 중 예외 발생: {ex}");
             }
         }
 

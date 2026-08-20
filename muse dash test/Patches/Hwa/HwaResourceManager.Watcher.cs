@@ -53,11 +53,11 @@ namespace muse_dash_test
                 bmsWatcher.Renamed += OnBmsFileRenamed;
 
                 bmsWatcher.EnableRaisingEvents = true;
-                MelonLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 폴더 감시 시작: {HwaFolderPath}");
+                ModLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 폴더 감시 시작: {HwaFolderPath}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaResourceManager.BmsWatcher] BMS 폴더 감시 설정 실패: {ex.Message}");
+                ModLogger.Error($"[HwaResourceManager.BmsWatcher] BMS 폴더 감시 설정 실패: {ex.Message}");
             }
         }
 
@@ -116,7 +116,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaResourceManager.BmsWatcher] 파일 변경 처리 중 오류: {ex.Message}");
+                ModLogger.Error($"[HwaResourceManager.BmsWatcher] 파일 변경 처리 중 오류: {ex.Message}");
             }
         }
 
@@ -132,7 +132,7 @@ namespace muse_dash_test
                 return false;
             }
 
-            MelonLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 감지 -> [{uid}] 다시 읽기 시도: {songDir}");
+            ModLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 감지 -> [{uid}] 다시 읽기 시도: {songDir}");
             BmsChart newChart = LoadHwaBmsChart(songDir, manifest);
             if (newChart != null)
             {
@@ -140,12 +140,12 @@ namespace muse_dash_test
                 {
                     cachedBmsCharts[uid] = newChart;
                 }
-                MelonLogger.Msg($"[HwaResourceManager.BmsWatcher] ✅ [{uid}] BMS 실시간 재로드 성공!");
+                ModLogger.Msg($"[HwaResourceManager.BmsWatcher] ✅ [{uid}] BMS 실시간 재로드 성공!");
                 return true;
             }
             else
             {
-                MelonLogger.Warning($"[HwaResourceManager.BmsWatcher] ❌ [{uid}] BMS 실시간 재로드 실패");
+                ModLogger.Warning($"[HwaResourceManager.BmsWatcher] ❌ [{uid}] BMS 실시간 재로드 실패");
                 return false;
             }
         }

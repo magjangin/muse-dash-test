@@ -41,7 +41,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[SpineContract] 공급 덤프 예외: {ex.Message}");
+                ModLogger.Warning($"[SpineContract] 공급 덤프 예외: {ex.Message}");
             }
         }
 
@@ -57,7 +57,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[SpineContract] 강제 공급 덤프 예외: {ex.Message}");
+                ModLogger.Warning($"[SpineContract] 강제 공급 덤프 예외: {ex.Message}");
             }
         }
 
@@ -83,7 +83,7 @@ namespace muse_dash_test
             AppendSkeletonAnimations(sb, sac);
 
             WriteFile(MakeSafeFileName(objName) + ".txt", sb.ToString());
-            MelonLogger.Msg($"[SpineContract] 공급 덤프 완료: {objName}");
+            ModLogger.Msg($"[SpineContract] 공급 덤프 완료: {objName}");
         }
 
         private static void AppendActionData(StringBuilder sb, SpineActionController sac)
@@ -221,7 +221,7 @@ namespace muse_dash_test
                 if (!hasWarnedWriteFailure)
                 {
                     hasWarnedWriteFailure = true;
-                    MelonLogger.Warning($"[SpineContract] 계약서 파일 쓰기 실패(이후 동일 오류는 생략): {ex.Message}");
+                    ModLogger.Warning($"[SpineContract] 계약서 파일 쓰기 실패(이후 동일 오류는 생략): {ex.Message}");
                 }
             }
         }

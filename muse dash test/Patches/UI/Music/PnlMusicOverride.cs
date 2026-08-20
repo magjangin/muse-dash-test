@@ -83,7 +83,7 @@ namespace muse_dash_test
                 }
             }
 
-            MelonLogger.Msg($"[SongTitleOverride] 화면 텍스트 적용(WRITE): source={source}, uid={resolvedUid}, title='{title}', artist='{artist}', designer='{designer}'");
+            ModLogger.Msg($"[SongTitleOverride] 화면 텍스트 적용(WRITE): source={source}, uid={resolvedUid}, title='{title}', artist='{artist}', designer='{designer}'");
 
             SetMemberTexts(pnlInstance, TitleMemberNames, title);
             SetMemberTexts(pnlInstance, ArtistMemberNames, artist);
@@ -219,7 +219,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlMusicOverride] BuildBinding 예외: {ex.Message}");
+                ModLogger.Error($"[PnlMusicOverride] BuildBinding 예외: {ex.Message}");
             }
             return binding;
         }

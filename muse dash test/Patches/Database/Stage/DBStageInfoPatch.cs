@@ -95,30 +95,30 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 CustomPlaySession.Current.RememberMusicSelection(uid);
             }
 
-            MelonLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: activeUid={uid ?? "(null)"}");
+            ModLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: activeUid={uid ?? "(null)"}");
 
             // [진단] 주입 후 호출 스택 확인 — 이 데이터가 어디로 흘러가는지 역추적.
             // 매 호출(순정 곡 포함)마다 전체 스택을 찍으면 로그가 폭발하므로,
             // 이 서브시스템의 다른 진단 로그들과 동일하게 DebugExperimentNotes 플래그로 게이트한다.
             if (DebugExperimentNotes)
             {
-                MelonLogger.Msg("[SetRuntimeMusicData.StackTrace] ↓ 호출 스택");
-                MelonLogger.Msg(new System.Diagnostics.StackTrace(true).ToString());
+                ModLogger.Msg("[SetRuntimeMusicData.StackTrace] ↓ 호출 스택");
+                ModLogger.Msg(new System.Diagnostics.StackTrace(true).ToString());
             }
 
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
-                MelonLogger.Msg($"[ExperimentChart] 적용 건너뜀: {CustomPlaySession.Current.LastApplyDecisionDescription} (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, isExperimentModeActive={CustomPlaySession.Current.IsExperimentModeActive}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, lastClickedUid={CustomPlaySession.Current.LastClickedMusicUid})");
+                ModLogger.Msg($"[ExperimentChart] 적용 건너뜀: {CustomPlaySession.Current.LastApplyDecisionDescription} (현재 UID: {uid ?? "(null)"}, apply={CustomPlaySession.Current.ShouldApplyExperimentChart}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, isExperimentModeActive={CustomPlaySession.Current.IsExperimentModeActive}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, lastClickedUid={CustomPlaySession.Current.LastClickedMusicUid})");
                 DumpMusicList(__instance);
                 return;
             }
 
-            MelonLogger.Msg($"[ExperimentChart] 적용 시작: uid={uid ?? "(null)"}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, detail={CustomPlaySession.Current.LastApplyDecisionDescription}, isExperimentModeActive={CustomPlaySession.Current.IsExperimentModeActive}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, lastClickedUid={CustomPlaySession.Current.LastClickedMusicUid}");
+            ModLogger.Msg($"[ExperimentChart] 적용 시작: uid={uid ?? "(null)"}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, detail={CustomPlaySession.Current.LastApplyDecisionDescription}, isExperimentModeActive={CustomPlaySession.Current.IsExperimentModeActive}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, lastClickedUid={CustomPlaySession.Current.LastClickedMusicUid}");
             ApplyExperimentChart(__instance, uid);
         }
         catch (System.Exception ex)
         {
-            MelonLogger.Error($"실험 차트 적용 중 예외 발생: {ex}");
+            ModLogger.Error($"실험 차트 적용 중 예외 발생: {ex}");
         }
     }
 }

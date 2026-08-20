@@ -33,10 +33,10 @@ namespace muse_dash_test
     {
         public static bool Prefix(MusicTagManager __instance, int tagIndex)
         {
-            MelonLogger.Msg($"[RefreshStageDisplayMusics Patch] Prefix called: tagIndex={tagIndex}");
+            ModLogger.Msg($"[RefreshStageDisplayMusics Patch] Prefix called: tagIndex={tagIndex}");
             if (tagIndex == CustomTagRegistry.TagUid || tagIndex == -1)
             {
-                MelonLogger.Msg($"[RefreshStageDisplayMusics Patch] Bypassing: tagIndex={tagIndex}");
+                ModLogger.Msg($"[RefreshStageDisplayMusics Patch] Bypassing: tagIndex={tagIndex}");
                 return false; // 원래 메소드 실행 차단
             }
             return true;

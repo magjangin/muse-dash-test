@@ -42,7 +42,7 @@ namespace muse_dash_test
             try
             {
                 var vUids = HwaResourceManager.GetVirtualUids();
-                MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 생성 시작: count={vUids.Count}");
+                ModLogger.Msg($"[CustomTagRegistry] 가상 곡 생성 시작: count={vUids.Count}");
 
                 foreach (var uid in vUids)
                 {
@@ -70,7 +70,7 @@ namespace muse_dash_test
                     if (originalInfo == null)
                     {
                         originalInfo = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(CustomContentIds.FallbackSourceMusicUid);
-                        MelonLogger.Warning($"[CustomTagRegistry] [{uid}] 원본 곡을 찾지 못하여 기본 곡(0-0)으로 폴백합니다. query={lookupQuery ?? "(null)"}, album={sourceAlbum ?? "(null)"}");
+                        ModLogger.Warning($"[CustomTagRegistry] [{uid}] 원본 곡을 찾지 못하여 기본 곡(0-0)으로 폴백합니다. query={lookupQuery ?? "(null)"}, album={sourceAlbum ?? "(null)"}");
                     }
 
                     if (originalInfo != null)
@@ -96,16 +96,16 @@ namespace muse_dash_test
                             primaryDiff5 = manifestDiff5;
                         }
 
-                        MelonLogger.Msg($"[CustomTagRegistry] === [{uid}] 주입 시도 === sourceUid={originalInfo.uid}, title={primaryName}, artist={primaryAuthor}, diff={primaryDiff1}/{primaryDiff2}");
+                        ModLogger.Msg($"[CustomTagRegistry] === [{uid}] 주입 시도 === sourceUid={originalInfo.uid}, title={primaryName}, artist={primaryAuthor}, diff={primaryDiff1}/{primaryDiff2}");
                         InjectVirtualSong(originalInfo, uid, primaryName, primaryAuthor, primaryLevelDesigner, primaryDiff1, primaryDiff2, primaryDiff3, primaryDiff4, primaryDiff5, musicList);
                     }
                 }
 
-                MelonLogger.Msg($"[CustomTagRegistry] 가상 곡 생성 완료: count={musicList.Count}");
+                ModLogger.Msg($"[CustomTagRegistry] 가상 곡 생성 완료: count={musicList.Count}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomTagRegistry] 가상 곡 생성/주입 중 예외 발생: {ex}");
+                ModLogger.Error($"[CustomTagRegistry] 가상 곡 생성/주입 중 예외 발생: {ex}");
             }
 
             return musicList;
@@ -166,7 +166,7 @@ namespace muse_dash_test
                                 if (!exists)
                                 {
                                     items.Add(clonedAlbum);
-                                    MelonLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(1998-0) 주입 완료!");
+                                    ModLogger.Msg("[CustomTagRegistry] [성공] 얇은 복제 방식으로 DBConfigAlbums.m_Items에 가상 앨범(1998-0) 주입 완료!");
                                 }
                             }
                         }
@@ -175,7 +175,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomTagRegistry] 앨범 복제 주입 중 예외 발생: {ex}");
+                ModLogger.Error($"[CustomTagRegistry] 앨범 복제 주입 중 예외 발생: {ex}");
             }
 
             if (albumInfo == null)
@@ -192,7 +192,7 @@ namespace muse_dash_test
 
                 albumInfo = fallbackAlbum;
                 CustomTagRegistry.CustomAlbumInfo = fallbackAlbum;
-                MelonLogger.Warning("[CustomTagRegistry] [경고] 복제에 실패하여 new AlbumsInfo 폴백을 생성했습니다.");
+                ModLogger.Warning("[CustomTagRegistry] [경고] 복제에 실패하여 new AlbumsInfo 폴백을 생성했습니다.");
             }
 
             return albumInfo;
@@ -234,7 +234,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[CustomTagRegistry] 서브 객체 복제 중 예외 발생: {ex.Message}");
+                ModLogger.Warning($"[CustomTagRegistry] 서브 객체 복제 중 예외 발생: {ex.Message}");
             }
             return null;
         }
@@ -283,7 +283,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomTagRegistry] {uid} 주입 중 예외 발생: {ex}");
+                ModLogger.Error($"[CustomTagRegistry] {uid} 주입 중 예외 발생: {ex}");
             }
         }
 
@@ -294,14 +294,14 @@ namespace muse_dash_test
             var clonedObj = originalInfo?.MemberwiseClone();
             if (clonedObj == null)
             {
-                MelonLogger.Error($"[CustomTagRegistry] [실패] {uid} originalInfo.MemberwiseClone() 결과가 null입니다.");
+                ModLogger.Error($"[CustomTagRegistry] [실패] {uid} originalInfo.MemberwiseClone() 결과가 null입니다.");
                 return false;
             }
 
             clonedInfo = clonedObj.TryCast<MusicInfo>();
             if (clonedInfo == null)
             {
-                MelonLogger.Error($"[CustomTagRegistry] [실패] {uid} clonedObj를 MusicInfo로 캐스팅하지 못했습니다.");
+                ModLogger.Error($"[CustomTagRegistry] [실패] {uid} clonedObj를 MusicInfo로 캐스팅하지 못했습니다.");
                 return false;
             }
 
@@ -362,7 +362,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomTagRegistry] [실패] {uid} AddMaskValue 앨범 마스크 적용 예외: {ex}");
+                ModLogger.Error($"[CustomTagRegistry] [실패] {uid} AddMaskValue 앨범 마스크 적용 예외: {ex}");
                 return false;
             }
         }
@@ -375,24 +375,24 @@ namespace muse_dash_test
             if (!allMusicDict.ContainsKey(uid))
             {
                 allMusicDict.Add(uid, clonedInfo);
-                MelonLogger.Msg($"[CustomTagRegistry] [성공] m_AllMusicInfo 맵에 '{uid}' 신규 주입 완료!");
+                ModLogger.Msg($"[CustomTagRegistry] [성공] m_AllMusicInfo 맵에 '{uid}' 신규 주입 완료!");
             }
             else
             {
                 allMusicDict[uid] = clonedInfo;
-                MelonLogger.Msg($"[CustomTagRegistry] [알림] m_AllMusicInfo에 '{uid}'이 이미 존재하여 덮어썼습니다.");
+                ModLogger.Msg($"[CustomTagRegistry] [알림] m_AllMusicInfo에 '{uid}'이 이미 존재하여 덮어썼습니다.");
             }
 
             var checkInfo = GlobalDataBase.dbMusicTag.GetMusicInfoFromAll(uid);
             if (checkInfo != null && checkInfo.uid == uid)
             {
-                MelonLogger.Msg($"[CustomTagRegistry] [대성공] GetMusicInfoFromAll('{uid}') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
+                ModLogger.Msg($"[CustomTagRegistry] [대성공] GetMusicInfoFromAll('{uid}') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
                 musicList.Add(uid);
-                MelonLogger.Msg($"[CustomTagRegistry] [성공] 커스텀 태그 노출 목록에 '{uid}' 추가 완료!");
+                ModLogger.Msg($"[CustomTagRegistry] [성공] 커스텀 태그 노출 목록에 '{uid}' 추가 완료!");
             }
             else
             {
-                MelonLogger.Error($"[CustomTagRegistry] [실패] '{uid}' 주입 후 조회 검증에 실패했습니다.");
+                ModLogger.Error($"[CustomTagRegistry] [실패] '{uid}' 주입 후 조회 검증에 실패했습니다.");
             }
         }
 

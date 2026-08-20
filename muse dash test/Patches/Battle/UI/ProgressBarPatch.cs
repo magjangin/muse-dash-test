@@ -18,28 +18,28 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("[ProgressBarPatch] PnlBattle.MusicProgressInit 호출됨 - 진행바 상태 점검(관찰 전용)");
+                ModLogger.Msg("[ProgressBarPatch] PnlBattle.MusicProgressInit 호출됨 - 진행바 상태 점검(관찰 전용)");
 
                 if (__instance.CurrentBattleUIComp != null)
                 {
                     Slider sld = __instance.CurrentBattleUIComp.sldProgress;
                     if (sld != null)
                     {
-                        MelonLogger.Msg("[ProgressBarPatch] sldProgress 슬라이더 감지됨 (관찰 전용, 별도 제어 없음)");
+                        ModLogger.Msg("[ProgressBarPatch] sldProgress 슬라이더 감지됨 (관찰 전용, 별도 제어 없음)");
                     }
                     else
                     {
-                        MelonLogger.Warning("[ProgressBarPatch] sldProgress 슬라이더 컴포넌트가 null입니다.");
+                        ModLogger.Warning("[ProgressBarPatch] sldProgress 슬라이더 컴포넌트가 null입니다.");
                     }
                 }
                 else
                 {
-                    MelonLogger.Warning("[ProgressBarPatch] CurrentBattleUIComp가 null입니다.");
+                    ModLogger.Warning("[ProgressBarPatch] CurrentBattleUIComp가 null입니다.");
                 }
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Error($"[ProgressBarPatch.MusicProgressInit.Postfix] 예외 발생: {ex}");
+                ModLogger.Error($"[ProgressBarPatch.MusicProgressInit.Postfix] 예외 발생: {ex}");
             }
         }
     }

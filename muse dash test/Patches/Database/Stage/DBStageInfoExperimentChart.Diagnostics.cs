@@ -1,6 +1,7 @@
-using MelonLoader;
+﻿using MelonLoader;
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
+using muse_dash_test;
 
 // 실험 차트 디버깅용 덤프/로깅 헬퍼. 게임 로직에는 영향을 주지 않습니다.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
@@ -9,7 +10,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     // 호출부에서 매번 'if (DebugExperimentNotes)'를 반복하지 않도록 해 파이프라인 가독성을 높입니다.
     private static void DebugMsg(string message)
     {
-        if (DebugExperimentNotes) MelonLogger.Msg(message);
+        if (DebugExperimentNotes) ModLogger.Msg(message);
     }
 
     private static void DebugNote(string label, MusicData note)
@@ -45,7 +46,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         var loggedUids = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
         int newNoteTotalCount = 0;
 
-        MelonLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트(UID & NoteType) 서치 시작 (total={musicList.Count}) ★");
+        ModLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트(UID & NoteType) 서치 시작 (total={musicList.Count}) ★");
 
         for (int i = 0; i < musicList.Count; i++)
         {
@@ -88,7 +89,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                     string dt = SafeLogValue(() => note.dt);
                     string showTick = SafeLogValue(() => note.showTick);
 
-                    MelonLogger.Msg(
+                    ModLogger.Msg(
                         $"[OfficialSceneContext] ★신규/미등록 노트 감지★ index={i}, objId={note.objId}, tick={tick}, dt={dt}, showTick={showTick}, " +
                         $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
                         $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
@@ -97,7 +98,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        MelonLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
+        ModLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
@@ -110,14 +111,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 continue;
             }
 
-            MelonLogger.Msg($"[BmsSortedBossContext] === index={i}, action={note.noteData.boss_action} ===");
+            ModLogger.Msg($"[BmsSortedBossContext] === index={i}, action={note.noteData.boss_action} ===");
             int firstIndex = System.Math.Max(startIndex, i - 2);
             int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
             for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
             {
                 var contextNote = musicList[contextIndex];
                 string role = contextIndex == i ? "EVENT" : contextIndex < i ? "PREV" : "NEXT";
-                MelonLogger.Msg(
+                ModLogger.Msg(
                     $"[BmsSortedBossContext] {role} index={contextIndex}, objId={contextNote.objId}, " +
                     $"tick={contextNote.tick}, dt={contextNote.dt}, showTick={contextNote.showTick}, " +
                     $"config.time={SafeLogValue(() => contextNote.configData?.time)}, uid={SafeLogValue(() => contextNote.noteData?.uid)}, " +
@@ -183,15 +184,15 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 string dt = SafeLogValue(() => note.dt);
                 string showTick = SafeLogValue(() => note.showTick);
 
-                MelonLogger.Msg($"[ExperimentDebug.Search] 원본 UID 발견: uid={uid}, idx={i}, objId={objId}, tick={tick}, dt={dt}, showTick={showTick}, type={type}, pathway={pathway}({pathwayLabel}), scene={sceneName}, prefab={prefab}, keyAudio={keyAudio}, bossAction={bossAction}, doubleIdx={doubleIdx}, sameTickNoteIdx={sameTickNoteIdx}, isDouble={isDouble}, jumpNote={jumpNote}, score={score}, config.time={configTime}, config.pathway={configPathway}");
+                ModLogger.Msg($"[ExperimentDebug.Search] 원본 UID 발견: uid={uid}, idx={i}, objId={objId}, tick={tick}, dt={dt}, showTick={showTick}, type={type}, pathway={pathway}({pathwayLabel}), scene={sceneName}, prefab={prefab}, keyAudio={keyAudio}, bossAction={bossAction}, doubleIdx={doubleIdx}, sameTickNoteIdx={sameTickNoteIdx}, isDouble={isDouble}, jumpNote={jumpNote}, score={score}, config.time={configTime}, config.pathway={configPathway}");
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Warning($"[ExperimentDebug.Search] 원본 UID 검사 중 예외 발생: idx={i}, error={ex.Message}");
+                ModLogger.Warning($"[ExperimentDebug.Search] 원본 UID 검사 중 예외 발생: idx={i}, error={ex.Message}");
             }
         }
 
-        MelonLogger.Msg($"[ExperimentDebug.Search] 원본 UID 검색 완료: scene={targetScene}, xx={targetXx}, count={count}");
+        ModLogger.Msg($"[ExperimentDebug.Search] 원본 UID 검색 완료: scene={targetScene}, xx={targetXx}, count={count}");
     }
 
     public static void LogInsertedNote(string label, MusicData note)
@@ -211,7 +212,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string isShowPlayEffect = note.noteData != null ? note.noteData.isShowPlayEffect.ToString() : "(null)";
         string sceneChangeNames = note.noteData != null ? FormatSceneChangeNames(note.noteData.sceneChangeNames) : "(null)";
         string ibmsId = note.noteData?.ibms_id ?? "(null)";
-        MelonLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, ibms_id={ibmsId}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, sceneChangeNames={sceneChangeNames}, prefab={prefab}, boss_action={bossAction}, effect={effect}, isShowPlayEffect={isShowPlayEffect}");
+        ModLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, ibms_id={ibmsId}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, sceneChangeNames={sceneChangeNames}, prefab={prefab}, boss_action={bossAction}, effect={effect}, isShowPlayEffect={isShowPlayEffect}");
     }
 
     // note.noteData.sceneChangeNames(Il2Cpp List<string>)를 사람이 읽기 좋은 형태로 변환합니다.
@@ -236,7 +237,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static void LogSpec(string label, ExperimentNoteSpec spec)
     {
         string sceneChangeNames = spec.SceneChangeNames != null ? string.Join(",", spec.SceneChangeNames) : "(null)";
-        MelonLogger.Msg($"{label}: Label={spec.Label}, Uid={spec.Uid}, NoteType={spec.NoteType}, Pathway={spec.Pathway}, PrefabName={spec.PrefabName}, KeyAudio={spec.KeyAudio}, BossAction={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}, IbmsId={spec.IbmsId}, SceneChangeNames={sceneChangeNames}, IsLong={spec.IsLong}, IsMul={spec.IsMul}, StartTick={spec.StartTick}, Count={spec.Count}, Interval={spec.Interval}, Length={spec.Length}, Speed={spec.Speed}, Dt={spec.Dt}");
+        ModLogger.Msg($"{label}: Label={spec.Label}, Uid={spec.Uid}, NoteType={spec.NoteType}, Pathway={spec.Pathway}, PrefabName={spec.PrefabName}, KeyAudio={spec.KeyAudio}, BossAction={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}, IbmsId={spec.IbmsId}, SceneChangeNames={sceneChangeNames}, IsLong={spec.IsLong}, IsMul={spec.IsMul}, StartTick={spec.StartTick}, Count={spec.Count}, Interval={spec.Interval}, Length={spec.Length}, Speed={spec.Speed}, Dt={spec.Dt}");
     }
 
     public static void LogNoteState(string label, MusicData note)
@@ -260,7 +261,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string configLength = SafeLogValue(() => note.configData?.length);
         string configPathway = SafeLogValue(() => note.configData?.pathway);
 
-        MelonLogger.Msg($"{label}: objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, note.uid={noteUid}, note.type={noteType}, note.pathway={notePathway}({notePathwayLabel}), note.noteUid={noteUidValue}, note.m_BmsUid={bmsUid}, note.prefab={prefab}, note.speed={speed}, note.key_audio={keyAudio}, note.boss_action={bossAction}, config.id={configId}, config.time={configTime}, config.note_uid={configUid}, config.length={configLength}, config.pathway={configPathway}, isLongPressing={note.isLongPressing}, isLongPressEnd={note.isLongPressEnd}, longPressPTick={note.longPressPTick}, endIndex={note.endIndex}, longPressNum={note.longPressNum}");
+        ModLogger.Msg($"{label}: objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, note.uid={noteUid}, note.type={noteType}, note.pathway={notePathway}({notePathwayLabel}), note.noteUid={noteUidValue}, note.m_BmsUid={bmsUid}, note.prefab={prefab}, note.speed={speed}, note.key_audio={keyAudio}, note.boss_action={bossAction}, config.id={configId}, config.time={configTime}, config.note_uid={configUid}, config.length={configLength}, config.pathway={configPathway}, isLongPressing={note.isLongPressing}, isLongPressEnd={note.isLongPressEnd}, longPressPTick={note.longPressPTick}, endIndex={note.endIndex}, longPressNum={note.longPressNum}");
     }
 
     public static string SafeLogValue(System.Func<object> getter)

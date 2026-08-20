@@ -30,7 +30,7 @@ namespace muse_dash_test
 
                 int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
-                MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlStage] 적용 감지: uid={musicInfo.uid}, diff={difficulty}");
+                ModLogger.Msg($"[CustomRecordUiPatchHelper.PnlStage] 적용 감지: uid={musicInfo.uid}, diff={difficulty}");
 
                 var record = CustomRecordStore.LoadResult(musicInfo.uid, difficulty);
                 if (record != null)
@@ -42,7 +42,7 @@ namespace muse_dash_test
                         {
                             textComp.text = FormatAccuracy(record);
                             stage.stageAchievementPercent.SetActive(true);
-                            MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlStage] UI 갱신 성공 -> {FormatAccuracy(record)}");
+                            ModLogger.Msg($"[CustomRecordUiPatchHelper.PnlStage] UI 갱신 성공 -> {FormatAccuracy(record)}");
                         }
                     }
                 }
@@ -51,13 +51,13 @@ namespace muse_dash_test
                     if (stage.stageAchievementPercent != null)
                     {
                         stage.stageAchievementPercent.SetActive(false);
-                        MelonLogger.Msg("[CustomRecordUiPatchHelper.PnlStage] UI 갱신 성공 -> 기록 없음으로 비활성화");
+                        ModLogger.Msg("[CustomRecordUiPatchHelper.PnlStage] UI 갱신 성공 -> 기록 없음으로 비활성화");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomRecordUiPatchHelper.PnlStage] Custom record UI apply error: {ex}");
+                ModLogger.Error($"[CustomRecordUiPatchHelper.PnlStage] Custom record UI apply error: {ex}");
             }
         }
 
@@ -72,7 +72,7 @@ namespace muse_dash_test
 
                 int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
-                MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlPrep] 적용 감지: uid={uid}, diff={difficulty}");
+                ModLogger.Msg($"[CustomRecordUiPatchHelper.PnlPrep] 적용 감지: uid={uid}, diff={difficulty}");
 
                 var record = CustomRecordStore.LoadResult(uid, difficulty);
                 if (record != null)
@@ -81,12 +81,12 @@ namespace muse_dash_test
                     {
                         prep.btnDownloadReport.gameObject.SetActive(true);
                         prep.btnDownloadReport.interactable = true;
-                        MelonLogger.Msg("[CustomRecordUiPatchHelper.PnlPrep] btnDownloadReport 활성화");
+                        ModLogger.Msg("[CustomRecordUiPatchHelper.PnlPrep] btnDownloadReport 활성화");
                     }
                     if (prep.stageAchievementValue != null)
                     {
                         prep.stageAchievementValue.text = FormatAccuracy(record);
-                        MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlPrep] UI 갱신 성공 -> {FormatAccuracy(record)}");
+                        ModLogger.Msg($"[CustomRecordUiPatchHelper.PnlPrep] UI 갱신 성공 -> {FormatAccuracy(record)}");
                     }
                 }
                 else
@@ -95,18 +95,18 @@ namespace muse_dash_test
                     {
                         prep.btnDownloadReport.gameObject.SetActive(false);
                         prep.btnDownloadReport.interactable = false;
-                        MelonLogger.Msg("[CustomRecordUiPatchHelper.PnlPrep] btnDownloadReport 비활성화 (기록 없음)");
+                        ModLogger.Msg("[CustomRecordUiPatchHelper.PnlPrep] btnDownloadReport 비활성화 (기록 없음)");
                     }
                     if (prep.stageAchievementValue != null)
                     {
                         prep.stageAchievementValue.text = "";
-                        MelonLogger.Msg("[CustomRecordUiPatchHelper.PnlPrep] UI 갱신 성공 -> 기록 없음 (빈 문자열)");
+                        ModLogger.Msg("[CustomRecordUiPatchHelper.PnlPrep] UI 갱신 성공 -> 기록 없음 (빈 문자열)");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomRecordUiPatchHelper.PnlPrep] Custom record UI apply error: {ex}");
+                ModLogger.Error($"[CustomRecordUiPatchHelper.PnlPrep] Custom record UI apply error: {ex}");
             }
         }
 
@@ -127,7 +127,7 @@ namespace muse_dash_test
 
                 int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
 
-                MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] 적용 감지: uid={uid}, diff={difficulty}");
+                ModLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] 적용 감지: uid={uid}, diff={difficulty}");
 
                 var record = CustomRecordStore.LoadResult(uid, difficulty);
                 if (record != null)
@@ -157,7 +157,7 @@ namespace muse_dash_test
                         pnlRecord.txtScore.text = FormatScore(record);
                     }
 
-                    MelonLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> acc={FormatAccuracy(record)}, clear={record.playCount}, FC={record.isFullCombo}, AP={record.isAllPerfect}");
+                    ModLogger.Msg($"[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> acc={FormatAccuracy(record)}, clear={record.playCount}, FC={record.isFullCombo}, AP={record.isAllPerfect}");
                 }
                 else
                 {
@@ -166,12 +166,12 @@ namespace muse_dash_test
                     if (pnlRecord.txtCombo != null) pnlRecord.txtCombo.text = "-";
                     if (pnlRecord.imgIconFc != null) pnlRecord.imgIconFc.SetActive(false);
                     if (pnlRecord.txtScore != null) pnlRecord.txtScore.text = "-";
-                    MelonLogger.Msg("[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> 기록 없음으로 초기화 (-)");
+                    ModLogger.Msg("[CustomRecordUiPatchHelper.PnlRecord] UI 상세정보 갱신 성공 -> 기록 없음으로 초기화 (-)");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomRecordUiPatchHelper.PnlRecord] Custom record UI apply error: {ex}");
+                ModLogger.Error($"[CustomRecordUiPatchHelper.PnlRecord] Custom record UI apply error: {ex}");
             }
         }
     }

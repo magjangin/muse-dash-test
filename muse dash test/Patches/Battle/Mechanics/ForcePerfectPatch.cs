@@ -60,7 +60,7 @@ namespace muse_dash_test
             if (!announced)
             {
                 announced = true;
-                MelonLogger.Msg($"[ForcePerfect] 판정 강제 첫 적용: {source} idx={idx}, {Describe(original)} -> Prefect");
+                ModLogger.Msg($"[ForcePerfect] 판정 강제 첫 적용: {source} idx={idx}, {Describe(original)} -> Prefect");
             }
 
             if ((DateTime.UtcNow - lastSummaryTime).TotalSeconds >= SummaryIntervalSeconds)
@@ -71,7 +71,7 @@ namespace muse_dash_test
 
         internal static void OnSettingChanged(bool enabled)
         {
-            MelonLogger.Msg($"[ForcePerfect] 강제퍼펙트 설정이 {(enabled ? "켜짐" : "꺼짐")}으로 변경되었습니다. (오토플레이와는 무관하며 판정 값만 바뀝니다)");
+            ModLogger.Msg($"[ForcePerfect] 강제퍼펙트 설정이 {(enabled ? "켜짐" : "꺼짐")}으로 변경되었습니다. (오토플레이와는 무관하며 판정 값만 바뀝니다)");
             if (!enabled)
             {
                 LogSummary();
@@ -85,7 +85,7 @@ namespace muse_dash_test
             if (!pendingSummary) return;
             pendingSummary = false;
 
-            MelonLogger.Msg($"[ForcePerfect] 누적 승격 현황: Miss={promotedByOrigin[(int)TaskResult.Miss]}, " +
+            ModLogger.Msg($"[ForcePerfect] 누적 승격 현황: Miss={promotedByOrigin[(int)TaskResult.Miss]}, " +
                             $"Cool={promotedByOrigin[(int)TaskResult.Cool]}, Great={promotedByOrigin[(int)TaskResult.Great]} " +
                             $"| 훅별: GameTouchPlay.TouchResult={promotedTotal}");
         }
@@ -126,7 +126,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[GameTouchPlay.TouchResult.Prefix] 판정 강제 중 예외 발생: {ex}");
+                ModLogger.Error($"[GameTouchPlay.TouchResult.Prefix] 판정 강제 중 예외 발생: {ex}");
             }
         }
     }

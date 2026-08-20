@@ -27,7 +27,7 @@ namespace muse_dash_test
                 string url = __instance?.url;
                 if (!string.IsNullOrEmpty(url) && (url.Contains("peropero.net") || url.Contains("thinkingdata")))
                 {
-                    MelonLogger.Msg($"[OfflineSandbox.Network] 🛡️ 외부 서버 요청 원천 차단 (오프라인 격리): {url}");
+                    ModLogger.Msg($"[OfflineSandbox.Network] 🛡️ 외부 서버 요청 원천 차단 (오프라인 격리): {url}");
                     try
                     {
                         __instance.FailCallback(-1, "Offline Sandbox Blocked");
@@ -38,7 +38,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[OfflineSandbox.Network] SendRequest Prefix 예외: {ex.Message}");
+                ModLogger.Warning($"[OfflineSandbox.Network] SendRequest Prefix 예외: {ex.Message}");
             }
 
             return true;
@@ -55,7 +55,7 @@ namespace muse_dash_test
 
             try
             {
-                MelonLogger.Msg($"[OfflineSandbox.PnlRank] 🛡️ 오프라인 샌드박스: 원격 랭킹 조회 스킵 (Target UID='{uid}')");
+                ModLogger.Msg($"[OfflineSandbox.PnlRank] 🛡️ 오프라인 샌드박스: 원격 랭킹 조회 스킵 (Target UID='{uid}')");
 
                 // 로딩 인디케이터 즉시 끄고 "서버 연결 없음(noNet)" 상태로 전환 및 커스텀 문구 적용
                 if (__instance != null)
@@ -86,7 +86,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[OfflineSandbox.PnlRank] RefreshGeneral Prefix 예외: {ex.Message}");
+                ModLogger.Warning($"[OfflineSandbox.PnlRank] RefreshGeneral Prefix 예외: {ex.Message}");
                 return true;
             }
         }

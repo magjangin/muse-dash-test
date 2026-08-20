@@ -46,7 +46,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlMusicTag] 커스텀 셀 제목 적용 예외: {ex}");
+                ModLogger.Error($"[PnlMusicTag] 커스텀 셀 제목 적용 예외: {ex}");
             }
         }
 
@@ -96,7 +96,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"PnlMusicTag.RefreshScrollViewItem Postfix 예외: {ex}");
+                ModLogger.Error($"PnlMusicTag.RefreshScrollViewItem Postfix 예외: {ex}");
             }
         }
     }

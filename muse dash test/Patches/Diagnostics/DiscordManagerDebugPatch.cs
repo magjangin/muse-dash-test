@@ -17,7 +17,7 @@ namespace muse_dash_test
         [HarmonyPrefix]
         public static void InitDiscord_Prefix(DiscordManager __instance)
         {
-            MelonLogger.Msg($"[DiscordHook.InitDiscord] ⚓ DiscordManager.InitDiscord() 호출됨! Instance={__instance?.Pointer ?? IntPtr.Zero}");
+            ModLogger.Msg($"[DiscordHook.InitDiscord] ⚓ DiscordManager.InitDiscord() 호출됨! Instance={__instance?.Pointer ?? IntPtr.Zero}");
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.SetUpdateActivity))]
@@ -32,26 +32,26 @@ namespace muse_dash_test
             {
                 levelInfo = "In Menu";
                 isPlaying = false;
-                MelonLogger.Msg("[DiscordHook.SetUpdateActivity.Prefix] 홈 메뉴 복귀 감지 ➔ 'In Menu' (isPlaying=false) 명시적 갱신 전송");
+                ModLogger.Msg("[DiscordHook.SetUpdateActivity.Prefix] 홈 메뉴 복귀 감지 ➔ 'In Menu' (isPlaying=false) 명시적 갱신 전송");
                 return;
             }
 
             string currentUid = CustomPlaySession.Current.LastKnownMusicUid;
 
-            MelonLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
-            MelonLogger.Msg($"  - isPlaying (입력값): {isPlaying}");
-            MelonLogger.Msg($"  - isSelectionActive (곡선택 패널): {isSelectionActive}");
-            MelonLogger.Msg($"  - isInBattle (배틀 여부): {isInBattle}");
-            MelonLogger.Msg($"  - levelInfo (원본 전달값): '{levelInfo ?? "(null)"}'");
-            MelonLogger.Msg($"  - Current Selected UID: '{currentUid}'");
+            ModLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
+            ModLogger.Msg($"  - isPlaying (입력값): {isPlaying}");
+            ModLogger.Msg($"  - isSelectionActive (곡선택 패널): {isSelectionActive}");
+            ModLogger.Msg($"  - isInBattle (배틀 여부): {isInBattle}");
+            ModLogger.Msg($"  - levelInfo (원본 전달값): '{levelInfo ?? "(null)"}'");
+            ModLogger.Msg($"  - Current Selected UID: '{currentUid}'");
 
             if (!string.IsNullOrEmpty(currentUid))
             {
                 DiscordPresenceManager.ResolveSongDetails(currentUid, out string title, out string artist);
-                MelonLogger.Msg($"  - ResolveSongDetails 해석 결과: Title='{title}', Artist='{artist}'");
+                ModLogger.Msg($"  - ResolveSongDetails 해석 결과: Title='{title}', Artist='{artist}'");
 
                 bool isCustom = CustomContentIds.IsVirtualSong(currentUid) || HwaResourceManager.IsRegisteredCustomHostUid(currentUid);
-                MelonLogger.Msg($"  - IsCustomRelated: {isCustom}");
+                ModLogger.Msg($"  - IsCustomRelated: {isCustom}");
 
                 if (isCustom && !string.IsNullOrEmpty(title))
                 {
@@ -61,24 +61,24 @@ namespace muse_dash_test
 
                     // isPlaying이 false면 게임 내부 C++ 코드에서 'In Menu'로 강제 덮어쓰므로 true로 전환
                     isPlaying = true;
-                    MelonLogger.Msg($"  - [가로채기 성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 전환 (상태: {statusTag})");
+                    ModLogger.Msg($"  - [가로채기 성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 전환 (상태: {statusTag})");
                 }
             }
-            MelonLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
+            ModLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.SetUpdateActivity))]
         [HarmonyPostfix]
         public static void SetUpdateActivity_Postfix(DiscordManager __instance, bool isPlaying, string levelInfo)
         {
-            MelonLogger.Msg($"[DiscordHook.SetUpdateActivity.Postfix] SetUpdateActivity 처리 완료. 최종 levelInfo: '{levelInfo}'");
+            ModLogger.Msg($"[DiscordHook.SetUpdateActivity.Postfix] SetUpdateActivity 처리 완료. 최종 levelInfo: '{levelInfo}'");
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.Destroy))]
         [HarmonyPrefix]
         public static void Destroy_Prefix()
         {
-            MelonLogger.Msg("[DiscordHook.Destroy] 🛑 DiscordManager.Destroy() 호출됨");
+            ModLogger.Msg("[DiscordHook.Destroy] 🛑 DiscordManager.Destroy() 호출됨");
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DiscordHook.IsStageSelectionContextActive] 예외 발생: {ex.Message}");
+                ModLogger.Error($"[DiscordHook.IsStageSelectionContextActive] 예외 발생: {ex.Message}");
             }
 
             return false;
@@ -123,7 +123,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[DiscordHook.IsInBattleStageContext] 예외 발생: {ex.Message}");
+                ModLogger.Error($"[DiscordHook.IsInBattleStageContext] 예외 발생: {ex.Message}");
             }
 
             return false;

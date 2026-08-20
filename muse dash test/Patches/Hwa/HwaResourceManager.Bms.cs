@@ -103,7 +103,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaResourceManager.Bms] BMS 탐색 실패: {ex}");
+                ModLogger.Error($"[HwaResourceManager.Bms] BMS 탐색 실패: {ex}");
                 return null;
             }
         }
@@ -117,7 +117,7 @@ namespace muse_dash_test
                     return null;
                 }
 
-                MelonLogger.Msg($"[HwaResourceManager.Bms] BMS 탐색 시작: folder={folderPath}");
+                ModLogger.Msg($"[HwaResourceManager.Bms] BMS 탐색 시작: folder={folderPath}");
 
                 string preferred = null;
                 if (manifest != null && !string.IsNullOrWhiteSpace(manifest.SourcePath))
@@ -136,21 +136,21 @@ namespace muse_dash_test
 
                 if (string.IsNullOrWhiteSpace(preferred) || !File.Exists(preferred))
                 {
-                    MelonLogger.Msg($"[HwaResourceManager.Bms] BMS 파일이 없습니다: folder={folderPath}");
+                    ModLogger.Msg($"[HwaResourceManager.Bms] BMS 파일이 없습니다: folder={folderPath}");
                     return null;
                 }
 
-                MelonLogger.Msg($"[HwaResourceManager.Bms] BMS 읽기 대상: {preferred}");
+                ModLogger.Msg($"[HwaResourceManager.Bms] BMS 읽기 대상: {preferred}");
                 var parseTimer = Stopwatch.StartNew();
                 var chart = BmsParser.ParseFile(preferred);
                 parseTimer.Stop();
-                MelonLogger.Msg($"[HwaResourceManager.Bms] BMS 파싱 완료: elapsed={parseTimer.ElapsedMilliseconds}ms, {HwaChartDiagnostics.DescribeBmsChart(chart)}");
+                ModLogger.Msg($"[HwaResourceManager.Bms] BMS 파싱 완료: elapsed={parseTimer.ElapsedMilliseconds}ms, {HwaChartDiagnostics.DescribeBmsChart(chart)}");
                 HwaChartDiagnostics.LogBmsWavMappingSummary(chart);
                 return chart;
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaResourceManager.Bms] BMS 읽기 실패: {ex}");
+                ModLogger.Error($"[HwaResourceManager.Bms] BMS 읽기 실패: {ex}");
                 return null;
             }
         }

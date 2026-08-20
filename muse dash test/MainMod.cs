@@ -54,7 +54,7 @@ namespace muse_dash_test
             {
                 string hwaPath = HwaResourceManager.HwaFolderPath;
                 Directory.CreateDirectory(hwaPath);
-                MelonLogger.Msg($"hwa 폴더를 확인/생성했습니다: {hwaPath}");
+                ModLogger.Msg($"hwa 폴더를 확인/생성했습니다: {hwaPath}");
                 CleanupStaleDumpFiles(hwaPath);
             }, maxConsecutiveFailures: 0);
 
@@ -63,7 +63,7 @@ namespace muse_dash_test
             {
                 string hwaTagImageFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa tag image");
                 Directory.CreateDirectory(hwaTagImageFolderPath);
-                MelonLogger.Msg($"hwa tag image 폴더를 확인/생성했습니다: {hwaTagImageFolderPath}");
+                ModLogger.Msg($"hwa tag image 폴더를 확인/생성했습니다: {hwaTagImageFolderPath}");
                 EnsureTagIconExtracted(hwaTagImageFolderPath);
             }, maxConsecutiveFailures: 0);
 
@@ -72,7 +72,7 @@ namespace muse_dash_test
             {
                 string skinsFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "skins");
                 Directory.CreateDirectory(skinsFolderPath);
-                MelonLogger.Msg($"skins 폴더를 확인/생성했습니다: {skinsFolderPath}");
+                ModLogger.Msg($"skins 폴더를 확인/생성했습니다: {skinsFolderPath}");
                 EnsureSampleSkinsFile(skinsFolderPath);
             }, maxConsecutiveFailures: 0);
 
@@ -81,10 +81,10 @@ namespace muse_dash_test
             FeatureGuard.Run("Init.SpineSkinFolder", () =>
             {
                 CustomSkinInjector.EnsureSetFolders();
-                MelonLogger.Msg($"skin test 폴더를 확인/생성했습니다: {CustomSkinInjector.SkinTestDirectory}");
+                ModLogger.Msg($"skin test 폴더를 확인/생성했습니다: {CustomSkinInjector.SkinTestDirectory}");
                 foreach (var baseName in CustomSkinInjector.KnownBaseNames)
                 {
-                    MelonLogger.Msg($"  - 세트 폴더: {CustomSkinInjector.GetSetDirectory(baseName)}");
+                    ModLogger.Msg($"  - 세트 폴더: {CustomSkinInjector.GetSetDirectory(baseName)}");
                 }
             }, maxConsecutiveFailures: 0);
 
@@ -97,10 +97,10 @@ namespace muse_dash_test
             // (기능 토글에는 묶지 않습니다. FavSave.favGirl은 FavManager의 Harmony 패치들이
             //  토글과 무관하게 읽으므로, 로드를 건너뛰면 그쪽이 전부 null을 보게 됩니다.)
             FeatureGuard.Run("Init.FavSave", FavSave.Load, maxConsecutiveFailures: 0);
-            MelonLogger.Msg("=== FavGirl 실시간 교체 기능 활성화 ===");
-            MelonLogger.Msg("P키: 실시간 교체 모드 켜기/끄기");
-            MelonLogger.Msg("O키: 실시간 교체 실행 (모드 활성화 후)");
-            MelonLogger.Msg("======================================");
+            ModLogger.Msg("=== FavGirl 실시간 교체 기능 활성화 ===");
+            ModLogger.Msg("P키: 실시간 교체 모드 켜기/끄기");
+            ModLogger.Msg("O키: 실시간 교체 실행 (모드 활성화 후)");
+            ModLogger.Msg("======================================");
 
             // Discord Rich Presence 초기화
             FeatureGuard.Run("Init.DiscordRPC", DiscordPresenceManager.Initialize, maxConsecutiveFailures: 0);
@@ -143,19 +143,19 @@ namespace muse_dash_test
                 {
                     if (stream == null)
                     {
-                        MelonLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
+                        ModLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
                         return;
                     }
 
                     byte[] fileData = new byte[stream.Length];
                     stream.Read(fileData, 0, fileData.Length);
                     File.WriteAllBytes(pngPath, fileData);
-                    MelonLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 추출 완료!");
+                    ModLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 추출 완료!");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 중 예외 발생: {ex}");
+                ModLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 중 예외 발생: {ex}");
             }
         }
 
@@ -179,17 +179,17 @@ namespace muse_dash_test
                     "# 캐릭터 토큰 예시: RIN_BASS, BURO_PILOT, MARIJA_BLACK, MARIJA_DEVIL, MIKU_HATSUNE, MARISA, AMIYA 등\r\n" +
                     "MARIJA_BLACK, MARIJA_DEVIL, RIN_BASS\r\n";
                 File.WriteAllText(skinsTxtPath, sample, new System.Text.UTF8Encoding(true));
-                MelonLogger.Msg($"[FavGirl] 샘플 skins.txt를 생성했습니다: {skinsTxtPath}");
+                ModLogger.Msg($"[FavGirl] 샘플 skins.txt를 생성했습니다: {skinsTxtPath}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[FavGirl] 샘플 skins.txt 생성 중 예외 발생: {ex}");
+                ModLogger.Error($"[FavGirl] 샘플 skins.txt 생성 중 예외 발생: {ex}");
             }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
-            MelonLogger.Msg($"씬이 로드되었습니다: {sceneName} (빌드 인덱스: {buildIndex})");
+            ModLogger.Msg($"씬이 로드되었습니다: {sceneName} (빌드 인덱스: {buildIndex})");
 
             // 씬 전환은 게임 상태가 크게 바뀌는 지점이므로, 특정 씬에서만 일시적으로 실패해
             // 자동 비활성화된 기능들에게 1회 재시도 기회를 부여합니다.
@@ -277,14 +277,14 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HywHpTextMod] Update 오류: {ex}");
+                ModLogger.Error($"[HywHpTextMod] Update 오류: {ex}");
             }
         }
 
         public override void OnApplicationQuit()
         {
             DiscordPresenceManager.Shutdown();
-            MelonLogger.Msg("모드가 종료되었습니다.");
+            ModLogger.Msg("모드가 종료되었습니다.");
         }
 
     }

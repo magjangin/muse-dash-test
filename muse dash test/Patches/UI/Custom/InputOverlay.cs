@@ -23,7 +23,7 @@ namespace muse_dash_test
         public static void ResetCache()
         {
             keysLoaded = false;
-            MelonLogger.Msg("[InputOverlay] 키 바인딩 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
+            ModLogger.Msg("[InputOverlay] 키 바인딩 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
         }
 
         /// <summary>
@@ -49,11 +49,11 @@ namespace muse_dash_test
                 var key = airKeys[i];
                 if (Input.GetKeyDown(key))
                 {
-                    MelonLogger.Msg($"[InputOverlay.Test] 공중 공격 키 입력 감지 (KeyDown): {key}");
+                    ModLogger.Msg($"[InputOverlay.Test] 공중 공격 키 입력 감지 (KeyDown): {key}");
                 }
                 if (Input.GetKeyUp(key))
                 {
-                    MelonLogger.Msg($"[InputOverlay.Test] 공중 공격 키 입력 해제 (KeyUp): {key}");
+                    ModLogger.Msg($"[InputOverlay.Test] 공중 공격 키 입력 해제 (KeyUp): {key}");
                 }
             }
 
@@ -62,11 +62,11 @@ namespace muse_dash_test
                 var key = groundKeys[i];
                 if (Input.GetKeyDown(key))
                 {
-                    MelonLogger.Msg($"[InputOverlay.Test] 지상 공격 키 입력 감지 (KeyDown): {key}");
+                    ModLogger.Msg($"[InputOverlay.Test] 지상 공격 키 입력 감지 (KeyDown): {key}");
                 }
                 if (Input.GetKeyUp(key))
                 {
-                    MelonLogger.Msg($"[InputOverlay.Test] 지상 공격 키 입력 해제 (KeyUp): {key}");
+                    ModLogger.Msg($"[InputOverlay.Test] 지상 공격 키 입력 해제 (KeyUp): {key}");
                 }
             }
         }
@@ -91,22 +91,22 @@ namespace muse_dash_test
                 var buttonKeyEnties = ModReflection.GetValue(config, "m_ButtonKeyEnties");
                 if (buttonKeyEnties == null)
                 {
-                    MelonLogger.Warning("[InputOverlay] StandloneCtrlConfig의 m_ButtonKeyEnties 필드가 null입니다.");
+                    ModLogger.Warning("[InputOverlay] StandloneCtrlConfig의 m_ButtonKeyEnties 필드가 null입니다.");
                     return;
                 }
 
                 // 1. 현재 proposal에 해당하는 키 매핑 딕셔너리를 조회. 없으면 첫 proposal로 폴백.
                 if (!TryGetDictItem(buttonKeyEnties, proposal, out var proposalDict))
                 {
-                    MelonLogger.Warning($"[InputOverlay] '{proposal}' proposal이 없습니다. 첫 proposal로 폴백을 시도합니다...");
+                    ModLogger.Warning($"[InputOverlay] '{proposal}' proposal이 없습니다. 첫 proposal로 폴백을 시도합니다...");
                     var proposals = GetDictKeys(buttonKeyEnties);
                     if (proposals.Count == 0 || !TryGetDictItem(buttonKeyEnties, proposals[0], out proposalDict))
                     {
-                        MelonLogger.Error("[InputOverlay] 사용 가능한 proposal 키가 존재하지 않습니다.");
+                        ModLogger.Error("[InputOverlay] 사용 가능한 proposal 키가 존재하지 않습니다.");
                         return;
                     }
                     proposal = proposals[0];
-                    MelonLogger.Msg($"[InputOverlay] 폴백 proposal로 '{proposal}'을 사용합니다.");
+                    ModLogger.Msg($"[InputOverlay] 폴백 proposal로 '{proposal}'을 사용합니다.");
                 }
 
                 // 2. 공중/지상 공격 키 이름 확정 (정확 매칭 → 키워드 포함 폴백).
@@ -128,14 +128,14 @@ namespace muse_dash_test
 
                 keysLoaded = true;
 
-                MelonLogger.Msg($"[InputOverlay] 키 바인딩 데이터 로드 완료! 공중 키: [{FormatKeys(airKeys)}], 지상 키: [{FormatKeys(groundKeys)}]");
+                ModLogger.Msg($"[InputOverlay] 키 바인딩 데이터 로드 완료! 공중 키: [{FormatKeys(airKeys)}], 지상 키: [{FormatKeys(groundKeys)}]");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[InputOverlay] 키매핑 추출 중 예외 발생: {ex}");
+                ModLogger.Error($"[InputOverlay] 키매핑 추출 중 예외 발생: {ex}");
                 if (ex.InnerException != null)
                 {
-                    MelonLogger.Error($"[InputOverlay] 상세 원인(InnerException): {ex.InnerException}");
+                    ModLogger.Error($"[InputOverlay] 상세 원인(InnerException): {ex.InnerException}");
                 }
             }
         }
@@ -170,7 +170,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[InputOverlay] 딕셔너리 조회 실패 (key={key}): {ex.Message}");
+                ModLogger.Warning($"[InputOverlay] 딕셔너리 조회 실패 (key={key}): {ex.Message}");
                 return false;
             }
         }
@@ -203,7 +203,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[InputOverlay] 딕셔너리 키 열거 실패: {ex.Message}");
+                ModLogger.Warning($"[InputOverlay] 딕셔너리 키 열거 실패: {ex.Message}");
             }
             return result;
         }
@@ -223,7 +223,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[InputOverlay] '{exactKey}' 존재 확인 실패: {ex.Message}");
+                ModLogger.Warning($"[InputOverlay] '{exactKey}' 존재 확인 실패: {ex.Message}");
             }
 
             foreach (var k in GetDictKeys(proposalDict))
@@ -258,7 +258,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[InputOverlay] 키코드 리스트 읽기 실패: {ex.Message}");
+                ModLogger.Warning($"[InputOverlay] 키코드 리스트 읽기 실패: {ex.Message}");
             }
         }
 

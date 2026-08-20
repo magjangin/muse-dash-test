@@ -58,18 +58,18 @@ namespace muse_dash_test
 
                 if (IsEnabled != prev)
                 {
-                    MelonLogger.Msg(IsEnabled
+                    ModLogger.Msg(IsEnabled
                         ? "[OfflineSandbox] ✅ 오프라인 샌드박스가 활성화되었습니다."
                         : "[OfflineSandbox] ⛔ 오프라인 샌드박스가 비활성화되었습니다.");
                 }
                 else
                 {
-                    MelonLogger.Msg($"[OfflineSandbox] 현재 상태: {(IsEnabled ? "활성화" : "비활성화")}");
+                    ModLogger.Msg($"[OfflineSandbox] 현재 상태: {(IsEnabled ? "활성화" : "비활성화")}");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OfflineSandbox] 플래그 파일 읽기 실패: {ex.Message}");
+                ModLogger.Error($"[OfflineSandbox] 플래그 파일 읽기 실패: {ex.Message}");
                 IsEnabled = false;
             }
         }
@@ -90,7 +90,7 @@ namespace muse_dash_test
         {
             if (!File.Exists(FlagFilePath))
             {
-                MelonLogger.Warning($"[OfflineSandbox] 플래그 파일 없음 → 비활성화 처리: {FlagFilePath}");
+                ModLogger.Warning($"[OfflineSandbox] 플래그 파일 없음 → 비활성화 처리: {FlagFilePath}");
                 return false;
             }
 
@@ -104,7 +104,7 @@ namespace muse_dash_test
                 }
             }
 
-            MelonLogger.Warning($"[OfflineSandbox] '{FlagKey}' 키를 찾지 못했습니다 → 비활성화 처리");
+            ModLogger.Warning($"[OfflineSandbox] '{FlagKey}' 키를 찾지 못했습니다 → 비활성화 처리");
             return false;
         }
 
@@ -118,13 +118,13 @@ namespace muse_dash_test
                     System.Text.Encoding.UTF8);
 
                 IsEnabled = enable;
-                MelonLogger.Msg(enable
+                ModLogger.Msg(enable
                     ? "[OfflineSandbox] ✅ 플래그 파일 → 활성화로 저장되었습니다."
                     : "[OfflineSandbox] ⛔ 플래그 파일 → 비활성화로 저장되었습니다.");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[OfflineSandbox] 플래그 파일 쓰기 실패: {ex.Message}");
+                ModLogger.Error($"[OfflineSandbox] 플래그 파일 쓰기 실패: {ex.Message}");
             }
         }
 
@@ -132,7 +132,7 @@ namespace muse_dash_test
         {
             if (!File.Exists(FlagFilePath))
             {
-                MelonLogger.Msg($"[OfflineSandbox] 플래그 파일이 없어 기본값(비활성화)으로 생성합니다: {FlagFilePath}");
+                ModLogger.Msg($"[OfflineSandbox] 플래그 파일이 없어 기본값(비활성화)으로 생성합니다: {FlagFilePath}");
                 WriteFlag(false);
             }
         }
@@ -153,7 +153,7 @@ namespace muse_dash_test
 
             if (loggedDLCs.Add(appID.m_AppId))
             {
-                MelonLogger.Msg($"[OfflineSandbox] DLC {appID.m_AppId} → 오프라인 샌드박스 허용");
+                ModLogger.Msg($"[OfflineSandbox] DLC {appID.m_AppId} → 오프라인 샌드박스 허용");
             }
 
             __result = true;
@@ -172,7 +172,7 @@ namespace muse_dash_test
             if (!OfflineCustomSandbox.IsEnabled)
                 return true; // 원본 로직 실행
 
-            MelonLogger.Msg("[OfflineSandbox] DLCVerify 바이패스 (오프라인 샌드박스 활성 중)");
+            ModLogger.Msg("[OfflineSandbox] DLCVerify 바이패스 (오프라인 샌드박스 활성 중)");
             __instance.m_DoSomething1 = true;
             __instance.m_DoSomething3 = true;
             return true;

@@ -26,13 +26,13 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("[HwaResourceManager] 모드 로드 시 manifest 선읽기 시작");
+                ModLogger.Msg("[HwaResourceManager] 모드 로드 시 manifest 선읽기 시작");
                 ClearCaches();
 
                 List<string> songDirs = DiscoverSongDirectories();
                 if (songDirs.Count > 0)
                 {
-                    MelonLogger.Msg($"[HwaResourceManager] 총 {songDirs.Count}개의 하위 폴더/곡 폴더를 발견했습니다.");
+                    ModLogger.Msg($"[HwaResourceManager] 총 {songDirs.Count}개의 하위 폴더/곡 폴더를 발견했습니다.");
                     for (int i = 0; i < songDirs.Count; i++)
                     {
                         string uid = CustomContentIds.CreateVirtualSongUid(i);
@@ -48,7 +48,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaResourceManager] 모드 로드 시 manifest 선읽기 실패: {ex}");
+                ModLogger.Error($"[HwaResourceManager] 모드 로드 시 manifest 선읽기 실패: {ex}");
             }
         }
 
@@ -120,7 +120,7 @@ namespace muse_dash_test
             }
             else
             {
-                MelonLogger.Warning($"[HwaResourceManager] [{uid}] BMS 로드 실패 또는 파일 없음");
+                ModLogger.Warning($"[HwaResourceManager] [{uid}] BMS 로드 실패 또는 파일 없음");
             }
 
             virtualUids.Add(uid);
@@ -159,7 +159,7 @@ namespace muse_dash_test
         /// </summary>
         private static void GenerateTestSlots()
         {
-            MelonLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1999-1~3)을 기본 생성합니다.");
+            ModLogger.Msg("[HwaResourceManager] 하위 폴더가 발견되지 않았습니다. 테스트용 3개 슬롯(1999-1~3)을 기본 생성합니다.");
             for (int i = 0; i < 3; i++)
             {
                 string uid = CustomContentIds.CreateVirtualSongUid(i);

@@ -57,7 +57,7 @@ namespace muse_dash_test
                     }
                     if (isFirstLog)
                     {
-                        MelonLogger.Error($"[Il2CppWrapperBase] '{memberName}' 형변환 오류 (Target: {typeof(T).Name}): {ex.Message} (이 에러는 1회만 표시됩니다)");
+                        ModLogger.Error($"[Il2CppWrapperBase] '{memberName}' 형변환 오류 (Target: {typeof(T).Name}): {ex.Message} (이 에러는 1회만 표시됩니다)");
                     }
                 }
             }
@@ -93,7 +93,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[Il2CppWrapperBase] AddMaskValue 호출 실패: {ex.Message}");
+                ModLogger.Error($"[Il2CppWrapperBase] AddMaskValue 호출 실패: {ex.Message}");
             }
         }
     }

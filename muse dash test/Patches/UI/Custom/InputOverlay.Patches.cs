@@ -12,7 +12,7 @@ namespace muse_dash_test
     {
         public static void Postfix(string keyName)
         {
-            MelonLogger.Msg($"[InputOverlay.Hook] OnClickBtnCustomComplete 호출됨: keyName={keyName}");
+            ModLogger.Msg($"[InputOverlay.Hook] OnClickBtnCustomComplete 호출됨: keyName={keyName}");
             InputOverlay.ResetCache();
         }
     }
@@ -22,7 +22,7 @@ namespace muse_dash_test
     {
         public static void Postfix()
         {
-            MelonLogger.Msg("[InputOverlay.Hook] OnCancelCustomize 호출됨");
+            ModLogger.Msg("[InputOverlay.Hook] OnCancelCustomize 호출됨");
             InputOverlay.ResetCache();
         }
     }

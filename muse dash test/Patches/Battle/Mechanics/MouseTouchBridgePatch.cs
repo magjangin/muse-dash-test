@@ -184,7 +184,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MouseTouchBridge] InjectButtonDown 에러: {ex}");
+                ModLogger.Error($"[MouseTouchBridge] InjectButtonDown 에러: {ex}");
             }
         }
 
@@ -248,7 +248,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MouseTouchBridge] InjectButtonHold 에러: {ex}");
+                ModLogger.Error($"[MouseTouchBridge] InjectButtonHold 에러: {ex}");
             }
         }
 
@@ -310,7 +310,7 @@ namespace muse_dash_test.Patches.Battle.Mechanics
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MouseTouchBridge] InjectButtonUp 에러: {ex}");
+                ModLogger.Error($"[MouseTouchBridge] InjectButtonUp 에러: {ex}");
             }
         }
 

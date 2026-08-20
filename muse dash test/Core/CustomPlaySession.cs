@@ -57,7 +57,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLoader.MelonLogger.Error($"[CustomPlaySession] Discord Presence 갱신 에러: {ex.Message}");
+                ModLogger.Error($"[CustomPlaySession] Discord Presence 갱신 에러: {ex.Message}");
             }
         }
 

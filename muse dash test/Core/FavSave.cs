@@ -48,7 +48,7 @@ namespace muse_dash_test
 
             if (!Enum.IsDefined(typeof(GirlID), favGirl.Value))
             {
-                MelonLogger.Msg("[FavSave] 즐겨찾기 소녀가 정의되지 않음");
+                ModLogger.Msg("[FavSave] 즐겨찾기 소녀가 정의되지 않음");
                 FavGirl = GirlID.NONE;
             }
         }

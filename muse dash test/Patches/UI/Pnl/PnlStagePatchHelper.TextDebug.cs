@@ -83,7 +83,7 @@ public static partial class PnlStagePatchHelper
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"IsCustomAlbumContext 예외: {ex}");
+            ModLogger.Error($"IsCustomAlbumContext 예외: {ex}");
         }
 
         return false;
@@ -126,7 +126,7 @@ public static partial class PnlStagePatchHelper
         }
         catch (System.Exception ex)
         {
-            MelonLogger.Error($"GetCurrentSelectedMusicUid 예외: {ex}");
+            ModLogger.Error($"GetCurrentSelectedMusicUid 예외: {ex}");
         }
         return null;
     }
@@ -184,7 +184,7 @@ public static partial class PnlStagePatchHelper
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"GetTitleTextFromArea 예외: {ex}");
+            ModLogger.Error($"GetTitleTextFromArea 예외: {ex}");
         }
         return null;
     }
@@ -363,11 +363,11 @@ public static partial class PnlStagePatchHelper
                 CustomPlaySession.Current.IsExperimentModeActive = isExp;
             }
 
-            MelonLogger.Msg($"[PnlStage.ExperimentMode] title='{text}', detected={isExp}, previous={previous}, current={CustomPlaySession.Current.IsExperimentModeActive}");
+            ModLogger.Msg($"[PnlStage.ExperimentMode] title='{text}', detected={isExp}, previous={previous}, current={CustomPlaySession.Current.IsExperimentModeActive}");
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"SyncExperimentModeFromStage \uc608\uc678: {ex}");
+            ModLogger.Error($"SyncExperimentModeFromStage \uc608\uc678: {ex}");
         }
     }
 

@@ -31,7 +31,7 @@ namespace muse_dash_test
 
                 if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
                 {
-                    MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2Cpp.BaseSpineObjectController]");
+                    ModLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2Cpp.BaseSpineObjectController]");
                 }
                 return restored;
             }
@@ -49,7 +49,7 @@ namespace muse_dash_test
 
                 if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
                 {
-                    MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[UnityEngine.GameObject]");
+                    ModLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[UnityEngine.GameObject]");
                 }
                 return restored;
             }
@@ -73,7 +73,7 @@ namespace muse_dash_test
 
                 if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
                 {
-                    MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2CppSystem.Collections.Generic.List`1[[UnityEngine.GameObject]]]");
+                    ModLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2CppSystem.Collections.Generic.List`1[[UnityEngine.GameObject]]]");
                 }
                 return restored;
             }
@@ -106,7 +106,7 @@ namespace muse_dash_test
             if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
             {
                 var preview = itemTypes.Count == 0 ? "(none)" : string.Join(", ", itemTypes);
-                MelonLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={fallbackCount}, restored={restored}, itemTypes=[{preview}]");
+                ModLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={fallbackCount}, restored={restored}, itemTypes=[{preview}]");
             }
             return restored;
         }

@@ -25,7 +25,7 @@ namespace muse_dash_test.Patches.UI.Stage
                 float displayAcc = acc * 100f;
                 if (number <= 10)
                 {
-                    MelonLogger.Msg($"🎯 [RankCell.SetValue] Number={number:D2}, NickName='{nickName}', Score={score:N0}, Acc={displayAcc:F2}% (UID={uid ?? "unknown"})");
+                    ModLogger.Msg($"🎯 [RankCell.SetValue] Number={number:D2}, NickName='{nickName}', Score={score:N0}, Acc={displayAcc:F2}% (UID={uid ?? "unknown"})");
                 }
             }
             catch { }

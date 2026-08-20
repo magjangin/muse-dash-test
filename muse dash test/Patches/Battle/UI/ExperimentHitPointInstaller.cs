@@ -71,7 +71,7 @@ namespace muse_dash_test
             if (++installAttempts > MaxInstallAttempts)
             {
                 gaveUp = true;
-                MelonLogger.Warning(
+                ModLogger.Warning(
                     $"[ExperimentHitPoint] {MaxInstallAttempts}회({MaxInstallAttempts * RetryInterval:0.#}초) 시도했지만 HitPoints 설치에 실패해 " +
                     "이번 스테이지에서는 재시도를 중단합니다. (프레임 드랍 방지)");
                 return;
@@ -114,7 +114,7 @@ namespace muse_dash_test
                     if (existingInstance != null)
                     {
                         installed = true;
-                        MelonLogger.Msg($"[ExperimentHitPoint] 기존 인스턴스 확인: {GetPath(existingInstance.transform)}, source={candidate.Source}");
+                        ModLogger.Msg($"[ExperimentHitPoint] 기존 인스턴스 확인: {GetPath(existingInstance.transform)}, source={candidate.Source}");
                         return;
                     }
 
@@ -127,7 +127,7 @@ namespace muse_dash_test
                         }
 
                         installed = true;
-                        MelonLogger.Msg($"[ExperimentHitPoint] 기존 전역 인스턴스 확인/연결: {GetPath(existingInstance.transform)}, source={candidate.Source}");
+                        ModLogger.Msg($"[ExperimentHitPoint] 기존 전역 인스턴스 확인/연결: {GetPath(existingInstance.transform)}, source={candidate.Source}");
                         return;
                     }
                 }
@@ -148,7 +148,7 @@ namespace muse_dash_test
                     instance.SetActive(true);
 
                     installed = true;
-                    MelonLogger.Msg(
+                    ModLogger.Msg(
                         $"[ExperimentHitPoint] 게임 원본 HitPoint 설치 완료: path={GetPath(instance.transform)}, " +
                         $"source={candidate.Source}, candidates={DescribeCandidates(candidates)}, scene={instance.scene.name}, " +
                         $"activeHierarchy={instance.activeInHierarchy}, localPos={instance.transform.localPosition}");
@@ -163,12 +163,12 @@ namespace muse_dash_test
                 if (!string.Equals(lastStatusLog, statusMsg, StringComparison.Ordinal))
                 {
                     lastStatusLog = statusMsg;
-                    MelonLogger.Msg($"{statusMsg}, loaded={DescribeLoadedHitPoints()}");
+                    ModLogger.Msg($"{statusMsg}, loaded={DescribeLoadedHitPoints()}");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[ExperimentHitPoint] 설치 중 예외: {ex}");
+                ModLogger.Error($"[ExperimentHitPoint] 설치 중 예외: {ex}");
             }
         }
 
@@ -377,7 +377,7 @@ namespace muse_dash_test
             }
 
             lastStatusLog = message;
-            MelonLogger.Msg(message);
+            ModLogger.Msg(message);
         }
 
         private static GameObject FindActiveGameObject(string name)

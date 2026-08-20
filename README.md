@@ -1,4 +1,4 @@
-# muse-dash-custom-chart 🎵
+﻿# muse-dash-custom-chart 🎵
 
 > **뮤즈대시(Muse Dash)를 네이티브 훅(Native Detour) 없이 관리형 Harmony 계층만으로 다뤄, 실시간 커스텀 차트와 보스 연출을 구현한 최초의 모드입니다. (첫 배포 버전)**
 >
@@ -58,7 +58,7 @@
   * **터치스크린 10접점 멀티터치 지원**: ROG Ally, 스팀덱, 서피스 등에서 두 손가락으로 공중/지상 동시 입력이 가능합니다. 레거시 `UnityEngine.Input`이 Windows 스탠드얼론에서 터치를 읽지 못하는 문제를 새 Input System 전환으로 해결했으며, Windows의 마우스 승격으로 인한 이중 판정도 차단합니다. (→ [MOBILE_TOUCH_AND_INPUT_GUIDE.md](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md))
 * **UMPC Hardware Auto-Detection & Lag Optimization (UMPC 자동 감지 및 로그 레벨 렉 최적화) [v0.10.0]** ✅
   * ASUS ROG Ally, Valve Steam Deck, Lenovo Legion Go, AYANEO, GPD 등 핸드헬드 기기 및 배터리/내장 APU 환경을 시작 시 자동 감지합니다 (`DeviceDetector`).
-  * UMPC 환경에서는 콘솔 출력 및 파일 I/O 부하로 인한 순간적인 프레임 드랍(스터터링)을 방지하기 위해 기본 로그 레벨을 `Error`로 대폭 낮추며, 전역 `MelonLoggerInterceptor`를 통해 모드 전반의 불필요한 로그 출력을 원천 차단합니다.
+  * UMPC 환경에서는 콘솔 출력 및 파일 I/O 부하로 인한 순간적인 프레임 드랍(스터터링)을 방지하기 위해 기본 로그 레벨을 `Error`로 대폭 낮춥니다. 모드의 모든 로그는 `ModLogger`를 단일 창구로 지나가며, 레벨에 미달하는 출력은 호출부에서 곧바로 차단됩니다.
   * `MelonPreferences.cfg`의 `LogLevel` 설정(`Auto`, `Silent`, `Error`, `Warning`, `Info`, `Verbose`)을 통해 사용자 맞춤 제어를 지원합니다. (→ [LOGGING_AND_TROUBLESHOOTING.md](docs/guides/LOGGING_AND_TROUBLESHOOTING.md))
 
 ---
@@ -141,8 +141,7 @@
 │   ├── Bms/                  # BMS 파서/렉서, WAV 코드 해석, 노트 매칭, 보스 스왑 플래너
 │   ├── Core/                 # 하드웨어 감지, 로그 레벨 제어, 예외 격리, 터치 판독, 세션/기록 저장소, ModConfig 통합 설정
 │   │   ├── DeviceDetector.cs # UMPC/핸드헬드 하드웨어 자동 판별
-│   │   ├── ModLogger.cs      # 로그 레벨 동적 제어
-│   │   ├── MelonLoggerInterceptor.cs # MelonLogger 전역 가로채기 & 음소거
+│   │   ├── ModLogger.cs      # 모드 로그의 단일 창구 & 레벨 동적 제어
 │   │   ├── ModConfig.cs      # MelonPreferences 기반 13개 개별 기능 및 LogLevel 제어
 │   │   └── ...
 │   ├── Integration/          # Discord RPC 연동 및 실시간 리소스/스킨 스와퍼 (P/O 단축키)

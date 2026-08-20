@@ -17,7 +17,7 @@ namespace muse_dash_test
             if (s_captured) return;
             s_captured = true;
             s_originalValue = currentValue;
-            MelonLogger.Msg($"[UnlockAllMasterGuard] 원본 IsUnlockAllMaster 값 캡처: {s_originalValue}");
+            ModLogger.Msg($"[UnlockAllMasterGuard] 원본 IsUnlockAllMaster 값 캡처: {s_originalValue}");
         }
 
         public static bool GetRestoreValue()

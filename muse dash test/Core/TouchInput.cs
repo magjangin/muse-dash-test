@@ -74,7 +74,7 @@ namespace muse_dash_test
                 if (!_backendLogged)
                 {
                     _backendLogged = true;
-                    MelonLogger.Msg($"[TouchInput] 터치스크린 입력을 {ActiveBackend} 백엔드로 처리합니다.");
+                    ModLogger.Msg($"[TouchInput] 터치스크린 입력을 {ActiveBackend} 백엔드로 처리합니다.");
                 }
             }
 
@@ -149,7 +149,7 @@ namespace muse_dash_test
                 if (!_errorLogged)
                 {
                     _errorLogged = true;
-                    MelonLogger.Warning($"[TouchInput] Input System 판독 실패, 레거시로 폴백합니다: {ex.GetType().Name}: {ex.Message}");
+                    ModLogger.Warning($"[TouchInput] Input System 판독 실패, 레거시로 폴백합니다: {ex.GetType().Name}: {ex.Message}");
                 }
                 return false;
             }
@@ -191,7 +191,7 @@ namespace muse_dash_test
                 if (!_errorLogged)
                 {
                     _errorLogged = true;
-                    MelonLogger.Warning($"[TouchInput] 레거시 판독 실패: {ex.GetType().Name}: {ex.Message}");
+                    ModLogger.Warning($"[TouchInput] 레거시 판독 실패: {ex.GetType().Name}: {ex.Message}");
                 }
             }
         }

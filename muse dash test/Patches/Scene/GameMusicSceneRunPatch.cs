@@ -42,7 +42,7 @@ public class GameMusicScene_Run_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"[GameMusicScene.Run] 덤프 예외: {ex}");
+            ModLogger.Error($"[GameMusicScene.Run] 덤프 예외: {ex}");
         }
     }
 
@@ -53,7 +53,7 @@ public class GameMusicScene_Run_Patch
         {
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
             var list = db != null ? db.musicList : null;
-            if (list == null) { MelonLogger.Msg("[GameMusicScene.Run]   >> musicList = (null)"); return; }
+            if (list == null) { ModLogger.Msg("[GameMusicScene.Run]   >> musicList = (null)"); return; }
 
             var hist = new System.Collections.Generic.SortedDictionary<string, int>();
             var firstNonNull = new System.Collections.Generic.List<string>();
@@ -72,9 +72,9 @@ public class GameMusicScene_Run_Patch
             bool first = true;
             foreach (var kv in hist) { if (!first) sb.Append(", "); sb.Append($"{kv.Key}:{kv.Value}"); first = false; }
             sb.Append($"}}, 첫non-null=[{string.Join(", ", firstNonNull)}]");
-            MelonLogger.Msg($"[GameMusicScene.Run]   >> musicList {sb}");
+            ModLogger.Msg($"[GameMusicScene.Run]   >> musicList {sb}");
         }
-        catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.Run] musicList 덤프 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[GameMusicScene.Run] musicList 덤프 예외: {ex}"); }
     }
 
     // 씬 슬롯 관련 핵심 컬렉션의 실제 내용(이름/키)을 풀어서 찍는다.
@@ -87,16 +87,16 @@ public class GameMusicScene_Run_Patch
             if (scenes != null)
             {
                 int sampleCount = Math.Min(scenes.Count, 8);
-                MelonLogger.Msg($"[GameMusicScene.Run]   >> scenes (Count={scenes.Count}, sample={sampleCount}):");
+                ModLogger.Msg($"[GameMusicScene.Run]   >> scenes (Count={scenes.Count}, sample={sampleCount}):");
                 for (int i = 0; i < sampleCount; i++)
                 {
                     string name = "(null)";
                     try { name = scenes[i] != null ? scenes[i].name : "(null)"; } catch (Exception ex) { name = $"(예외:{ex.GetType().Name})"; }
-                    MelonLogger.Msg($"[GameMusicScene.Run]        [{i}] {name}");
+                    ModLogger.Msg($"[GameMusicScene.Run]        [{i}] {name}");
                 }
             }
         }
-        catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.Run] scenes 덤프 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[GameMusicScene.Run] scenes 덤프 예외: {ex}"); }
 
         // scenesAnimas: 씬 이름(키) → 애니메이터 배열
         try
@@ -105,17 +105,17 @@ public class GameMusicScene_Run_Patch
             if (sa != null)
             {
                 int sampleCount = Math.Min(sa.Count, 8);
-                MelonLogger.Msg($"[GameMusicScene.Run]   >> scenesAnimas keys (Count={sa.Count}, sample={sampleCount}):");
+                ModLogger.Msg($"[GameMusicScene.Run]   >> scenesAnimas keys (Count={sa.Count}, sample={sampleCount}):");
                 var e = sa.Keys.GetEnumerator();
                 int logged = 0;
                 while (e.MoveNext() && logged < sampleCount)
                 {
-                    MelonLogger.Msg($"[GameMusicScene.Run]        key='{e.Current}'");
+                    ModLogger.Msg($"[GameMusicScene.Run]        key='{e.Current}'");
                     logged++;
                 }
             }
         }
-        catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.Run] scenesAnimas 덤프 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[GameMusicScene.Run] scenesAnimas 덤프 예외: {ex}"); }
 
         // SceneSubCtrls: 씬 인덱스(키) → SceneSubControl
         try
@@ -124,16 +124,16 @@ public class GameMusicScene_Run_Patch
             if (subs != null)
             {
                 int sampleCount = Math.Min(subs.Count, 8);
-                MelonLogger.Msg($"[GameMusicScene.Run]   >> SceneSubCtrls keys (Count={subs.Count}, sample={sampleCount}):");
+                ModLogger.Msg($"[GameMusicScene.Run]   >> SceneSubCtrls keys (Count={subs.Count}, sample={sampleCount}):");
                 var e = subs.Keys.GetEnumerator();
                 int logged = 0;
                 while (e.MoveNext() && logged < sampleCount)
                 {
-                    MelonLogger.Msg($"[GameMusicScene.Run]        key={e.Current}");
+                    ModLogger.Msg($"[GameMusicScene.Run]        key={e.Current}");
                     logged++;
                 }
             }
         }
-        catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.Run] SceneSubCtrls 덤프 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[GameMusicScene.Run] SceneSubCtrls 덤프 예외: {ex}"); }
     }
 }

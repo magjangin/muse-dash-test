@@ -38,7 +38,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
             var summary = $"[PreLoadEnemy] PRE frame={frame}: musicList.Count={musicCount}, oriMusicList.Count={oriCount}\n[PreLoadEnemy]   musicList    {musicHead}\n[PreLoadEnemy]   oriMusicList {oriHead}";
             SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Prefix", summary, 20);
         }
-        catch (Exception ex) { MelonLogger.Error($"[PreLoadEnemy] Prefix 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[PreLoadEnemy] Prefix 예외: {ex}"); }
     }
 
     // 빌드 후 풀 크기 → 어느 리스트로 만들었는지 판별.
@@ -66,7 +66,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
                 SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Postfix", summary, 20);
             }
         }
-        catch (Exception ex) { MelonLogger.Error($"[PreLoadEnemy] Postfix 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[PreLoadEnemy] Postfix 예외: {ex}"); }
     }
 
     // 리스트 전체를 스캔: uid zz(앞2자리) 프리픽스 분포 + 첫 non-null uid 몇 개.

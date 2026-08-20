@@ -262,12 +262,12 @@ namespace muse_dash_test
                 sb.AppendLine($"모바일터치조작={enableMobileTouch.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
-                MelonLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");
+                ModLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");
             }
             catch (Exception ex)
             {
                 hasFailedToWrite = true;
-                MelonLogger.Error($"[InputOverlay] 설정 파일 저장 중 실패 (쓰기 시도가 중단됩니다): {ex.Message}");
+                ModLogger.Error($"[InputOverlay] 설정 파일 저장 중 실패 (쓰기 시도가 중단됩니다): {ex.Message}");
             }
         }
     }

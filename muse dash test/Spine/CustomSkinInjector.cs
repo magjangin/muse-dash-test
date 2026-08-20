@@ -52,7 +52,7 @@ namespace muse_dash_test
 
                 if (!File.Exists(pngPath) || !File.Exists(atlasPath) || !File.Exists(jsonPath))
                 {
-                    MelonLogger.Msg($"[CustomSkinInjector] {baseName} 파일이 없습니다: {dir}");
+                    ModLogger.Msg($"[CustomSkinInjector] {baseName} 파일이 없습니다: {dir}");
                     return null;
                 }
 
@@ -71,7 +71,7 @@ namespace muse_dash_test
                         "================================================================================\n",
                         baseName, jsonPath, warningMsg);
 
-                    MelonLogger.Error(banner);
+                    ModLogger.Error(banner);
                 }
 
                 var pngBytes = File.ReadAllBytes(pngPath);
@@ -97,19 +97,19 @@ namespace muse_dash_test
                 var skeletonDataAsset = SkeletonDataAsset.CreateRuntimeInstance(skeletonTextAsset, atlasAsset, true, 0.01f);
                 if (skeletonDataAsset == null || skeletonDataAsset.GetSkeletonData(true) == null)
                 {
-                    MelonLogger.Msg($"[CustomSkinInjector] {baseName} 스켈레톤 데이터 생성 실패");
+                    ModLogger.Msg($"[CustomSkinInjector] {baseName} 스켈레톤 데이터 생성 실패");
                     return null;
                 }
 
                 skeletonDataAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
                 Cache[baseName] = skeletonDataAsset;
-                MelonLogger.Msg($"[CustomSkinInjector] {baseName} 커스텀 SkeletonDataAsset 생성 완료");
+                ModLogger.Msg($"[CustomSkinInjector] {baseName} 커스텀 SkeletonDataAsset 생성 완료");
                 return skeletonDataAsset;
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomSkinInjector] {baseName} 예외: " + ex);
+                ModLogger.Error($"[CustomSkinInjector] {baseName} 예외: " + ex);
                 return null;
             }
         }

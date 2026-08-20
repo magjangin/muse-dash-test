@@ -61,7 +61,7 @@ namespace muse_dash_test
         {
             if (chart?.Notes == null || chart.Notes.Count == 0)
             {
-                MelonLogger.Msg("[HwaResourceManager.Bms] 노트가 없어 WAV 매핑 샘플을 건너뜁니다.");
+                ModLogger.Msg("[HwaResourceManager.Bms] 노트가 없어 WAV 매핑 샘플을 건너뜁니다.");
                 return;
             }
 
@@ -77,11 +77,11 @@ namespace muse_dash_test
                 var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, note);
                 if (wavInfo == null)
                 {
-                    MelonLogger.Msg($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav=(null)");
+                    ModLogger.Msg($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav=(null)");
                 }
                 else
                 {
-                    MelonLogger.Msg($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav={wavInfo.RawWavName}, uid={wavInfo.Uid ?? "(null)"}, type={wavInfo.NoteType}, prefab={wavInfo.PrefabName ?? "(null)"}, dt={wavInfo.Dt}, keyAudio={wavInfo.KeyAudio ?? "(null)"}, bossAction={wavInfo.BossAction ?? "(null)"}");
+                    ModLogger.Msg($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav={wavInfo.RawWavName}, uid={wavInfo.Uid ?? "(null)"}, type={wavInfo.NoteType}, prefab={wavInfo.PrefabName ?? "(null)"}, dt={wavInfo.Dt}, keyAudio={wavInfo.KeyAudio ?? "(null)"}, bossAction={wavInfo.BossAction ?? "(null)"}");
                 }
 
                 logged++;
@@ -95,7 +95,7 @@ namespace muse_dash_test
             for (int i = 0; i < swapEvents.Count && i < 5; i++)
             {
                 var evt = swapEvents[i];
-                MelonLogger.Msg($"[HwaResourceManager.Bms] 보스 스왑 후보 #{i + 1}: outTick={evt.OutNote?.Tick}, inTick={evt.InNote?.Tick}, delay={evt.DelaySeconds:0.###}s, action={evt.BossAction}");
+                ModLogger.Msg($"[HwaResourceManager.Bms] 보스 스왑 후보 #{i + 1}: outTick={evt.OutNote?.Tick}, inTick={evt.InNote?.Tick}, delay={evt.DelaySeconds:0.###}s, action={evt.BossAction}");
             }
         }
     }

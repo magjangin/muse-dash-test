@@ -22,11 +22,11 @@ namespace muse_dash_test.Patches.UI.Stage
                 int bufferChildCount = __instance.m_RankCellBuffer != null ? __instance.m_RankCellBuffer.childCount : 0;
                 int ranksDictCount = PnlRankLoggingHelper.GetMRanksCountReflect(__instance);
 
-                MelonLogger.Msg($"👑 [PnlRank.RefreshGeneral] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
+                ModLogger.Msg($"👑 [PnlRank.RefreshGeneral] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlRank.RefreshGeneral Logging] 예외: {ex}");
+                ModLogger.Error($"[PnlRank.RefreshGeneral Logging] 예외: {ex}");
             }
         }
     }
@@ -42,11 +42,11 @@ namespace muse_dash_test.Patches.UI.Stage
                 int bufferChildCount = __instance.m_RankCellBuffer != null ? __instance.m_RankCellBuffer.childCount : 0;
                 int ranksDictCount = PnlRankLoggingHelper.GetMRanksCountReflect(__instance);
 
-                MelonLogger.Msg($"👑 [PnlRank.UIRefresh] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
+                ModLogger.Msg($"👑 [PnlRank.UIRefresh] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlRank.UIRefresh Logging] 예외: {ex}");
+                ModLogger.Error($"[PnlRank.UIRefresh Logging] 예외: {ex}");
             }
         }
     }
@@ -59,7 +59,7 @@ namespace muse_dash_test.Patches.UI.Stage
             try
             {
                 string uid = CustomPlaySession.Current.SelectedMusicUid ?? PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-                MelonLogger.Msg($"👑 [PnlRank.Refresh] Called! force={force}, UID='{uid}'");
+                ModLogger.Msg($"👑 [PnlRank.Refresh] Called! force={force}, UID='{uid}'");
             }
             catch { }
         }
@@ -72,11 +72,11 @@ namespace muse_dash_test.Patches.UI.Stage
         {
             try
             {
-                MelonLogger.Warning($"⚠️ [PnlRank.NsRefreshFail] 서버 갱신 실패 감지! ErrorType={errorType}, UID='{uid}'");
+                ModLogger.Warning($"⚠️ [PnlRank.NsRefreshFail] 서버 갱신 실패 감지! ErrorType={errorType}, UID='{uid}'");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlRank.NsRefreshFail Logging] 예외: {ex}");
+                ModLogger.Error($"[PnlRank.NsRefreshFail Logging] 예외: {ex}");
             }
         }
     }

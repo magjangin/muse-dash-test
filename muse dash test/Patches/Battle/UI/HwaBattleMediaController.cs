@@ -26,14 +26,14 @@ namespace muse_dash_test
             battleMediaInjectionStarted = false;
             injectedAudioSource = null;
             injectedClip = null;
-            MelonLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, ManagedHeap={currentMem / 1048576f:F2}MB)");
+            ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, ManagedHeap={currentMem / 1048576f:F2}MB)");
         }
 
         public static void StartBattleMediaInjection()
         {
             if (!ModConfig.EnableBattleMedia)
             {
-                MelonLogger.Msg("[HwaBattleMediaController.Debug] 스킵: ModConfig에서 BattleMedia 기능이 비활성화됨");
+                ModLogger.Msg("[HwaBattleMediaController.Debug] 스킵: ModConfig에서 BattleMedia 기능이 비활성화됨");
                 return;
             }
             try
@@ -43,17 +43,17 @@ namespace muse_dash_test
                 {
                     debugUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
                 }
-                MelonLogger.Msg($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, {CustomPlaySession.Current.DescribeApplyDecision()}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
+                ModLogger.Msg($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, {CustomPlaySession.Current.DescribeApplyDecision()}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
 
                 if (battleMediaInjectionStarted)
                 {
-                    MelonLogger.Msg("[HwaBattleMediaController.Debug] 스킵: 이미 이번 배틀에서 주입을 시작함 (battleMediaInjectionStarted=true)");
+                    ModLogger.Msg("[HwaBattleMediaController.Debug] 스킵: 이미 이번 배틀에서 주입을 시작함 (battleMediaInjectionStarted=true)");
                     return;
                 }
 
                 if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
-                    MelonLogger.Msg($"[HwaBattleMediaController.Debug] 스킵: 커스텀 배틀 미디어 비활성 ({CustomPlaySession.Current.DescribeApplyDecision()})");
+                    ModLogger.Msg($"[HwaBattleMediaController.Debug] 스킵: 커스텀 배틀 미디어 비활성 ({CustomPlaySession.Current.DescribeApplyDecision()})");
                     return;
                 }
 
@@ -63,7 +63,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] 주입 시작 실패: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] 주입 시작 실패: {ex}");
             }
         }
 
@@ -84,30 +84,30 @@ namespace muse_dash_test
             Camera mainCam = Camera.main;
             if (mainCam != null)
             {
-                MelonLogger.Msg($"[HwaBattleMediaController] 메인 카메라 감지 완료: name={mainCam.name}, position={mainCam.transform.position}");
+                ModLogger.Msg($"[HwaBattleMediaController] 메인 카메라 감지 완료: name={mainCam.name}, position={mainCam.transform.position}");
                 if (InputOverlay.enableCinema)
                 {
                     TryPlayVideo(mainCam, songDir);
                 }
                 else
                 {
-                    MelonLogger.Msg("[HwaBattleMediaController] 시네마(BGA)가 설정에서 비활성화되어 있어 비디오 재생을 건너뜁니다.");
+                    ModLogger.Msg("[HwaBattleMediaController] 시네마(BGA)가 설정에서 비활성화되어 있어 비디오 재생을 건너뜁니다.");
                 }
             }
             else
             {
-                MelonLogger.Warning("[HwaBattleMediaController] 메인 카메라를 찾지 못했습니다.");
+                ModLogger.Warning("[HwaBattleMediaController] 메인 카메라를 찾지 못했습니다.");
             }
 
             string oggPath = ResolveHwaOggPath(songDir);
             if (string.IsNullOrWhiteSpace(oggPath))
             {
-                MelonLogger.Msg($"[HwaBattleMediaController] ogg 파일을 찾지 못했습니다: folder={songDir}");
+                ModLogger.Msg($"[HwaBattleMediaController] ogg 파일을 찾지 못했습니다: folder={songDir}");
                 return;
             }
 
             FileInfo oggInfo = new FileInfo(oggPath);
-            MelonLogger.Msg($"[HwaBattleMediaController] ogg 주입 대상 발견: path={oggPath}, fileName={oggInfo.Name}, size={oggInfo.Length}, lastWrite={oggInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss}");
+            ModLogger.Msg($"[HwaBattleMediaController] ogg 주입 대상 발견: path={oggPath}, fileName={oggInfo.Name}, size={oggInfo.Length}, lastWrite={oggInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss}");
 
             AudioSource targetSource = FindBattleAudioSource();
             if (targetSource == null)
@@ -117,11 +117,11 @@ namespace muse_dash_test
 
             if (targetSource == null)
             {
-                MelonLogger.Msg("[HwaBattleMediaController] 배틀 AudioSource를 찾거나 생성하지 못했습니다.");
+                ModLogger.Msg("[HwaBattleMediaController] 배틀 AudioSource를 찾거나 생성하지 못했습니다.");
                 return;
             }
 
-            MelonLogger.Msg($"[HwaBattleMediaController] 대상 AudioSource 선택: {DescribeAudioSource(targetSource)}");
+            ModLogger.Msg($"[HwaBattleMediaController] 대상 AudioSource 선택: {DescribeAudioSource(targetSource)}");
             MelonCoroutines.Start(LoadAndApplyClip(targetSource, oggPath));
         }
 
@@ -136,7 +136,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] ogg 경로 변환 실패: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] ogg 경로 변환 실패: {ex}");
             }
 
             if (!uriReady)
@@ -154,7 +154,7 @@ namespace muse_dash_test
 
                 if (!string.IsNullOrWhiteSpace(request.error))
                 {
-                    MelonLogger.Error($"[HwaBattleMediaController] ogg 로드 실패: path={oggPath}, error={request.error}");
+                    ModLogger.Error($"[HwaBattleMediaController] ogg 로드 실패: path={oggPath}, error={request.error}");
                     yield break;
                 }
 
@@ -167,17 +167,17 @@ namespace muse_dash_test
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[HwaBattleMediaController] 오디오 클립 변환 실패: {oggPath}, error={ex}");
+                    ModLogger.Error($"[HwaBattleMediaController] 오디오 클립 변환 실패: {oggPath}, error={ex}");
                 }
 
                 if (!clipReady || clip == null)
                 {
-                    MelonLogger.Error($"[HwaBattleMediaController] 오디오 클립이 비어 있습니다: {oggPath}");
+                    ModLogger.Error($"[HwaBattleMediaController] 오디오 클립이 비어 있습니다: {oggPath}");
                     yield break;
                 }
 
                 clip.name = Path.GetFileName(oggPath);
-                MelonLogger.Msg($"[HwaBattleMediaController] 로드한 클립 정보: {DescribeAudioClip(clip)}");
+                ModLogger.Msg($"[HwaBattleMediaController] 로드한 클립 정보: {DescribeAudioClip(clip)}");
 
                 string beforeState = DescribeAudioSource(targetSource);
 
@@ -192,7 +192,7 @@ namespace muse_dash_test
                 injectedClip = clip;
 
                 long heapMem = GC.GetTotalMemory(false);
-                MelonLogger.Msg($"[HwaBattleMediaController.Memory] 배틀 BGM 주입 완료 (ManagedHeap={heapMem / 1048576f:F2}MB): loadedClip={DescribeAudioClip(clip)}");
+                ModLogger.Msg($"[HwaBattleMediaController.Memory] 배틀 BGM 주입 완료 (ManagedHeap={heapMem / 1048576f:F2}MB): loadedClip={DescribeAudioClip(clip)}");
             }
             finally
             {
@@ -248,7 +248,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] ogg 탐색 실패: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] ogg 탐색 실패: {ex}");
                 return null;
             }
         }
@@ -288,7 +288,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] AudioSource 탐색 실패: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] AudioSource 탐색 실패: {ex}");
                 return null;
             }
         }
@@ -305,7 +305,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] AudioSource 생성 실패: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] AudioSource 생성 실패: {ex}");
                 return null;
             }
         }
@@ -322,20 +322,20 @@ namespace muse_dash_test
                 string[] mp4Files = Directory.GetFiles(folderPath, "*.mp4", SearchOption.AllDirectories);
                 if (mp4Files == null || mp4Files.Length == 0)
                 {
-                    MelonLogger.Msg($"[HwaBattleMediaController.Video] {folderPath} 폴더 및 하위 폴더에 mp4 파일이 없습니다.");
+                    ModLogger.Msg($"[HwaBattleMediaController.Video] {folderPath} 폴더 및 하위 폴더에 mp4 파일이 없습니다.");
                     return;
                 }
 
                 Array.Sort(mp4Files, StringComparer.OrdinalIgnoreCase);
                 string mp4Path = mp4Files[0];
                 FileInfo mp4Info = new FileInfo(mp4Path);
-                MelonLogger.Msg($"[HwaBattleMediaController.Video] mp4 비디오 주입 대상 발견: path={mp4Path}, fileName={mp4Info.Name}, size={mp4Info.Length}");
+                ModLogger.Msg($"[HwaBattleMediaController.Video] mp4 비디오 주입 대상 발견: path={mp4Path}, fileName={mp4Info.Name}, size={mp4Info.Length}");
 
                 Transform existingQuad = mainCam.transform.Find("VideoBackgroundQuad");
                 if (existingQuad != null && existingQuad.gameObject != null)
                 {
                     UnityEngine.Object.Destroy(existingQuad.gameObject);
-                    MelonLogger.Msg("[HwaBattleMediaController.Video] 기존 잔존 VideoBackgroundQuad 오브젝트를 삭제했습니다.");
+                    ModLogger.Msg("[HwaBattleMediaController.Video] 기존 잔존 VideoBackgroundQuad 오브젝트를 삭제했습니다.");
                 }
 
                 GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -359,11 +359,11 @@ namespace muse_dash_test
                 if (shader != null)
                 {
                     renderer.material = new Material(shader);
-                    MelonLogger.Msg($"[HwaBattleMediaController.Video] '{shader.name}' 쉐이더를 비디오 판넬에 주입했습니다.");
+                    ModLogger.Msg($"[HwaBattleMediaController.Video] '{shader.name}' 쉐이더를 비디오 판넬에 주입했습니다.");
                 }
                 else
                 {
-                    MelonLogger.Warning("[HwaBattleMediaController.Video] 폴백 쉐이더를 찾지 못하여 기본 생성된 머티리얼을 재사용합니다.");
+                    ModLogger.Warning("[HwaBattleMediaController.Video] 폴백 쉐이더를 찾지 못하여 기본 생성된 머티리얼을 재사용합니다.");
                 }
 
                 renderer.sortingLayerName = "Background";
@@ -377,13 +377,13 @@ namespace muse_dash_test
                 videoPlayer.url = mp4Path;
                 videoPlayer.isLooping = true;
                 videoPlayer.Play();
-                MelonLogger.Msg("[HwaBattleMediaController.Video] 쿼드 머티리얼 기반 비디오 재생을 성공적으로 시작했습니다.");
+                ModLogger.Msg("[HwaBattleMediaController.Video] 쿼드 머티리얼 기반 비디오 재생을 성공적으로 시작했습니다.");
 
                 MelonCoroutines.Start(MonitorVideoPlayback(videoPlayer));
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController.Video] 비디오 재생 중 오류 발생: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController.Video] 비디오 재생 중 오류 발생: {ex}");
             }
         }
 
@@ -393,14 +393,14 @@ namespace muse_dash_test
             yield return new WaitForSeconds(1.0f);
             if (vp == null) yield break;
 
-            MelonLogger.Msg($"[HwaBattleMediaController.Video.Debug] 1초 후 비디오 재생 상태 상세 점검:");
-            MelonLogger.Msg($"  - isPlaying: {vp.isPlaying}");
-            MelonLogger.Msg($"  - isPrepared: {vp.isPrepared}");
-            MelonLogger.Msg($"  - url: {vp.url}");
-            MelonLogger.Msg($"  - resolution: {vp.width}x{vp.height}");
-            MelonLogger.Msg($"  - frameCount: {vp.frameCount}");
-            MelonLogger.Msg($"  - frameRate: {vp.frameRate:0.00}");
-            MelonLogger.Msg($"  - playbackTime: {vp.time:0.00}s / duration: {vp.length:0.00}s");
+            ModLogger.Msg($"[HwaBattleMediaController.Video.Debug] 1초 후 비디오 재생 상태 상세 점검:");
+            ModLogger.Msg($"  - isPlaying: {vp.isPlaying}");
+            ModLogger.Msg($"  - isPrepared: {vp.isPrepared}");
+            ModLogger.Msg($"  - url: {vp.url}");
+            ModLogger.Msg($"  - resolution: {vp.width}x{vp.height}");
+            ModLogger.Msg($"  - frameCount: {vp.frameCount}");
+            ModLogger.Msg($"  - frameRate: {vp.frameRate:0.00}");
+            ModLogger.Msg($"  - playbackTime: {vp.time:0.00}s / duration: {vp.length:0.00}s");
         }
 
         private static bool LooksLikeBattleAudio(string text)

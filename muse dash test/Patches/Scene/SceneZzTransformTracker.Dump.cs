@@ -163,7 +163,7 @@ namespace muse_dash_test
         private static void FlushDumpBuffer(System.Text.StringBuilder sb)
         {
             if (sb.Length == 0) return;
-            MelonLogger.Msg(sb.ToString().TrimEnd('\r', '\n'));
+            ModLogger.Msg(sb.ToString().TrimEnd('\r', '\n'));
             sb.Clear();
         }
 

@@ -18,7 +18,7 @@ namespace muse_dash_test
                 shouldLogCurrent = (System.DateTime.UtcNow - lastLogTime).TotalSeconds >= 10.0;
                 if (shouldLogCurrent)
                 {
-                    MelonLogger.Msg($"[FeverPatch] AbstractFeverManager.AddFever Prefix 호출 감지: 원래 value={value}, 피버 차단 설정값={InputOverlay.blockFever}");
+                    ModLogger.Msg($"[FeverPatch] AbstractFeverManager.AddFever Prefix 호출 감지: 원래 value={value}, 피버 차단 설정값={InputOverlay.blockFever}");
                 }
 
                 if (InputOverlay.blockFever)
@@ -27,13 +27,13 @@ namespace muse_dash_test
                     value = 0;
                     if (shouldLogCurrent)
                     {
-                        MelonLogger.Msg("[FeverPatch] 피버 게이지 충전 차단 적용 (value -> 0)");
+                        ModLogger.Msg("[FeverPatch] 피버 게이지 충전 차단 적용 (value -> 0)");
                     }
                 }
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Error($"[AbstractFeverManager.AddFever.Prefix] 예외 발생: {ex}");
+                ModLogger.Error($"[AbstractFeverManager.AddFever.Prefix] 예외 발생: {ex}");
             }
             return true;
         }
@@ -44,13 +44,13 @@ namespace muse_dash_test
             {
                 if (shouldLogCurrent)
                 {
-                    MelonLogger.Msg($"[FeverPatch] AbstractFeverManager.AddFever Postfix 최종 적용 완료: value={value}, instance={__instance}");
+                    ModLogger.Msg($"[FeverPatch] AbstractFeverManager.AddFever Postfix 최종 적용 완료: value={value}, instance={__instance}");
                     lastLogTime = System.DateTime.UtcNow;
                 }
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Error($"[AbstractFeverManager.AddFever.Postfix] Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[AbstractFeverManager.AddFever.Postfix] Postfix 예외 발생: {ex}");
             }
         }
     }

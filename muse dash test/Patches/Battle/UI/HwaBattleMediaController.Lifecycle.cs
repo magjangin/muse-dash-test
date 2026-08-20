@@ -21,7 +21,7 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("[HwaBattleMediaController] PauseMedia 호출됨 - 비디오 및 BGM을 일시정지합니다.");
+                ModLogger.Msg("[HwaBattleMediaController] PauseMedia 호출됨 - 비디오 및 BGM을 일시정지합니다.");
                 Camera mainCam = Camera.main;
                 if (mainCam != null)
                 {
@@ -29,7 +29,7 @@ namespace muse_dash_test
                     if (vp != null && vp.isPlaying)
                     {
                         vp.Pause();
-                        MelonLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 일시정지했습니다.");
+                        ModLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 일시정지했습니다.");
                     }
                 }
 
@@ -40,13 +40,13 @@ namespace muse_dash_test
                     if (bgm != null && bgm.isPlaying)
                     {
                         bgm.Pause();
-                        MelonLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 일시정지했습니다.");
+                        ModLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 일시정지했습니다.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] PauseMedia 중 오류: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] PauseMedia 중 오류: {ex}");
             }
         }
 
@@ -54,7 +54,7 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg($"[HwaBattleMediaController] ResumeMedia 호출됨 (isExit={isExit}) - 비디오 및 BGM을 재개/정지합니다.");
+                ModLogger.Msg($"[HwaBattleMediaController] ResumeMedia 호출됨 (isExit={isExit}) - 비디오 및 BGM을 재개/정지합니다.");
                 if (isExit)
                 {
                     StopMedia();
@@ -70,7 +70,7 @@ namespace muse_dash_test
                         bool wasPlaying = vp.isPlaying;
                         bool wasPrepared = vp.isPrepared;
                         vp.Play();
-                        MelonLogger.Msg($"[HwaBattleMediaController] 배경 비디오 재생을 재개했습니다. (이전 상태: isPlaying={wasPlaying}, isPrepared={wasPrepared})");
+                        ModLogger.Msg($"[HwaBattleMediaController] 배경 비디오 재생을 재개했습니다. (이전 상태: isPlaying={wasPlaying}, isPrepared={wasPrepared})");
                     }
                 }
 
@@ -81,13 +81,13 @@ namespace muse_dash_test
                     if (bgm != null && !bgm.isPlaying)
                     {
                         bgm.UnPause();
-                        MelonLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 재개했습니다.");
+                        ModLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 재개했습니다.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] ResumeMedia 중 오류: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] ResumeMedia 중 오류: {ex}");
             }
         }
 
@@ -96,7 +96,7 @@ namespace muse_dash_test
             try
             {
                 long heapMem = GC.GetTotalMemory(false);
-                MelonLogger.Msg($"[HwaBattleMediaController.Memory] StopMedia 호출됨 - 비디오 및 BGM 정지 시작 (ManagedHeap={heapMem / 1048576f:F2}MB)");
+                ModLogger.Msg($"[HwaBattleMediaController.Memory] StopMedia 호출됨 - 비디오 및 BGM 정지 시작 (ManagedHeap={heapMem / 1048576f:F2}MB)");
                 
                 Camera mainCam = Camera.main;
                 if (mainCam != null)
@@ -105,7 +105,7 @@ namespace muse_dash_test
                     if (vp != null)
                     {
                         vp.Stop();
-                        MelonLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 완전히 멈췄습니다.");
+                        ModLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 완전히 멈췄습니다.");
                     }
                 }
 
@@ -117,12 +117,12 @@ namespace muse_dash_test
                         if (injectedAudioSource.gameObject != null)
                         {
                             injectedAudioSource.Stop();
-                            MelonLogger.Msg($"[HwaBattleMediaController] 캐싱된 주입 BGM 소스 정지 완료: go={injectedAudioSource.gameObject.name}, playing={injectedAudioSource.isPlaying}");
+                            ModLogger.Msg($"[HwaBattleMediaController] 캐싱된 주입 BGM 소스 정지 완료: go={injectedAudioSource.gameObject.name}, playing={injectedAudioSource.isPlaying}");
                         }
                     }
                     catch (Exception ex)
                     {
-                        MelonLogger.Warning($"[HwaBattleMediaController] 캐싱된 주입 BGM 소스 정지 중 예외 발생: {ex.Message}");
+                        ModLogger.Warning($"[HwaBattleMediaController] 캐싱된 주입 BGM 소스 정지 중 예외 발생: {ex.Message}");
                     }
                     injectedAudioSource = null;
                 }
@@ -145,7 +145,7 @@ namespace muse_dash_test
                     if (bgm != null)
                     {
                         bgm.Stop();
-                        MelonLogger.Msg("[HwaBattleMediaController] HwaBattleBgmSource 재생을 완전히 멈췄습니다.");
+                        ModLogger.Msg("[HwaBattleMediaController] HwaBattleBgmSource 재생을 완전히 멈췄습니다.");
                     }
                 }
 
@@ -153,22 +153,22 @@ namespace muse_dash_test
                 AudioSource[] allSources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
                 if (allSources != null && allSources.Length > 0)
                 {
-                    MelonLogger.Msg($"[HwaBattleMediaController.Debug] 현재 씬의 AudioSource 진단 (총 {allSources.Length}개):");
+                    ModLogger.Msg($"[HwaBattleMediaController.Debug] 현재 씬의 AudioSource 진단 (총 {allSources.Length}개):");
                     foreach (var src in allSources)
                     {
                         if (src == null || src.gameObject == null) continue;
                         string clipName = src.clip != null ? src.clip.name : "(null)";
-                        MelonLogger.Msg($"  - GameObject='{src.gameObject.name}', clip='{clipName}', isPlaying={src.isPlaying}, loop={src.loop}, volume={src.volume}");
+                        ModLogger.Msg($"  - GameObject='{src.gameObject.name}', clip='{clipName}', isPlaying={src.isPlaying}, loop={src.loop}, volume={src.volume}");
                     }
                 }
                 else
                 {
-                    MelonLogger.Msg("[HwaBattleMediaController.Debug] 현재 씬에 AudioSource가 존재하지 않습니다.");
+                    ModLogger.Msg("[HwaBattleMediaController.Debug] 현재 씬에 AudioSource가 존재하지 않습니다.");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaBattleMediaController] StopMedia 중 오류: {ex}");
+                ModLogger.Error($"[HwaBattleMediaController] StopMedia 중 오류: {ex}");
             }
         }
     }

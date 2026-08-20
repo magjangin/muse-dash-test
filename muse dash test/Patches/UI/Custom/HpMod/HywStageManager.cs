@@ -32,7 +32,7 @@ namespace muse_dash_test
                         IsInStageStatic = false;
                         targetTextComponent = null;
                         lastText = "";
-                        MelonLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
+                        ModLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
                     }
                     return;
                 }
@@ -62,7 +62,7 @@ namespace muse_dash_test
                         // OnGUI 게이트가 함께 쓰므로 이 설정과 무관하게 항상 돌아야 합니다.
                         if (HywHpText.ShouldApply)
                         {
-                            MelonLogger.Msg("[HywHpTextMod] 스테이지 진입 감지: UI 덮어쓰기를 실행합니다.");
+                            ModLogger.Msg("[HywHpTextMod] 스테이지 진입 감지: UI 덮어쓰기를 실행합니다.");
                             ModifyHealthBar();
                         }
                     }
@@ -71,7 +71,7 @@ namespace muse_dash_test
                         // 재시작 감지 (이전 스테이지 컴포넌트가 파괴됨)
                         targetTextComponent = null;
                         lastText = "";
-                        MelonLogger.Msg("[HywHpTextMod] 스테이지 재시작 감지: UI를 다시 덮어씁니다.");
+                        ModLogger.Msg("[HywHpTextMod] 스테이지 재시작 감지: UI를 다시 덮어씁니다.");
                         ModifyHealthBar();
                     }
                 }
@@ -84,13 +84,13 @@ namespace muse_dash_test
                         IsInStageStatic = false;
                         targetTextComponent = null;
                         lastText = "";
-                        MelonLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
+                        ModLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
                     }
                 }
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Msg($"[HywHpTextMod] 오류 발생: {ex.Message}");
+                ModLogger.Msg($"[HywHpTextMod] 오류 발생: {ex.Message}");
             }
         }
 
@@ -143,26 +143,26 @@ namespace muse_dash_test
                 Canvas parentCanvas = textComponent.GetComponentInParent<Canvas>();
                 if (parentCanvas != null)
                 {
-                    MelonLogger.Msg($"[HywHpTextMod.Debug] 체력바 텍스트 렌더링 상태 상세 분석:");
-                    MelonLogger.Msg($"  - Parent Canvas: {parentCanvas.name}");
-                    MelonLogger.Msg($"  - Render Mode: {parentCanvas.renderMode}");
-                    MelonLogger.Msg($"  - Sorting Layer Name: {parentCanvas.sortingLayerName}");
-                    MelonLogger.Msg($"  - Sorting Order: {parentCanvas.sortingOrder}");
-                    MelonLogger.Msg($"  - Local Position: {textComponent.transform.localPosition}");
-                    MelonLogger.Msg($"  - World Position: {textComponent.transform.position}");
+                    ModLogger.Msg($"[HywHpTextMod.Debug] 체력바 텍스트 렌더링 상태 상세 분석:");
+                    ModLogger.Msg($"  - Parent Canvas: {parentCanvas.name}");
+                    ModLogger.Msg($"  - Render Mode: {parentCanvas.renderMode}");
+                    ModLogger.Msg($"  - Sorting Layer Name: {parentCanvas.sortingLayerName}");
+                    ModLogger.Msg($"  - Sorting Order: {parentCanvas.sortingOrder}");
+                    ModLogger.Msg($"  - Local Position: {textComponent.transform.localPosition}");
+                    ModLogger.Msg($"  - World Position: {textComponent.transform.position}");
                 }
                 else
                 {
-                    MelonLogger.Warning("[HywHpTextMod.Debug] 체력바 텍스트의 상위 Canvas를 찾을 수 없습니다.");
+                    ModLogger.Warning("[HywHpTextMod.Debug] 체력바 텍스트의 상위 Canvas를 찾을 수 없습니다.");
                 }
                 
                 // 텍스트 스타일 적용
                 HywTextStyler.ApplyMadeByHywStyle(textComponent);
-                MelonLogger.Msg("체력바 텍스트가 성공적으로 변경되었습니다!");
+                ModLogger.Msg("체력바 텍스트가 성공적으로 변경되었습니다!");
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Msg($"체력바 수정 중 오류 발생: {ex.Message}");
+                ModLogger.Msg($"체력바 수정 중 오류 발생: {ex.Message}");
             }
         }
     }

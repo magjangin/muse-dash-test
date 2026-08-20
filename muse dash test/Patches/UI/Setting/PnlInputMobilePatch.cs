@@ -20,7 +20,7 @@ namespace muse_dash_test.Patches.UI.Setting
             {
                 if (__instance == null) return;
 
-                MelonLogger.Msg("📱 [MobileSetting] PnlPlaySetting.OnAwake 감지 - 모바일 입력 설정 패널 연동 시도");
+                ModLogger.Msg("📱 [MobileSetting] PnlPlaySetting.OnAwake 감지 - 모바일 입력 설정 패널 연동 시도");
 
                 if (__instance.m_BtnInputSetting != null)
                 {
@@ -31,11 +31,11 @@ namespace muse_dash_test.Patches.UI.Setting
                         {
                             if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch)
                             {
-                                MelonLogger.Msg("📱 [MobileSetting] 모바일 터치 설정이 꺼져 있어 PC 기본 키설정 패널을 유지합니다.");
+                                ModLogger.Msg("📱 [MobileSetting] 모바일 터치 설정이 꺼져 있어 PC 기본 키설정 패널을 유지합니다.");
                                 return;
                             }
 
-                            MelonLogger.Msg("📱 [MobileSetting] 입력 설정 버튼 클릭됨! -> PnlInputMobile 강제 표시 시도");
+                            ModLogger.Msg("📱 [MobileSetting] 입력 설정 버튼 클릭됨! -> PnlInputMobile 강제 표시 시도");
 
                             if (__instance.m_PnlInputSettingStandlone != null)
                             {
@@ -45,23 +45,23 @@ namespace muse_dash_test.Patches.UI.Setting
                             if (__instance.m_PnlInputSettingMobile != null)
                             {
                                 __instance.m_PnlInputSettingMobile.SetActive(true);
-                                MelonLogger.Msg("📱 [MobileSetting] m_PnlInputSettingMobile.SetActive(true) 성공!");
+                                ModLogger.Msg("📱 [MobileSetting] m_PnlInputSettingMobile.SetActive(true) 성공!");
                             }
                             else
                             {
-                                MelonLogger.Warning("⚠️ [MobileSetting] m_PnlInputSettingMobile 오브젝트가 null입니다.");
+                                ModLogger.Warning("⚠️ [MobileSetting] m_PnlInputSettingMobile 오브젝트가 null입니다.");
                             }
                         }
                         catch (Exception ex)
                         {
-                            MelonLogger.Error($"[MobileSetting] onClick 핸들러 에러: {ex}");
+                            ModLogger.Error($"[MobileSetting] onClick 핸들러 에러: {ex}");
                         }
                     }));
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MobileSetting] PnlPlaySetting.OnAwake 패치 에러: {ex}");
+                ModLogger.Error($"[MobileSetting] PnlPlaySetting.OnAwake 패치 에러: {ex}");
             }
         }
     }
@@ -76,28 +76,28 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void Awake_Postfix(PnlInputMobile __instance)
         {
-            MelonLogger.Msg($"📱 [PnlInputMobile] Awake 완료! (IsLeftRight: {__instance.m_IsLeftRight}, IsTouchReverse: {__instance.m_IsTouchReverse}, IsAutoFever: {__instance.m_IsAutoFever})");
+            ModLogger.Msg($"📱 [PnlInputMobile] Awake 완료! (IsLeftRight: {__instance.m_IsLeftRight}, IsTouchReverse: {__instance.m_IsTouchReverse}, IsAutoFever: {__instance.m_IsAutoFever})");
         }
 
         [HarmonyPatch("SetAutoFever")]
         [HarmonyPostfix]
         public static void SetAutoFever_Postfix(bool autoFever)
         {
-            MelonLogger.Msg($"📱 [PnlInputMobile] 오토 피버(AutoFever) 설정 변경됨: {autoFever}");
+            ModLogger.Msg($"📱 [PnlInputMobile] 오토 피버(AutoFever) 설정 변경됨: {autoFever}");
         }
 
         [HarmonyPatch("SetTouchReverse")]
         [HarmonyPostfix]
         public static void SetTouchReverse_Postfix(bool reverse)
         {
-            MelonLogger.Msg($"📱 [PnlInputMobile] 터치 좌우 반전(TouchReverse) 설정 변경됨: {reverse}");
+            ModLogger.Msg($"📱 [PnlInputMobile] 터치 좌우 반전(TouchReverse) 설정 변경됨: {reverse}");
         }
 
         [HarmonyPatch("SetLeftRight")]
         [HarmonyPostfix]
         public static void SetLeftRight_Postfix(bool leftRight)
         {
-            MelonLogger.Msg($"📱 [PnlInputMobile] 좌우 분할 모드(LeftRight) 설정 변경됨: {leftRight}");
+            ModLogger.Msg($"📱 [PnlInputMobile] 좌우 분할 모드(LeftRight) 설정 변경됨: {leftRight}");
         }
     }
 }

@@ -96,7 +96,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[JudgmentBar] 히트 데이터 등록 중 에러: {ex.Message}");
+                ModLogger.Error($"[JudgmentBar] 히트 데이터 등록 중 에러: {ex.Message}");
             }
         }
 
@@ -211,7 +211,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[JudgmentBar] OnGUI 드로우 에러: {ex.Message}");
+                ModLogger.Error($"[JudgmentBar] OnGUI 드로우 에러: {ex.Message}");
             }
         }
 
@@ -257,7 +257,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[JudgmentBar.Hook] TouchResult Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[JudgmentBar.Hook] TouchResult Postfix 예외 발생: {ex}");
             }
         }
     }

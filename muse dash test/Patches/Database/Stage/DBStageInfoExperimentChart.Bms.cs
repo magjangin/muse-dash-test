@@ -1,4 +1,5 @@
-using MelonLoader;
+﻿using MelonLoader;
+using muse_dash_test;
 
 // BMS 차트(BmsChart) → 실험 노트 스펙(ExperimentNoteSpec) 변환 및 보스 등장/퇴장 자동 스왑 로직.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
@@ -53,7 +54,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             if (wavInfo.NoteType == NoteTypes.Long || wavInfo.NoteType == NoteTypes.Sandbag)
             {
-                MelonLogger.Warning($"[ExperimentChart.Bms] 특수 노트가 짝 없이 남아 단일 주입을 건너뜁니다: raw={note.RawValue}, tick={note.Tick}, time={note.Time:0.###}, wav={wavInfo.RawWavName}");
+                ModLogger.Warning($"[ExperimentChart.Bms] 특수 노트가 짝 없이 남아 단일 주입을 건너뜁니다: raw={note.RawValue}, tick={note.Tick}, time={note.Time:0.###}, wav={wavInfo.RawWavName}");
                 continue;
             }
 
@@ -67,7 +68,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return string.Compare(left.Label, right.Label, System.StringComparison.OrdinalIgnoreCase);
         });
 
-        MelonLogger.Msg($"[ExperimentChart.Bms] BMS 변환 완료: notes={chart.Notes.Count}, specs={specs.Count}, matchedPairs={matchedPairs.Count}");
+        ModLogger.Msg($"[ExperimentChart.Bms] BMS 변환 완료: notes={chart.Notes.Count}, specs={specs.Count}, matchedPairs={matchedPairs.Count}");
         return specs;
     }
 
@@ -94,7 +95,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 if (!string.IsNullOrWhiteSpace(spec.IbmsId))
                 {
                     activeSceneChangeName = spec.IbmsId;
-                    MelonLogger.Msg($"[ExperimentChart.Bms.SceneChangeNames] 활성 씬 체인지 키 갱신: uid={spec.Uid}, ibms_id={activeSceneChangeName}, tick={spec.StartTick}");
+                    ModLogger.Msg($"[ExperimentChart.Bms.SceneChangeNames] 활성 씬 체인지 키 갱신: uid={spec.Uid}, ibms_id={activeSceneChangeName}, tick={spec.StartTick}");
                 }
                 continue;
             }
@@ -106,7 +107,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        MelonLogger.Msg($"[ExperimentChart.Bms.SceneChangeNames] 적용 완료: applied={applied}, active={activeSceneChangeName ?? "(none)"}");
+        ModLogger.Msg($"[ExperimentChart.Bms.SceneChangeNames] 적용 완료: applied={applied}, active={activeSceneChangeName ?? "(none)"}");
     }
 
     public static ExperimentNoteSpec CreateExperimentNoteSpecFromBms(muse_dash_test.BmsNote note, muse_dash_test.BmsWavInfo wavInfo, string activeUid)
@@ -140,7 +141,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (!string.IsNullOrWhiteSpace(spec.BossAction))
         {
-            MelonLogger.Msg($"[ExperimentChart.Bms.BossFields] raw={note.RawValue}, uid={spec.Uid}, action={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}");
+            ModLogger.Msg($"[ExperimentChart.Bms.BossFields] raw={note.RawValue}, uid={spec.Uid}, action={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}");
         }
 
         // 씬 전환 노트(type 9): SceneChangeController.ChangeScene가 호출되려면 ibms_id가 게임의
@@ -152,7 +153,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             spec.IbmsId = ResolveSceneToggleIbmsId(spec.Uid); // 000401 → "1O"
             // Scene/BossAction은 의도적으로 미설정 → 복제된 원본 노트의 실재 scene을 상속하여
             // 존재하지 않는 scene_00 배경 등록(보라색 화면)을 원천 차단합니다.
-            MelonLogger.Msg($"[ExperimentChart.Bms.SceneToggle] uid={spec.Uid}, ibms_id={spec.IbmsId ?? "(none)"}, prefab={spec.PrefabName}, tick={note.Tick}, time={note.Time:0.###}");
+            ModLogger.Msg($"[ExperimentChart.Bms.SceneToggle] uid={spec.Uid}, ibms_id={spec.IbmsId ?? "(none)"}, prefab={spec.PrefabName}, tick={note.Tick}, time={note.Time:0.###}");
         }
 
         // 고스트 노트(xx=17, type 4)는 렌더러 페이드를 동반하는 유일한 계열이라 주입 시점 상태를 남깁니다.
@@ -160,7 +161,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // PrefabName이 비어 있으면 이후 자동 생성 규칙을 타므로, 여기서 무엇이 확정됐는지가 중요합니다.
         if (spec.NoteType == NoteTypes.Ghost)
         {
-            MelonLogger.Msg($"[ExperimentChart.Bms.Ghost] uid={spec.Uid}, xx={UidCode.Xx(spec.Uid) ?? "(none)"}, yy={UidCode.Yy(spec.Uid) ?? "(none)"}, " +
+            ModLogger.Msg($"[ExperimentChart.Bms.Ghost] uid={spec.Uid}, xx={UidCode.Xx(spec.Uid) ?? "(none)"}, yy={UidCode.Yy(spec.Uid) ?? "(none)"}, " +
                             $"prefab={(string.IsNullOrEmpty(spec.PrefabName) ? "(자동생성)" : spec.PrefabName)}, pathway={spec.Pathway}, " +
                             $"keyAudio={spec.KeyAudio}, tick={note.Tick}, time={note.Time:0.###}, dt={spec.Dt}");
 
@@ -191,7 +192,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return ibmsId;
         }
 
-        MelonLogger.Warning($"[ExperimentChart.Bms] 씬 전환 ibms_id 매핑을 찾지 못했습니다: uid={uid}, yy={yy}. 씬 전환이 동작하지 않을 수 있습니다.");
+        ModLogger.Warning($"[ExperimentChart.Bms] 씬 전환 ibms_id 매핑을 찾지 못했습니다: uid={uid}, yy={yy}. 씬 전환이 동작하지 않을 수 있습니다.");
         return null;
     }
 
@@ -278,7 +279,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 string swapAction = BuildBossSwapAction(spec);
                 if (!string.IsNullOrWhiteSpace(swapAction))
                 {
-                    MelonLogger.Msg($"[BossAutoSwap] out 이후 in 감지: label={spec.Label}, tick={spec.StartTick}, action={swapAction}");
+                    ModLogger.Msg($"[BossAutoSwap] out 이후 in 감지: label={spec.Label}, tick={spec.StartTick}, action={swapAction}");
                     spec.BossAction = swapAction;
                     spec.NoteType = NoteTypes.Boss;
                     spec.PrefabName = "empty_000";
@@ -286,7 +287,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 }
                 else
                 {
-                    MelonLogger.Warning($"[BossAutoSwap] out 이후 in을 감지했지만 BossName/BossScene을 결정하지 못했습니다: label={spec.Label}, uid={spec.Uid}");
+                    ModLogger.Warning($"[BossAutoSwap] out 이후 in을 감지했지만 BossName/BossScene을 결정하지 못했습니다: label={spec.Label}, uid={spec.Uid}");
                 }
 
                 waitingForSwapIn = false;

@@ -68,11 +68,11 @@ namespace muse_dash_test
                     }
                 }
 
-                MelonLogger.Msg($"[SetSelectedMusicNameTxt.{source}] uid={uid}, value={value}, writes={writes}");
+                ModLogger.Msg($"[SetSelectedMusicNameTxt.{source}] uid={uid}, value={value}, writes={writes}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[SetSelectedMusicNameTxt.{source}] 커스텀 곡 정보 적용 예외: {ex}");
+                ModLogger.Error($"[SetSelectedMusicNameTxt.{source}] 커스텀 곡 정보 적용 예외: {ex}");
             }
         }
     }

@@ -76,7 +76,7 @@ namespace muse_dash_test
 
                                     if (Mathf.Abs(currentAudioTime - expectedTime) > 0.2f)
                                     {
-                                        MelonLogger.Msg($"[Sync.BGM] 싱크 보정 적용! 오차: {currentAudioTime - expectedTime:F3}초 | 기존: {currentAudioTime:F2}초 -> 목표: {expectedTime:F2}초");
+                                        ModLogger.Msg($"[Sync.BGM] 싱크 보정 적용! 오차: {currentAudioTime - expectedTime:F3}초 | 기존: {currentAudioTime:F2}초 -> 목표: {expectedTime:F2}초");
                                         bgmSource.time = expectedTime;
                                         syncCooldownTimer = 0.5f; // 0.5초 쿨다운을 두어 동기화 루프 충돌 방지
                                     }
@@ -90,7 +90,7 @@ namespace muse_dash_test
 
                                     if (Mathf.Abs(currentVideoTime - expectedTime) > 0.2f)
                                     {
-                                        MelonLogger.Msg($"[Sync.BGA] 싱크 보정 적용! 오차: {currentVideoTime - expectedTime:F3}초 | 기존: {currentVideoTime:F2}초 -> 목표: {expectedTime:F2}초");
+                                        ModLogger.Msg($"[Sync.BGA] 싱크 보정 적용! 오차: {currentVideoTime - expectedTime:F3}초 | 기존: {currentVideoTime:F2}초 -> 목표: {expectedTime:F2}초");
                                         bgaPlayer.time = expectedTime;
                                         syncCooldownTimer = 0.5f; // 0.5초 쿨다운을 두어 비디오 버퍼 정비 보장
                                     }

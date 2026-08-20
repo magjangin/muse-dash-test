@@ -10,16 +10,16 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg($"[HwaResourceManager] manifest 탐색 시작: folder={folderPath}");
+                ModLogger.Msg($"[HwaResourceManager] manifest 탐색 시작: folder={folderPath}");
 
                 string[] txtFiles = Directory.GetFiles(folderPath, "*.txt", SearchOption.AllDirectories);
                 if (txtFiles == null || txtFiles.Length == 0)
                 {
-                    MelonLogger.Msg($"[HwaResourceManager] 하위 폴더까지 스캔했지만 txt 파일이 없습니다: folder={folderPath}");
+                    ModLogger.Msg($"[HwaResourceManager] 하위 폴더까지 스캔했지만 txt 파일이 없습니다: folder={folderPath}");
                     return null;
                 }
 
-                MelonLogger.Msg($"[HwaResourceManager] txt 파일 {txtFiles.Length}개 발견(하위 폴더 포함): {string.Join(", ", Array.ConvertAll(txtFiles, file => GetRelativeHwaPath(folderPath, file)))}");
+                ModLogger.Msg($"[HwaResourceManager] txt 파일 {txtFiles.Length}개 발견(하위 폴더 포함): {string.Join(", ", Array.ConvertAll(txtFiles, file => GetRelativeHwaPath(folderPath, file)))}");
 
                 Array.Sort(txtFiles, StringComparer.OrdinalIgnoreCase);
                 string preferred = null;
@@ -40,35 +40,35 @@ namespace muse_dash_test
 
                 if (string.IsNullOrWhiteSpace(preferred) || !File.Exists(preferred))
                 {
-                    MelonLogger.Msg($"[HwaResourceManager] 선택할 txt 파일이 없습니다: folder={folderPath}");
+                    ModLogger.Msg($"[HwaResourceManager] 선택할 txt 파일이 없습니다: folder={folderPath}");
                     return null;
                 }
 
-                MelonLogger.Msg($"[HwaResourceManager] manifest 읽기 대상: {preferred}");
+                ModLogger.Msg($"[HwaResourceManager] manifest 읽기 대상: {preferred}");
 
                 var manifest = new HwaManifest { SourcePath = preferred };
                 foreach (var rawLine in File.ReadAllLines(preferred))
                 {
                     if (TryParseManifestLine(rawLine, out string key, out string value))
                     {
-                        MelonLogger.Msg($"[HwaResourceManager] manifest line parsed: key={key}, value={value}");
+                        ModLogger.Msg($"[HwaResourceManager] manifest line parsed: key={key}, value={value}");
                         ApplyManifestValue(manifest, key, value);
                     }
                 }
 
                 if (string.IsNullOrWhiteSpace(manifest.Uid) && string.IsNullOrWhiteSpace(manifest.Title) && string.IsNullOrWhiteSpace(manifest.Artist))
                 {
-                    MelonLogger.Msg($"[HwaResourceManager] manifest 파싱은 했지만 핵심 값이 비어 있습니다: {DescribeManifest(manifest)}");
+                    ModLogger.Msg($"[HwaResourceManager] manifest 파싱은 했지만 핵심 값이 비어 있습니다: {DescribeManifest(manifest)}");
                     return null;
                 }
 
-                MelonLogger.Msg($"[HwaResourceManager] manifest 파싱 완료: {DescribeManifest(manifest)}");
+                ModLogger.Msg($"[HwaResourceManager] manifest 파싱 완료: {DescribeManifest(manifest)}");
 
                 return manifest;
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[HwaResourceManager] manifest 읽기 실패: {ex}");
+                ModLogger.Error($"[HwaResourceManager] manifest 읽기 실패: {ex}");
                 return null;
             }
         }
@@ -195,7 +195,7 @@ namespace muse_dash_test
 
             // 어떤 항목에도 걸리지 않은 줄은 오타일 가능성이 높습니다. 예전에는 조용히 버려서
             // "설정을 적었는데 반영이 안 된다"는 증상만 남았습니다.
-            MelonLogger.Warning($"[HwaResourceManager] info.txt에서 알 수 없는 설정 키를 건너뜁니다: '{key}' (값: '{value}')");
+            ModLogger.Warning($"[HwaResourceManager] info.txt에서 알 수 없는 설정 키를 건너뜁니다: '{key}' (값: '{value}')");
         }
 
         private static bool TryApplyString(string normalizedKey, string value, Action<string> apply, params string[] tokens)

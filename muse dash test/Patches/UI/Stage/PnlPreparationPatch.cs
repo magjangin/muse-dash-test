@@ -30,7 +30,7 @@ public class PnlPreparation_OnEnable_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.OnEnable Postfix 예외: {ex}");
+            ModLogger.Error($"PnlPreparation.OnEnable Postfix 예외: {ex}");
         }
     }
 }
@@ -48,7 +48,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.OnDownloadBestReport Prefix 예외: {ex}");
+            ModLogger.Error($"PnlPreparation.OnDownloadBestReport Prefix 예외: {ex}");
         }
     }
 
@@ -67,7 +67,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.OnDownloadBestReport Postfix 예외: {ex}");
+            ModLogger.Error($"PnlPreparation.OnDownloadBestReport Postfix 예외: {ex}");
         }
     }
 
@@ -152,7 +152,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.OnDownloadBestReport {phase} 기록 컨텍스트 덤프 예외: {ex}");
+            ModLogger.Error($"PnlPreparation.OnDownloadBestReport {phase} 기록 컨텍스트 덤프 예외: {ex}");
         }
     }
 }
@@ -176,7 +176,7 @@ public class PnlPreparation_RefreshUi_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.RefreshUi Postfix 예외: {ex}");
+            ModLogger.Error($"PnlPreparation.RefreshUi Postfix 예외: {ex}");
         }
     }
 }
@@ -193,7 +193,7 @@ public class PnlPreparation_GameStart_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.GameStart Postfix 예외: {ex}");
+            ModLogger.Error($"PnlPreparation.GameStart Postfix 예외: {ex}");
         }
     }
 }
@@ -210,7 +210,7 @@ public class PnlPreparation_OnBattleStart_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlPreparation.OnBattleStart Postfix 예외: {ex}");
+            ModLogger.Error($"PnlPreparation.OnBattleStart Postfix 예외: {ex}");
         }
     }
 }

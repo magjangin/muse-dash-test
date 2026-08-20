@@ -15,7 +15,7 @@ public class PnlMenu_OnEnable_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"PnlMenu.OnEnable Postfix 예외: {ex}");
+            ModLogger.Error($"PnlMenu.OnEnable Postfix 예외: {ex}");
         }
     }
 }

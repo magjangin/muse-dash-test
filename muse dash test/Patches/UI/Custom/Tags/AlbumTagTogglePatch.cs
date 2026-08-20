@@ -47,17 +47,17 @@ namespace muse_dash_test
                                 byte[] fileData = new byte[stream.Length];
                                 stream.Read(fileData, 0, fileData.Length);
                                 File.WriteAllBytes(pngPath, fileData);
-                                MelonLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 복사 및 추출 완료!");
+                                ModLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 복사 및 추출 완료!");
                             }
                             else
                             {
-                                MelonLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
+                                ModLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        MelonLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 도중 예외 발생: {ex}");
+                        ModLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 도중 예외 발생: {ex}");
                     }
                 }
 
@@ -72,7 +72,7 @@ namespace muse_dash_test
                         texture.name = "CustomTagIconTexture";
                         texture.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC 방지
                         cachedCustomTexture = texture;
-                        MelonLogger.Msg($"[APMod.TagIcon] 물리 파일 '{pngPath}' 로드 및 텍스처 디코딩 성공! 해상도: {texture.width}x{texture.height}");
+                        ModLogger.Msg($"[APMod.TagIcon] 물리 파일 '{pngPath}' 로드 및 텍스처 디코딩 성공! 해상도: {texture.width}x{texture.height}");
                         return texture;
                     }
                     else
@@ -82,17 +82,17 @@ namespace muse_dash_test
                         // 해제하지 않으면 GetCustomTexture()를 부를 때마다 텍스처가 하나씩 샙니다.
                         // (MusicButtonCellPatch의 cover.png 로딩과 같은 처리입니다.)
                         UnityEngine.Object.Destroy(texture);
-                        MelonLogger.Error($"[APMod.TagIcon] 물리 파일 '{pngPath}'를 Texture2D로 디코딩하는 데 실패했습니다.");
+                        ModLogger.Error($"[APMod.TagIcon] 물리 파일 '{pngPath}'를 Texture2D로 디코딩하는 데 실패했습니다.");
                     }
                 }
                 else
                 {
-                    MelonLogger.Error($"[APMod.TagIcon] 로드할 파일 '{pngPath}'가 존재하지 않습니다.");
+                    ModLogger.Error($"[APMod.TagIcon] 로드할 파일 '{pngPath}'가 존재하지 않습니다.");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod.TagIcon] 물리 텍스처 로딩 및 생성 중 예외 발생: {ex}");
+                ModLogger.Error($"[APMod.TagIcon] 물리 텍스처 로딩 및 생성 중 예외 발생: {ex}");
             }
 
             return null;
@@ -117,12 +117,12 @@ namespace muse_dash_test
                     sprite.name = "CustomTagIconSprite";
                     sprite.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC(UnloadUnusedAssets)에 의해 해제되는 현상 방지
                     cachedCustomSprite = sprite;
-                    MelonLogger.Msg("[APMod.TagIcon] Texture2D로부터 영구 Sprite 생성 완료!");
+                    ModLogger.Msg("[APMod.TagIcon] Texture2D로부터 영구 Sprite 생성 완료!");
                     return sprite;
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[APMod.TagIcon] Sprite 생성 중 예외 발생: {ex}");
+                    ModLogger.Error($"[APMod.TagIcon] Sprite 생성 중 예외 발생: {ex}");
                 }
             }
             return null;
@@ -144,7 +144,7 @@ namespace muse_dash_test
                     return;
                 }
 
-                MelonLogger.Msg("[APMod.TagIcon] 가상 태그 AlbumTagToggle 초기화 감지. 내장 텍스처 교체를 시작합니다.");
+                ModLogger.Msg("[APMod.TagIcon] 가상 태그 AlbumTagToggle 초기화 감지. 내장 텍스처 교체를 시작합니다.");
 
                 // 2. tag_icon.png 텍스처 확보
                 Texture2D customTexture = GetCustomTexture();
@@ -158,16 +158,16 @@ namespace muse_dash_test
                 if (iconImgComp != null)
                 {
                     iconImgComp.texture = customTexture;
-                    MelonLogger.Msg("[APMod.TagIcon] AlbumTagToggle m_IconImg(RawImage)의 텍스처를 커스텀 이미지로 오버라이드 완료!");
+                    ModLogger.Msg("[APMod.TagIcon] AlbumTagToggle m_IconImg(RawImage)의 텍스처를 커스텀 이미지로 오버라이드 완료!");
                 }
                 else
                 {
-                    MelonLogger.Warning("[APMod.TagIcon] AlbumTagToggle 인스턴스에서 m_IconImg 컴포넌트를 찾지 못했습니다.");
+                    ModLogger.Warning("[APMod.TagIcon] AlbumTagToggle 인스턴스에서 m_IconImg 컴포넌트를 찾지 못했습니다.");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod.TagIcon] AlbumTagToggle Postfix 패치 처리 중 오류: {ex}");
+                ModLogger.Error($"[APMod.TagIcon] AlbumTagToggle Postfix 패치 처리 중 오류: {ex}");
             }
         }
 
@@ -191,13 +191,13 @@ namespace muse_dash_test
                     if (customTexture != null)
                     {
                         tex = customTexture;
-                        MelonLogger.Msg("[APMod.TagIcon] SetIconAsync 호출 감지 - 가상 태그의 아이콘 텍스처를 커스텀 이미지로 오버라이드합니다.");
+                        ModLogger.Msg("[APMod.TagIcon] SetIconAsync 호출 감지 - 가상 태그의 아이콘 텍스처를 커스텀 이미지로 오버라이드합니다.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod.TagIcon] SetIconAsync 패치 처리 중 예외 발생: {ex}");
+                ModLogger.Error($"[APMod.TagIcon] SetIconAsync 패치 처리 중 예외 발생: {ex}");
             }
             return true;
         }
@@ -226,7 +226,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod.TagIcon] SetStateIcon 패치 처리 중 예외 발생: {ex}");
+                ModLogger.Error($"[APMod.TagIcon] SetStateIcon 패치 처리 중 예외 발생: {ex}");
             }
         }
     }

@@ -17,7 +17,7 @@ namespace muse_dash_test
         {
             if (!_isInitialized)
             {
-                MelonLogger.Msg("[FavGirl] RealTimeSwapper가 초기화되었습니다.");
+                ModLogger.Msg("[FavGirl] RealTimeSwapper가 초기화되었습니다.");
                 _isInitialized = true;
             }
         }
@@ -28,13 +28,13 @@ namespace muse_dash_test
             {
                 if (Input.GetKeyDown(KeyCode.O))
                 {
-                    MelonLogger.Msg("[FavGirl] O키가 눌렸습니다!");
+                    ModLogger.Msg("[FavGirl] O키가 눌렸습니다!");
                     OnKeyPressed();
                 }
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"[FavGirl] Input 오류: {e.Message}");
+                ModLogger.Error($"[FavGirl] Input 오류: {e.Message}");
             }
         }
         
@@ -42,12 +42,12 @@ namespace muse_dash_test
         {
             if (RealTimeSwapManager.IsRealTimeModeActive())
             {
-                MelonLogger.Msg("[FavGirl] 실시간 교체 모드가 활성화되어 있습니다. 교체를 시도합니다...");
+                ModLogger.Msg("[FavGirl] 실시간 교체 모드가 활성화되어 있습니다. 교체를 시도합니다...");
                 RealTimeSwapManager.PerformRealTimeSwap();
             }
             else
             {
-                MelonLogger.Msg("[FavGirl] 실시간 교체 모드가 비활성화되어 있습니다. P키를 눌러서 실시간 모드를 활성화하세요.");
+                ModLogger.Msg("[FavGirl] 실시간 교체 모드가 비활성화되어 있습니다. P키를 눌러서 실시간 모드를 활성화하세요.");
             }
         }
     }
@@ -118,7 +118,7 @@ namespace muse_dash_test
             {
                 RealTimeSwapper.Initialize();
                 _isInitialized = true;
-                MelonLogger.Msg("[FavGirl] RealTimeSwapManager가 초기화되었습니다.");
+                ModLogger.Msg("[FavGirl] RealTimeSwapManager가 초기화되었습니다.");
             }
         }
         
@@ -138,12 +138,12 @@ namespace muse_dash_test
             
             if (_isRealTimeMode)
             {
-                MelonLogger.Msg("[FavGirl] 실시간 외형 교체 모드 활성화! O키를 눌러서 외형을 교체하세요.");
+                ModLogger.Msg("[FavGirl] 실시간 외형 교체 모드 활성화! O키를 눌러서 외형을 교체하세요.");
                 ResetToggleState();
             }
             else
             {
-                MelonLogger.Msg("[FavGirl] 실시간 외형 교체 모드 비활성화");
+                ModLogger.Msg("[FavGirl] 실시간 외형 교체 모드 비활성화");
                 ResetToOriginalState();
             }
         }
@@ -151,7 +151,7 @@ namespace muse_dash_test
         private static void ResetToggleState()
         {
             _originalSkillRole = -1;
-            MelonLogger.Msg("[FavGirl] 토글 상태가 초기화되었습니다.");
+            ModLogger.Msg("[FavGirl] 토글 상태가 초기화되었습니다.");
         }
         
         private static void ResetToOriginalState()
@@ -159,7 +159,7 @@ namespace muse_dash_test
             if (_originalSkillRole != -1)
             {
                 FavSave.FavGirl = (GirlID)_originalSkillRole;
-                MelonLogger.Msg($"[FavGirl] 원래 스킬 캐릭터로 복원: {_originalSkillRole}");
+                ModLogger.Msg($"[FavGirl] 원래 스킬 캐릭터로 복원: {_originalSkillRole}");
             }
             ResetToggleState();
         }
@@ -172,7 +172,7 @@ namespace muse_dash_test
             }
             else
             {
-                MelonLogger.Msg("[FavGirl] RealTimeSwapper가 초기화되지 않았습니다. 초기화를 시도합니다...");
+                ModLogger.Msg("[FavGirl] RealTimeSwapper가 초기화되지 않았습니다. 초기화를 시도합니다...");
                 Initialize();
                 if (_isInitialized)
                 {
@@ -185,17 +185,17 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("=== [FavGirl] 실시간 외형 교체 시작 ===");
+                ModLogger.Msg("=== [FavGirl] 실시간 외형 교체 시작 ===");
                 
                 var currentRole = GlobalDataBase.s_DbBattleStage.m_SelectedRole;
                 var currentFavGirl = FavSave.FavGirl;
                 
-                MelonLogger.Msg($"현재 스킬 캐릭터: {currentRole}, 현재 외형 캐릭터: {currentFavGirl}");
+                ModLogger.Msg($"현재 스킬 캐릭터: {currentRole}, 현재 외형 캐릭터: {currentFavGirl}");
                 
                 if (_originalSkillRole == -1)
                 {
                     _originalSkillRole = currentRole;
-                    MelonLogger.Msg($"원래 스킬 캐릭터 저장: {_originalSkillRole}");
+                    ModLogger.Msg($"원래 스킬 캐릭터 저장: {_originalSkillRole}");
                 }
                 
                 // skins.txt에 설정된 3개 슬롯을 순환한다: 스킬 → 외형 → 3번째 슬롯 → 다시 스킬.
@@ -204,29 +204,29 @@ namespace muse_dash_test
 
                 if (FavSave.FavGirl == skillCharacter)
                 {
-                    MelonLogger.Msg($"스킬 캐릭터 → 외형 캐릭터: {skillCharacter} → {appearanceCharacter}");
+                    ModLogger.Msg($"스킬 캐릭터 → 외형 캐릭터: {skillCharacter} → {appearanceCharacter}");
                     FavSave.FavGirl = appearanceCharacter;
                 }
                 else if (FavSave.FavGirl == appearanceCharacter)
                 {
-                    MelonLogger.Msg($"외형 캐릭터 → 테스트 캐릭터: {appearanceCharacter} → {testCharacter}");
+                    ModLogger.Msg($"외형 캐릭터 → 테스트 캐릭터: {appearanceCharacter} → {testCharacter}");
                     FavSave.FavGirl = testCharacter;
                 }
                 else
                 {
-                    MelonLogger.Msg($"테스트 캐릭터 → 스킬 캐릭터: {FavSave.FavGirl} → {skillCharacter}");
+                    ModLogger.Msg($"테스트 캐릭터 → 스킬 캐릭터: {FavSave.FavGirl} → {skillCharacter}");
                     FavSave.FavGirl = skillCharacter;
                 }
                 
-                MelonLogger.Msg($"실시간 외형 교체 완료: {currentFavGirl} → {FavSave.FavGirl}");
+                ModLogger.Msg($"실시간 외형 교체 완료: {currentFavGirl} → {FavSave.FavGirl}");
                 
                 ForceCharacterRecreation();
                 
-                MelonLogger.Msg("=== [FavGirl] 실시간 외형 교체 완료 ===");
+                ModLogger.Msg("=== [FavGirl] 실시간 외형 교체 완료 ===");
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"[FavGirl] 실시간 외형 교체 실패: {e.Message}");
+                ModLogger.Error($"[FavGirl] 실시간 외형 교체 실패: {e.Message}");
             }
         }
         
@@ -234,26 +234,26 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg("=== [FavGirl] 캐릭터 강제 재생성 시작 ===");
+                ModLogger.Msg("=== [FavGirl] 캐릭터 강제 재생성 시작 ===");
                 
                 if (GlobalManagers.girlManager != null)
                 {
                     if (GlobalManagers.girlManager.girl != null)
                     {
                         var oldCharacter = GlobalManagers.girlManager.girl;
-                        MelonLogger.Msg($"기존 캐릭터 제거: {oldCharacter.name}");
+                        ModLogger.Msg($"기존 캐릭터 제거: {oldCharacter.name}");
                         
                         UnityEngine.Object.DestroyImmediate(oldCharacter);
                         GlobalManagers.girlManager.girl = null;
                     }
                     
-                    MelonLogger.Msg("새로운 캐릭터 생성 중...");
+                    ModLogger.Msg("새로운 캐릭터 생성 중...");
                     GlobalManagers.girlManager.InstanceGirl();
                     
                     if (GlobalManagers.girlManager.girl != null)
                     {
                         var newCharacter = GlobalManagers.girlManager.girl;
-                        MelonLogger.Msg($"새 캐릭터 생성 완료: {newCharacter.name}");
+                        ModLogger.Msg($"새 캐릭터 생성 완료: {newCharacter.name}");
                         
                         ForceRecoverAllRenderers(newCharacter);
                         
@@ -263,11 +263,11 @@ namespace muse_dash_test
                         }
                     }
                 }
-                MelonLogger.Msg("=== [FavGirl] 캐릭터 강제 재생성 완료 ===");
+                ModLogger.Msg("=== [FavGirl] 캐릭터 강제 재생성 완료 ===");
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"[FavGirl] 캐릭터 강제 재생성 실패: {e.Message}");
+                ModLogger.Error($"[FavGirl] 캐릭터 강제 재생성 실패: {e.Message}");
             }
         }
 
@@ -302,7 +302,7 @@ namespace muse_dash_test
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"[FavGirl] 렌더러 강제 복구 실패: {e.Message}");
+                ModLogger.Error($"[FavGirl] 렌더러 강제 복구 실패: {e.Message}");
             }
         }
         
@@ -316,7 +316,7 @@ namespace muse_dash_test
                 
                 if (!File.Exists(skinPath))
                 {
-                    MelonLogger.Error($"[FavGirl] 설정 파일을 찾을 수 없습니다: {skinPath}");
+                    ModLogger.Error($"[FavGirl] 설정 파일을 찾을 수 없습니다: {skinPath}");
                     return (GirlID.MARIJA_BLACK, GirlID.MARIJA_DEVIL, GirlID.RIN_BASS);
                 }
                 
@@ -341,7 +341,7 @@ namespace muse_dash_test
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"[FavGirl] 설정 파일 읽기 실패: {e.Message}");
+                ModLogger.Error($"[FavGirl] 설정 파일 읽기 실패: {e.Message}");
                 return (GirlID.MARIJA_BLACK, GirlID.MARIJA_DEVIL, GirlID.RIN_BASS);
             }
         }

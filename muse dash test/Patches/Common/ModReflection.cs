@@ -70,7 +70,7 @@ namespace muse_dash_test
             {
                 if (!silent && ShouldLogFailure(key))
                 {
-                    MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없습니다. (이 경고는 1회만 표시됩니다)");
+                    ModLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없습니다. (이 경고는 1회만 표시됩니다)");
                 }
                 return null;
             }
@@ -84,7 +84,7 @@ namespace muse_dash_test
             {
                 if (!silent && ShouldLogFailure(key))
                 {
-                    MelonLogger.Error($"[ModReflection] '{memberName}' 값을 읽는 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
+                    ModLogger.Error($"[ModReflection] '{memberName}' 값을 읽는 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
                 }
             }
             return null;
@@ -110,7 +110,7 @@ namespace muse_dash_test
             {
                 if (!silent && ShouldLogFailure(key))
                 {
-                    MelonLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없어 값을 주입할 수 없습니다. (이 경고는 1회만 표시됩니다)");
+                    ModLogger.Warning($"[ModReflection] 업데이트 경고: 멤버 '{memberName}'을 '{type.FullName}'에서 찾을 수 없어 값을 주입할 수 없습니다. (이 경고는 1회만 표시됩니다)");
                 }
                 return false;
             }
@@ -135,7 +135,7 @@ namespace muse_dash_test
             {
                 if (!silent && ShouldLogFailure(key))
                 {
-                    MelonLogger.Error($"[ModReflection] '{memberName}' 값 설정 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
+                    ModLogger.Error($"[ModReflection] '{memberName}' 값 설정 중 오류 발생: {ex.Message} (이 에러는 1회만 표시됩니다)");
                 }
             }
             return false;
@@ -337,7 +337,7 @@ namespace muse_dash_test
         {
             if (target == null)
             {
-                MelonLogger.Error("[ModReflection.Diagnostics] Dump 대상 객체가 null입니다.");
+                ModLogger.Error("[ModReflection.Diagnostics] Dump 대상 객체가 null입니다.");
                 return;
             }
 
@@ -384,7 +384,7 @@ namespace muse_dash_test
             }
             sb.AppendLine($"========================================================================\n");
 
-            MelonLogger.Error(sb.ToString());
+            ModLogger.Error(sb.ToString());
         }
     }
 }

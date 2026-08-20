@@ -52,14 +52,14 @@ namespace muse_dash_test
 
                 if (missing.Count == 0)
                 {
-                    MelonLogger.Msg($"[PatchHealth] 패치 대상 {total}개 전부 정상 해석되었습니다.");
+                    ModLogger.Msg($"[PatchHealth] 패치 대상 {total}개 전부 정상 해석되었습니다.");
                 }
                 else
                 {
-                    MelonLogger.Warning($"[PatchHealth] {missing.Count}/{total}개 패치 대상이 현재 게임 빌드에서 해석되지 않았습니다(해당 기능 비활성 가능):");
+                    ModLogger.Warning($"[PatchHealth] {missing.Count}/{total}개 패치 대상이 현재 게임 빌드에서 해석되지 않았습니다(해당 기능 비활성 가능):");
                     foreach (var m in missing)
                     {
-                        MelonLogger.Warning($"[PatchHealth]   - {m}");
+                        ModLogger.Warning($"[PatchHealth]   - {m}");
                     }
                 }
 
@@ -68,7 +68,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PatchHealth] 패치 점검 중 예외: {ex}");
+                ModLogger.Error($"[PatchHealth] 패치 점검 중 예외: {ex}");
             }
         }
 
@@ -79,13 +79,13 @@ namespace muse_dash_test
                 var targetMethod = AccessTools.Method(typeof(Il2Cpp.MusicTagManager), "InitAlbumTagInfo");
                 if (targetMethod == null)
                 {
-                    MelonLogger.Warning("[PatchHealth] MusicTagManager.InitAlbumTagInfo 메서드를 찾을 수 없습니다! Harmony 패치가 동작하지 않을 가능성이 높습니다. Init으로 시작하는 메서드를 찾아 덤프 파일을 생성합니다.");
+                    ModLogger.Warning("[PatchHealth] MusicTagManager.InitAlbumTagInfo 메서드를 찾을 수 없습니다! Harmony 패치가 동작하지 않을 가능성이 높습니다. Init으로 시작하는 메서드를 찾아 덤프 파일을 생성합니다.");
                     DumpInitMethods();
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PatchHealth] MusicTagManager 패치 타겟 검사 중 오류: {ex}");
+                ModLogger.Error($"[PatchHealth] MusicTagManager 패치 타겟 검사 중 오류: {ex}");
             }
         }
 
@@ -130,11 +130,11 @@ namespace muse_dash_test
                     writer.WriteLine($"Total methods found: {count}");
                 }
 
-                MelonLogger.Msg($"[PatchHealth] MusicTagManager의 'Init'로 시작하는 메서드 {count}개를 덤프했습니다: {dumpPath}");
+                ModLogger.Msg($"[PatchHealth] MusicTagManager의 'Init'로 시작하는 메서드 {count}개를 덤프했습니다: {dumpPath}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PatchHealth] MusicTagManager 메서드 덤프 중 오류 발생: {ex}");
+                ModLogger.Error($"[PatchHealth] MusicTagManager 메서드 덤프 중 오류 발생: {ex}");
             }
         }
 

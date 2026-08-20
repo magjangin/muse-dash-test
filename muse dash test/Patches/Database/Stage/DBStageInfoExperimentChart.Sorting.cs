@@ -1,5 +1,6 @@
-using MelonLoader;
+﻿using MelonLoader;
 using Il2CppGameLogic;
+using muse_dash_test;
 
 // 삽입된 BMS 노트의 더블 상태(지상+공중 동시) 판정과 showTick 기준 재정렬 로직.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
@@ -70,7 +71,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             musicList.Add(note);
         }
 
-        MelonLogger.Msg($"[ExperimentChart.Bms] 공식 방식 showTick 정렬 완료: notes={runtimeNotes.Count}, bossOffset={BossEventTickOffset}");
+        ModLogger.Msg($"[ExperimentChart.Bms] 공식 방식 showTick 정렬 완료: notes={runtimeNotes.Count}, bossOffset={BossEventTickOffset}");
         DumpSortedBmsBossContext(musicList, startIndex);
     }
 
@@ -182,7 +183,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (!warnedDecimalParseFailure)
         {
             warnedDecimalParseFailure = true;
-            MelonLogger.Error($"[ExperimentChart] Decimal 파싱 실패: raw='{raw}', culture={System.Globalization.CultureInfo.CurrentCulture.Name}. " +
+            ModLogger.Error($"[ExperimentChart] Decimal 파싱 실패: raw='{raw}', culture={System.Globalization.CultureInfo.CurrentCulture.Name}. " +
                               "이 상태에서는 더블 노트의 dt/showTick이 0으로 덮어써져 채보 타이밍이 깨집니다. (이 경고는 1회만 출력)");
         }
 
@@ -277,7 +278,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        MelonLogger.Msg($"[ExperimentChart.Bms] 더블 상태 적용 완료: pairs={doubleGroupCount}, notes={musicList.Count - startIndex}");
+        ModLogger.Msg($"[ExperimentChart.Bms] 더블 상태 적용 완료: pairs={doubleGroupCount}, notes={musicList.Count - startIndex}");
     }
 
     public static string GetDoubleExclusionReason(MusicData note)

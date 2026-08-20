@@ -146,7 +146,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[GhostNote.AlphaTimeline] 알파 타임라인 처리 중 예외 발생: {ex}");
+                ModLogger.Error($"[GhostNote.AlphaTimeline] 알파 타임라인 처리 중 예외 발생: {ex}");
             }
         }
 
@@ -175,7 +175,7 @@ namespace muse_dash_test
             var animation = data.FindAnimation(animationName);
             if (animation == null)
             {
-                MelonLogger.Msg($"[GhostNote.AlphaTimeline] 애니메이션을 찾지 못했습니다: {animationName}");
+                ModLogger.Msg($"[GhostNote.AlphaTimeline] 애니메이션을 찾지 못했습니다: {animationName}");
                 return;
             }
 
@@ -218,7 +218,7 @@ namespace muse_dash_test
             if (capture != null) originalAlphas[cacheKey] = capture.ToArray();
             opaqueAnimations[cacheKey] = opaque;
 
-            MelonLogger.Msg($"[GhostNote.AlphaTimeline] {ObjectNameOf(controller)} '{cacheKey}' {(opaque ? "고정" : "복원")} 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
+            ModLogger.Msg($"[GhostNote.AlphaTimeline] {ObjectNameOf(controller)} '{cacheKey}' {(opaque ? "고정" : "복원")} 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
                             $"알파 키 {alphaKeys}개를 {(opaque ? "1로 고정" : "원본으로 되돌림")} (이동/스케일 타임라인은 그대로)");
         }
 

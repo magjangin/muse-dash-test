@@ -70,21 +70,21 @@ namespace muse_dash_test
             {
                 if (obj == null)
                 {
-                    MelonLogger.Msg("DumpMusicInfoVerbose: null");
+                    ModLogger.Msg("DumpMusicInfoVerbose: null");
                     return;
                 }
                 var t = obj.GetType();
-                MelonLogger.Msg($"--- DumpMusicInfoVerbose: {t.FullName} ---");
+                ModLogger.Msg($"--- DumpMusicInfoVerbose: {t.FullName} ---");
                 
                 foreach (var f in t.GetFields(DefaultFlags))
                 {
                     try
                     {
                         var v = f.GetValue(obj);
-                        MelonLogger.Msg($"Field: {f.Name} (Type={f.FieldType.Name}) = {(v != null ? v.ToString() : "(null)")}");
+                        ModLogger.Msg($"Field: {f.Name} (Type={f.FieldType.Name}) = {(v != null ? v.ToString() : "(null)")}");
                         if (v != null) LogStringProps(v, "  ");
                     }
-                    catch (Exception ex) { MelonLogger.Msg($"Field {f.Name} read error: {ex.Message}"); }
+                    catch (Exception ex) { ModLogger.Msg($"Field {f.Name} read error: {ex.Message}"); }
                 }
 
                 foreach (var p in t.GetProperties(DefaultFlags))
@@ -93,14 +93,14 @@ namespace muse_dash_test
                     {
                         if (p.GetIndexParameters().Length > 0)
                         {
-                            MelonLogger.Msg($"Property: {p.Name} (indexed) skipped");
+                            ModLogger.Msg($"Property: {p.Name} (indexed) skipped");
                             continue;
                         }
                         var v = p.GetValue(obj);
-                        MelonLogger.Msg($"Property: {p.Name} (Type={p.PropertyType.Name}) = {(v != null ? v.ToString() : "(null)")}");
+                        ModLogger.Msg($"Property: {p.Name} (Type={p.PropertyType.Name}) = {(v != null ? v.ToString() : "(null)")}");
                         if (v != null) LogStringProps(v, "  ");
                     }
-                    catch (Exception ex) { MelonLogger.Msg($"Property {p.Name} read error: {ex.Message}"); }
+                    catch (Exception ex) { ModLogger.Msg($"Property {p.Name} read error: {ex.Message}"); }
                 }
 
                 int childCount = 0;
@@ -114,23 +114,23 @@ namespace muse_dash_test
                         if (vt == typeof(string) || vt.IsPrimitive) continue;
                         if (++childCount > 6) break;
                         
-                        MelonLogger.Msg($"-- Child field {f.Name} type {vt.FullName} --");
+                        ModLogger.Msg($"-- Child field {f.Name} type {vt.FullName} --");
                         foreach (var p in vt.GetProperties(DefaultFlags))
                         {
                             try
                             {
                                 if (p.GetIndexParameters().Length > 0) continue;
                                 var pv = p.GetValue(v);
-                                if (pv is string) MelonLogger.Msg($"   {p.Name} = {pv}");
+                                if (pv is string) ModLogger.Msg($"   {p.Name} = {pv}");
                             }
                             catch (Exception) { }
                         }
                     }
                     catch (Exception) { }
                 }
-                MelonLogger.Msg($"--- End DumpMusicInfoVerbose ---");
+                ModLogger.Msg($"--- End DumpMusicInfoVerbose ---");
             }
-            catch (Exception ex) { MelonLogger.Msg($"DumpMusicInfoVerbose exception: {ex}"); }
+            catch (Exception ex) { ModLogger.Msg($"DumpMusicInfoVerbose exception: {ex}"); }
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace muse_dash_test
                     return false;
                 }
 
-                MelonLogger.Msg($"NowPlaying: {(string.IsNullOrEmpty(title) ? "(unknown)" : title)} - {(string.IsNullOrEmpty(artist) ? "(unknown)" : artist)} - {(string.IsNullOrEmpty(album) ? "(unknown)" : album)}");
+                ModLogger.Msg($"NowPlaying: {(string.IsNullOrEmpty(title) ? "(unknown)" : title)} - {(string.IsNullOrEmpty(artist) ? "(unknown)" : artist)} - {(string.IsNullOrEmpty(album) ? "(unknown)" : album)}");
                 return true;
             }
             catch { return false; }
@@ -232,7 +232,7 @@ namespace muse_dash_test
                     try
                     {
                         var tv = textProp.GetValue(v) as string;
-                        if (!string.IsNullOrEmpty(tv)) MelonLogger.Msg($"{indent}text: {tv}");
+                        if (!string.IsNullOrEmpty(tv)) ModLogger.Msg($"{indent}text: {tv}");
                     }
                     catch (Exception) { }
                 }
@@ -243,7 +243,7 @@ namespace muse_dash_test
                     if (nameProp != null)
                     {
                         var nv = nameProp.GetValue(v) as string;
-                        if (!string.IsNullOrEmpty(nv)) MelonLogger.Msg($"{indent}name: {nv}");
+                        if (!string.IsNullOrEmpty(nv)) ModLogger.Msg($"{indent}name: {nv}");
                     }
                 }
                 catch (Exception) { }
@@ -259,7 +259,7 @@ namespace muse_dash_test
                             if (p.PropertyType == typeof(string))
                             {
                                 var sval = p.GetValue(v) as string;
-                                if (!string.IsNullOrEmpty(sval)) MelonLogger.Msg($"{indent}{p.Name}: {sval}");
+                                if (!string.IsNullOrEmpty(sval)) ModLogger.Msg($"{indent}{p.Name}: {sval}");
                             }
                         }
                         catch (Exception) { }
@@ -275,14 +275,14 @@ namespace muse_dash_test
                         var pv = p.GetValue(v);
                         if (pv is string s && !string.IsNullOrEmpty(s))
                         {
-                            MelonLogger.Msg($"{indent}{p.Name}: {s}");
+                            ModLogger.Msg($"{indent}{p.Name}: {s}");
                             if (++found > 6) break;
                         }
                     }
                     catch (Exception) { }
                 }
             }
-            catch (Exception ex) { MelonLogger.Msg($"LogStringProps exception: {ex.Message}"); }
+            catch (Exception ex) { ModLogger.Msg($"LogStringProps exception: {ex.Message}"); }
         }
 
         private static void MatchNowPlayingMember(string memberName, object value, ref string title, ref string artist, ref string album)

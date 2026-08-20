@@ -27,12 +27,12 @@ namespace muse_dash_test
                 if (img != null && img.sprite != sprite)
                 {
                     img.sprite = sprite;
-                    MelonLogger.Msg($"[Cover.Disc] MusicStageCell 커버 교체 uid='{uid}'");
+                    ModLogger.Msg($"[Cover.Disc] MusicStageCell 커버 교체 uid='{uid}'");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[Cover.Disc] SetCoverLogic Postfix 예외: {ex}");
+                ModLogger.Error($"[Cover.Disc] SetCoverLogic Postfix 예외: {ex}");
             }
         }
     }

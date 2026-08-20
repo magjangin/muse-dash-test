@@ -27,7 +27,7 @@ namespace muse_dash_test.Patches
             yield return new UnityEngine.WaitForSeconds(6.0f);
             if (!isEndReached)
             {
-                MelonLogger.Msg("ℹ️ [APMod.Guard] 승리 연출 후 결과 화면 진입이 스킵되었거나 이탈(재시작/퇴장)되었습니다.");
+                ModLogger.Msg("ℹ️ [APMod.Guard] 승리 연출 후 결과 화면 진입이 스킵되었거나 이탈(재시작/퇴장)되었습니다.");
             }
         }
     }
@@ -41,7 +41,7 @@ namespace muse_dash_test.Patches
             if (!ModConfig.EnableAPMod) return;
             try
             {
-                MelonLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
+                ModLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
                 VictoryFlowGuard.StartGuard();
 
                 // 결과 화면 진입 시 커스텀 BGM/BGA 미디어를 강제로 정지시킵니다.
@@ -53,38 +53,38 @@ namespace muse_dash_test.Patches
 
                 if (__instance == null)
                 {
-                    MelonLogger.Msg("[APMod] __instance가 null입니다!");
+                    ModLogger.Msg("[APMod] __instance가 null입니다!");
                     return;
                 }
 
                 var comp = __instance.m_CurVictoryComp;
                 if (comp == null)
                 {
-                    MelonLogger.Msg("[APMod] m_CurVictoryComp가 null입니다!");
+                    ModLogger.Msg("[APMod] m_CurVictoryComp가 null입니다!");
                     return;
                 }
 
                 var fcGo = comp.fullCombo; // PnlFullComboText GameObject
                 if (fcGo == null)
                 {
-                    MelonLogger.Msg("[APMod] comp.fullCombo가 null입니다.");
+                    ModLogger.Msg("[APMod] comp.fullCombo가 null입니다.");
                     return;
                 }
 
                 if (IsAllPerfect())
                 {
-                    MelonLogger.Msg("[APMod] ★ALL PERFECT 달성!★ 승리 배너 수정 프로세스 개시.");
+                    ModLogger.Msg("[APMod] ★ALL PERFECT 달성!★ 승리 배너 수정 프로세스 개시.");
                     ShowAllPerfectBanner(fcGo.transform);
                 }
                 else
                 {
-                    MelonLogger.Msg("[APMod] 일반 풀콤보 또는 퍼펙트 미달성. 기존 FULL COMBO 문자 복원 활성화.");
+                    ModLogger.Msg("[APMod] 일반 풀콤보 또는 퍼펙트 미달성. 기존 FULL COMBO 문자 복원 활성화.");
                     RestoreFullComboBanner(fcGo.transform);
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APMod] OnShowVictory Postfix 예외 발생: {ex}");
+                ModLogger.Error($"[APMod] OnShowVictory Postfix 예외 발생: {ex}");
             }
         }
 
@@ -103,7 +103,7 @@ namespace muse_dash_test.Patches
                 var target = VictoryDataCache.ActiveTarget;
                 if (target == null)
                 {
-                    MelonLogger.Warning("[CustomRecordStore] ActiveTarget이 null이라 기록을 저장할 수 없습니다.");
+                    ModLogger.Warning("[CustomRecordStore] ActiveTarget이 null이라 기록을 저장할 수 없습니다.");
                     return;
                 }
 
@@ -131,7 +131,7 @@ namespace muse_dash_test.Patches
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomRecordStore] 기록 저장 시도 중 예외: {ex}");
+                ModLogger.Error($"[CustomRecordStore] 기록 저장 시도 중 예외: {ex}");
             }
         }
 
@@ -140,7 +140,7 @@ namespace muse_dash_test.Patches
         {
             if (VictoryDataCache.ActiveTarget == null)
             {
-                MelonLogger.Msg("[APMod.Debug.Victory] [주의] VictoryDataCache.ActiveTarget가 null입니다! 콤보 판정을 가져올 수 없습니다.");
+                ModLogger.Msg("[APMod.Debug.Victory] [주의] VictoryDataCache.ActiveTarget가 null입니다! 콤보 판정을 가져올 수 없습니다.");
                 return false;
             }
 
@@ -149,7 +149,7 @@ namespace muse_dash_test.Patches
             int missCount = VictoryDataCache.ActiveTarget.m_MissResult;
             float accuracy = VictoryDataCache.ActiveTarget.GetAccuracy();
 
-            MelonLogger.Msg($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
+            ModLogger.Msg($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
 
             return isFullCombo && greatCount == 0 && missCount == 0;
         }
@@ -163,20 +163,20 @@ namespace muse_dash_test.Patches
                 var child = fcTransform.GetChild(i);
                 if (child == null) continue;
 
-                MelonLogger.Msg($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
+                ModLogger.Msg($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
                 if (child.name != "CustomAPText")
                 {
                     child.gameObject.SetActive(false);
                     hiddenCount++;
                 }
             }
-            MelonLogger.Msg($"[APMod.Debug.Victory] 기존 FULL COMBO 관련 오브젝트 총 {hiddenCount}개 숨김 처리 완료.");
+            ModLogger.Msg($"[APMod.Debug.Victory] 기존 FULL COMBO 관련 오브젝트 총 {hiddenCount}개 숨김 처리 완료.");
 
             var customApTransform = fcTransform.Find("CustomAPText");
             if (customApTransform != null)
             {
                 customApTransform.gameObject.SetActive(true);
-                MelonLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 활성화 완료.");
+                ModLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 활성화 완료.");
                 return;
             }
 
@@ -186,7 +186,7 @@ namespace muse_dash_test.Patches
         // 커스텀 "ALL PERFECT!" 텍스트 오브젝트를 신규 생성하고 스타일을 적용합니다.
         private static void CreateAllPerfectBanner(Transform fcTransform)
         {
-            MelonLogger.Msg("[APMod] CustomAPText 게임 오브젝트 신규 생성 프로세스 시작...");
+            ModLogger.Msg("[APMod] CustomAPText 게임 오브젝트 신규 생성 프로세스 시작...");
             var apGo = new GameObject("CustomAPText");
             apGo.transform.SetParent(fcTransform, false);
 
@@ -215,7 +215,7 @@ namespace muse_dash_test.Patches
                 rect.sizeDelta = new Vector2(1000f, 200f);
             }
 
-            MelonLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 생성 성공.");
+            ModLogger.Msg("[APMod] 커스텀 ALL PERFECT 배너 텍스트 생성 성공.");
         }
 
         // 게임플레이 중 캐싱한 프리미엄 폰트 → PnlVictory accuracyTxt → 씬 내 임의 Text → Arial 순으로 폰트를 해석합니다.
@@ -224,11 +224,11 @@ namespace muse_dash_test.Patches
             Font targetFont = VictoryDataCache.PremiumFont;
             if (targetFont != null)
             {
-                MelonLogger.Msg($"[APMod.Debug.Victory] 캐싱해 둔 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
+                ModLogger.Msg($"[APMod.Debug.Victory] 캐싱해 둔 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
                 return targetFont;
             }
 
-            MelonLogger.Msg("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
+            ModLogger.Msg("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
             var victoryPanel = GameObject.FindObjectOfType<Il2Cpp.PnlVictory>();
             if (victoryPanel != null)
             {
@@ -239,7 +239,7 @@ namespace muse_dash_test.Patches
                 if (targetFont != null)
                 {
                     VictoryDataCache.PremiumFont = targetFont; // 다음 호출 시 FindObjectOfType 회피용 캐싱
-                    MelonLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 및 캐싱 성공: '{targetFont.name}'");
+                    ModLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 및 캐싱 성공: '{targetFont.name}'");
                     return targetFont;
                 }
             }
@@ -249,11 +249,11 @@ namespace muse_dash_test.Patches
             {
                 targetFont = anyText.font;
                 VictoryDataCache.PremiumFont = targetFont; // 다음 호출 시 FindObjectOfType 회피용 캐싱
-                MelonLogger.Msg("[APMod] 활성화된 씬 내 Text 컴포넌트에서 폰트 획득 및 캐싱 완료.");
+                ModLogger.Msg("[APMod] 활성화된 씬 내 Text 컴포넌트에서 폰트 획득 및 캐싱 완료.");
                 return targetFont;
             }
 
-            MelonLogger.Msg("[APMod] 폴백 빌트인 Arial 폰트 적용.");
+            ModLogger.Msg("[APMod] 폴백 빌트인 Arial 폰트 적용.");
             return Resources.GetBuiltinResource<Font>("Arial.ttf");
         }
 

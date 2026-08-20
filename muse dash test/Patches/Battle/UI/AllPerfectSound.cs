@@ -48,7 +48,7 @@ namespace muse_dash_test.Patches
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[APSound] AP 판정 실패: {ex.Message}");
+                ModLogger.Warning($"[APSound] AP 판정 실패: {ex.Message}");
                 return false;
             }
         }
@@ -69,12 +69,12 @@ namespace muse_dash_test.Patches
                 if (!AllPerfectSound.IsFullComboClip(clip)) return true; // FC 효과음이 아니면 통과
                 if (!AllPerfectSound.IsAllPerfect()) return true;        // AP가 아니면 FC 효과음 그대로
 
-                MelonLogger.Msg($"[APSound] ★AP★ 풀콤보 효과음('{clip.name}') 재생을 뮤트합니다.");
+                ModLogger.Msg($"[APSound] ★AP★ 풀콤보 효과음('{clip.name}') 재생을 뮤트합니다.");
                 return false; // AP일 때 FC 효과음 차단
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APSound] PlayOneShot 뮤트 중 예외: {ex}");
+                ModLogger.Error($"[APSound] PlayOneShot 뮤트 중 예외: {ex}");
                 return true;
             }
         }
@@ -95,12 +95,12 @@ namespace muse_dash_test.Patches
                 if (!AllPerfectSound.IsFullComboClip(clip)) return true;
                 if (!AllPerfectSound.IsAllPerfect()) return true;
 
-                MelonLogger.Msg($"[APSound] ★AP★ 풀콤보 효과음('{clip.name}') 재생을 뮤트합니다.");
+                ModLogger.Msg($"[APSound] ★AP★ 풀콤보 효과음('{clip.name}') 재생을 뮤트합니다.");
                 return false;
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[APSound] PlayOneShot(novol) 뮤트 중 예외: {ex}");
+                ModLogger.Error($"[APSound] PlayOneShot(novol) 뮤트 중 예외: {ex}");
                 return true;
             }
         }

@@ -32,7 +32,7 @@ namespace muse_dash_test
             // 이번 요청의 세대 번호를 코루틴에 넘겨 줍니다. uid만으로는 A→B→A처럼 같은 곡으로
             // 되돌아온 경우 낡은 코루틴이 자기가 낡았다는 걸 알 수 없습니다(아래 코루틴 주석 참고).
             int generation = ++monitorGeneration;
-            MelonLogger.Msg($"[MenuBGM] BGM 변경 트리거: uid={uid}, generation={generation}");
+            ModLogger.Msg($"[MenuBGM] BGM 변경 트리거: uid={uid}, generation={generation}");
             MelonCoroutines.Start(LoadAndPlayCustomMenuBgm(uid, generation));
         }
 
@@ -40,7 +40,7 @@ namespace muse_dash_test
         {
             currentLoadingUid = null;
             monitorGeneration++;
-            MelonLogger.Msg($"[MenuBGM.Monitor] 메뉴 BGM 모니터링 중지 요청: {reason}");
+            ModLogger.Msg($"[MenuBGM.Monitor] 메뉴 BGM 모니터링 중지 요청: {reason}");
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace muse_dash_test
                 if (src != null && injectedMenuClip != null && src.clip == injectedMenuClip)
                 {
                     src.Stop();
-                    MelonLogger.Msg($"[MenuBGM] 커스텀 메뉴 BGM 정지 ({reason}): 우리가 주입한 클립 재생 중단");
+                    ModLogger.Msg($"[MenuBGM] 커스텀 메뉴 BGM 정지 ({reason}): 우리가 주입한 클립 재생 중단");
                 }
 
                 // 곡 선택/준비 화면 이탈 시 디스코드 프로필도 In Menu 상태로 즉시 복원
@@ -73,7 +73,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MenuBGM] StopCustomMenuBgm 예외: {ex}");
+                ModLogger.Error($"[MenuBGM] StopCustomMenuBgm 예외: {ex}");
             }
         }
 
@@ -98,7 +98,7 @@ namespace muse_dash_test
             string oggPath = ResolveHwaOggPath(songDir);
             if (string.IsNullOrWhiteSpace(oggPath) || !File.Exists(oggPath))
             {
-                MelonLogger.Warning($"[MenuBGM] ogg 파일을 찾지 못했습니다: folder={songDir}");
+                ModLogger.Warning($"[MenuBGM] ogg 파일을 찾지 못했습니다: folder={songDir}");
                 yield break;
             }
 
@@ -114,11 +114,11 @@ namespace muse_dash_test
             AudioSource menuSource = FindMenuAudioSource();
             if (menuSource == null)
             {
-                MelonLogger.Warning("[MenuBGM] 활성화된 BGM AudioSource를 찾지 못했습니다.");
+                ModLogger.Warning("[MenuBGM] 활성화된 BGM AudioSource를 찾지 못했습니다.");
                 yield break;
             }
 
-            MelonLogger.Msg($"[MenuBGM] 대상 AudioSource 선택됨: GO={menuSource.gameObject.name}, Clip={menuSource.clip?.name ?? "(null)"}, Vol={menuSource.volume}, Mute={menuSource.mute}, SpatialBlend={menuSource.spatialBlend}, MixerGroup={menuSource.outputAudioMixerGroup?.name ?? "(null)"}");
+            ModLogger.Msg($"[MenuBGM] 대상 AudioSource 선택됨: GO={menuSource.gameObject.name}, Clip={menuSource.clip?.name ?? "(null)"}, Vol={menuSource.volume}, Mute={menuSource.mute}, SpatialBlend={menuSource.spatialBlend}, MixerGroup={menuSource.outputAudioMixerGroup?.name ?? "(null)"}");
 
             string uri = new Uri(oggPath).AbsoluteUri;
             UnityWebRequest request = new UnityWebRequest(uri, "GET");
@@ -131,7 +131,7 @@ namespace muse_dash_test
 
                 if (!string.IsNullOrWhiteSpace(request.error))
                 {
-                    MelonLogger.Error($"[MenuBGM] OGG 로드 실패: {oggPath}, error={request.error}");
+                    ModLogger.Error($"[MenuBGM] OGG 로드 실패: {oggPath}, error={request.error}");
                     yield break;
                 }
 
@@ -148,7 +148,7 @@ namespace muse_dash_test
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[MenuBGM] AudioClip 변환 실패: {ex.Message}");
+                    ModLogger.Error($"[MenuBGM] AudioClip 변환 실패: {ex.Message}");
                 }
 
                 if (customClip != null)
@@ -174,11 +174,11 @@ namespace muse_dash_test
                     if (previousInjected != null && previousInjected != customClip)
                     {
                         UnityEngine.Object.Destroy(previousInjected);
-                        MelonLogger.Msg($"[MenuBGM] 이전 커스텀 클립 해제: {previousInjected.name}");
+                        ModLogger.Msg($"[MenuBGM] 이전 커스텀 클립 해제: {previousInjected.name}");
                     }
 
-                    MelonLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
-                    MelonLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
+                    ModLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
+                    ModLogger.Msg($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
 
                     // 후속 볼륨 페이드아웃이나 변경 현상 감시를 위해 실시간 모니터러 작동
                     // (바로 위 가드에서 generation == monitorGeneration을 확인했으므로 같은 값이며,
@@ -203,17 +203,17 @@ namespace muse_dash_test
                     AudioSource source = bgmGo.GetComponent<AudioSource>();
                     if (source != null && source.gameObject.activeInHierarchy)
                     {
-                        MelonLogger.Msg($"[MenuBGM] 핀포인트 매칭 성공: GO={bgmGo.name}");
+                        ModLogger.Msg($"[MenuBGM] 핀포인트 매칭 성공: GO={bgmGo.name}");
                         return source;
                     }
                 }
 
                 // 핀포인트 검색 실패 시에만 예외적으로 씬 내 전체 스캔 진행 (폴백)
-                MelonLogger.Msg("[MenuBGM] 핀포인트 검색 실패, 씬 내 모든 AudioSource 스캔 폴백 진행");
+                ModLogger.Msg("[MenuBGM] 핀포인트 검색 실패, 씬 내 모든 AudioSource 스캔 폴백 진행");
                 AudioSource[] sources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
                 if (sources == null || sources.Length == 0)
                 {
-                    MelonLogger.Warning("[MenuBGM] 씬 내에 어떠한 AudioSource도 존재하지 않습니다.");
+                    ModLogger.Warning("[MenuBGM] 씬 내에 어떠한 AudioSource도 존재하지 않습니다.");
                     return null;
                 }
 
@@ -222,27 +222,27 @@ namespace muse_dash_test
                     if (source == null) continue;
                     string goName = source.gameObject != null ? source.gameObject.name : "(null)";
                     string clipName = source.clip != null ? source.clip.name : "(null)";
-                    MelonLogger.Msg($"[MenuBGM] 후보 - GO: {goName}, Clip: {clipName}, Playing: {source.isPlaying}, Vol: {source.volume}, Mute: {source.mute}, SpatialBlend: {source.spatialBlend}, Enabled: {source.enabled}, Active: {source.gameObject?.activeInHierarchy}");
+                    ModLogger.Msg($"[MenuBGM] 후보 - GO: {goName}, Clip: {clipName}, Playing: {source.isPlaying}, Vol: {source.volume}, Mute: {source.mute}, SpatialBlend: {source.spatialBlend}, Enabled: {source.enabled}, Active: {source.gameObject?.activeInHierarchy}");
                 }
 
                 AudioSource selectedSource = FindActiveSource(s => s.gameObject.name.Equals("BGM", StringComparison.OrdinalIgnoreCase));
                 if (selectedSource != null)
                 {
-                    MelonLogger.Msg($"[MenuBGM] 0단계(이름 매칭) 성공: GO={selectedSource.gameObject.name}");
+                    ModLogger.Msg($"[MenuBGM] 0단계(이름 매칭) 성공: GO={selectedSource.gameObject.name}");
                     return selectedSource;
                 }
 
                 selectedSource = FindActiveSource(IsLikelySoundtrackSource);
                 if (selectedSource != null)
                 {
-                    MelonLogger.Msg($"[MenuBGM] 1단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
+                    ModLogger.Msg($"[MenuBGM] 1단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
                     return selectedSource;
                 }
 
                 selectedSource = FindActiveSource(IsPlayingNonEffectSource);
                 if (selectedSource != null)
                 {
-                    MelonLogger.Msg($"[MenuBGM] 2단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
+                    ModLogger.Msg($"[MenuBGM] 2단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
                     return selectedSource;
                 }
 
@@ -259,7 +259,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MenuBGM] FindMenuAudioSource 예외: {ex}");
+                ModLogger.Error($"[MenuBGM] FindMenuAudioSource 예외: {ex}");
             }
             return null;
         }
@@ -302,38 +302,38 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MenuBGM] ogg 탐색 실패: {ex}");
+                ModLogger.Error($"[MenuBGM] ogg 탐색 실패: {ex}");
                 return null;
             }
         }
 
         private static IEnumerator MonitorAudioSource(AudioSource source, string uid, string clipName, int generation)
         {
-            MelonLogger.Msg($"[MenuBGM.Monitor] 모니터링 시작: GO={source.gameObject.name}, targetClip={clipName}");
+            ModLogger.Msg($"[MenuBGM.Monitor] 모니터링 시작: GO={source.gameObject.name}, targetClip={clipName}");
             int i = 0;
             while (true)
             {
                 yield return new WaitForSeconds(5.0f);
                 if (generation != monitorGeneration)
                 {
-                    MelonLogger.Msg("[MenuBGM.Monitor] 모니터링 세대가 변경되어 종료합니다.");
+                    ModLogger.Msg("[MenuBGM.Monitor] 모니터링 세대가 변경되어 종료합니다.");
                     yield break;
                 }
 
                 if (source == null)
                 {
-                    MelonLogger.Warning("[MenuBGM.Monitor] AudioSource가 파괴되었습니다.");
+                    ModLogger.Warning("[MenuBGM.Monitor] AudioSource가 파괴되었습니다.");
                     yield break;
                 }
 
                 string currentClip = source.clip != null ? source.clip.name : "(null)";
                 if (currentClip != clipName || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
                 {
-                    MelonLogger.Msg($"[MenuBGM.Monitor] 대상 클립 또는 선택 곡이 변경되어 모니터링을 종료합니다. (현재 클립: {currentClip})");
+                    ModLogger.Msg($"[MenuBGM.Monitor] 대상 클립 또는 선택 곡이 변경되어 모니터링을 종료합니다. (현재 클립: {currentClip})");
                     yield break;
                 }
 
-                MelonLogger.Msg($"[MenuBGM.Monitor] T+{i*5.0f:F1}s - Playing: {source.isPlaying}, Vol: {source.volume:F4}, Mute: {source.mute}, Clip: {currentClip}, Time: {source.time:F2}");
+                ModLogger.Msg($"[MenuBGM.Monitor] T+{i*5.0f:F1}s - Playing: {source.isPlaying}, Vol: {source.volume:F4}, Mute: {source.mute}, Clip: {currentClip}, Time: {source.time:F2}");
                 i++;
             }
         }
@@ -354,14 +354,14 @@ namespace muse_dash_test
                     // MD는 단일 씬(UISystem_PC) 구조라 씬 이름으로는 "곡 선택/준비 화면을 벗어났는지"를 구분할 수 없다.
                     // 대신 곡 선택(PnlStage)/준비(PnlPreparation) 패널이 실제로 활성 상태인지를 직접 확인한다.
                     bool inStageSelectionContext = IsStageSelectionContextActive();
-                    MelonLogger.Msg($"[MenuBGM.Patch.Debug] set_clip 호출: selectedUid={selectedUid ?? "(null)"}, requestedClip={clipNameForLog}, inStageSelectionContext={inStageSelectionContext}");
+                    ModLogger.Msg($"[MenuBGM.Patch.Debug] set_clip 호출: selectedUid={selectedUid ?? "(null)"}, requestedClip={clipNameForLog}, inStageSelectionContext={inStageSelectionContext}");
 
                     if (!inStageSelectionContext)
                     {
                         // 곡 선택/준비 화면을 벗어나면 커스텀 BGM 재생을 정지하고 모니터링을 종료하여 게임이 자기 BGM을 회복하도록 합니다.
                         if (!string.IsNullOrEmpty(CustomPlaySession.Current.SelectedMusicUid))
                         {
-                            MelonLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 커스텀 BGM 정지 및 모니터링 종료: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
+                            ModLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 커스텀 BGM 정지 및 모니터링 종료: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
                             HwaMenuBgmController.StopCustomMenuBgm("곡 선택/준비 화면 이탈 감지");
                             HwaMenuBgmController.StopMenuMonitoring("곡 선택/준비 화면 이탈 감지");
                         }
@@ -376,7 +376,7 @@ namespace muse_dash_test
                         if (!isCustomClip)
                         {
                             __instance.Stop();
-                            MelonLogger.Msg($"[MenuBGM.Patch] 가상 곡 활성화 중 허용되지 않은 클립 대입 차단! (selectedUid={selectedUid}, 요청 클립: {clipNameForLog})");
+                            ModLogger.Msg($"[MenuBGM.Patch] 가상 곡 활성화 중 허용되지 않은 클립 대입 차단! (selectedUid={selectedUid}, 요청 클립: {clipNameForLog})");
                             return false;
                         }
                     }
@@ -384,7 +384,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MenuBGM.Patch] set_clip 패치 에러: {ex}");
+                ModLogger.Error($"[MenuBGM.Patch] set_clip 패치 에러: {ex}");
             }
             return true;
         }
@@ -421,7 +421,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[MenuBGM.Patch] IsStageSelectionContextActive 예외: {ex}");
+                ModLogger.Error($"[MenuBGM.Patch] IsStageSelectionContextActive 예외: {ex}");
             }
             return false;
         }

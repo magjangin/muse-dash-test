@@ -1,4 +1,4 @@
-# 로그와 문제 해결 가이드
+﻿# 로그와 문제 해결 가이드
 
 이 문서는 모드가 출력하는 로그를 어떻게 읽고, 문제가 생겼을 때 어디부터 확인할지 정리한 문서입니다.
 
@@ -259,12 +259,13 @@ LevelDesignerNameTextObjectNames
 
 ## 로그가 너무 많을 때 (로그 레벨 제어 및 UMPC 최적화)
 
-v0.10.0부터 **하드웨어 자동 감지(`DeviceDetector`)**와 **동적 로그 레벨 제어(`ModLogger`, `MelonLoggerInterceptor`)** 시스템이 탑재되었습니다.
+v0.10.0부터 **하드웨어 자동 감지(`DeviceDetector`)**와 **동적 로그 레벨 제어(`ModLogger`)** 시스템이 탑재되었습니다.
 
 ### 1. UMPC(핸드헬드) 환경에서의 자동 음소거 (Auto Mode)
 * **배경**: ROG Ally, Steam Deck, Legion Go 등 UMPC 기기는 저전력(TDP 15~25W) 및 공유 메모리 구조를 가집니다. 게임 루프 또는 차트 파싱(롱노트·샌드백 매칭 수백 건) 시 콘솔 문자열 렌더링 및 디스크 파일 I/O로 인한 순간 끊김(Stuttering/프레임 드랍)이 발생할 수 있습니다.
 * **동작**: 시작 시 UMPC가 감지되면 로그 레벨이 **`Error`**(치명적 오류만)로 자동 강하됩니다.
-* **전역 가로채기 (`MelonLoggerInterceptor`)**: 모드 내부의 모든 `MelonLogger.Msg`, `MelonLogger.Warning` 호출을 프레임워크 레벨에서 프리픽스로 가로채 차단하므로, 일반 플레이 중에는 로그가 100% 조용하게 유지됩니다.
+* **단일 창구 (`ModLogger`)**: 모드 내부의 모든 로그는 `ModLogger.Msg/Warning/Error`를 거치며, 레벨에 미달하면 호출부에서 곧바로 반환되어 문자열 조립·콘솔 렌더링·파일 I/O가 아예 일어나지 않습니다. 일반 플레이 중에는 로그가 조용하게 유지됩니다.
+* **참고**: v0.10.0에는 `MelonLogger`를 Harmony로 전역 가로채는 방식이 있었지만, MelonLoader 0.7.3에서 관리 메서드 디투어가 NRE로 실패해 음소거가 아예 걸리지 않았습니다. 시작 로그에 `Failed to HarmonyInit PatchAll: muse_dash_test.MelonLoggerInterceptor`가 보인다면 그 버전입니다. 현재는 제거되었습니다.
 
 ### 2. 수동 로그 레벨 설정 (`MelonPreferences.cfg`)
 `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 섹션에서 `LogLevel` 키를 직접 변경할 수 있습니다:

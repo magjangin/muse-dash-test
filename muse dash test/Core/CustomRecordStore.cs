@@ -36,7 +36,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[CustomRecordStore] 난이도 해석 실패, 1로 폴백: {ex.Message}");
+                ModLogger.Warning($"[CustomRecordStore] 난이도 해석 실패, 1로 폴백: {ex.Message}");
             }
             return 1;
         }
@@ -57,7 +57,7 @@ namespace muse_dash_test
             {
                 if (string.IsNullOrEmpty(uid))
                 {
-                    MelonLogger.Warning("[CustomRecordStore] uid가 비어 있어 기록 저장을 건너뜁니다.");
+                    ModLogger.Warning("[CustomRecordStore] uid가 비어 있어 기록 저장을 건너뜁니다.");
                     return;
                 }
 
@@ -118,7 +118,7 @@ namespace muse_dash_test
                     finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt);
 
                 File.WriteAllText(filePath, json, Encoding.UTF8);
-                MelonLogger.Msg($"[CustomRecordStore] 기록 저장 완료 (신규 최고기록: {isNewHighScore}) → {filePath} (playCount={updatedPlayCount}, score={finalScore}, maxCombo={finalMaxCombo}, acc={finalAccuracy:0.0000}, FC={finalIsFullCombo}, AP={finalIsAllPerfect})");
+                ModLogger.Msg($"[CustomRecordStore] 기록 저장 완료 (신규 최고기록: {isNewHighScore}) → {filePath} (playCount={updatedPlayCount}, score={finalScore}, maxCombo={finalMaxCombo}, acc={finalAccuracy:0.0000}, FC={finalIsFullCombo}, AP={finalIsAllPerfect})");
 
                 try
                 {
@@ -127,12 +127,12 @@ namespace muse_dash_test
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[CustomRecordStore] Discord Presence 갱신 에러: {ex.Message}");
+                    ModLogger.Error($"[CustomRecordStore] Discord Presence 갱신 에러: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomRecordStore] 기록 저장 중 예외: {ex}");
+                ModLogger.Error($"[CustomRecordStore] 기록 저장 중 예외: {ex}");
             }
         }
 
@@ -184,12 +184,12 @@ namespace muse_dash_test
                 string content = File.ReadAllText(filePath, Encoding.UTF8);
                 var record = ParseJson(content);
                 if (record != null && record.playCount <= 0) record.playCount = 1;
-                MelonLogger.Msg($"[CustomRecordStore] 기록 로드 성공 → {filePath} (playCount={record?.playCount}, score={record?.score}, acc={record?.accuracy:0.0000}, FC={record?.isFullCombo})");
+                ModLogger.Msg($"[CustomRecordStore] 기록 로드 성공 → {filePath} (playCount={record?.playCount}, score={record?.score}, acc={record?.accuracy:0.0000}, FC={record?.isFullCombo})");
                 return record;
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[CustomRecordStore] 기록 로드 중 예외 (uid={uid}, diff={difficulty}): {ex}");
+                ModLogger.Error($"[CustomRecordStore] 기록 로드 중 예외 (uid={uid}, diff={difficulty}): {ex}");
                 return null;
             }
         }

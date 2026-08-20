@@ -123,7 +123,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[InputOverlay] 설정 감지 중 예외 발생: {ex.Message}");
+                ModLogger.Error($"[InputOverlay] 설정 감지 중 예외 발생: {ex.Message}");
             }
         }
 
@@ -165,13 +165,13 @@ namespace muse_dash_test
                 string cp949Text = cp949.GetString(bytes, offset, bytes.Length - offset);
                 if (cp949Text.Contains("오토플레이") || cp949Text.Contains("키가로크기") || cp949Text.Contains("판정바"))
                 {
-                    MelonLogger.Msg("[InputOverlay] config.txt를 CP949(EUC-KR) 인코딩으로 인식하여 로드했습니다.");
+                    ModLogger.Msg("[InputOverlay] config.txt를 CP949(EUC-KR) 인코딩으로 인식하여 로드했습니다.");
                     return cp949Text;
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[InputOverlay] CP949 디코딩 중 예외: {ex.Message}");
+                ModLogger.Warning($"[InputOverlay] CP949 디코딩 중 예외: {ex.Message}");
             }
 
             return utf8Text;
@@ -316,12 +316,12 @@ namespace muse_dash_test
                     }
                 }
 
-                MelonLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 모바일터치={enableMobileTouch})");
+                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 모바일터치={enableMobileTouch})");
                 UpdateTextures();
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[InputOverlay] 설정 파일 파싱 중 에러 발생: {ex.Message}");
+                ModLogger.Error($"[InputOverlay] 설정 파일 파싱 중 에러 발생: {ex.Message}");
             }
         }
         /// <summary>
@@ -345,7 +345,7 @@ namespace muse_dash_test
                     ModConfig.VerboseLog($"[InputOverlay] '{key}' → false (입력값: '{val}')");
                     return false;
                 default:
-                    MelonLogger.Warning($"[InputOverlay] '{key}' 파싱 실패: '{val}'은 인식할 수 없는 값입니다. (true/false/on/off/켜짐/끔/1/0 중 하나를 사용하세요) 기존 값({fallback}) 유지.");
+                    ModLogger.Warning($"[InputOverlay] '{key}' 파싱 실패: '{val}'은 인식할 수 없는 값입니다. (true/false/on/off/켜짐/끔/1/0 중 하나를 사용하세요) 기존 값({fallback}) 유지.");
                     return fallback;
             }
         }

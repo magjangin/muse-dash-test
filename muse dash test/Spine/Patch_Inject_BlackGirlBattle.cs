@@ -39,20 +39,20 @@ namespace muse_dash_test
             var customAsset = CustomSkinInjector.GetOrBuild(baseName);
             if (customAsset == null)
             {
-                MelonLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
+                ModLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
                 return;
             }
 
             var ska = instance.skeletonAnimation;
             if (ska == null)
             {
-                MelonLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
+                ModLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
                 return;
             }
 
             ska.skeletonDataAsset = customAsset;
             ska.Initialize(true);
-            MelonLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료");
+            ModLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료");
         }
     }
 

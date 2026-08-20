@@ -16,7 +16,7 @@ public class Boss_Play_Patch
                 return true;
             }
 
-            MelonLogger.Msg($"Il2Cpp.Boss.Play 호출: key={key}, playAnimator={playAnimator}, instance={__instance}");
+            ModLogger.Msg($"Il2Cpp.Boss.Play 호출: key={key}, playAnimator={playAnimator}, instance={__instance}");
 
             if (key != null && key.StartsWith("swap:"))
             {
@@ -63,14 +63,14 @@ public class Boss_Play_Patch
                 {
                     // 예전에는 여기서 아무 말 없이 Play를 통째로 삼켜 버려서, 오타가 나면
                     // 보스가 조용히 사라지기만 했습니다.
-                    MelonLogger.Warning($"[DynamicSwap] swap 키를 해석하지 못해 보스 교체를 건너뜁니다: '{key}' (형식: swap:보스이름:씬번호)");
+                    ModLogger.Warning($"[DynamicSwap] swap 키를 해석하지 못해 보스 교체를 건너뜁니다: '{key}' (형식: swap:보스이름:씬번호)");
                 }
                 return false; // 원래 Play("swap:...") 호출은 무시 및 중단
             }
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"Boss.Play Prefix 예외: {ex}");
+            ModLogger.Error($"Boss.Play Prefix 예외: {ex}");
         }
         return true;
     }
@@ -113,7 +113,7 @@ public class Boss_Play_Patch
                 target.SetActive(true);
                 if (ModConfig.EnableVerboseLog)
                 {
-                    MelonLogger.Msg($"[DynamicSwap] {label}: '{target.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+                    ModLogger.Msg($"[DynamicSwap] {label}: '{target.name}'이(가) 꺼져 있어 강제로 켰습니다.");
                 }
             }
 
@@ -123,13 +123,13 @@ public class Boss_Play_Patch
                 parent.gameObject.SetActive(true);
                 if (ModConfig.EnableVerboseLog)
                 {
-                    MelonLogger.Msg($"[DynamicSwap] {label}: 부모 '{parent.gameObject.name}'이(가) 꺼져 있어 강제로 켰습니다.");
+                    ModLogger.Msg($"[DynamicSwap] {label}: 부모 '{parent.gameObject.name}'이(가) 꺼져 있어 강제로 켰습니다.");
                 }
             }
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning($"[DynamicSwap] {label} 활성화 실패: {ex.Message}");
+            ModLogger.Warning($"[DynamicSwap] {label} 활성화 실패: {ex.Message}");
         }
     }
 
@@ -140,14 +140,14 @@ public class Boss_Play_Patch
 
         if (boss == null)
         {
-            MelonLogger.Msg($"[DynamicSwap.State] {phase}: boss=(null)");
+            ModLogger.Msg($"[DynamicSwap.State] {phase}: boss=(null)");
             return;
         }
 
         // boss.go는 여기서 항상 KeyNotFoundException을 던지므로 찍지 않습니다
         // (사유는 ForceActivateBossObjects 주석 참고). 대신 그 원인이 되는
         // curBossIndex와 bossObjects 키를 나란히 남겨 불일치가 눈에 보이게 합니다.
-        MelonLogger.Msg(
+        ModLogger.Msg(
             $"[DynamicSwap.State] {phase}: " +
             $"curBossObject={Describe(SafeGet(() => boss.m_CurBossObject, "m_CurBossObject"))}, " +
             $"curBossIndex={SafeGet(() => boss.m_CurBossIndex.ToString(), "m_CurBossIndex") ?? "?"}, " +
@@ -202,7 +202,7 @@ public class Boss_Play_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning($"[DynamicSwap] Boss.{memberName} 접근 실패: {ex.Message}");
+            ModLogger.Warning($"[DynamicSwap] Boss.{memberName} 접근 실패: {ex.Message}");
             return null;
         }
     }
@@ -274,7 +274,7 @@ public class Boss_InitBossObject_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"TryGetFirstBmsBoss 예외: {ex}");
+            ModLogger.Error($"TryGetFirstBmsBoss 예외: {ex}");
         }
 
         return false;
@@ -316,7 +316,7 @@ public class Boss_InitBossObject_Patch
                                     {
                                         if (boss.m_BossObjects == null || !boss.m_BossObjects.ContainsKey(sceneId))
                                         {
-                                            MelonLogger.Msg($"[DynamicSwap] BMS 보스 사전 로드(Pre-warm): name={ev.InWav.BossName}, scene={sceneId}");
+                                            ModLogger.Msg($"[DynamicSwap] BMS 보스 사전 로드(Pre-warm): name={ev.InWav.BossName}, scene={sceneId}");
                                             boss.InitBossObject(ev.InWav.BossName, sceneId, false);
                                             if (boss.m_CurBossObject != null)
                                             {
@@ -337,7 +337,7 @@ public class Boss_InitBossObject_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning($"[DynamicSwap] BMS 보스 프리워밍 중 예외: {ex.Message}");
+            ModLogger.Warning($"[DynamicSwap] BMS 보스 프리워밍 중 예외: {ex.Message}");
         }
     }
 
@@ -345,17 +345,17 @@ public class Boss_InitBossObject_Patch
     {
         try
         {
-            MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
+            ModLogger.Msg($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
 
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
-                MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: 변경 건너뜀 ({CustomPlaySession.Current.DescribeApplyDecision()})");
+                ModLogger.Msg($"Il2Cpp.Boss.InitBossObject: 변경 건너뜀 ({CustomPlaySession.Current.DescribeApplyDecision()})");
                 return;
             }
 
             if (CustomPlaySession.Current.IsDynamicBossSwap)
             {
-                MelonLogger.Msg("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
+                ModLogger.Msg("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
                 return;
             }
 
@@ -364,7 +364,7 @@ public class Boss_InitBossObject_Patch
             {
                 PrewarmBmsBosses(__instance);
 
-                MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: BMS 첫 'in' 노트를 통한 동적 보스 매핑 적용 -> name={firstBossName}, scene={firstBossScene}");
+                ModLogger.Msg($"Il2Cpp.Boss.InitBossObject: BMS 첫 'in' 노트를 통한 동적 보스 매핑 적용 -> name={firstBossName}, scene={firstBossScene}");
                 name = firstBossName;
                 scene = firstBossScene;
                 return;
@@ -378,7 +378,7 @@ public class Boss_InitBossObject_Patch
                 bool isLastMatch = (!r.OrigIsLast.HasValue) || (isLast == r.OrigIsLast.Value);
                 if (nameMatch && sceneMatch && isLastMatch)
                 {
-                    MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject: Static 폴백 변경 적용 -> name={r.NewName}, scene={r.NewScene}");
+                    ModLogger.Msg($"Il2Cpp.Boss.InitBossObject: Static 폴백 변경 적용 -> name={r.NewName}, scene={r.NewScene}");
                     name = r.NewName;
                     scene = r.NewScene;
                     break;
@@ -387,7 +387,7 @@ public class Boss_InitBossObject_Patch
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"Boss.InitBossObject Prefix 예외: {ex}");
+            ModLogger.Error($"Boss.InitBossObject Prefix 예외: {ex}");
         }
     }
 
@@ -395,13 +395,13 @@ public class Boss_InitBossObject_Patch
     {
         try
         {
-            MelonLogger.Msg($"Il2Cpp.Boss.InitBossObject 완료: name={name}, scene={scene}, isLast={isLast}");
+            ModLogger.Msg($"Il2Cpp.Boss.InitBossObject 완료: name={name}, scene={scene}, isLast={isLast}");
 
             // (프리팹 교체 로직은 제거됨 — 간단한 매핑/로깅만 수행합니다)
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"Boss.InitBossObject Postfix 예외: {ex}");
+            ModLogger.Error($"Boss.InitBossObject Postfix 예외: {ex}");
         }
     }
 }
@@ -415,11 +415,11 @@ public class Boss_SceneBossChange_Patch
     {
         try
         {
-            MelonLogger.Msg($"Il2Cpp.Boss.SceneBossChange 호출: idx={idx}, instance={__instance}");
+            ModLogger.Msg($"Il2Cpp.Boss.SceneBossChange 호출: idx={idx}, instance={__instance}");
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"Boss.SceneBossChange Prefix 예외: {ex}");
+            ModLogger.Error($"Boss.SceneBossChange Prefix 예외: {ex}");
         }
     }
 
@@ -427,11 +427,11 @@ public class Boss_SceneBossChange_Patch
     {
         try
         {
-            MelonLogger.Msg($"Il2Cpp.Boss.SceneBossChange 완료: idx={idx}");
+            ModLogger.Msg($"Il2Cpp.Boss.SceneBossChange 완료: idx={idx}");
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"Boss.SceneBossChange Postfix 예외: {ex}");
+            ModLogger.Error($"Boss.SceneBossChange Postfix 예외: {ex}");
         }
     }
 }

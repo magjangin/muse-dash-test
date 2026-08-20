@@ -16,14 +16,14 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg($"[StageBattleComponent.LoadMusicData] 호출됨: {__instance}");
+                ModLogger.Msg($"[StageBattleComponent.LoadMusicData] 호출됨: {__instance}");
                 // [비활성] MusicData 덤프 로직. 평소엔 로그 과다/성능 때문에 꺼두며,
                 // 노트 주입 디버깅이 필요할 때만 아래 한 줄을 주석 해제한다.
                 // StageBattleMusicDataDump.Dump(__instance);
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[StageBattleComponent.LoadMusicData] MusicData 덤프 예외: {ex}");
+                ModLogger.Error($"[StageBattleComponent.LoadMusicData] MusicData 덤프 예외: {ex}");
             }
         }
     }
@@ -40,7 +40,7 @@ namespace muse_dash_test
         {
             if (component == null)
             {
-                MelonLogger.Msg("[StageBattleComponent.MusicDataDump] component=null");
+                ModLogger.Msg("[StageBattleComponent.MusicDataDump] component=null");
                 return;
             }
 
@@ -59,7 +59,7 @@ namespace muse_dash_test
 
             if (!dumpedAny)
             {
-                MelonLogger.Msg("[StageBattleComponent.MusicDataDump] MusicData/List<MusicData> 멤버를 찾지 못했습니다.");
+                ModLogger.Msg("[StageBattleComponent.MusicDataDump] MusicData/List<MusicData> 멤버를 찾지 못했습니다.");
             }
         }
 
@@ -69,14 +69,14 @@ namespace muse_dash_test
 
             if (value is MusicData single)
             {
-                MelonLogger.Msg($"[StageBattleComponent.MusicDataDump] member={memberName}, single MusicData");
+                ModLogger.Msg($"[StageBattleComponent.MusicDataDump] member={memberName}, single MusicData");
                 DumpNote(memberName, 0, single, force: true);
                 return true;
             }
 
             if (value is Il2CppSystem.Collections.Generic.List<MusicData> list)
             {
-                MelonLogger.Msg($"[StageBattleComponent.MusicDataDump] member={memberName}, List<MusicData>.Count={list.Count}");
+                ModLogger.Msg($"[StageBattleComponent.MusicDataDump] member={memberName}, List<MusicData>.Count={list.Count}");
                 int emitted = 0;
                 for (int i = 0; i < list.Count; i++)
                 {
@@ -89,7 +89,7 @@ namespace muse_dash_test
 
                     if (emitted >= 80)
                     {
-                        MelonLogger.Msg($"[StageBattleComponent.MusicDataDump] member={memberName}, 덤프 80개에서 중단");
+                        ModLogger.Msg($"[StageBattleComponent.MusicDataDump] member={memberName}, 덤프 80개에서 중단");
                         break;
                     }
                 }
@@ -105,7 +105,7 @@ namespace muse_dash_test
             {
                 if (force)
                 {
-                    MelonLogger.Msg($"[StageBattleComponent.MusicDataDump] {memberName}[{index}] note/null");
+                    ModLogger.Msg($"[StageBattleComponent.MusicDataDump] {memberName}[{index}] note/null");
                     return true;
                 }
                 return false;
@@ -121,7 +121,7 @@ namespace muse_dash_test
 
             if (!interesting) return false;
 
-            MelonLogger.Msg(
+            ModLogger.Msg(
                 $"[StageBattleComponent.MusicDataDump] {memberName}[{index}] objId={Safe(() => note.objId)}, " +
                 $"tick={Safe(() => note.tick)}, dt={Safe(() => note.dt)}, showTick={Safe(() => note.showTick)}, " +
                 $"uid={uid}, mirror_uid={Safe(() => note.noteData.mirror_uid)}, ibms_id={ibmsId}, " +
@@ -185,7 +185,7 @@ namespace muse_dash_test
             {
                 uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
             }
-            MelonLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
+            ModLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
         }
     }
 
@@ -196,7 +196,7 @@ namespace muse_dash_test
         {
             try
             {
-                MelonLogger.Msg($"[StageBattleComponent.Load] 호출됨: {__instance}");
+                ModLogger.Msg($"[StageBattleComponent.Load] 호출됨: {__instance}");
                 // 매 배틀 로드 시마다 미디어 주입 시작 상태 초기화 및 주입 실행
                 HwaBattleMediaController.ResetState();
                 HwaBattleMediaController.StartBattleMediaInjection();
@@ -206,7 +206,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[StageBattleComponent.Load] 예외 발생: {ex}");
+                ModLogger.Error($"[StageBattleComponent.Load] 예외 발생: {ex}");
             }
         }
     }
@@ -216,7 +216,7 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance, bool pauseCorountine)
         {
-            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Pause 호출됨");
+            ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Pause 호출됨");
             HwaBattleMediaController.PauseMedia();
         }
     }
@@ -226,7 +226,7 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance, bool isExit)
         {
-            MelonLogger.Msg($"[StageBattleComponentPatch] StageBattleComponent.Resume 호출됨 (isExit={isExit})");
+            ModLogger.Msg($"[StageBattleComponentPatch] StageBattleComponent.Resume 호출됨 (isExit={isExit})");
             HwaBattleMediaController.ResumeMedia(isExit);
         }
     }
@@ -236,7 +236,7 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
-            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.End 호출됨");
+            ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.End 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             HwaBattleMediaController.StopMedia();
         }
@@ -247,13 +247,13 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
-            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Exit 호출됨");
+            ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Exit 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             // 리셋을 먼저 수행해 StopMedia가 예외를 던져도 stale 플래그가 남지 않게 합니다.
             try { CustomPlaySession.Current.ResetApplyDecision(); }
-            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Exit ResetApplyDecision 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] Exit ResetApplyDecision 예외: {ex}"); }
             try { HwaBattleMediaController.StopMedia(); }
-            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Exit StopMedia 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] Exit StopMedia 예외: {ex}"); }
         }
     }
 
@@ -262,12 +262,12 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
-            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Release 호출됨");
+            ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Release 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             try { CustomPlaySession.Current.ResetApplyDecision(); }
-            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Release ResetApplyDecision 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] Release ResetApplyDecision 예외: {ex}"); }
             try { HwaBattleMediaController.StopMedia(); }
-            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] Release StopMedia 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] Release StopMedia 예외: {ex}"); }
         }
     }
 
@@ -276,12 +276,12 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
-            MelonLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.GameRestart 호출됨");
+            ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.GameRestart 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
             try { CustomPlaySession.Current.ResetApplyDecision(); }
-            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] GameRestart ResetApplyDecision 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] GameRestart ResetApplyDecision 예외: {ex}"); }
             try { HwaBattleMediaController.StopMedia(); }
-            catch (Exception ex) { MelonLogger.Error($"[StageBattleComponentPatch] GameRestart StopMedia 예외: {ex}"); }
+            catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] GameRestart StopMedia 예외: {ex}"); }
         }
     }
 }

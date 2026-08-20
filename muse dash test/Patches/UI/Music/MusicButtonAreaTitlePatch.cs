@@ -14,12 +14,12 @@ public class MusicButtonAreaTitle_RefreshTxt_Patch
             {
                 bool isExperimentMode = PnlStagePatchHelper.IsExperimentModeTitle(title);
                 CustomPlaySession.Current.IsExperimentModeActive = isExperimentMode;
-                MelonLogger.Msg($"[MusicButtonAreaTitle] title='{title ?? "(null)"}', isExperimentMode={isExperimentMode}");
+                ModLogger.Msg($"[MusicButtonAreaTitle] title='{title ?? "(null)"}', isExperimentMode={isExperimentMode}");
             }
         }
         catch (Exception ex)
         {
-            MelonLogger.Error($"MusicButtonAreaTitle.RefreshTxt Prefix 예외: {ex}");
+            ModLogger.Error($"MusicButtonAreaTitle.RefreshTxt Prefix 예외: {ex}");
         }
     }
 }

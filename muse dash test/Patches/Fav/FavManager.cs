@@ -63,10 +63,10 @@ namespace muse_dash_test
                 else if (item["index"].Cast<IVariable>().GetResult<int>() == (int)girl)
                 {
                     bool isUnlock = item["isUnlock"].Cast<IVariable>().GetResult<bool>();
-                    MelonLogger.Msg($"[FavGirl.Debug] ValidGirl({girl}={(int)girl}): DataHelper.items에서 발견됨, isUnlock={isUnlock}");
+                    ModLogger.Msg($"[FavGirl.Debug] ValidGirl({girl}={(int)girl}): DataHelper.items에서 발견됨, isUnlock={isUnlock}");
                     return isUnlock;
                 }
-            MelonLogger.Msg($"[FavGirl.Debug] ValidGirl({girl}={(int)girl}): DataHelper.items에 type=character, index={(int)girl}인 항목이 없음");
+            ModLogger.Msg($"[FavGirl.Debug] ValidGirl({girl}={(int)girl}): DataHelper.items에 type=character, index={(int)girl}인 항목이 없음");
             return false;
         }
 
@@ -79,7 +79,7 @@ namespace muse_dash_test
                     : DataHelper.selectedRoleIndex;
                 bool favValid = ValidGirl(FavSave.FavGirl);
                 bool dataValid = ValidGirl(dataID);
-                MelonLogger.Msg($"[FavGirl.Debug] PrefixStoreGirlDoThing: favGirl={FavSave.FavGirl}({(int)FavSave.FavGirl}), favValid={favValid}, currentRole={dataID}, currentRoleValid={dataValid}, targetGlobal={targetGlobal}");
+                ModLogger.Msg($"[FavGirl.Debug] PrefixStoreGirlDoThing: favGirl={FavSave.FavGirl}({(int)FavSave.FavGirl}), favValid={favValid}, currentRole={dataID}, currentRoleValid={dataValid}, targetGlobal={targetGlobal}");
                 if (favValid && dataValid)
                 {
                     _oldGirl.Add(dataID);
@@ -89,18 +89,18 @@ namespace muse_dash_test
                     {
                         DataHelper.selectedRoleIndex = (int)FavSave.FavGirl;
                     }
-                    MelonLogger.Msg($"[FavGirl.Debug] 교체 적용됨: role -> {(int)FavSave.FavGirl}");
+                    ModLogger.Msg($"[FavGirl.Debug] 교체 적용됨: role -> {(int)FavSave.FavGirl}");
                 }
                 else
                 {
-                    MelonLogger.Msg($"[FavGirl.Debug] 교체 스킵됨 (favValid={favValid}, dataValid={dataValid})");
+                    ModLogger.Msg($"[FavGirl.Debug] 교체 스킵됨 (favValid={favValid}, dataValid={dataValid})");
                 }
 
                 act?.Invoke();
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"[FavManager] PrefixStoreGirlDoThing 예외: {e}");
+                ModLogger.Error($"[FavManager] PrefixStoreGirlDoThing 예외: {e}");
             }
         }
 
@@ -125,7 +125,7 @@ namespace muse_dash_test
             }
             catch (Exception e)
             {
-                MelonLogger.Error($"[FavManager] PostfixRestoreGirlDoThing 예외: {e}");
+                ModLogger.Error($"[FavManager] PostfixRestoreGirlDoThing 예외: {e}");
             }
         }
 
@@ -154,7 +154,7 @@ namespace muse_dash_test
             {
                 var currentRole = GlobalDataBase.s_DbBattleStage.m_SelectedRole;
                 var favGirl = FavSave.FavGirl;
-                MelonLogger.Msg($"[FavGirl] 현재 스킬 캐릭터: {currentRole}, 즐겨찾기 캐릭터: {favGirl}");
+                ModLogger.Msg($"[FavGirl] 현재 스킬 캐릭터: {currentRole}, 즐겨찾기 캐릭터: {favGirl}");
                 
                 if (GlobalDataBase.s_DbBattleStage.m_SelectedRole == (int)GirlID.RIN_SLEEP &&
                     FavSave.FavGirl != GirlID.RIN_SLEEP && FavSave.FavGirl != GirlID.NONE)
@@ -168,7 +168,7 @@ namespace muse_dash_test
                     }
                     catch (Exception e)
                     {
-                        MelonLogger.Error($"[FavGirl] Sleepwalker 수면 파티클 생성 실패: {e}");
+                        ModLogger.Error($"[FavGirl] Sleepwalker 수면 파티클 생성 실패: {e}");
                     }
                 }
 
@@ -183,14 +183,14 @@ namespace muse_dash_test
                 if (GlobalDataBase.s_DbBattleStage.m_SelectedRole == (int)GirlID.MARIJA_BLACK &&
                     FavSave.FavGirl != GirlID.MARIJA_BLACK && FavSave.FavGirl != GirlID.NONE)
                 {
-                    MelonLogger.Msg("[FavGirl] 블랙소녀 스킬 활성화됨 (판정 범위 확장)");
+                    ModLogger.Msg("[FavGirl] 블랙소녀 스킬 활성화됨 (판정 범위 확장)");
                 }
                 
                 // 블랙 마리쟈 스킬 효과 제거
                 if (FavSave.FavGirl == GirlID.MARIJA_BLACK &&
                     GlobalDataBase.s_DbBattleStage.m_SelectedRole != (int)GirlID.MARIJA_BLACK)
                 {
-                    MelonLogger.Msg("[FavGirl] 블랙 마리쟈 스킬 효과 제거됨");
+                    ModLogger.Msg("[FavGirl] 블랙 마리쟈 스킬 효과 제거됨");
                 }
             });
         }
@@ -264,7 +264,7 @@ namespace muse_dash_test
         {
             if (DataHelper.selectedElfinIndex != GlobalDataBase.s_DbBattleStage.m_SelectedElfin)
             {
-                MelonLogger.Warning("[FavGirl] 배틀 엘핀과 실제 엘핀이 다릅니다. 조정 중!");
+                ModLogger.Warning("[FavGirl] 배틀 엘핀과 실제 엘핀이 다릅니다. 조정 중!");
                 GlobalDataBase.s_DbBattleStage.m_SelectedElfin = DataHelper.selectedElfinIndex;
             }
         }

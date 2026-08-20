@@ -50,7 +50,7 @@ public class GameMusicScene_InitTimer_Patch
         }
         catch (Exception ex) 
         { 
-            MelonLogger.Error($"[GameMusicScene.InitTimer] Prefix 예외: {ex}"); 
+            ModLogger.Error($"[GameMusicScene.InitTimer] Prefix 예외: {ex}"); 
         }
     }
 
@@ -109,7 +109,7 @@ public class GameMusicScene_InitTimer_Patch
             if (!loggedGhostUids.Add(beforeUid)) return;
 
             var nd = note.noteData;
-            MelonLogger.Msg($"[GameMusicScene.InitTimer.Ghost] uid {beforeUid} -> {nd.uid ?? "(null)"}, " +
+            ModLogger.Msg($"[GameMusicScene.InitTimer.Ghost] uid {beforeUid} -> {nd.uid ?? "(null)"}, " +
                             $"prefab {beforePrefab ?? "(null)"} -> {nd.prefab_name ?? "(null)"}, scene={nd.scene ?? "(null)"}, " +
                             $"type={nd.type}, pathway={nd.pathway}, tick={note.tick}, showTick={note.showTick}, dt={note.dt}");
         }
@@ -226,7 +226,7 @@ public class GameMusicScene_InitSceneEvents_Patch
             try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
             SceneDiagnosticLogger.Log("GameMusicScene.InitSceneEvents", $"[GameMusicScene.InitSceneEvents] PRE frame={frame}, curSceneName={SafeCurSceneName(__instance)}", 20);
         }
-        catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.InitSceneEvents] Prefix 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[GameMusicScene.InitSceneEvents] Prefix 예외: {ex}"); }
     }
 
     public static void Postfix(Il2CppGameLogic.GameMusicScene __instance)
@@ -239,7 +239,7 @@ public class GameMusicScene_InitSceneEvents_Patch
             try { sceneCount = __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1; } catch (Exception) { }
             SceneDiagnosticLogger.Log("GameMusicScene.InitSceneEvents", $"[GameMusicScene.InitSceneEvents] POST scenes.Count={sceneCount}, curSceneName={SafeCurSceneName(__instance)}", 20);
         }
-        catch (Exception ex) { MelonLogger.Error($"[GameMusicScene.InitSceneEvents] Postfix 예외: {ex}"); }
+        catch (Exception ex) { ModLogger.Error($"[GameMusicScene.InitSceneEvents] Postfix 예외: {ex}"); }
     }
 
     private static string SafeCurSceneName(Il2CppGameLogic.GameMusicScene scene)

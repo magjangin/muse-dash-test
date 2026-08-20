@@ -21,7 +21,7 @@ namespace muse_dash_test
             var name = __instance.gameObject.name;
             if (name.ToLowerInvariant().Contains("battle"))
             {
-                MelonLogger.Msg($"[SkinNameProbe] 배틀 오브젝트 이름 = \"{name}\"");
+                ModLogger.Msg($"[SkinNameProbe] 배틀 오브젝트 이름 = \"{name}\"");
             }
         }
     }
