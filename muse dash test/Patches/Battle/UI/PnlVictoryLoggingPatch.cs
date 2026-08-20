@@ -31,7 +31,7 @@ namespace muse_dash_test.Patches.Battle.UI
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlVictoryLoggingPatch] TargetMethods 탐색 중 예외: {ex}");
+                ModLogger.Error($"[PnlVictoryLoggingPatch] TargetMethods 탐색 중 예외: {ex}");
             }
             return methods;
         }
@@ -41,11 +41,11 @@ namespace muse_dash_test.Patches.Battle.UI
             try
             {
                 string methodName = __originalMethod != null ? __originalMethod.Name : "(unknown)";
-                MelonLogger.Msg($"🏆 [PnlVictory.{methodName}.Prefix] 호출됨! ActiveSelf={(__instance != null && __instance.gameObject != null ? __instance.gameObject.activeSelf.ToString() : "null")}");
+                ModLogger.Msg($"🏆 [PnlVictory.{methodName}.Prefix] 호출됨! ActiveSelf={(__instance != null && __instance.gameObject != null ? __instance.gameObject.activeSelf.ToString() : "null")}");
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlVictoryLoggingPatch.Prefix] 예외 발생: {ex}");
+                ModLogger.Error($"[PnlVictoryLoggingPatch.Prefix] 예외 발생: {ex}");
             }
         }
 
@@ -54,7 +54,7 @@ namespace muse_dash_test.Patches.Battle.UI
             try
             {
                 string methodName = __originalMethod != null ? __originalMethod.Name : "(unknown)";
-                MelonLogger.Msg($"🏆 [PnlVictory.{methodName}.Postfix] 실행 완료!");
+                ModLogger.Msg($"🏆 [PnlVictory.{methodName}.Postfix] 실행 완료!");
 
                 if (__instance != null && (methodName == "OnVictory" || methodName == "OnEnable" || methodName == "SetResult"))
                 {
@@ -63,7 +63,7 @@ namespace muse_dash_test.Patches.Battle.UI
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlVictoryLoggingPatch.Postfix] 예외 발생: {ex}");
+                ModLogger.Error($"[PnlVictoryLoggingPatch.Postfix] 예외 발생: {ex}");
             }
         }
 
@@ -77,7 +77,7 @@ namespace muse_dash_test.Patches.Battle.UI
                     uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
                 }
 
-                MelonLogger.Msg($"📊 [PnlVictory.Diagnostics] 결과 패치 상세 진단 (UID={uid}):");
+                ModLogger.Msg($"📊 [PnlVictory.Diagnostics] 결과 패치 상세 진단 (UID={uid}):");
 
                 var target = VictoryDataCache.ActiveTarget;
                 if (target != null)
@@ -90,22 +90,22 @@ namespace muse_dash_test.Patches.Battle.UI
                     float acc = target.GetAccuracy();
                     bool fc = target.IsFullCombo();
 
-                    MelonLogger.Msg($"   - [TargetRecord] Score={score}, MaxCombo={maxCombo}, Acc={acc * 100f:F2}%, Perfect={perfect}, Great={great}, Miss={miss}, FC={fc}");
+                    ModLogger.Msg($"   - [TargetRecord] Score={score}, MaxCombo={maxCombo}, Acc={acc * 100f:F2}%, Perfect={perfect}, Great={great}, Miss={miss}, FC={fc}");
                 }
                 else
                 {
-                    MelonLogger.Warning("   - [TargetRecord] VictoryDataCache.ActiveTarget가 null입니다.");
+                    ModLogger.Warning("   - [TargetRecord] VictoryDataCache.ActiveTarget가 null입니다.");
                 }
 
                 var curControls = ModReflection.GetValue(instance, "CurControls", silent: true);
                 if (curControls != null)
                 {
-                    MelonLogger.Msg($"   - [CurControls] 발견됨: type={curControls.GetType().Name}");
+                    ModLogger.Msg($"   - [CurControls] 발견됨: type={curControls.GetType().Name}");
                 }
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[PnlVictoryLoggingPatch.LogVictoryDetails] 예외 발생: {ex}");
+                ModLogger.Error($"[PnlVictoryLoggingPatch.LogVictoryDetails] 예외 발생: {ex}");
             }
         }
     }

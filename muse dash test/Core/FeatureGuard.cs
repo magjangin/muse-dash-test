@@ -66,7 +66,7 @@ namespace muse_dash_test
                 // 이전에 실패하다가 정상 복구된 경우 한 번 알립니다.
                 if (state.ConsecutiveFailures > 0)
                 {
-                    MelonLogger.Msg($"[FeatureGuard] '{feature}' 기능이 정상 복구되었습니다.");
+                    ModLogger.Msg($"[FeatureGuard] '{feature}' 기능이 정상 복구되었습니다.");
                     state.ConsecutiveFailures = 0;
                     state.LastErrorText = null;
                 }
@@ -80,14 +80,14 @@ namespace muse_dash_test
                 string errorText = ex.ToString();
                 if (state.ConsecutiveFailures == 1 || errorText != state.LastErrorText)
                 {
-                    MelonLogger.Error($"[FeatureGuard] '{feature}' 실행 오류 (연속 {state.ConsecutiveFailures}회): {ex}");
+                    ModLogger.Error($"[FeatureGuard] '{feature}' 실행 오류 (연속 {state.ConsecutiveFailures}회): {ex}");
                     state.LastErrorText = errorText;
                 }
 
                 if (maxConsecutiveFailures > 0 && state.ConsecutiveFailures >= maxConsecutiveFailures)
                 {
                     state.Disabled = true;
-                    MelonLogger.Error(
+                    ModLogger.Error(
                         $"[FeatureGuard] '{feature}' 기능이 {maxConsecutiveFailures}회 연속 실패하여 자동 비활성화되었습니다. " +
                         "게임 업데이트로 패치 대상이 변경되었을 수 있습니다. (씬 전환 시 1회 재시도)");
                 }
@@ -109,7 +109,7 @@ namespace muse_dash_test
                     kv.Value.Disabled = false;
                     kv.Value.ConsecutiveFailures = 0;
                     kv.Value.LastErrorText = null;
-                    MelonLogger.Msg($"[FeatureGuard] '{kv.Key}' 기능을 재시도 가능 상태로 되돌렸습니다.");
+                    ModLogger.Msg($"[FeatureGuard] '{kv.Key}' 기능을 재시도 가능 상태로 되돌렸습니다.");
                 }
             }
         }

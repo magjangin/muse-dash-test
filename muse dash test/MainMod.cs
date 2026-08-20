@@ -21,10 +21,18 @@ namespace muse_dash_test
 
         public override void OnInitializeMelon()
         {
-            MelonLogger.Msg("모드가 로드되었습니다.");
+            DeviceDetector.Detect();
             ModConfig.Load();
+
+            if (DeviceDetector.IsUmpc)
+            {
+                ModLogger.LogAlways($"[DeviceDetector] UMPC 기기가 감지되었습니다 ({DeviceDetector.DetectedModel} / {DeviceDetector.GpuName}).");
+                ModLogger.LogAlways($"[DeviceDetector] 렉 및 프레임 드랍을 방지하기 위해 로그 레벨을 '{ModLogger.CurrentLogLevel}'(으)로 최적화(억제)했습니다.");
+            }
+
+            ModLogger.Msg("모드가 로드되었습니다.");
             try { UnityEngine.Input.multiTouchEnabled = true; } catch (Exception) { }
-            MelonLogger.Msg("HywHpTextMod - 체력바 텍스트 모드가 성공적으로 연동 활성화되었습니다!");
+            ModLogger.Msg("HywHpTextMod - 체력바 텍스트 모드가 성공적으로 연동 활성화되었습니다!");
 
             // 게임 업데이트로 깨진 패치 대상이 있는지 시작 시 점검하여 요약 로그로 표시합니다.
             PatchHealthCheck.Run();

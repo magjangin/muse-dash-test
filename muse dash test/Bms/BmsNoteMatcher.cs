@@ -93,7 +93,7 @@ namespace muse_dash_test
                         {
                             // 홀드 시작 지점 지정
                             activeHoldStart = currentNote;
-                            MelonLogger.Msg($"[BmsMatcher] 홀드 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
+                            ModLogger.Msg($"[BmsMatcher] 홀드 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
                         }
                         else
                         {
@@ -105,7 +105,7 @@ namespace muse_dash_test
                                 EndNote = currentNote
                             };
                             matchedPairs.Add(pair);
-                            MelonLogger.Msg($"[BmsMatcher] ★홀드 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (길이={pair.Duration:F2}초, {pair.LengthInTicks:F2}틱)");
+                            ModLogger.Msg($"[BmsMatcher] ★홀드 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (길이={pair.Duration:F2}초, {pair.LengthInTicks:F2}틱)");
                             
                             // 상태 초기화하여 다음 롱노트 매칭을 준비시킴
                             activeHoldStart = null;
@@ -119,7 +119,7 @@ namespace muse_dash_test
                         {
                             // 샌드백 시작 지점 지정
                             activeSandbagStart = currentNote;
-                            MelonLogger.Msg($"[BmsMatcher] 샌드백 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
+                            ModLogger.Msg($"[BmsMatcher] 샌드백 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
                         }
                         else
                         {
@@ -131,7 +131,7 @@ namespace muse_dash_test
                                 EndNote = currentNote
                             };
                             matchedPairs.Add(pair);
-                            MelonLogger.Msg($"[BmsMatcher] ★샌드백 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (연타구간={pair.Duration:F2}초)");
+                            ModLogger.Msg($"[BmsMatcher] ★샌드백 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (연타구간={pair.Duration:F2}초)");
                             
                             activeSandbagStart = null;
                         }
@@ -141,11 +141,11 @@ namespace muse_dash_test
                 // 3. 루프 종료 후 짝을 찾지 못하고 남은 비정상 노드 경고 로깅 (차트 버그 진단용)
                 if (activeHoldStart != null)
                 {
-                    MelonLogger.Warning($"[BmsMatcher.Bug] 홀드 매칭 경고: 채널 {channel}의 Tick {activeHoldStart.Tick}에 선언된 롱노트의 짝(종료 노트)을 찾지 못했습니다.");
+                    ModLogger.Warning($"[BmsMatcher.Bug] 홀드 매칭 경고: 채널 {channel}의 Tick {activeHoldStart.Tick}에 선언된 롱노트의 짝(종료 노트)을 찾지 못했습니다.");
                 }
                 if (activeSandbagStart != null)
                 {
-                    MelonLogger.Warning($"[BmsMatcher.Bug] 샌드백 매칭 경고: 채널 {channel}의 Tick {activeSandbagStart.Tick}에 선언된 샌드백의 짝(종료 노트)을 찾지 못했습니다.");
+                    ModLogger.Warning($"[BmsMatcher.Bug] 샌드백 매칭 경고: 채널 {channel}의 Tick {activeSandbagStart.Tick}에 선언된 샌드백의 짝(종료 노트)을 찾지 못했습니다.");
                 }
             }
 

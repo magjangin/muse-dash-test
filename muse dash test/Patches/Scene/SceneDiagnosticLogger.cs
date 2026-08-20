@@ -27,7 +27,7 @@ namespace muse_dash_test
         {
             if (!ShouldLog(key, minIntervalFrames)) return;
             if (string.IsNullOrEmpty(message)) return;
-            MelonLogger.Msg(message);
+            ModLogger.Msg(message);
         }
 
         private static int GetFrameCount()
