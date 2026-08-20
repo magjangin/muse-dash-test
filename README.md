@@ -56,6 +56,10 @@
   * PC 스팀 빌드 내에 잠들어 있던 모바일 전용 입력 설정창(`PnlInputMobile`)을 완벽 복원하여 좌우/상하 분할 모드, 되돌리기(반전), 오토 피버 옵션을 실시간 제어합니다.
   * 인게임 배틀에서 마우스 좌/우 클릭 및 터치스크린 입력을 공중/지상 타격 및 점프 체공(롱노트 홀드)으로 실시간 변환 주입하며, PC 기본 키 매핑 간섭을 원천 차단하는 상호 배타적 필터링이 적용되었습니다.
   * **터치스크린 10접점 멀티터치 지원**: ROG Ally, 스팀덱, 서피스 등에서 두 손가락으로 공중/지상 동시 입력이 가능합니다. 레거시 `UnityEngine.Input`이 Windows 스탠드얼론에서 터치를 읽지 못하는 문제를 새 Input System 전환으로 해결했으며, Windows의 마우스 승격으로 인한 이중 판정도 차단합니다. (→ [MOBILE_TOUCH_AND_INPUT_GUIDE.md](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md))
+* **UMPC Hardware Auto-Detection & Lag Optimization (UMPC 자동 감지 및 로그 레벨 렉 최적화) [v0.10.0]** ✅
+  * ASUS ROG Ally, Valve Steam Deck, Lenovo Legion Go, AYANEO, GPD 등 핸드헬드 기기 및 배터리/내장 APU 환경을 시작 시 자동 감지합니다 (`DeviceDetector`).
+  * UMPC 환경에서는 콘솔 출력 및 파일 I/O 부하로 인한 순간적인 프레임 드랍(스터터링)을 방지하기 위해 기본 로그 레벨을 `Error`로 대폭 낮추며, 전역 `MelonLoggerInterceptor`를 통해 모드 전반의 불필요한 로그 출력을 원천 차단합니다.
+  * `MelonPreferences.cfg`의 `LogLevel` 설정(`Auto`, `Silent`, `Error`, `Warning`, `Info`, `Verbose`)을 통해 사용자 맞춤 제어를 지원합니다. (→ [LOGGING_AND_TROUBLESHOOTING.md](docs/guides/LOGGING_AND_TROUBLESHOOTING.md))
 
 ---
 
@@ -88,6 +92,7 @@
 | **가상 곡 플레이 기록(정확도·스코어·최대 콤보·풀콤보) 로컬 JSON 저장 및 결과/기록 카드 표시** | ✅ 완료 |
 | **모바일 전용 터치 조작 패널(`PnlInputMobile`) 복원 및 마우스/터치 배틀 입력 브릿지** | ✅ 완료 ([상세 문서](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md)) |
 | **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](docs/guides/DISCORD_RICH_PRESENCE.md)) |
+| **UMPC 하드웨어 자동 감지 및 전역 로그 레벨 렉 최적화** | ✅ 완료 (v0.10.0, [상세 문서](docs/guides/LOGGING_AND_TROUBLESHOOTING.md)) |
 
 
 ---
@@ -134,8 +139,11 @@
 ```text
 ├── muse dash test/           # C# 모드 프로젝트 폴더
 │   ├── Bms/                  # BMS 파서/렉서, WAV 코드 해석, 노트 매칭, 보스 스왑 플래너
-│   ├── Core/                 # 게임 바인딩, 예외 격리, 터치 입력 판독, 세션/기록 저장소, ModConfig 통합 설정
-│   │   ├── ModConfig.cs      # MelonPreferences 기반 12개 개별 기능 동적 On/Off 제어
+│   ├── Core/                 # 하드웨어 감지, 로그 레벨 제어, 예외 격리, 터치 판독, 세션/기록 저장소, ModConfig 통합 설정
+│   │   ├── DeviceDetector.cs # UMPC/핸드헬드 하드웨어 자동 판별
+│   │   ├── ModLogger.cs      # 로그 레벨 동적 제어
+│   │   ├── MelonLoggerInterceptor.cs # MelonLogger 전역 가로채기 & 음소거
+│   │   ├── ModConfig.cs      # MelonPreferences 기반 13개 개별 기능 및 LogLevel 제어
 │   │   └── ...
 │   ├── Integration/          # Discord RPC 연동 및 실시간 리소스/스킨 스와퍼 (P/O 단축키)
 │   │   ├── DiscordPresenceManager.cs

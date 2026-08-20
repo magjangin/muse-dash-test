@@ -45,6 +45,17 @@ MelonLoader 모드 진입점 클래스입니다.
 * **로그 스로틀링(Log Throttling)**: 동일한 에러 발생 시 반복 로깅을 방지하여 디버그 로그 비대화를 제어합니다.
 * **서킷 브레이커(Circuit Breaker)**: 특정 기능의 실패가 누적될 경우 자동으로 해당 기능만 비활성화하여 프레임 드랍을 원천 차단하고, 씬 전환 시 재장전(Rearm)하여 재시도할 기회를 부여합니다.
 
+### 📂 [Core/DeviceDetector.cs](../../muse%20dash%20test/Core/DeviceDetector.cs) [v0.10.0]
+* 현재 실행 환경이 UMPC(ROG Ally, Steam Deck, Legion Go, AYANEO, GPD 등)인지 여부를 하드웨어 모델명, GPU 장치명, 배터리 유무를 통해 자동 감지하는 모듈입니다.
+* `IsUmpc`, `DetectedModel`, `GpuName` 프로퍼티를 제공하여 저전력/핸드헬드 환경에 맞춘 최적화 분기점으로 동작합니다.
+
+### 📂 [Core/ModLogger.cs](../../muse%20dash%20test/Core/ModLogger.cs) [v0.10.0]
+* 로그 레벨(`Silent`, `Error`, `Warning`, `Info`, `Verbose`)에 따라 로그 출력을 동적으로 제어하는 통합 로거입니다.
+* UMPC 환경에서는 콘솔/디스크 I/O 렉을 원천 방지하기 위해 기본 레벨을 `Error`로 낮추며, `LogAlways()`는 필터링을 우회하여 최초 필수 시작 배너를 보장합니다.
+
+### 📂 [Core/MelonLoggerInterceptor.cs](../../muse%20dash%20test/Core/MelonLoggerInterceptor.cs) [v0.10.0]
+* MelonLoader의 `MelonLogger.Msg`, `Warning`, `Error` 메서드를 Harmony Prefix로 가로채 `ModLogger.CurrentLogLevel`에 맞춰 불필요한 로그 출력을 프레임워크 레벨에서 완전히 차단(음소거)하는 인터셉터 패치입니다.
+
 ### 📂 [Core/TouchInput.cs](../../muse%20dash%20test/Core/TouchInput.cs) [NEW]
 * 터치스크린 접점을 판독하는 단일 창구입니다. **새 Input System의 `Touchscreen.current.touches`에서 읽습니다.**
 * **레거시 `UnityEngine.Input`을 쓰지 않는 이유**: 게임이 Unity 2019.4이고, 이 버전의 레거시 Input은 Windows 스탠드얼론에서 터치 디지타이저를 읽지 못합니다. ROG Ally 실측에서 `touchSupported=True`인데 `touchCount=0`으로 확인되었습니다. **저 `True`에 속으면 안 됩니다.** 레거시 경로는 타 환경용 폴백으로만 남아 있습니다.

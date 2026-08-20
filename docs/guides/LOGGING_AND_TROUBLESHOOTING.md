@@ -257,9 +257,34 @@ LevelDesignerNameTextObjectNames
 * **문제 상황**: 폰트 캐싱에 실패하여 순정 `"FULL COMBO"` 배너가 그대로 나오거나 골드 텍스트의 외곽선/스타일이 깨지는 경우.
 * **해결 방법**: `PnlBattle.instance.currentComps.scoreValue` 객체가 인게임 내에서 활성화되기 전에 조기 쿼리가 들어갔는지 확인하고, 폰트 획득 로그가 한 번이라도 제대로 출력되었는지 점검하십시오.
 
-## 로그가 너무 많을 때
+## 로그가 너무 많을 때 (로그 레벨 제어 및 UMPC 최적화)
 
-아래 기능들은 로그가 길어질 수 있습니다.
+v0.10.0부터 **하드웨어 자동 감지(`DeviceDetector`)**와 **동적 로그 레벨 제어(`ModLogger`, `MelonLoggerInterceptor`)** 시스템이 탑재되었습니다.
+
+### 1. UMPC(핸드헬드) 환경에서의 자동 음소거 (Auto Mode)
+* **배경**: ROG Ally, Steam Deck, Legion Go 등 UMPC 기기는 저전력(TDP 15~25W) 및 공유 메모리 구조를 가집니다. 게임 루프 또는 차트 파싱(롱노트·샌드백 매칭 수백 건) 시 콘솔 문자열 렌더링 및 디스크 파일 I/O로 인한 순간 끊김(Stuttering/프레임 드랍)이 발생할 수 있습니다.
+* **동작**: 시작 시 UMPC가 감지되면 로그 레벨이 **`Error`**(치명적 오류만)로 자동 강하됩니다.
+* **전역 가로채기 (`MelonLoggerInterceptor`)**: 모드 내부의 모든 `MelonLogger.Msg`, `MelonLogger.Warning` 호출을 프레임워크 레벨에서 프리픽스로 가로채 차단하므로, 일반 플레이 중에는 로그가 100% 조용하게 유지됩니다.
+
+### 2. 수동 로그 레벨 설정 (`MelonPreferences.cfg`)
+`UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 섹션에서 `LogLevel` 키를 직접 변경할 수 있습니다:
+
+```toml
+[muse-dash-custom-chart-features]
+LogLevel = "Auto" # "Auto", "Silent", "Error", "Warning", "Info", "Verbose"
+```
+
+| 값 | 설명 | 출력 대상 |
+|---|---|---|
+| **`Auto`** (기본값) | 기기 자동 판별 | UMPC는 `Error`, 일반 PC는 `Info` (또는 `VerboseLog=true` 시 `Verbose`) |
+| **`Silent`** | 완전 음소거 | 에러/경고/메시지 포함 전체 차단 |
+| **`Error`** | 오류 전용 | 치명적인 예외 및 크래시 오류만 출력 |
+| **`Warning`** | 경고 + 오류 | 경고 및 에러만 출력 |
+| **`Info`** | 일반 정보 | 기본 상태 안내 및 상태 변경 메시지 포함 |
+| **`Verbose`** | 상세 진단 | 내부 디버깅용 상세 로그까지 모두 출력 |
+
+### 3. 디버그 덤프 플래그
+아래 진단 플래그들은 개발용 상세 덤프를 생성하므로 일반 플레이 시에는 비활성화를 권장합니다:
 
 | 위치 | 이유 |
 | --- | --- |
@@ -267,8 +292,6 @@ LevelDesignerNameTextObjectNames
 | `DumpMusicList` | 원본/실험 노트 내부 필드를 덤프합니다. |
 | `DumpStageBattleComponentProperties` | 전투 컴포넌트의 공개 프로퍼티와 리스트를 깊게 덤프합니다. |
 | `DumpStageInfo` | StageInfo 필드와 프로퍼티를 모두 덤프합니다. |
-
-실험값이 어느 정도 안정되면 상세 덤프는 끄거나 호출을 주석 처리하는 편이 로그 읽기가 쉬워집니다.
 
 ## 빌드가 실패할 때
 
