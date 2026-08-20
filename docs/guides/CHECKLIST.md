@@ -39,8 +39,18 @@
       MelonLoader는 폴더 안의 `.dll`을 전부 로드합니다. 이름만 다른 같은 모드가 두 개 있으면
       Harmony 패치와 가상 곡 등록이 중복됩니다.
 
+- [ ] **릴리즈 첨부는 ZIP으로 올렸는가?**
+      **GitHub는 릴리즈 첨부 파일 이름의 공백을 점으로 자동 변환합니다.** `AssemblyName`이
+      `muse dash custom chart`(공백 포함)라서, DLL을 그대로 올리면 `muse.dash.custom.chart.dll`로
+      바뀌어 올라갑니다. `gh release upload`의 `#표시이름` 문법으로도 못 막습니다(v0.10.1에서 실측).
+
+      그러면 내려받은 DLL과 직접 빌드한 DLL이 이름이 달라 **`Mods` 폴더에 나란히 남습니다.**
+      (2026-08-20: v0.9.6 에셋 `muse.dash.custom.chart.dll`이 빌드본 옆에 461,824바이트로 남아 있었습니다.)
+      ZIP으로 감싸면 압축 해제 시 실제 이름이 복원되어 기존 파일을 덮어씁니다.
+
 - [ ] **릴리즈에 올릴 산출물은 `-c Release`로 빌드했는가?**
-      Debug는 `DEBUG` 상수가 정의되고 최적화가 꺼집니다. 크기로 구분됩니다 — Release 451KB / Debug 483KB 근처.
+      Debug는 `DEBUG` 상수가 정의되고 최적화가 꺼집니다. 크기로 구분됩니다 — v0.10.1 기준 Release 469KB / Debug 503KB.
+      확실히 하려면 `DebuggableAttribute`를 봅니다. Release는 `01-00-02-00-...`(값 2), Debug는 최적화 해제 비트가 켜집니다.
 
       ```bash
       dotnet build "muse dash test/muse dash test.csproj" -c Release
