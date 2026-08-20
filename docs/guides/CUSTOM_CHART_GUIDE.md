@@ -11,7 +11,7 @@
 ```text
 Muse Dash/
 ├── Mods/
-│   └── muse.dash.custom.chart.dll  # 빌드 완료된 모드 DLL
+│   └── muse dash custom chart.dll      # 빌드 완료된 모드 DLL (AssemblyName 그대로, 공백 포함)
 └── hwa/                            # 커스텀 리소스 루트 디렉터리
     ├── 01_MyCustomSong/            # 첫 번째 곡 폴더 (알파벳/숫자 순서대로 1999-0에 매핑)
     │   ├── info.txt                # 곡 설정 텍스트 (곡 제목, 난이도 등)
