@@ -108,6 +108,7 @@ namespace muse_dash_test
                 }
             };
 
+            bool sawDirectBpmChannel = false;
             foreach (var evt in measureEvents)
             {
                 if (evt.Channel == 0x08)
@@ -116,8 +117,17 @@ namespace muse_dash_test
                 }
                 else if (evt.Channel == 0x03)
                 {
-                    AddDirectBpmChanges(evt, bpmChanges);
+                    sawDirectBpmChannel = true;
                 }
+            }
+
+            // 채널 03(직접 BPM 변경)은 지원하지 않습니다. BPM 변경은 #BPMxx 선언 + 채널 08로 적어 주세요.
+            // 조용히 무시하면 "BPM이 왜 안 바뀌지"가 원인 찾기 어려운 증상이 되므로 한 줄 남깁니다.
+            if (sawDirectBpmChannel)
+            {
+                ModLogger.Warning(
+                    $"[BmsParser] 채널 03(직접 BPM 변경)은 지원하지 않아 무시했습니다: {sourcePath ?? "(경로 없음)"}. "
+                    + "BPM 변경은 '#BPMxx nnn' 선언과 채널 08로 적어 주세요.");
             }
 
             var notes = new List<BmsNote>();
@@ -248,38 +258,6 @@ namespace muse_dash_test
                     Tick = evt.Measure + (i / (float)cellCount),
                     Bpm = bpm,
                     Source = $"BPM{cell}"
-                });
-            }
-        }
-
-        private static void AddDirectBpmChanges(RawMeasureEvent evt, List<BpmChange> bpmChanges)
-        {
-            int cellWidth = 2;
-            int cellCount = GetCellCount(evt.Data, cellWidth);
-            if (cellCount == 0)
-            {
-                return;
-            }
-
-            for (int i = 0; i < cellCount; i++)
-            {
-                int offset = i * cellWidth;
-                if (IsZeroCell(evt.Data, offset, cellWidth))
-                {
-                    continue;
-                }
-
-                string cell = evt.Data.Substring(offset, cellWidth);
-                if (!TryParseBpmValue(cell, out float bpm))
-                {
-                    continue;
-                }
-
-                bpmChanges.Add(new BpmChange
-                {
-                    Tick = evt.Measure + (i / (float)cellCount),
-                    Bpm = bpm,
-                    Source = "03"
                 });
             }
         }

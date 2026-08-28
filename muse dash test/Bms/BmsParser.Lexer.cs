@@ -90,24 +90,6 @@ namespace muse_dash_test
             return !string.IsNullOrWhiteSpace(data);
         }
 
-        private static bool TryParseBpmValue(string text, out float bpm)
-        {
-            bpm = 0f;
-
-            if (float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out bpm))
-            {
-                return true;
-            }
-
-            if (int.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int bpmAsHex))
-            {
-                bpm = bpmAsHex;
-                return true;
-            }
-
-            return false;
-        }
-
         private static int GetCellCount(string data, int cellWidth)
         {
             if (string.IsNullOrWhiteSpace(data))

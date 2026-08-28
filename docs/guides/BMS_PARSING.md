@@ -144,6 +144,10 @@ $$\Delta\text{Time} = \Delta\text{Tick} \times \frac{240}{\text{CurrentBpm}}$$
 - 이 공식은 1 마디(Bar)를 1.0 Tick 단위(4박자)로 설정하는 BMS 틱 표준 규격에 따라 산출되었습니다.
 
 ### ② BPM 변경 (BPM Change) 대응 프로세스
-- 차트 로딩 시점에 모든 `#BPMxx` 선언 및 직접 BPM 변경 이벤트들을 탐색하여 정렬된 `BpmChanges` 리스트를 구성합니다.
+- 차트 로딩 시점에 `#BPMxx` 선언과 그것을 참조하는 **채널 08** 이벤트를 탐색하여 정렬된 `BpmChanges` 리스트를 구성합니다.
+- **채널 03(직접 BPM 변경)은 지원하지 않습니다.** BMS 스펙상 이 채널의 셀은 항상 2자리 16진수인데
+  예전 구현은 10진수로 먼저 파싱해 `0078`을 120이 아닌 78 BPM으로 읽었습니다(256개 셀 중 100개가 오답).
+  쓰는 채보가 없어 채널 자체를 걷어냈고, 채보에 채널 03이 들어 있으면 로드 시 경고를 한 줄 남깁니다.
+  BPM 변경은 `#BPMxx nnn` 선언과 채널 08로 적어 주세요.
 - 특정 틱의 시간을 구할 때, 리스트 상의 이전 BPM 변경 내역들을 순차적으로 적용하여 누적된 시간(`Time`)을 합산합니다:
   $$\text{AccumulatedTime} = \sum \left( (\text{ChangeTick}_{n} - \text{ChangeTick}_{n-1}) \times \frac{240}{\text{Bpm}_{n-1}} \right) + (\text{TargetTick} - \text{LastChangeTick}) \times \frac{240}{\text{LastBpm}}$$

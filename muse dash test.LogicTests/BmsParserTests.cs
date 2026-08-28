@@ -93,17 +93,22 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(3.0f, chart.Notes[0].Time);
         }
 
-        public static void ParseText_ReadsHexBpmFromChannel03()
+        // 채널 03(직접 BPM 변경)은 지원하지 않습니다. BPM 변경은 #BPMxx + 채널 08만 씁니다.
+        //
+        // 예전에는 채널 03을 읽되 셀을 10진수로 먼저 파싱했는데, BMS 스펙상 이 채널은 항상
+        // 2자리 16진수라 256개 셀 중 100개(00~99)가 틀린 값이 됐습니다. 예를 들어 "0078"은
+        // 120 BPM이어야 하는데 78 BPM으로 읽혔습니다. 쓰는 채보가 없어 채널 자체를 걷어냈습니다.
+        public static void ParseText_IgnoresDirectBpmChannel03()
         {
             var chart = BmsParser.ParseText("""
                 #BPM 120
-                #00103:009C
+                #00103:0078
                 """);
 
-            // "9C"는 10진 파싱에 실패하므로 16진수 0x9C = 156으로 읽힙니다.
-            Assert.Equal(2, chart.BpmChanges.Count);
-            Assert.Equal(1.5f, chart.BpmChanges[1].Tick);
-            Assert.Equal(156f, chart.BpmChanges[1].Bpm);
+            // 기본 BPM 하나만 남고, 채널 03에서는 아무 변경도 만들지 않습니다.
+            Assert.Equal(1, chart.BpmChanges.Count);
+            Assert.Equal(120f, chart.BpmChanges[0].Bpm);
+            Assert.Equal("default", chart.BpmChanges[0].Source);
         }
 
         public static void ParseText_StripsSlashAndSemicolonComments()
