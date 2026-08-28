@@ -33,33 +33,10 @@ namespace muse_dash_test
                 string pngPath = Path.Combine(gameDir, "hwa tag image", "tag_icon.png");
 
                 // 1. hwa tag image/tag_icon.png 가 없으면 내장 리소스에서 추출
-                if (!File.Exists(pngPath))
-                {
-                    try
-                    {
-                        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                        string resourceName = "muse_dash_test.Resources.tag_icon.png";
-
-                        using (var stream = assembly.GetManifestResourceStream(resourceName))
-                        {
-                            if (stream != null)
-                            {
-                                byte[] fileData = new byte[stream.Length];
-                                stream.Read(fileData, 0, fileData.Length);
-                                File.WriteAllBytes(pngPath, fileData);
-                                ModLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 복사 및 추출 완료!");
-                            }
-                            else
-                            {
-                                ModLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ModLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 도중 예외 발생: {ex}");
-                    }
-                }
+                //    (추출 경로는 EmbeddedResource 한 곳뿐입니다. 예전에는 이 블록과
+                //     MainMod.EnsureTagIconExtracted에 같은 코드가 복사돼 있었고,
+                //     양쪽 다 Stream.Read 반환값을 버려 잘린 PNG를 쓸 수 있었습니다.)
+                EmbeddedResource.EnsureExtracted(EmbeddedResource.TagIconResourceName, pngPath);
 
                 // 2. 물리 파일이 존재하면 로드 진행
                 if (File.Exists(pngPath))

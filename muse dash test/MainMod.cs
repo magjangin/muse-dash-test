@@ -64,7 +64,7 @@ namespace muse_dash_test
                 string hwaTagImageFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa tag image");
                 Directory.CreateDirectory(hwaTagImageFolderPath);
                 ModLogger.Msg($"hwa tag image 폴더를 확인/생성했습니다: {hwaTagImageFolderPath}");
-                EnsureTagIconExtracted(hwaTagImageFolderPath);
+                EmbeddedResource.EnsureTagIcon(hwaTagImageFolderPath);
             }, maxConsecutiveFailures: 0);
 
             // skins 폴더 생성 및 샘플 skins.txt 추출 (FavGirl 실시간 외형 교체 설정)
@@ -124,38 +124,6 @@ namespace muse_dash_test
             {
                 string path = Path.Combine(hwaPath, name);
                 if (File.Exists(path)) File.Delete(path);
-            }
-        }
-
-        /// <summary>
-        /// 내장 리소스 tag_icon.png를 대상 폴더에 추출합니다(이미 존재하면 건너뜀).
-        /// </summary>
-        private static void EnsureTagIconExtracted(string targetFolder)
-        {
-            string pngPath = Path.Combine(targetFolder, "tag_icon.png");
-            if (File.Exists(pngPath)) return;
-
-            const string resourceName = "muse_dash_test.Resources.tag_icon.png";
-            try
-            {
-                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                using (var stream = assembly.GetManifestResourceStream(resourceName))
-                {
-                    if (stream == null)
-                    {
-                        ModLogger.Error($"[APMod.TagIcon] 추출할 내장 리소스를 찾을 수 없습니다: {resourceName}");
-                        return;
-                    }
-
-                    byte[] fileData = new byte[stream.Length];
-                    stream.Read(fileData, 0, fileData.Length);
-                    File.WriteAllBytes(pngPath, fileData);
-                    ModLogger.Msg($"[APMod.TagIcon] 내장 리소스 '{resourceName}'를 '{pngPath}'에 추출 완료!");
-                }
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[APMod.TagIcon] 내장 리소스 추출 중 예외 발생: {ex}");
             }
         }
 

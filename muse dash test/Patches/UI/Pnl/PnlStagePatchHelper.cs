@@ -10,8 +10,6 @@ public static partial class PnlStagePatchHelper
 {
     private const int CustomTagUid = muse_dash_test.CustomContentIds.TagIndex;
     private const string CustomMusicUid = muse_dash_test.CustomContentIds.FallbackSourceMusicUid;
-    private const string CustomTitle = "화영왕 0";
-    private const string CustomArtist = "화영왕 0";
 
     private const BindingFlags InstanceMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
