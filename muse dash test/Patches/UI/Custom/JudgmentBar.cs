@@ -27,10 +27,46 @@ namespace muse_dash_test
 
         private static string cachedMsText = "";
 
+        /// <summary>
+        /// 지금 판정 기록을 남길 상태인지 여부입니다.
+        /// 판정바를 끄는 창구가 둘(config.txt의 '판정바표시', MelonPreferences의 EnableJudgmentBar)이라
+        /// 둘 다 확인합니다.
+        /// </summary>
+        private static bool IsRecordingEnabled => ModConfig.EnableJudgmentBar && InputOverlay.showBar;
+
+        /// <summary>
+        /// 유효 시간이 지난 틱을 제거합니다. 뒤에서부터 훑어 가비지를 만들지 않습니다.
+        /// </summary>
+        private static void TrimExpiredTicks(float now)
+        {
+            float duration = InputOverlay.tickDuration;
+            for (int i = hitHistory.Count - 1; i >= 0; i--)
+            {
+                if (now - hitHistory[i].timeAdded > duration)
+                {
+                    hitHistory.RemoveAt(i);
+                }
+            }
+        }
+
         public static void RegisterHit(float gapInSeconds, byte result)
         {
             try
             {
+                // 판정바가 꺼져 있으면 기록하지 않고, 그동안 쌓인 것도 한 번 비웁니다.
+                //
+                // 예전에는 여기에 게이트가 없었고 만료 정리는 DrawJudgmentBar 안에만 있었습니다.
+                // 그런데 Draw는 showBar가 false면 정리 루프 '앞에서' return하고, EnableJudgmentBar가
+                // 꺼져 있으면 FeatureGuard가 Draw 호출 자체를 막습니다. 반면 이 메서드를 부르는
+                // Harmony 훅(GameTouchPlay.TouchResult)에는 아무 게이트가 없었습니다.
+                // 그래서 판정바를 끈 채 플레이하면 hitHistory에 노트마다 계속 쌓이기만 하고
+                // 비우는 코드는 영영 실행되지 않았습니다.
+                if (!IsRecordingEnabled)
+                {
+                    if (hitHistory.Count > 0) hitHistory.Clear();
+                    return;
+                }
+
                 // 초 단위를 밀리초 단위로 변환
                 float offsetMs = gapInSeconds * 1000f;
 
@@ -93,6 +129,10 @@ namespace muse_dash_test
                     timeAdded = Time.time,
                     color = tickColor
                 });
+
+                // 정리를 그리기 쪽에만 맡기지 않습니다. 목록을 늘리는 곳이 여기뿐이므로
+                // 여기서 함께 줄이면 그리기가 도는지와 무관하게 길이가 유지됩니다.
+                TrimExpiredTicks(lastHitTime);
             }
             catch (Exception ex)
             {
@@ -106,16 +146,11 @@ namespace muse_dash_test
             {
                 if (!InputOverlay.showBar) return;
 
-                // 1. 유효 시간이 지난 틱 제거 (가비지 할당 없는 루프 구조)
+                // 1. 유효 시간이 지난 틱 제거.
+                //    새 입력이 없어도 남은 잔상이 사라져야 하므로 그리기 쪽에도 그대로 둡니다.
                 float duration = InputOverlay.tickDuration;
                 float now = Time.time;
-                for (int i = hitHistory.Count - 1; i >= 0; i--)
-                {
-                    if (now - hitHistory[i].timeAdded > duration)
-                    {
-                        hitHistory.RemoveAt(i);
-                    }
-                }
+                TrimExpiredTicks(now);
 
                 // 2. 화이트 텍스처 초기화
                 if (whiteTex == null)
