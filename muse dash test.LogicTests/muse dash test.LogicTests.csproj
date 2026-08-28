@@ -18,5 +18,6 @@
     <Compile Include="..\muse dash test\Bms\*.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <!-- 게임 의존이 없는 순수 판정 규칙만 골라 링크합니다(Core 폴더 전체는 MelonLoader/Il2Cpp를 씁니다). -->
     <Compile Include="..\muse dash test\Core\PlayRecordMerge.cs" Link="UnderTest\%(Filename)%(Extension)" />
+    <Compile Include="..\muse dash test\Core\MusicDecimalText.cs" Link="UnderTest\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

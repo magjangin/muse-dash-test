@@ -281,7 +281,14 @@ namespace muse_dash_test
                     var md = tno.md;
 
                     float lastMusicTick = music.m_LastMusicTick;
-                    float tickVal = Convert.ToSingle(md.tick.ToString());
+
+                    // Convert.ToSingle(md.tick.ToString())을 쓰면 안 됩니다. 문자열을 만드는 쪽은
+                    // IL2CPP 런타임의 문화권을, Convert는 관리 런타임의 문화권을 따르므로 둘이
+                    // 어긋날 수 있고, 그때 Convert.ToSingle은 TryParse와 달리 '예외를 던집니다'.
+                    // 이 자리는 노트를 칠 때마다 도는 곳이라 바깥 catch가 노트마다 에러 로그를
+                    // 찍게 되고(플레이 중 로그 폭발), 판정바는 조용히 안 보이게 됩니다.
+                    // 문화권 2단 폴백은 MusicDecimalText가 이미 담당합니다.
+                    float tickVal = (float)MusicDecimalText.Parse(md.tick.ToString());
 
                     // 오차(초 단위) 계산: (lastMusicTick / 1000f) - tickVal
                     float gap = (lastMusicTick / 1000f) - tickVal;

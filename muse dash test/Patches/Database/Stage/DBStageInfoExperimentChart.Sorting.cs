@@ -157,45 +157,15 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
     }
 
-    // ParseMusicDecimal이 두 로케일 모두에서 실패했을 때 로그가 노트 수만큼 쏟아지는 것을 막습니다.
-    private static bool warnedDecimalParseFailure = false;
-
     /// <summary>
-    /// Il2CppSystem.Decimal을 double로 변환합니다.
-    /// <para>
-    /// 주의: <c>Decimal.ToString()</c>은 인자가 없으므로 <b>CurrentCulture</b>를 따릅니다.
-    /// 소수점 구분자가 쉼표인 로케일(de/fr/ru 등)에서 게임이 돌면 "15,5"가 나오는데,
-    /// 이를 InvariantCulture로만 파싱하면 실패해서 0.0이 됩니다. 이 값은 정렬 비교뿐 아니라
-    /// <see cref="ApplyBmsDoubleState"/>에서 dt/showTick으로 <b>되써지기 때문에</b>,
-    /// 0.0 폴백은 더블 노트의 등장 타이밍을 통째로 망가뜨립니다.
-    /// 그래서 ToString()과 같은 CurrentCulture로 먼저 시도하고 InvariantCulture로 재시도합니다.
-    /// </para>
+    /// <c>Il2CppSystem.Decimal</c>을 double로 변환합니다.
+    /// 문자열 판정 규칙 본체는 게임에 의존하지 않는 <see cref="muse_dash_test.MusicDecimalText"/>에 있고,
+    /// 로직 테스트(<c>MusicDecimalTextTests</c>)로 검증됩니다. 여기서는 IL2CPP 값을 문자열로 꺼내
+    /// 그쪽에 넘기기만 합니다.
     /// </summary>
     public static double ParseMusicDecimal(Il2CppSystem.Decimal value)
     {
-        string raw = value.ToString();
-
-        // ToString()이 CurrentCulture를 썼으므로 같은 문화권으로 먼저 되돌립니다.
-        if (double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.CurrentCulture, out double parsed))
-        {
-            return parsed;
-        }
-
-        // 게임이 InvariantGlobalization으로 빌드된 경우 등을 위한 2차 시도.
-        if (double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out parsed))
-        {
-            return parsed;
-        }
-
-        // 여기까지 왔으면 차트 타이밍이 손상됩니다. 조용히 0을 넘기지 않고 반드시 알립니다.
-        if (!warnedDecimalParseFailure)
-        {
-            warnedDecimalParseFailure = true;
-            ModLogger.Error($"[ExperimentChart] Decimal 파싱 실패: raw='{raw}', culture={System.Globalization.CultureInfo.CurrentCulture.Name}. " +
-                              "이 상태에서는 더블 노트의 dt/showTick이 0으로 덮어써져 채보 타이밍이 깨집니다. (이 경고는 1회만 출력)");
-        }
-
-        return 0.0;
+        return muse_dash_test.MusicDecimalText.Parse(value.ToString());
     }
 
     public static void ApplyBmsDoubleState(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
