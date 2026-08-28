@@ -184,7 +184,19 @@ public class GameMusicScene_InitTimer_Patch
         try { nd.scene = "scene_" + renderZz; } catch (Exception) { }
         try { nd.prefab_name = renderPrefabName; } catch (Exception) { }
         try { if (int.TryParse(newUid, out int parsedNoteUid)) nd.noteUid = parsedNoteUid; } catch (Exception) { }
-        try { if (note.configData != null && ScenePatchHelpers.IsSixDigitUid(note.configData.note_uid) && note.configData.note_uid.StartsWith(fromZz)) note.configData.note_uid = renderZz + note.configData.note_uid.Substring(2); } catch (Exception) { }
+        // configData도 noteData와 같은 IL2CPP 값 타입이라 getter가 매번 새 박스를 돌려줍니다.
+        // 예전에는 note.configData.note_uid에 바로 썼는데, 그 쓰기는 임시 박스에만 남아
+        // 사라졌습니다(아래 nd처럼 setter로 되돌려 써야 합니다).
+        try
+        {
+            var cd = note.configData;
+            if (cd != null && ScenePatchHelpers.IsSixDigitUid(cd.note_uid) && cd.note_uid.StartsWith(fromZz))
+            {
+                cd.note_uid = renderZz + cd.note_uid.Substring(2);
+                note.configData = cd;
+            }
+        }
+        catch (Exception) { }
         try { note.noteData = nd; } catch (Exception) { }
     }
 

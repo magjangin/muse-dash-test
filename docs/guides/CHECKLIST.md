@@ -20,6 +20,27 @@
       `private` + `out` 조합이나 `virtual` 메서드 패치는 로그 한 줄 없이 네이티브 크래시가 납니다.
       한 줄짜리 세터는 인라인돼서 훅이 아예 안 걸립니다. 패치 헬스체크가 초록불이어도 실행을 보장하지 않습니다.
 
+- [ ] **IL2CPP 값 타입 필드에 `a.b.c = x`로 바로 쓰지 않았는가?**
+      `MusicData` / `NoteConfigData` / `MusicConfigData`는 전부 값 타입(`: ValueType`)이고,
+      Il2CppInterop이 만든 getter는 부모를 가리키는 게 아니라 **`il2cpp_value_box`로 새 박스에
+      복사해서** 돌려줍니다(`MusicData.get_noteData` → `new NoteConfigData(il2cpp_value_box(...))`).
+      그래서 `note.noteData.id = x`는 임시 박스에만 쓰이고 **조용히 버려집니다.** 컴파일도 되고
+      예외도 안 나고 로그도 안 남습니다. 반드시 지역 변수로 받아 고친 뒤 setter로 되돌려 쓰십시오.
+
+      ```csharp
+      var nd = note.noteData;   // 사본
+      nd.id = newId;
+      note.noteData = nd;       // ← 이게 없으면 위 줄은 무의미
+      ```
+
+      같은 이유로 `note.noteData != null` 류의 널 가드는 **항상 참**입니다(박싱 getter는 null을
+      못 냅니다). 그 가드를 믿고 방어했다고 생각하지 마십시오.
+      리스트에서 꺼낸 노트도 사본이므로 `list[i] = note` 되쓰기가 따로 필요합니다.
+      (2026-08-28: `MoveNote`·`SortBmsNotesByShowTick`·`ApplyTransformedFields` 4곳에서
+      `noteData.id` / `configData.id` / `configData.note_uid` 쓰기가 유실되고 있었습니다.
+      전부 **올바른 write-back 바로 옆 줄**이었습니다 — `MoveNote`는 두 줄 아래 configData는
+      clone→수정→대입을 제대로 하면서 noteData만 빠뜨렸습니다.)
+
 - [ ] **IL2CPP 객체를 리플렉션으로 깊게 훑는 진단을 켜둔 채 두지 않았는가?**
       패치만 위험한 게 아니라 **읽기만 하는 탐침도 프로세스를 날립니다.**
       (2026-08-20: `SceneZzTransformTracker`의 진단 덤프가 노트 많은 곡에서 게임을 죽였습니다.

@@ -358,7 +358,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (note.noteData != null)
         {
-            note.noteData.id = objId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // noteData/configData는 IL2CPP 값 타입이라, getter가 부모를 가리키는 게 아니라
+            // il2cpp_value_box로 '새 박스에 복사'해서 돌려줍니다(생성 코드 확인:
+            // MusicData.get_noteData → new NoteConfigData(il2cpp_value_box(...))).
+            // 그래서 note.noteData.id = x 처럼 바로 쓰면 그 값은 임시 박스에만 남고 버려집니다.
+            // 반드시 지역 변수로 받아 고친 뒤 setter로 되돌려 써야 노트에 반영됩니다.
+            var noteData = note.noteData;
+            noteData.id = objId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            note.noteData = noteData;
         }
 
         if (note.configData != null)

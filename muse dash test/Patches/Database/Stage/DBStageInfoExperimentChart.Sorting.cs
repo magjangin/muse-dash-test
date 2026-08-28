@@ -58,14 +58,22 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             note.objId = (short)newIndex;
             references.Relink(note, oldObjId);
 
+            // noteData/configData는 IL2CPP 값 타입이고 getter가 사본을 박싱해 돌려주므로,
+            // 지역 변수로 받아 고친 뒤 setter로 되돌려 써야 합니다. 바로 쓰면 버려집니다.
+            // (MoveNote의 같은 주석 참고. 이게 없으면 objId/endIndex/doubleIdx만 재번호되고
+            //  noteData.id / configData.id는 정렬 전 번호로 남습니다.)
             if (note.noteData != null)
             {
-                note.noteData.id = newIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var noteData = note.noteData;
+                noteData.id = newIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                note.noteData = noteData;
             }
 
             if (note.configData != null)
             {
-                note.configData.id = newIndex;
+                var configData = note.configData;
+                configData.id = newIndex;
+                note.configData = configData;
             }
 
             musicList.Add(note);
