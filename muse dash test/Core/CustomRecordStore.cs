@@ -133,35 +133,22 @@ namespace muse_dash_test
 
                 int updatedPlayCount = (existing != null && existing.playCount > 0) ? existing.playCount + 1 : 1;
 
-                // 2. 최고 기록(High Score) 판정:
-                //    기존 기록이 없거나, 새 점수가 더 높거나, 점수가 같아도 정확도가 높거나, FC/AP 신규 달성 시 갱신
-                bool isNewHighScore = false;
-                if (existing == null)
-                {
-                    isNewHighScore = true;
-                }
-                else if (score > existing.score)
-                {
-                    isNewHighScore = true;
-                }
-                else if (score == existing.score && accuracy > existing.accuracy)
-                {
-                    isNewHighScore = true;
-                }
-                else if (isAllPerfect && !existing.isAllPerfect)
-                {
-                    isNewHighScore = true;
-                }
-                else if (isFullCombo && !existing.isFullCombo && !existing.isAllPerfect)
-                {
-                    isNewHighScore = true;
-                }
+                // 2. 최고 기록 / 달성 배지 / 최고 콤보 판정.
+                //    셋은 서로 다른 개념이라 규칙을 PlayRecordMerge로 분리했습니다.
+                //    (한 플래그로 겸하다가 낮은 점수의 AP가 최고점을 덮고, 반대로 점수만 높은 판이
+                //     이미 딴 FC/AP를 지우는 사고가 있었습니다. 자세한 배경은 PlayRecordMerge 참고)
+                var merged = PlayRecordMerge.Merge(
+                    existing != null,
+                    existing?.score ?? 0, existing?.maxCombo ?? 0, existing?.accuracy ?? 0f,
+                    existing?.isFullCombo ?? false, existing?.isAllPerfect ?? false,
+                    score, maxCombo, accuracy, isFullCombo, isAllPerfect);
 
-                int finalScore = isNewHighScore ? score : existing.score;
-                int finalMaxCombo = isNewHighScore ? maxCombo : existing.maxCombo;
-                float finalAccuracy = isNewHighScore ? accuracy : existing.accuracy;
-                bool finalIsFullCombo = isNewHighScore ? isFullCombo : (existing.isFullCombo || isFullCombo);
-                bool finalIsAllPerfect = isNewHighScore ? isAllPerfect : (existing.isAllPerfect || isAllPerfect);
+                bool isNewHighScore = merged.IsNewHighScore;
+                int finalScore = merged.Score;
+                int finalMaxCombo = merged.MaxCombo;
+                float finalAccuracy = merged.Accuracy;
+                bool finalIsFullCombo = merged.IsFullCombo;
+                bool finalIsAllPerfect = merged.IsAllPerfect;
 
                 int finalNoteCount = isNewHighScore ? noteCount : existing.noteCount;
                 int finalStandard = isNewHighScore ? standard : existing.standard;
