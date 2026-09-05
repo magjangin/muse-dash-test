@@ -117,7 +117,7 @@ namespace muse_dash_test
                     return null;
                 }
 
-                ModLogger.Msg($"[HwaResourceManager.Bms] BMS 탐색 시작: folder={folderPath}");
+                ModLogger.Verbose($"[HwaResourceManager.Bms] BMS 탐색 시작: folder={folderPath}");
 
                 string preferred = null;
                 if (manifest != null && !string.IsNullOrWhiteSpace(manifest.SourcePath))
@@ -136,11 +136,11 @@ namespace muse_dash_test
 
                 if (string.IsNullOrWhiteSpace(preferred) || !File.Exists(preferred))
                 {
-                    ModLogger.Msg($"[HwaResourceManager.Bms] BMS 파일이 없습니다: folder={folderPath}");
+                    ModLogger.Warning($"[HwaResourceManager.Bms] BMS 파일이 없습니다: folder={folderPath}");
                     return null;
                 }
 
-                ModLogger.Msg($"[HwaResourceManager.Bms] BMS 읽기 대상: {preferred}");
+                ModLogger.Verbose($"[HwaResourceManager.Bms] BMS 읽기 대상: {preferred}");
                 var parseTimer = Stopwatch.StartNew();
                 var chart = BmsParser.ParseFile(preferred);
                 parseTimer.Stop();

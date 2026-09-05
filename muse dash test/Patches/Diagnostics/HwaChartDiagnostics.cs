@@ -57,37 +57,47 @@ namespace muse_dash_test
             return count;
         }
 
+        /// <summary>
+        /// BMS 차트의 WAV 매핑 샘플과 보스 스왑 후보를 남깁니다.
+        /// 샘플 열거는 Verbose 전용입니다. 곡마다 12줄씩 쌓여 시작 로그를 덮어 버리는 데다,
+        /// <see cref="BmsBossSwapPlanner.ResolveWavInfo"/>가 노트마다 실제 조회를 돌기 때문에
+        /// 출력하지 않을 때는 루프 자체를 건너뜁니다. 보스 스왑 후보는 차트를 바꾸는 '결정'이라
+        /// 열거가 아니므로 Info로 남깁니다.
+        /// </summary>
         internal static void LogBmsWavMappingSummary(BmsChart chart)
         {
             if (chart?.Notes == null || chart.Notes.Count == 0)
             {
-                ModLogger.Msg("[HwaResourceManager.Bms] 노트가 없어 WAV 매핑 샘플을 건너뜁니다.");
+                ModLogger.Verbose("[HwaResourceManager.Bms] 노트가 없어 WAV 매핑 샘플을 건너뜁니다.");
                 return;
             }
 
-            int logged = 0;
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var note in chart.Notes)
+            if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
             {
-                if (note == null || string.IsNullOrWhiteSpace(note.RawValue) || !seen.Add(note.RawValue))
+                int logged = 0;
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var note in chart.Notes)
                 {
-                    continue;
-                }
+                    if (note == null || string.IsNullOrWhiteSpace(note.RawValue) || !seen.Add(note.RawValue))
+                    {
+                        continue;
+                    }
 
-                var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, note);
-                if (wavInfo == null)
-                {
-                    ModLogger.Msg($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav=(null)");
-                }
-                else
-                {
-                    ModLogger.Msg($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav={wavInfo.RawWavName}, uid={wavInfo.Uid ?? "(null)"}, type={wavInfo.NoteType}, prefab={wavInfo.PrefabName ?? "(null)"}, dt={wavInfo.Dt}, keyAudio={wavInfo.KeyAudio ?? "(null)"}, bossAction={wavInfo.BossAction ?? "(null)"}");
-                }
+                    var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, note);
+                    if (wavInfo == null)
+                    {
+                        ModLogger.Verbose($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav=(null)");
+                    }
+                    else
+                    {
+                        ModLogger.Verbose($"[HwaResourceManager.Bms] WAV 매핑 샘플: raw={note.RawValue}, wav={wavInfo.RawWavName}, uid={wavInfo.Uid ?? "(null)"}, type={wavInfo.NoteType}, prefab={wavInfo.PrefabName ?? "(null)"}, dt={wavInfo.Dt}, keyAudio={wavInfo.KeyAudio ?? "(null)"}, bossAction={wavInfo.BossAction ?? "(null)"}");
+                    }
 
-                logged++;
-                if (logged >= 12)
-                {
-                    break;
+                    logged++;
+                    if (logged >= 12)
+                    {
+                        break;
+                    }
                 }
             }
 

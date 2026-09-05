@@ -26,7 +26,7 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg("[HwaResourceManager] 모드 로드 시 manifest 선읽기 시작");
+                ModLogger.Verbose("[HwaResourceManager] 모드 로드 시 manifest 선읽기 시작");
                 ClearCaches();
 
                 List<string> songDirs = DiscoverSongDirectories();

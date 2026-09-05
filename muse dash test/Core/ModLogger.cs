@@ -103,6 +103,12 @@ namespace muse_dash_test
 
         /// <summary>
         /// 상세 진단 로그를 출력합니다. (LogLevel이 Verbose일 때만 출력)
+        ///
+        /// <para><b>어느 레벨에 남길지 고르는 기준.</b> 항목마다 한 줄씩 나가는 <b>열거</b>는
+        /// 여기(Verbose)에 둡니다. 곡·작업당 한 줄인 <b>요약</b>은 <see cref="Msg(string)"/>,
+        /// 사용자가 고쳐야 할 <b>문제</b>는 <see cref="Warning(string)"/>입니다.
+        /// 곡 폴더 하나가 시작 로그에 30줄씩 쏟아내 정작 봐야 할 줄이 묻힌 적이 있습니다.
+        /// 열거를 만드는 계산이 무겁다면 <see cref="IsLevelEnabled"/>로 루프째 건너뛰세요.</para>
         /// </summary>
         public static void Verbose(string msg)
         {

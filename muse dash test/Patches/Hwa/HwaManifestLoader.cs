@@ -10,16 +10,16 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg($"[HwaResourceManager] manifest 탐색 시작: folder={folderPath}");
+                ModLogger.Verbose($"[HwaResourceManager] manifest 탐색 시작: folder={folderPath}");
 
                 string[] txtFiles = Directory.GetFiles(folderPath, "*.txt", SearchOption.AllDirectories);
                 if (txtFiles == null || txtFiles.Length == 0)
                 {
-                    ModLogger.Msg($"[HwaResourceManager] 하위 폴더까지 스캔했지만 txt 파일이 없습니다: folder={folderPath}");
+                    ModLogger.Warning($"[HwaResourceManager] 하위 폴더까지 스캔했지만 txt 파일이 없습니다: folder={folderPath}");
                     return null;
                 }
 
-                ModLogger.Msg($"[HwaResourceManager] txt 파일 {txtFiles.Length}개 발견(하위 폴더 포함): {string.Join(", ", Array.ConvertAll(txtFiles, file => GetRelativeHwaPath(folderPath, file)))}");
+                ModLogger.Verbose($"[HwaResourceManager] txt 파일 {txtFiles.Length}개 발견(하위 폴더 포함): {string.Join(", ", Array.ConvertAll(txtFiles, file => GetRelativeHwaPath(folderPath, file)))}");
 
                 Array.Sort(txtFiles, StringComparer.OrdinalIgnoreCase);
                 string preferred = null;
@@ -40,25 +40,25 @@ namespace muse_dash_test
 
                 if (string.IsNullOrWhiteSpace(preferred) || !File.Exists(preferred))
                 {
-                    ModLogger.Msg($"[HwaResourceManager] 선택할 txt 파일이 없습니다: folder={folderPath}");
+                    ModLogger.Warning($"[HwaResourceManager] 선택할 txt 파일이 없습니다: folder={folderPath}");
                     return null;
                 }
 
-                ModLogger.Msg($"[HwaResourceManager] manifest 읽기 대상: {preferred}");
+                ModLogger.Verbose($"[HwaResourceManager] manifest 읽기 대상: {preferred}");
 
                 var manifest = new HwaManifest { SourcePath = preferred };
                 foreach (var rawLine in File.ReadAllLines(preferred))
                 {
                     if (TryParseManifestLine(rawLine, out string key, out string value))
                     {
-                        ModLogger.Msg($"[HwaResourceManager] manifest line parsed: key={key}, value={value}");
+                        ModLogger.Verbose($"[HwaResourceManager] manifest line parsed: key={key}, value={value}");
                         ApplyManifestValue(manifest, key, value);
                     }
                 }
 
                 if (string.IsNullOrWhiteSpace(manifest.Uid) && string.IsNullOrWhiteSpace(manifest.Title) && string.IsNullOrWhiteSpace(manifest.Artist))
                 {
-                    ModLogger.Msg($"[HwaResourceManager] manifest 파싱은 했지만 핵심 값이 비어 있습니다: {DescribeManifest(manifest)}");
+                    ModLogger.Warning($"[HwaResourceManager] manifest 파싱은 했지만 핵심 값이 비어 있습니다: {DescribeManifest(manifest)}");
                     return null;
                 }
 
