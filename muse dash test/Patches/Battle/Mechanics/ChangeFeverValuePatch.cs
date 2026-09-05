@@ -18,7 +18,7 @@ namespace muse_dash_test
                 shouldLogCurrent = (System.DateTime.UtcNow - lastLogTime).TotalSeconds >= 10.0;
                 if (shouldLogCurrent)
                 {
-                    ModLogger.Msg($"[FeverPatch] AbstractFeverManager.AddFever Prefix 호출 감지: 원래 value={value}, 피버 차단 설정값={InputOverlay.blockFever}");
+                    ModLogger.Verbose($"[FeverPatch] AbstractFeverManager.AddFever Prefix 호출 감지: 원래 value={value}, 피버 차단 설정값={InputOverlay.blockFever}");
                 }
 
                 if (InputOverlay.blockFever)
@@ -44,7 +44,7 @@ namespace muse_dash_test
             {
                 if (shouldLogCurrent)
                 {
-                    ModLogger.Msg($"[FeverPatch] AbstractFeverManager.AddFever Postfix 최종 적용 완료: value={value}, instance={__instance}");
+                    ModLogger.Verbose($"[FeverPatch] AbstractFeverManager.AddFever Postfix 최종 적용 완료: value={value}, instance={__instance}");
                     lastLogTime = System.DateTime.UtcNow;
                 }
             }

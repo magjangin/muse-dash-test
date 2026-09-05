@@ -74,20 +74,27 @@ namespace muse_dash_test
             ModLogger.Msg($"[ForcePerfect] 강제퍼펙트 설정이 {(enabled ? "켜짐" : "꺼짐")}으로 변경되었습니다. (오토플레이와는 무관하며 판정 값만 바뀝니다)");
             if (!enabled)
             {
-                LogSummary();
+                LogSummary(important: true);
             }
             announced = false;
         }
 
-        private static void LogSummary()
+        /// <summary>
+        /// 누적 승격 현황을 남깁니다. 플레이 중 10초마다 부르는 쪽은 Verbose로,
+        /// 설정을 끌 때처럼 "이번 세션은 여기서 끝"인 자리만 <paramref name="important"/>로 Info에 남깁니다.
+        /// (배틀 내내 같은 줄이 반복되면 정작 봐야 할 로그가 밀립니다)
+        /// </summary>
+        private static void LogSummary(bool important = false)
         {
             lastSummaryTime = DateTime.UtcNow;
             if (!pendingSummary) return;
             pendingSummary = false;
 
-            ModLogger.Msg($"[ForcePerfect] 누적 승격 현황: Miss={promotedByOrigin[(int)TaskResult.Miss]}, " +
+            string message = $"[ForcePerfect] 누적 승격 현황: Miss={promotedByOrigin[(int)TaskResult.Miss]}, " +
                             $"Cool={promotedByOrigin[(int)TaskResult.Cool]}, Great={promotedByOrigin[(int)TaskResult.Great]} " +
-                            $"| 훅별: GameTouchPlay.TouchResult={promotedTotal}");
+                            $"| 훅별: GameTouchPlay.TouchResult={promotedTotal}";
+
+            if (important) ModLogger.Msg(message); else ModLogger.Verbose(message);
         }
 
         internal static string Describe(uint result)

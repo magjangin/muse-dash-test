@@ -50,13 +50,13 @@ namespace muse_dash_test
                 float currentTime = Time.time;
                 if (currentTime - lastLogTime >= LogCooldown)
                 {
-                    ModLogger.Msg(message);
+                    ModLogger.Verbose(message);
                     lastLogTime = currentTime;
                 }
             }
             catch
             {
-                ModLogger.Msg(message);
+                ModLogger.Verbose(message);
             }
         }
     }
