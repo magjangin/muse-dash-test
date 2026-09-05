@@ -93,7 +93,7 @@ namespace muse_dash_test
                         {
                             // 홀드 시작 지점 지정
                             activeHoldStart = currentNote;
-                            ModLogger.Msg($"[BmsMatcher] 홀드 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
+                            ModLogger.Verbose($"[BmsMatcher] 홀드 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
                         }
                         else
                         {
@@ -105,7 +105,7 @@ namespace muse_dash_test
                                 EndNote = currentNote
                             };
                             matchedPairs.Add(pair);
-                            ModLogger.Msg($"[BmsMatcher] ★홀드 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (길이={pair.Duration:F2}초, {pair.LengthInTicks:F2}틱)");
+                            ModLogger.Verbose($"[BmsMatcher] ★홀드 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (길이={pair.Duration:F2}초, {pair.LengthInTicks:F2}틱)");
                             
                             // 상태 초기화하여 다음 롱노트 매칭을 준비시킴
                             activeHoldStart = null;
@@ -119,7 +119,7 @@ namespace muse_dash_test
                         {
                             // 샌드백 시작 지점 지정
                             activeSandbagStart = currentNote;
-                            ModLogger.Msg($"[BmsMatcher] 샌드백 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
+                            ModLogger.Verbose($"[BmsMatcher] 샌드백 시작 등록 완료: Channel={channel}, Tick={currentNote.Tick}");
                         }
                         else
                         {
@@ -131,7 +131,7 @@ namespace muse_dash_test
                                 EndNote = currentNote
                             };
                             matchedPairs.Add(pair);
-                            ModLogger.Msg($"[BmsMatcher] ★샌드백 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (연타구간={pair.Duration:F2}초)");
+                            ModLogger.Verbose($"[BmsMatcher] ★샌드백 매칭 완성★ Channel={channel} | 시작={pair.StartNote.Tick:F3} 틱 ➡️ 끝={pair.EndNote.Tick:F3} 틱 (연타구간={pair.Duration:F2}초)");
                             
                             activeSandbagStart = null;
                         }

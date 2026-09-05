@@ -95,7 +95,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 if (!string.IsNullOrWhiteSpace(spec.IbmsId))
                 {
                     activeSceneChangeName = spec.IbmsId;
-                    ModLogger.Msg($"[ExperimentChart.Bms.SceneChangeNames] 활성 씬 체인지 키 갱신: uid={spec.Uid}, ibms_id={activeSceneChangeName}, tick={spec.StartTick}");
+                    ModLogger.Verbose($"[ExperimentChart.Bms.SceneChangeNames] 활성 씬 체인지 키 갱신: uid={spec.Uid}, ibms_id={activeSceneChangeName}, tick={spec.StartTick}");
                 }
                 continue;
             }
@@ -141,7 +141,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (!string.IsNullOrWhiteSpace(spec.BossAction))
         {
-            ModLogger.Msg($"[ExperimentChart.Bms.BossFields] raw={note.RawValue}, uid={spec.Uid}, action={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}");
+            ModLogger.Verbose($"[ExperimentChart.Bms.BossFields] raw={note.RawValue}, uid={spec.Uid}, action={spec.BossAction}, BossName={spec.BossName}, BossScene={spec.BossScene}, Scene={spec.Scene}");
         }
 
         // 씬 전환 노트(type 9): SceneChangeController.ChangeScene가 호출되려면 ibms_id가 게임의
@@ -153,7 +153,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             spec.IbmsId = ResolveSceneToggleIbmsId(spec.Uid); // 000401 → "1O"
             // Scene/BossAction은 의도적으로 미설정 → 복제된 원본 노트의 실재 scene을 상속하여
             // 존재하지 않는 scene_00 배경 등록(보라색 화면)을 원천 차단합니다.
-            ModLogger.Msg($"[ExperimentChart.Bms.SceneToggle] uid={spec.Uid}, ibms_id={spec.IbmsId ?? "(none)"}, prefab={spec.PrefabName}, tick={note.Tick}, time={note.Time:0.###}");
+            ModLogger.Verbose($"[ExperimentChart.Bms.SceneToggle] uid={spec.Uid}, ibms_id={spec.IbmsId ?? "(none)"}, prefab={spec.PrefabName}, tick={note.Tick}, time={note.Time:0.###}");
         }
 
         // 고스트 노트(xx=17, type 4)는 렌더러 페이드를 동반하는 유일한 계열이라 주입 시점 상태를 남깁니다.
@@ -161,7 +161,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // PrefabName이 비어 있으면 이후 자동 생성 규칙을 타므로, 여기서 무엇이 확정됐는지가 중요합니다.
         if (spec.NoteType == NoteTypes.Ghost)
         {
-            ModLogger.Msg($"[ExperimentChart.Bms.Ghost] uid={spec.Uid}, xx={UidCode.Xx(spec.Uid) ?? "(none)"}, yy={UidCode.Yy(spec.Uid) ?? "(none)"}, " +
+            ModLogger.Verbose($"[ExperimentChart.Bms.Ghost] uid={spec.Uid}, xx={UidCode.Xx(spec.Uid) ?? "(none)"}, yy={UidCode.Yy(spec.Uid) ?? "(none)"}, " +
                             $"prefab={(string.IsNullOrEmpty(spec.PrefabName) ? "(자동생성)" : spec.PrefabName)}, pathway={spec.Pathway}, " +
                             $"keyAudio={spec.KeyAudio}, tick={note.Tick}, time={note.Time:0.###}, dt={spec.Dt}");
 

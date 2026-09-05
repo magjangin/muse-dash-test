@@ -197,6 +197,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void LogInsertedNote(string label, MusicData note)
     {
+        // 노트마다 한 줄이고, 그 한 줄을 만들자고 아래에서 IL2CPP 박싱 getter를 열댓 번 두드립니다.
+        // 배틀 진입 경로라 버려질 문자열에 그 비용을 치르면 안 됩니다 — CHECKLIST에 적힌 대로
+        // 진단 탐침이 노트 많은 곡에서 프로세스를 통째로 날린 적이 있습니다.
+        // 그래서 레벨 판정을 필드 접근보다 먼저 둡니다.
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
+
         string uid = note.noteData?.uid ?? "(null)";
         bool isBmsNote = label != null && label.StartsWith("BMS ", System.StringComparison.OrdinalIgnoreCase);
         if (!isBmsNote && !IsUidMiddlePair(uid, "09")) return;
@@ -212,7 +218,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         string isShowPlayEffect = note.noteData != null ? note.noteData.isShowPlayEffect.ToString() : "(null)";
         string sceneChangeNames = note.noteData != null ? FormatSceneChangeNames(note.noteData.sceneChangeNames) : "(null)";
         string ibmsId = note.noteData?.ibms_id ?? "(null)";
-        ModLogger.Msg($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, ibms_id={ibmsId}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, sceneChangeNames={sceneChangeNames}, prefab={prefab}, boss_action={bossAction}, effect={effect}, isShowPlayEffect={isShowPlayEffect}");
+        ModLogger.Verbose($"실험 노트 추가: {label}, objId={note.objId}, tick={note.tick}, dt={note.dt}, showTick={note.showTick}, config.time={configTime}, speed={speed}, uid={uid}, ibms_id={ibmsId}, type={type}, pathway={pathway}({pathwayLabel}), scene={scene}, sceneChangeNames={sceneChangeNames}, prefab={prefab}, boss_action={bossAction}, effect={effect}, isShowPlayEffect={isShowPlayEffect}");
     }
 
     // note.noteData.sceneChangeNames(Il2Cpp List<string>)를 사람이 읽기 좋은 형태로 변환합니다.
