@@ -133,6 +133,28 @@ namespace muse_dash_test
         /// <summary>캐시 키 → 지금 불투명으로 덮인 상태인가. 상태가 같으면 아무것도 하지 않습니다.</summary>
         private static readonly Dictionary<string, bool> opaqueAnimations = new Dictionary<string, bool>();
 
+        // ─────────────────────────────────────────────────────────────────────
+        //  임시 진단: "고스트 보이기가 저절로 풀린다"의 원인을 계측으로 확정하기 위한 상태.
+        //
+        //  위 두 캐시는 스켈레톤 '이름'으로 키를 잡고 어디서도 비워지지 않습니다. 그래서 씬 재진입
+        //  등으로 SkeletonData가 다시 만들어지면 알파는 원본으로 돌아갔는데 캐시는 "이미 덮었다"고
+        //  기억한 채라, 아래 조기 반환이 실제 덮어쓰기를 영영 건너뛸 수 있습니다. 그게 사실인지
+        //  추측이 아니라 눈으로 보려고 실제 알파와 네이티브 포인터를 같이 찍습니다.
+        //
+        //  원인이 확정되면 이 필드들과 ProbeCachedState / ReadMinAlpha / ScanAlpha /
+        //  RecordProbePointer, 그리고 두 호출 지점을 통째로 지웁니다.
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>덮어쓸 당시의 SkeletonData 네이티브 포인터. 지금 것과 다르면 데이터가 다시 만들어진 것입니다.</summary>
+        private static readonly Dictionary<string, IntPtr> probeDataPtr = new Dictionary<string, IntPtr>();
+
+        /// <summary>정상(일치) 결과를 이미 남긴 캐시 키. 불일치는 이 목록과 무관하게 매번 남깁니다.</summary>
+        private static readonly HashSet<string> probeLogged = new HashSet<string>();
+
+        /// <summary>진단이 무한정 비용을 물지 않도록 하는 상한. 소진되면 조용히 멈춥니다.</summary>
+        private const int ProbeBudget = 300;
+        private static int probeCount;
+
         public static void Postfix(SpineActionController __instance, string actionKey)
         {
             try
@@ -163,7 +185,11 @@ namespace muse_dash_test
             string cacheKey = SkeletonNameOf(controller, data) + "|" + animationName;
 
             // 이미 원하는 상태면 끝. 스켈레톤+애니메이션 조합당 한 번씩만 실제로 손댑니다.
-            if (opaqueAnimations.TryGetValue(cacheKey, out bool state) && state == opaque) return;
+            if (opaqueAnimations.TryGetValue(cacheKey, out bool state) && state == opaque)
+            {
+                ProbeCachedState(controller, data, animationName, cacheKey, opaque);   // ← 임시 진단
+                return;
+            }
 
             // 아직 한 번도 안 건드렸는데 "보이지 않게"라면, 데이터가 이미 원본이라 할 일이 없습니다.
             if (!opaque && !originalAlphas.ContainsKey(cacheKey))
@@ -217,9 +243,112 @@ namespace muse_dash_test
 
             if (capture != null) originalAlphas[cacheKey] = capture.ToArray();
             opaqueAnimations[cacheKey] = opaque;
+            RecordProbePointer(cacheKey, data);   // ← 임시 진단 (원인 확정 후 제거)
 
             ModLogger.Msg($"[GhostNote.AlphaTimeline] {ObjectNameOf(controller)} '{cacheKey}' {(opaque ? "고정" : "복원")} 완료: 타임라인 {count}개 중 컬러 {colorTimelines}개, " +
                             $"알파 키 {alphaKeys}개를 {(opaque ? "1로 고정" : "원본으로 되돌림")} (이동/스케일 타임라인은 그대로)");
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        //  임시 진단 — 아래 세 메서드와 위 probe* 필드는 원인 확정 후 통째로 지웁니다.
+        // ═══════════════════════════════════════════════════════════════════════
+
+        /// <summary>임시 진단: 실제로 덮어쓴 그 순간의 SkeletonData 네이티브 포인터를 적어 둡니다.</summary>
+        private static void RecordProbePointer(string cacheKey, Il2CppSpine.SkeletonData data)
+        {
+            try { probeDataPtr[cacheKey] = data.Pointer; }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 임시 진단: 캐시가 "이미 불투명"이라 말할 때, 실제 알파도 정말 1인지 확인합니다.
+        /// 어긋나면 캐시가 낡은 것이고, 그 경우 SkeletonData 포인터도 덮을 때와 달라져 있을 것입니다.
+        /// 그 둘을 한 줄에 같이 찍어야 "캐시가 거짓말한다"와 "설정이 꺼졌다"를 구분할 수 있습니다.
+        /// </summary>
+        private static void ProbeCachedState(SpineActionController controller, Il2CppSpine.SkeletonData data,
+                                             string animationName, string cacheKey, bool opaque)
+        {
+            if (probeCount >= ProbeBudget) return;
+
+            try
+            {
+                probeCount++;
+
+                var animation = data.FindAnimation(animationName);
+                int alphaKeys = 0;
+                float? actual = animation != null ? ReadMinAlpha(animation, out alphaKeys) : null;
+
+                // 덮어쓴 뒤라면 모든 알파 키가 1이므로 최솟값도 1입니다. 1보다 작으면 원본으로 돌아간 것입니다.
+                bool mismatch = opaque && actual.HasValue && actual.Value < 0.999f;
+
+                // 어긋남은 볼 때마다, 정상은 캐시 키당 한 번만 남깁니다.
+                if (!mismatch && !probeLogged.Add(cacheKey)) return;
+
+                string then = probeDataPtr.TryGetValue(cacheKey, out IntPtr recorded)
+                    ? "0x" + recorded.ToString("X")
+                    : "(기록 없음)";
+
+                ModLogger.Msg($"[GhostNote.Probe] {(mismatch ? "★불일치★" : "일치")} '{cacheKey}': " +
+                              $"캐시={opaque}, 실제 알파 최솟값={(actual.HasValue ? actual.Value.ToString("0.###") : "(못 읽음)")}(키 {alphaKeys}개), " +
+                              $"덮을 때 포인터={then}, 지금 포인터=0x{data.Pointer.ToString("X")}, " +
+                              $"uid={CustomPlaySession.Current.LastKnownMusicUid ?? "(null)"}, " +
+                              $"설정={GhostNoteVisibility.IsEnabledForCurrentSong()}, obj={ObjectNameOf(controller)}");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[GhostNote.Probe] 진단 중 예외: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 임시 진단: 컬러 타임라인의 알파 키 중 가장 작은 값을 돌려줍니다.
+        /// 첫 키가 아니라 최솟값을 봐야 하는 이유 — 페이드는 보통 알파 1에서 시작해 내려가므로,
+        /// 첫 키만 보면 "덮어쓴 상태"와 "원본"이 똑같이 1로 보입니다.
+        /// </summary>
+        private static float? ReadMinAlpha(Il2CppSpine.Animation animation, out int alphaKeys)
+        {
+            alphaKeys = 0;
+            float min = float.MaxValue;
+
+            var timelines = animation.timelines;
+            var items = timelines != null ? timelines.Items : null;
+            int count = timelines == null ? 0 : timelines.Count;
+            if (items == null) return null;
+            if (count > items.Length) count = items.Length;
+
+            for (int i = 0; i < count; i++)
+            {
+                var timeline = items[i];
+                if (timeline == null) continue;
+
+                var color = timeline.TryCast<Il2CppSpine.ColorTimeline>();
+                if (color != null)
+                {
+                    ScanAlpha(color.frames, ColorEntries, ref min, ref alphaKeys);
+                    continue;
+                }
+
+                var twoColor = timeline.TryCast<Il2CppSpine.TwoColorTimeline>();
+                if (twoColor != null)
+                {
+                    ScanAlpha(twoColor.frames, TwoColorEntries, ref min, ref alphaKeys);
+                }
+            }
+
+            return alphaKeys > 0 ? min : (float?)null;
+        }
+
+        /// <summary>임시 진단: 프레임 배열의 알파 자리만 훑어 최솟값과 키 개수를 모읍니다.</summary>
+        private static void ScanAlpha(Il2CppStructArray<float> frames, int entries, ref float min, ref int alphaKeys)
+        {
+            if (frames == null) return;
+
+            for (int i = AlphaOffset; i < frames.Length; i += entries)
+            {
+                float value = frames[i];
+                if (value < min) min = value;
+                alphaKeys++;
+            }
         }
 
         /// <summary>
