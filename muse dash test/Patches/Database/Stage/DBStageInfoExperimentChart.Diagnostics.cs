@@ -103,6 +103,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)
     {
+        // 보스 이벤트마다 앞뒤 ±2 노트를 찍으므로 이벤트 하나당 5줄입니다. 보스 액션이 잦은
+        // 채보에서는 이것만으로 수십 줄이 되고, 줄마다 SafeLogValue로 IL2CPP 필드를 다시 읽습니다.
+        // 레벨 판정을 순회보다 먼저 둬서 꺼져 있을 때는 리스트를 아예 훑지 않습니다.
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
+
         for (int i = startIndex; i < musicList.Count; i++)
         {
             var note = musicList[i];
@@ -111,14 +116,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 continue;
             }
 
-            ModLogger.Msg($"[BmsSortedBossContext] === index={i}, action={note.noteData.boss_action} ===");
+            ModLogger.Verbose($"[BmsSortedBossContext] === index={i}, action={note.noteData.boss_action} ===");
             int firstIndex = System.Math.Max(startIndex, i - 2);
             int lastIndex = System.Math.Min(musicList.Count - 1, i + 2);
             for (int contextIndex = firstIndex; contextIndex <= lastIndex; contextIndex++)
             {
                 var contextNote = musicList[contextIndex];
                 string role = contextIndex == i ? "EVENT" : contextIndex < i ? "PREV" : "NEXT";
-                ModLogger.Msg(
+                ModLogger.Verbose(
                     $"[BmsSortedBossContext] {role} index={contextIndex}, objId={contextNote.objId}, " +
                     $"tick={contextNote.tick}, dt={contextNote.dt}, showTick={contextNote.showTick}, " +
                     $"config.time={SafeLogValue(() => contextNote.configData?.time)}, uid={SafeLogValue(() => contextNote.noteData?.uid)}, " +

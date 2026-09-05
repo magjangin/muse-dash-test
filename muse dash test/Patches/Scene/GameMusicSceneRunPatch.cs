@@ -6,7 +6,9 @@ using System;
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "Run")]
 public class GameMusicScene_Run_Patch
 {
-    private static bool EnableVerboseSceneDump => true;
+    // 배틀 중 30프레임마다 반복되는 관찰용 덤프입니다. 여기가 하드코딩 true라
+    // 릴리스 플레이 내내 돌고 있었습니다. 사용자가 끄고 켤 수 있게 로그 레벨에 묶습니다.
+    private static bool EnableVerboseSceneDump => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
     private static int _dumpCount;
     private static bool _musicDumped;
     private static int _lastDumpFrame;
@@ -53,7 +55,7 @@ public class GameMusicScene_Run_Patch
         {
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
             var list = db != null ? db.musicList : null;
-            if (list == null) { ModLogger.Msg("[GameMusicScene.Run]   >> musicList = (null)"); return; }
+            if (list == null) { ModLogger.Verbose("[GameMusicScene.Run]   >> musicList = (null)"); return; }
 
             var hist = new System.Collections.Generic.SortedDictionary<string, int>();
             var firstNonNull = new System.Collections.Generic.List<string>();
@@ -72,7 +74,7 @@ public class GameMusicScene_Run_Patch
             bool first = true;
             foreach (var kv in hist) { if (!first) sb.Append(", "); sb.Append($"{kv.Key}:{kv.Value}"); first = false; }
             sb.Append($"}}, 첫non-null=[{string.Join(", ", firstNonNull)}]");
-            ModLogger.Msg($"[GameMusicScene.Run]   >> musicList {sb}");
+            ModLogger.Verbose($"[GameMusicScene.Run]   >> musicList {sb}");
         }
         catch (Exception ex) { ModLogger.Error($"[GameMusicScene.Run] musicList 덤프 예외: {ex}"); }
     }
@@ -87,12 +89,12 @@ public class GameMusicScene_Run_Patch
             if (scenes != null)
             {
                 int sampleCount = Math.Min(scenes.Count, 8);
-                ModLogger.Msg($"[GameMusicScene.Run]   >> scenes (Count={scenes.Count}, sample={sampleCount}):");
+                ModLogger.Verbose($"[GameMusicScene.Run]   >> scenes (Count={scenes.Count}, sample={sampleCount}):");
                 for (int i = 0; i < sampleCount; i++)
                 {
                     string name = "(null)";
                     try { name = scenes[i] != null ? scenes[i].name : "(null)"; } catch (Exception ex) { name = $"(예외:{ex.GetType().Name})"; }
-                    ModLogger.Msg($"[GameMusicScene.Run]        [{i}] {name}");
+                    ModLogger.Verbose($"[GameMusicScene.Run]        [{i}] {name}");
                 }
             }
         }
@@ -105,12 +107,12 @@ public class GameMusicScene_Run_Patch
             if (sa != null)
             {
                 int sampleCount = Math.Min(sa.Count, 8);
-                ModLogger.Msg($"[GameMusicScene.Run]   >> scenesAnimas keys (Count={sa.Count}, sample={sampleCount}):");
+                ModLogger.Verbose($"[GameMusicScene.Run]   >> scenesAnimas keys (Count={sa.Count}, sample={sampleCount}):");
                 var e = sa.Keys.GetEnumerator();
                 int logged = 0;
                 while (e.MoveNext() && logged < sampleCount)
                 {
-                    ModLogger.Msg($"[GameMusicScene.Run]        key='{e.Current}'");
+                    ModLogger.Verbose($"[GameMusicScene.Run]        key='{e.Current}'");
                     logged++;
                 }
             }
@@ -124,12 +126,12 @@ public class GameMusicScene_Run_Patch
             if (subs != null)
             {
                 int sampleCount = Math.Min(subs.Count, 8);
-                ModLogger.Msg($"[GameMusicScene.Run]   >> SceneSubCtrls keys (Count={subs.Count}, sample={sampleCount}):");
+                ModLogger.Verbose($"[GameMusicScene.Run]   >> SceneSubCtrls keys (Count={subs.Count}, sample={sampleCount}):");
                 var e = subs.Keys.GetEnumerator();
                 int logged = 0;
                 while (e.MoveNext() && logged < sampleCount)
                 {
-                    ModLogger.Msg($"[GameMusicScene.Run]        key={e.Current}");
+                    ModLogger.Verbose($"[GameMusicScene.Run]        key={e.Current}");
                     logged++;
                 }
             }
