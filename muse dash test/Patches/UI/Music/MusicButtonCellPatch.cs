@@ -38,7 +38,7 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg($"[Postfix] SelectedMusicUid={CustomPlaySession.Current.SelectedMusicUid}, LastClickedMusicUid={CustomPlaySession.Current.LastClickedMusicUid}");
+                ModLogger.Verbose($"[Postfix] SelectedMusicUid={CustomPlaySession.Current.SelectedMusicUid}, LastClickedMusicUid={CustomPlaySession.Current.LastClickedMusicUid}");
             }
             catch (Exception ex)
             {
@@ -148,7 +148,7 @@ namespace muse_dash_test
                 if (img.sprite != coverSprite)
                 {
                     img.sprite = coverSprite;
-                    ModLogger.Msg($"[Cover] 곡 셀 ImgCover 스프라이트를 커스텀 커버로 교체 uid='{uid}'");
+                    ModLogger.Verbose($"[Cover] 곡 셀 ImgCover 스프라이트를 커스텀 커버로 교체 uid='{uid}'");
                 }
                 return;
             }
@@ -230,6 +230,10 @@ namespace muse_dash_test
 
         public static void LogCellImagesOnce(MusicButtonCell cell, string uid)
         {
+            // 순수 관찰용입니다. 아래 GetComponentsInChildren는 셀마다 배열을 새로 할당하는데,
+            // 곡 목록을 스크롤하면 셀이 재활용되며 계속 불립니다. 찍지 않을 거면 훑지도 않습니다.
+            if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
+
             try
             {
                 if (cell == null) return;
@@ -250,7 +254,7 @@ namespace muse_dash_test
                     break;
                 }
 
-                ModLogger.Msg($"[CoverDiag] uid='{key}' cover='{coverName}'");
+                ModLogger.Verbose($"[CoverDiag] uid='{key}' cover='{coverName}'");
             }
             catch (Exception ex)
             {

@@ -168,7 +168,7 @@ namespace muse_dash_test
                     if (customTexture != null)
                     {
                         tex = customTexture;
-                        ModLogger.Msg("[APMod.TagIcon] SetIconAsync 호출 감지 - 가상 태그의 아이콘 텍스처를 커스텀 이미지로 오버라이드합니다.");
+                        ModLogger.Verbose("[APMod.TagIcon] SetIconAsync 호출 감지 - 가상 태그의 아이콘 텍스처를 커스텀 이미지로 오버라이드합니다.");
                     }
                 }
             }

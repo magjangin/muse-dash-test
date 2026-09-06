@@ -27,7 +27,7 @@ namespace muse_dash_test
                 if (img != null && img.sprite != sprite)
                 {
                     img.sprite = sprite;
-                    ModLogger.Msg($"[Cover.Disc] MusicStageCell 커버 교체 uid='{uid}'");
+                    ModLogger.Verbose($"[Cover.Disc] MusicStageCell 커버 교체 uid='{uid}'");
                 }
             }
             catch (Exception ex)

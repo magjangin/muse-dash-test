@@ -9,7 +9,7 @@ public class PnlRecord_RefreshRecord_Patch
     {
         try
         {
-            ModLogger.Msg($"[PnlRecord.RefreshRecord.Prefix] 호출 감지: instance={(__instance != null ? __instance.ToString() : "null")}");
+            ModLogger.Verbose($"[PnlRecord.RefreshRecord.Prefix] 호출 감지: instance={(__instance != null ? __instance.ToString() : "null")}");
         }
         catch (Exception ex)
         {
@@ -21,7 +21,7 @@ public class PnlRecord_RefreshRecord_Patch
     {
         try
         {
-            ModLogger.Msg($"[PnlRecord.RefreshRecord.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
+            ModLogger.Verbose($"[PnlRecord.RefreshRecord.Postfix] 처리 완료: instance={(__instance != null ? __instance.ToString() : "null")}");
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlRecord(__instance);
         }
         catch (Exception ex)

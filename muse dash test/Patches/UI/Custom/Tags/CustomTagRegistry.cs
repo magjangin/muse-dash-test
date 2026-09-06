@@ -109,27 +109,27 @@ namespace muse_dash_test
             try
             {
                 // 4. 커스텀 허용 임계 한계값 분석 (Maximum Safety Threshold Analysis)
-                ModLogger.Msg("[UidAnalysis] === 게임 내부 커스텀 입력 최대 한계 분석 리포트 ===");
+                ModLogger.Verbose("[UidAnalysis] === 게임 내부 커스텀 입력 최대 한계 분석 리포트 ===");
                 
                 // (1) 태그 UID 한계
                 int tagLimitTheoretical = int.MaxValue;
                 int tagLimitRecommended = 999;
                 string tagStatus = (TagUid <= tagLimitRecommended) ? "SAFE" : (TagUid <= 2000 ? "WARN (UI lag might occur)" : "DANGER (High risk of crash)");
-                ModLogger.Msg($"[UidAnalysis] - 태그 UID (tagIndex): 이론상 최대 {tagLimitTheoretical:N0} | 실질적 권장 최대 {tagLimitRecommended} (현재 설정값: {TagUid} -> {tagStatus})");
+                ModLogger.Verbose($"[UidAnalysis] - 태그 UID (tagIndex): 이론상 최대 {tagLimitTheoretical:N0} | 실질적 권장 최대 {tagLimitRecommended} (현재 설정값: {TagUid} -> {tagStatus})");
 
                 // (2) 앨범 UID 한계
                 int albumLimitTheoretical = int.MaxValue;
                 int albumLimitRecommended = 999;
                 int currentAlbumIdx = TagUid; // 앨범 UID의 인덱스로 TagUid를 씀
                 string albumStatus = (currentAlbumIdx <= albumLimitRecommended) ? "SAFE" : "WARN (UI performance hit)";
-                ModLogger.Msg($"[UidAnalysis] - 앨범 UID (albumIndex): 이론상 최대 {albumLimitTheoretical:N0} | 실질적 권장 최대 {albumLimitRecommended} (현재 설정값: {currentAlbumIdx} -> {albumStatus})");
+                ModLogger.Verbose($"[UidAnalysis] - 앨범 UID (albumIndex): 이론상 최대 {albumLimitTheoretical:N0} | 실질적 권장 최대 {albumLimitRecommended} (현재 설정값: {currentAlbumIdx} -> {albumStatus})");
 
                 // (3) 곡 UID 한계
                 int currentSongAlbumPart = 1999;
                 string songStatus = (currentSongAlbumPart >= 999 && currentSongAlbumPart <= 9999) ? "SAFE" : "WARN (Extremely high index)";
-                ModLogger.Msg($"[UidAnalysis] - 곡 UID (songUid): 이론상 최대 2147483647-2147483647 | 실질적 권장 최대 9999-99 (현재 설정 패턴: {currentSongAlbumPart}-* -> {songStatus})");
+                ModLogger.Verbose($"[UidAnalysis] - 곡 UID (songUid): 이론상 최대 2147483647-2147483647 | 실질적 권장 최대 9999-99 (현재 설정 패턴: {currentSongAlbumPart}-* -> {songStatus})");
                 
-                ModLogger.Msg("[UidAnalysis] === 게임 내부 커스텀 입력 최대 한계 분석 완료 ===");
+                ModLogger.Verbose("[UidAnalysis] === 게임 내부 커스텀 입력 최대 한계 분석 완료 ===");
             }
             catch (Exception ex)
             {

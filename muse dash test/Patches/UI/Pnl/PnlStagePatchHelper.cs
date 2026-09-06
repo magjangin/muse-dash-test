@@ -143,7 +143,7 @@ public static partial class PnlStagePatchHelper
 
             var musicText = stage.musicNameTitle;
             var artistText = stage.artistNameTitle;
-            ModLogger.Msg($"{source}: musicInfo.uid={musicInfo.uid} direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
+            ModLogger.Verbose($"{source}: musicInfo.uid={musicInfo.uid} direct apply => musicText={CleanLogText(musicText != null ? musicText.text : null)}, artistText={CleanLogText(artistText != null ? artistText.text : null)}");
             return true;
         }
         catch (Exception ex)

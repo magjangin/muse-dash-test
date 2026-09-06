@@ -363,7 +363,7 @@ public static partial class PnlStagePatchHelper
                 CustomPlaySession.Current.IsExperimentModeActive = isExp;
             }
 
-            ModLogger.Msg($"[PnlStage.ExperimentMode] title='{text}', detected={isExp}, previous={previous}, current={CustomPlaySession.Current.IsExperimentModeActive}");
+            ModLogger.Verbose($"[PnlStage.ExperimentMode] title='{text}', detected={isExp}, previous={previous}, current={CustomPlaySession.Current.IsExperimentModeActive}");
         }
         catch (Exception ex)
         {

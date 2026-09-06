@@ -60,7 +60,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
 
         if (foundInManifest)
         {
-            ModLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] HwaPrimarySong 매니페스트 조회 성공: uid={uid}, title='{manifestTitle}', artist='{manifestArtist}'");
+            ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord.Debug] HwaPrimarySong 매니페스트 조회 성공: uid={uid}, title='{manifestTitle}', artist='{manifestArtist}'");
             if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
             else ModLogger.Warning($"[PnlReportCard.RefreshBestRecord.Debug] 매니페스트 내 곡명(title)이 비어있습니다. uid={uid}");
 
@@ -69,7 +69,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
         }
         else
         {
-            ModLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] HwaPrimarySong 조회 실패. dbMusicTag 백업 조회를 시도합니다: uid={uid}");
+            ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord.Debug] HwaPrimarySong 조회 실패. dbMusicTag 백업 조회를 시도합니다: uid={uid}");
             if (GlobalDataBase.dbMusicTag == null)
             {
                 ModLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] GlobalDataBase.dbMusicTag가 null입니다!");
@@ -81,7 +81,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
                 {
                     title = musicInfo.name;
                     artist = musicInfo.author;
-                    ModLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] dbMusicTag에서 MusicInfo 획득 성공: name='{title}', author='{artist}'");
+                    ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord.Debug] dbMusicTag에서 MusicInfo 획득 성공: name='{title}', author='{artist}'");
                 }
                 else
                 {
@@ -96,7 +96,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
         if (instance.longSongNameController != null)
         {
             var c = instance.longSongNameController;
-            ModLogger.Msg($"[PnlReportCard.RefreshBestRecord] longSongNameController: simpleName={c.m_TxtSimpleName != null}, backupName={c.m_TxtBackupName != null}, midSimpleName={c.m_MidSimpleName != null}");
+            ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord] longSongNameController: simpleName={c.m_TxtSimpleName != null}, backupName={c.m_TxtBackupName != null}, midSimpleName={c.m_MidSimpleName != null}");
             c.RefreshText(title);
             if (c.m_TxtSimpleName != null) c.m_TxtSimpleName.text = title;
             if (c.m_TxtBackupName != null) c.m_TxtBackupName.text = title;
@@ -111,7 +111,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
         if (instance.longAuthorNameController != null)
         {
             var c = instance.longAuthorNameController;
-            ModLogger.Msg($"[PnlReportCard.RefreshBestRecord] longAuthorNameController: simpleName={c.m_TxtSimpleName != null}, backupName={c.m_TxtBackupName != null}, midSimpleName={c.m_MidSimpleName != null}");
+            ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord] longAuthorNameController: simpleName={c.m_TxtSimpleName != null}, backupName={c.m_TxtBackupName != null}, midSimpleName={c.m_MidSimpleName != null}");
             c.RefreshText(artist);
             if (c.m_TxtSimpleName != null) c.m_TxtSimpleName.text = artist;
             if (c.m_TxtBackupName != null) c.m_TxtBackupName.text = artist;
@@ -187,7 +187,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
                     int.TryParse(musicInfo.difficulty5, out int l5) ? l5 : 0
                 };
 
-                ModLogger.Msg($"[PnlReportCard.RefreshBestRecord] 난이도 매핑: starObjs={instance.starObjs.Count}, starTxtValues={instance.starTxtValues.Count}, diff={difficulty}");
+                ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord] 난이도 매핑: starObjs={instance.starObjs.Count}, starTxtValues={instance.starTxtValues.Count}, diff={difficulty}");
 
                 for (int i = 0; i < instance.starObjs.Count; i++)
                 {
@@ -227,7 +227,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
         var record = CustomRecordStore.LoadResult(uid, difficulty);
         if (record != null)
         {
-            ModLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] 가상 곡 기록 로드 성공: uid={uid}, diff={difficulty}");
+            ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord.Debug] 가상 곡 기록 로드 성공: uid={uid}, diff={difficulty}");
             if (instance.txtScrore != null) instance.txtScrore.text = CustomRecordUiPatchHelper.FormatScore(record);
             else ModLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtScrore가 null입니다.");
 
@@ -245,7 +245,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
         }
         else
         {
-            ModLogger.Msg($"[PnlReportCard.RefreshBestRecord.Debug] 가상 곡 플레이 이력 없음. 대시(-) 처리 진행: uid={uid}, diff={difficulty}");
+            ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord.Debug] 가상 곡 플레이 이력 없음. 대시(-) 처리 진행: uid={uid}, diff={difficulty}");
             if (instance.txtScrore != null) instance.txtScrore.text = "-";
             if (instance.txtAccuracy != null) instance.txtAccuracy.text = "-";
             if (instance.txtCombo != null) instance.txtCombo.text = "-";

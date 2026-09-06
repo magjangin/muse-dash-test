@@ -68,7 +68,7 @@ namespace muse_dash_test
                     }
                 }
 
-                ModLogger.Msg($"[SetSelectedMusicNameTxt.{source}] uid={uid}, value={value}, writes={writes}");
+                ModLogger.Verbose($"[SetSelectedMusicNameTxt.{source}] uid={uid}, value={value}, writes={writes}");
             }
             catch (Exception ex)
             {

@@ -14,7 +14,7 @@ public class MusicButtonAreaTitle_RefreshTxt_Patch
             {
                 bool isExperimentMode = PnlStagePatchHelper.IsExperimentModeTitle(title);
                 CustomPlaySession.Current.IsExperimentModeActive = isExperimentMode;
-                ModLogger.Msg($"[MusicButtonAreaTitle] title='{title ?? "(null)"}', isExperimentMode={isExperimentMode}");
+                ModLogger.Verbose($"[MusicButtonAreaTitle] title='{title ?? "(null)"}', isExperimentMode={isExperimentMode}");
             }
         }
         catch (Exception ex)

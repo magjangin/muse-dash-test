@@ -83,7 +83,7 @@ namespace muse_dash_test
                 }
             }
 
-            ModLogger.Msg($"[SongTitleOverride] 화면 텍스트 적용(WRITE): source={source}, uid={resolvedUid}, title='{title}', artist='{artist}', designer='{designer}'");
+            ModLogger.Verbose($"[SongTitleOverride] 화면 텍스트 적용(WRITE): source={source}, uid={resolvedUid}, title='{title}', artist='{artist}', designer='{designer}'");
 
             SetMemberTexts(pnlInstance, TitleMemberNames, title);
             SetMemberTexts(pnlInstance, ArtistMemberNames, artist);

@@ -22,7 +22,7 @@ namespace muse_dash_test.Patches.UI.Stage
                 int bufferChildCount = __instance.m_RankCellBuffer != null ? __instance.m_RankCellBuffer.childCount : 0;
                 int ranksDictCount = PnlRankLoggingHelper.GetMRanksCountReflect(__instance);
 
-                ModLogger.Msg($"👑 [PnlRank.RefreshGeneral] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
+                ModLogger.Verbose($"👑 [PnlRank.RefreshGeneral] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
             }
             catch (Exception ex)
             {
@@ -42,7 +42,7 @@ namespace muse_dash_test.Patches.UI.Stage
                 int bufferChildCount = __instance.m_RankCellBuffer != null ? __instance.m_RankCellBuffer.childCount : 0;
                 int ranksDictCount = PnlRankLoggingHelper.GetMRanksCountReflect(__instance);
 
-                ModLogger.Msg($"👑 [PnlRank.UIRefresh] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
+                ModLogger.Verbose($"👑 [PnlRank.UIRefresh] Called! Target UID='{uid}', BufferChildCount={bufferChildCount}, RanksDictCount={ranksDictCount}");
             }
             catch (Exception ex)
             {
@@ -59,7 +59,7 @@ namespace muse_dash_test.Patches.UI.Stage
             try
             {
                 string uid = CustomPlaySession.Current.SelectedMusicUid ?? PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-                ModLogger.Msg($"👑 [PnlRank.Refresh] Called! force={force}, UID='{uid}'");
+                ModLogger.Verbose($"👑 [PnlRank.Refresh] Called! force={force}, UID='{uid}'");
             }
             catch { }
         }
