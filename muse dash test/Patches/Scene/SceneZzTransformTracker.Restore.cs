@@ -1,26 +1,31 @@
 using MelonLoader;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Il2CppGameLogic;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace muse_dash_test
 {
     /// <summary>
-    /// 런타임 오브젝트 트리를 재귀적으로 순회하며 보관된 원본 MusicData/식별 값을 복구하는 로직.
+    /// 런타임 오브젝트 트리를 순회하며 보관된 원본 MusicData/식별 값을 복구하는 로직.
     /// </summary>
     internal static partial class SceneZzTransformTracker
     {
         /// <summary>
-        /// 씬에 생성된 실제 런타임 컨트롤러 객체들을 깊게 탐색하여 원래의 원본 값(uid, scene 등)으로 되돌려놓습니다.
+        /// 씬에 생성된 실제 런타임 컨트롤러 객체들을 탐색하여 원래의 원본 값(uid, scene 등)으로 되돌려놓습니다.
         ///
-        /// <para><b>진단 덤프는 제거됐습니다(2026-08-20).</b> 예전에는 복구가 끝나면 non-07 노트마다
-        /// 런타임 객체를 리플렉션으로 깊이 2까지 훑어 <c>runtime object dump</c> / <c>MusicData prop depth=2</c>
-        /// 줄을 찍었는데, 노트가 많은 곡(objCtrls 501개)에서 <b>게임이 통째로 죽었습니다</b> —
-        /// 로그가 objCtrls 193번째에서 끊기고 종료 로그도 남지 않는 네이티브 크래시였습니다.
-        /// IL2CPP 객체를 리플렉션으로 깊게 파는 탐침이 이 게임에서 조용히 프로세스를 날리는 건
-        /// 전력이 있습니다(<c>SpineActionController</c>). 게임 동작에 기여하지 않는 진단이라 걷어냈고,
-        /// 규모 파악에 필요한 요약(<c>runtime list scan</c>, zz 분포)은 그대로 남깁니다.</para>
+        /// <para><b>크래시 방지 핵심 (CHECKLIST.md):</b></para>
+        /// <list type="bullet">
+        /// <item><description>게임의 <c>scene.objCtrls</c>, <c>scene.preloads</c>, <c>scene.preloads1</c>은
+        /// <c>List&lt;T&gt;</c>가 아니라 <b><c>Il2CppReferenceArray&lt;T&gt;</c></b>입니다.
+        /// 예전에는 <c>is List&lt;...&gt;</c>만 검사해 모든 런타임 객체가 리플렉션 폴백으로 떨어졌습니다.</description></item>
+        /// <item><description>리플렉션으로 IL2CPP 속성(<c>prop.GetValue()</c>)을 재귀 탐색하면
+        /// 500노트 이상 대형 곡에서 193번째 노트 전후로 프로세스가 로그 없이 즉시 증발합니다.
+        /// 따라서 심층 재귀 리플렉션을 완전히 배제하고, <c>BaseEnemyObjectController.m_MusicData</c> 및
+        /// <c>BaseSpineObjectController.m_Sac.m_MusicData</c>로 직접 타입 캐스팅해 즉시 복원합니다.</description></item>
+        /// <item><description>객체 중복 방문 방지는 매니지드 C# 래퍼 해시코드가 아닌
+        /// 네이티브 포인터(<c>Il2CppObjectBase.Pointer</c>)를 기준으로 합니다.</description></item>
+        /// </list>
         /// </summary>
         public static int RestoreRuntimeObjects(GameMusicScene scene)
         {
@@ -38,9 +43,25 @@ namespace muse_dash_test
             if (listObj == null) return 0;
 
             int restored = 0;
-            var inspectedObjects = new HashSet<int>();
+            var inspectedPointers = new HashSet<IntPtr>();
 
-            // 1. objCtrls (List<BaseSpineObjectController>) 초고속 다이렉트 패스
+            // 1. objCtrls 초고속 다이렉트 패스 (Il2CppReferenceArray<BaseSpineObjectController> 또는 List<BaseSpineObjectController>)
+            if (listObj is Il2CppReferenceArray<Il2Cpp.BaseSpineObjectController> spineArray)
+            {
+                int count = spineArray.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    var item = spineArray[i];
+                    if (item == null) continue;
+                    restored += RestoreBaseSpineController(item, inspectedPointers);
+                }
+
+                if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
+                {
+                    ModLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2CppReferenceArray<BaseSpineObjectController>]");
+                }
+                return restored;
+            }
             if (listObj is Il2CppSystem.Collections.Generic.List<Il2Cpp.BaseSpineObjectController> spineList)
             {
                 int count = spineList.Count;
@@ -48,7 +69,7 @@ namespace muse_dash_test
                 {
                     var item = spineList[i];
                     if (item == null) continue;
-                    restored += RestoreBaseSpineController(item, inspectedObjects);
+                    restored += RestoreBaseSpineController(item, inspectedPointers);
                 }
 
                 if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
@@ -58,7 +79,23 @@ namespace muse_dash_test
                 return restored;
             }
 
-            // 2. preloads (List<GameObject>) 초고속 다이렉트 패스
+            // 2. preloads 초고속 다이렉트 패스 (Il2CppReferenceArray<GameObject> 또는 List<GameObject>)
+            if (listObj is Il2CppReferenceArray<UnityEngine.GameObject> goArray)
+            {
+                int count = goArray.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    var go = goArray[i];
+                    if (go == null) continue;
+                    restored += RestoreGameObject(go, inspectedPointers);
+                }
+
+                if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
+                {
+                    ModLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2CppReferenceArray<GameObject>]");
+                }
+                return restored;
+            }
             if (listObj is Il2CppSystem.Collections.Generic.List<UnityEngine.GameObject> goList)
             {
                 int count = goList.Count;
@@ -66,7 +103,7 @@ namespace muse_dash_test
                 {
                     var go = goList[i];
                     if (go == null) continue;
-                    restored += RestoreGameObject(go, inspectedObjects);
+                    restored += RestoreGameObject(go, inspectedPointers);
                 }
 
                 if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
@@ -76,7 +113,29 @@ namespace muse_dash_test
                 return restored;
             }
 
-            // 3. preloads1 (List<List<GameObject>>) 초고속 다이렉트 패스
+            // 3. preloads1 초고속 다이렉트 패스 (Il2CppReferenceArray<List<GameObject>> 또는 List<List<GameObject>>)
+            if (listObj is Il2CppReferenceArray<Il2CppSystem.Collections.Generic.List<UnityEngine.GameObject>> nestedGoArray)
+            {
+                int count = nestedGoArray.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    var subList = nestedGoArray[i];
+                    if (subList == null) continue;
+                    int subCount = subList.Count;
+                    for (int j = 0; j < subCount; j++)
+                    {
+                        var go = subList[j];
+                        if (go == null) continue;
+                        restored += RestoreGameObject(go, inspectedPointers);
+                    }
+                }
+
+                if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
+                {
+                    ModLogger.Msg($"[SceneZzTransformTracker] runtime list scan: {label}, count={count}, restored={restored}, itemTypes=[Il2CppReferenceArray<List<GameObject>>]");
+                }
+                return restored;
+            }
             if (listObj is Il2CppSystem.Collections.Generic.List<Il2CppSystem.Collections.Generic.List<UnityEngine.GameObject>> nestedGoList)
             {
                 int count = nestedGoList.Count;
@@ -89,7 +148,7 @@ namespace muse_dash_test
                     {
                         var go = subList[j];
                         if (go == null) continue;
-                        restored += RestoreGameObject(go, inspectedObjects);
+                        restored += RestoreGameObject(go, inspectedPointers);
                     }
                 }
 
@@ -100,7 +159,7 @@ namespace muse_dash_test
                 return restored;
             }
 
-            // 4. 일반 폴백 (리플렉션 + 단일 visitedSet 재사용)
+            // 4. 일반 폴백 (리플렉션 재귀 탐색 대신 알려진 컨트롤러/게임오브젝트 타입으로 직접 디스패치)
             var listType = listObj.GetType();
             var countProp = GetCountProperty(listType);
             if (countProp == null) return 0;
@@ -122,7 +181,25 @@ namespace muse_dash_test
                     itemTypes.Add(item.GetType().FullName ?? item.GetType().Name);
                 }
 
-                restored += RestoreObjectMusicData(item, 0, inspectedObjects);
+                if (item is Il2Cpp.BaseSpineObjectController bsoc)
+                {
+                    restored += RestoreBaseSpineController(bsoc, inspectedPointers);
+                }
+                else if (item is UnityEngine.GameObject go)
+                {
+                    restored += RestoreGameObject(go, inspectedPointers);
+                }
+                else if (item is Il2Cpp.SpineActionController sac)
+                {
+                    restored += RestoreSpineActionController(sac, inspectedPointers);
+                }
+                else if (item is MusicData directMd)
+                {
+                    if (RestoreMusicData(ref directMd))
+                    {
+                        try { itemProp.SetValue(listObj, directMd, indexArgs); restored++; } catch (Exception) { }
+                    }
+                }
             }
 
             if (SceneDiagnosticLogger.ShouldLog($"SceneZzTransformTracker.RestoreList.{label}", 20))
@@ -133,46 +210,60 @@ namespace muse_dash_test
             return restored;
         }
 
-        private static readonly Dictionary<Type, FieldInfo[]> s_TypeMusicDataFields = new Dictionary<Type, FieldInfo[]>();
-
-        private static FieldInfo[] GetTypeMusicDataFields(Type type)
+        private static int RestoreBaseSpineController(Il2Cpp.BaseSpineObjectController bsoc, HashSet<IntPtr> inspectedPointers)
         {
-            if (!s_TypeMusicDataFields.TryGetValue(type, out var fields))
-            {
-                var list = new List<FieldInfo>();
-                foreach (var f in GetFieldsCached(type))
-                {
-                    if (f.FieldType == typeof(MusicData))
-                    {
-                        list.Add(f);
-                    }
-                }
-                fields = list.ToArray();
-                s_TypeMusicDataFields[type] = fields;
-            }
-            return fields;
-        }
-
-        private static int RestoreBaseSpineController(object item, HashSet<int> inspectedObjects)
-        {
-            if (item == null) return 0;
-            int identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(item);
-            if (!inspectedObjects.Add(identity)) return 0;
+            if (bsoc == null) return 0;
+            IntPtr ptr = bsoc.Pointer;
+            if (ptr == IntPtr.Zero || !inspectedPointers.Add(ptr)) return 0;
 
             int restored = 0;
             try
             {
-                var fields = GetTypeMusicDataFields(item.GetType());
-                for (int i = 0; i < fields.Length; i++)
+                // 1. BaseEnemyObjectController의 m_MusicData 직접 복구
+                if (bsoc is Il2Cpp.BaseEnemyObjectController beoc)
                 {
-                    object val = fields[i].GetValue(item);
-                    if (val is MusicData md)
+                    try
                     {
+                        var md = beoc.m_MusicData;
                         if (RestoreMusicData(ref md))
                         {
-                            try { fields[i].SetValue(item, md); restored++; } catch (Exception) { }
+                            beoc.m_MusicData = md;
+                            restored++;
                         }
                     }
+                    catch (Exception) { }
+                }
+
+                // 2. BaseSpineObjectController.m_Sac (SpineActionController)의 m_MusicData 직접 복구
+                try
+                {
+                    var sac = bsoc.m_Sac;
+                    if (sac != null)
+                    {
+                        restored += RestoreSpineActionController(sac, inspectedPointers);
+                    }
+                }
+                catch (Exception) { }
+            }
+            catch (Exception) { }
+
+            return restored;
+        }
+
+        private static int RestoreSpineActionController(Il2Cpp.SpineActionController sac, HashSet<IntPtr> inspectedPointers)
+        {
+            if (sac == null) return 0;
+            IntPtr ptr = sac.Pointer;
+            if (ptr == IntPtr.Zero || !inspectedPointers.Add(ptr)) return 0;
+
+            int restored = 0;
+            try
+            {
+                var md = sac.m_MusicData;
+                if (RestoreMusicData(ref md))
+                {
+                    sac.m_MusicData = md;
+                    restored++;
                 }
             }
             catch (Exception) { }
@@ -180,267 +271,40 @@ namespace muse_dash_test
             return restored;
         }
 
-        private static int RestoreGameObject(UnityEngine.GameObject go, HashSet<int> inspectedObjects)
+        private static int RestoreGameObject(UnityEngine.GameObject go, HashSet<IntPtr> inspectedPointers)
         {
             if (go == null) return 0;
-            int identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(go);
-            if (!inspectedObjects.Add(identity)) return 0;
+            IntPtr ptr = go.Pointer;
+            if (ptr == IntPtr.Zero || !inspectedPointers.Add(ptr)) return 0;
 
             int restored = 0;
             try
             {
-                var comps = go.GetComponents<UnityEngine.Component>();
-                if (comps != null)
+                var beoc = go.GetComponent<Il2Cpp.BaseEnemyObjectController>();
+                if (beoc != null)
                 {
-                    for (int i = 0; i < comps.Length; i++)
-                    {
-                        var comp = comps[i];
-                        if (comp != null && ShouldInspectNested(comp))
-                        {
-                            restored += RestoreBaseSpineController(comp, inspectedObjects);
-                        }
-                    }
+                    restored += RestoreBaseSpineController(beoc, inspectedPointers);
+                }
+
+                var bsoc = go.GetComponent<Il2Cpp.BaseSpineObjectController>();
+                if (bsoc != null && (beoc == null || bsoc.Pointer != beoc.Pointer))
+                {
+                    restored += RestoreBaseSpineController(bsoc, inspectedPointers);
+                }
+
+                var sac = go.GetComponent<Il2Cpp.SpineActionController>();
+                if (sac != null)
+                {
+                    restored += RestoreSpineActionController(sac, inspectedPointers);
                 }
             }
             catch (Exception) { }
 
             return restored;
-        }
-
-        /// <summary>
-        /// [재귀 복구] 런타임 객체 트리의 필드를 타고 내려가며 보관된 MusicData 및 식별 값을 복원합니다.
-        /// </summary>
-        private static int RestoreObjectMusicData(object obj, int depth, HashSet<int> inspectedObjects)
-        {
-            if (obj == null || depth > 2) return 0;
-
-            int identity = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
-            if (!inspectedObjects.Add(identity)) return 0;
-
-            if (obj is MusicData direct)
-            {
-                return RestoreMusicData(ref direct) ? 1 : 0;
-            }
-
-            // preloads1은 List<List<GameObject>> 형태입니다. 일반 중첩 탐색에서는
-            // Il2CppSystem.*을 차단하므로, 인덱스 컬렉션은 명시적으로 펼쳐서 내부
-            // GameObject까지 전달합니다.
-            if (TryRestoreIndexedCollection(obj, depth, inspectedObjects, out int collectionRestored))
-            {
-                return collectionRestored;
-            }
-
-            int restored = 0;
-            var type = obj.GetType();
-
-            // 1. 필드 탐색 및 복구
-            foreach (var field in GetFieldsCached(type))
-            {
-                try
-                {
-                    object value = field.GetValue(obj);
-                    if (value is MusicData musicData)
-                    {
-                        if (RestoreMusicData(ref musicData))
-                        {
-                            try { field.SetValue(obj, musicData); restored++; } catch (Exception) { }
-                        }
-                        continue;
-                    }
-
-                    if (TryRestoreScalarField(obj, field, value))
-                    {
-                        restored++;
-                        continue;
-                    }
-
-                    if (ShouldInspectNested(value))
-                    {
-                        restored += RestoreObjectMusicData(value, depth + 1, inspectedObjects);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Ignored: 런타임 객체 필드 탐색 중 예외 무시
-                }
-            }
-
-            // 2. 프로퍼티 탐색 및 복구
-            foreach (var prop in GetPropertiesCached(type))
-            {
-                try
-                {
-                    object value = prop.GetValue(obj);
-                    if (value is MusicData musicData)
-                    {
-                        if (RestoreMusicData(ref musicData) && prop.CanWrite)
-                        {
-                            try { prop.SetValue(obj, musicData); restored++; } catch (Exception) { }
-                        }
-                        continue;
-                    }
-
-                    if (TryRestoreScalarProperty(obj, prop, value))
-                    {
-                        restored++;
-                        continue;
-                    }
-
-                    if (ShouldInspectNested(value))
-                    {
-                        restored += RestoreObjectMusicData(value, depth + 1, inspectedObjects);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Ignored: 런타임 객체 프로퍼티 탐색 중 예외 무시
-                }
-            }
-
-            return restored;
-        }
-
-        private static bool TryRestoreIndexedCollection(
-            object obj,
-            int depth,
-            HashSet<int> inspectedObjects,
-            out int restored)
-        {
-            restored = 0;
-            var type = obj.GetType();
-            var countProp = GetCountProperty(type);
-            var itemProp = GetItemProperty(type);
-            if (countProp == null || itemProp == null) return false;
-
-            try
-            {
-                int count = (int)countProp.GetValue(obj);
-                var indexArgs = new object[1];
-                for (int i = 0; i < count; i++)
-                {
-                    indexArgs[0] = i;
-                    object item = itemProp.GetValue(obj, indexArgs);
-                    restored += RestoreObjectMusicData(item, depth + 1, inspectedObjects);
-                }
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        private static bool TryRestoreScalarField(object obj, FieldInfo field, object value)
-        {
-            if (obj == null || field == null || value == null) return false;
-
-            if (TryGetRestoredScalar(value, field.FieldType, out object restored))
-            {
-                try
-                {
-                    field.SetValue(obj, restored);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            return false;
-        }
-
-        private static bool TryRestoreScalarProperty(object obj, PropertyInfo prop, object value)
-        {
-            if (obj == null || prop == null || !prop.CanWrite || value == null) return false;
-
-            if (TryGetRestoredScalar(value, prop.PropertyType, out object restored))
-            {
-                try
-                {
-                    prop.SetValue(obj, restored);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            return false;
-        }
-
-        private static bool TryGetRestoredScalar(object value, Type targetType, out object restored)
-        {
-            restored = null;
-            if (value == null) return false;
-
-            if (targetType == typeof(string) && value is string text)
-            {
-                // 1. 다이렉트 매칭 (O(1))
-                if (OriginalsByRenderUid.TryGetValue(text, out var origUid))
-                {
-                    restored = origUid.Uid;
-                    return true;
-                }
-                if (OriginalsByRenderMirrorUid.TryGetValue(text, out var origMirror))
-                {
-                    restored = origMirror.MirrorUid;
-                    return true;
-                }
-                if (OriginalsByRenderConfigNoteUid.TryGetValue(text, out var origConfig))
-                {
-                    restored = origConfig.ConfigNoteUid;
-                    return true;
-                }
-
-                // 2. 부분 일치 검색
-                foreach (var orig in OriginalsWithRenderPrefabName)
-                {
-                    if (text.Contains(orig.RenderPrefabName))
-                    {
-                        restored = text.Replace(orig.RenderPrefabName, orig.PrefabName ?? orig.Uid);
-                        return true;
-                    }
-                }
-                foreach (var orig in OriginalsByRenderUid.Values)
-                {
-                    if (text.Contains(orig.RenderUid))
-                    {
-                        restored = text.Replace(orig.RenderUid, orig.Uid);
-                        return true;
-                    }
-                }
-            }
-            else if (targetType == typeof(int) && value is int intValue)
-            {
-                if (OriginalsByRenderNoteUid.TryGetValue(intValue, out var orig))
-                {
-                    restored = orig.NoteUid;
-                    return true;
-                }
-            }
-            else if (targetType == typeof(short) && value is short shortValue)
-            {
-                if (OriginalsByRenderNoteUid.TryGetValue(shortValue, out var orig))
-                {
-                    restored = (short)orig.NoteUid;
-                    return true;
-                }
-            }
-            else if (targetType == typeof(uint) && value is uint uintValue)
-            {
-                if (OriginalsByRenderNoteUid.TryGetValue((int)uintValue, out var orig))
-                {
-                    restored = (uint)orig.NoteUid;
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static bool RestoreMusicData(ref MusicData note)
         {
-            if (note?.noteData == null) return false;
             if (!TryResolveOriginalIdentity(note, out var original)) return false;
 
             var noteData = note.noteData;
@@ -516,24 +380,6 @@ namespace muse_dash_test
                 RenderPrefabName = note.noteData.prefab_name,
                 RenderKeyAudio = note.noteData.key_audio
             };
-        }
-
-        /// <summary>
-        /// 탐색 가치가 있는 유니티 내부 IL2CPP 타입 객체인지 필터링합니다. (순환 스캔 최적화)
-        /// </summary>
-        private static bool ShouldInspectNested(object value)
-        {
-            if (value == null) return false;
-
-            string typeName = value.GetType().FullName ?? string.Empty;
-
-            // Unity 엔진 및 시스템 기본 형식 검색 차단 (GC 및 네이티브 속성 탐색 속도 대폭 개선)
-            return typeName.StartsWith("Il2Cpp", StringComparison.Ordinal)
-                && !typeName.StartsWith("Il2CppUnityEngine.", StringComparison.Ordinal)
-                && !typeName.StartsWith("Il2CppSystem.", StringComparison.Ordinal)
-                && !typeName.StartsWith("UnityEngine.", StringComparison.Ordinal)
-                && !typeName.StartsWith("System.", StringComparison.Ordinal)
-                && !typeName.Contains("String");
         }
 
         private static object SafeGet(Func<object> getter)
