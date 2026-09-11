@@ -35,12 +35,12 @@ namespace muse_dash_test.LogicTests
             Assert.Equal("https://example.com/a:b", value);
         }
 
-        public static void BothOffsetHooksPreservePlayerCalibration()
+        public static void BothOffsetHooksKeepLegacyAbsoluteOffset()
         {
             try
             {
                 CustomPlaySession.Current.SelectedMusicUid = "1999-1";
-                HwaResourceManager.Manifest = new HwaManifest { Offset = 0.04877 };
+                HwaResourceManager.Manifest = new HwaManifest { Offset = -0.05123 };
                 foreach (var hook in Hooks())
                 {
                     var stage = new StageBattleComponent { offset = -0.1f };
@@ -48,10 +48,10 @@ namespace muse_dash_test.LogicTests
                     Assert.Equal(-0.05123f, stage.offset);
                     stage.offset = 0f; // 게임 원본이 새 보정값을 계산한 이후의 Postfix 입력
                     hook(stage);
-                    Assert.Equal(0.04877f, stage.offset);
+                    Assert.Equal(-0.05123f, stage.offset);
                     stage.offset = 0.1f;
                     hook(stage);
-                    Assert.Equal(0.14877f, stage.offset);
+                    Assert.Equal(-0.05123f, stage.offset);
                 }
             }
             finally { Reset(); }
@@ -63,7 +63,7 @@ namespace muse_dash_test.LogicTests
             {
                 foreach (var hook in Hooks())
                 {
-                    foreach (var manifest in new[] { null, new HwaManifest(), new HwaManifest { Offset = 0 } })
+                    foreach (var manifest in new[] { null, new HwaManifest() })
                     {
                         CustomPlaySession.Current.SelectedMusicUid = "1999-1";
                         HwaResourceManager.Manifest = manifest;

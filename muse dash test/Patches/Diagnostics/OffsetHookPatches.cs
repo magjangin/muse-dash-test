@@ -8,8 +8,8 @@ using System;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 게임이 계산한 오프셋에 곡별 offset을 더하고, 곡별 delay를 적용합니다.
-    /// 진단 로그도 제공하지만 실제 싱크 보정을 수행하는 기능 패치입니다.
+    /// 게임 내 오프셋(Offset) 및 딜레이(Delay) 연산 흐름을 추적하기 위해
+    /// 핵심 메서드들을 실시간으로 후킹하여 MelonLogger 로그로 출력합니다.
     /// </summary>
     [HarmonyPatch]
     public static class OffsetHookPatches
@@ -48,10 +48,10 @@ namespace muse_dash_test
                         float customOffset = (float)manifest.Offset.Value;
                         float originalOffset = __instance.offset;
                         
-                        __instance.offset = originalOffset + customOffset;
+                        __instance.offset = customOffset;
                         
                         if (LogOnce($"FixedOffset:{uid}"))
-                            ModLogger.Msg($"[OffsetInject] FixedOffset 합산 완료. 곡={uid}, 기존={originalOffset}초 + 곡={customOffset}초 -> 적용={__instance.offset}초");
+                            ModLogger.Msg($"[OffsetInject] FixedOffset 오버라이드 완료. 곡={uid}, 기존={originalOffset}초 -> 주입={customOffset}초");
                     }
                 }
             }
@@ -77,12 +77,12 @@ namespace muse_dash_test
                         float customOffset = (float)manifest.Offset.Value;
                         float originalOffset = __instance.offset;
                         
-                        __instance.offset = originalOffset + customOffset;
+                        __instance.offset = customOffset;
                         
                         if (LogOnce($"FixedMusicOffset:{uid}"))
                         {
                             string bgmName = bgm != null ? bgm.name : "(null)";
-                            ModLogger.Msg($"[OffsetInject] FixedMusicOffset 합산 완료. BGM={bgmName}, 곡={uid}, 기존={originalOffset}초 + 곡={customOffset}초 -> 적용={__instance.offset}초");
+                            ModLogger.Msg($"[OffsetInject] FixedMusicOffset 오버라이드 완료. BGM={bgmName}, 곡={uid}, 기존={originalOffset}초 -> 주입={customOffset}초");
                         }
                     }
                 }
