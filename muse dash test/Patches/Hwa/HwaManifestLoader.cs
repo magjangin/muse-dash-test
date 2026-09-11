@@ -127,15 +127,7 @@ namespace muse_dash_test
                 return false;
             }
 
-            int separatorIndex = line.IndexOf(':');
-            if (separatorIndex < 0)
-            {
-                separatorIndex = line.IndexOf('=');
-            }
-            if (separatorIndex < 0)
-            {
-                separatorIndex = line.IndexOf('：');
-            }
+            int separatorIndex = line.IndexOfAny(new[] { ':', '=', '：' });
 
             if (separatorIndex < 0)
             {
@@ -182,7 +174,7 @@ namespace muse_dash_test
             if (TryApplyString(normalizedKey, value, v => manifest.CustomArtist = v, "커스텀아티스트", "customartist", "customauthor")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.LevelDesigner = v, "레벨디자이너", "leveldesigner")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.Artist = v, "artist", "아티스트", "author")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.CustomTitle = v, "커스텀곡제목", "customsongtitle", "customtitle")) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.CustomTitle = v, "커스텀곡제목", "커스텀곡이름", "커스텀곡명", "customsongtitle", "customsongname", "customtitle")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.Title = v, "곡이름", "곡명", "곡제목", "가져올곡", "song", "title", "music")) return;
             if (TryApplyInt(normalizedKey, value, v => manifest.Scene = v, "씬번호", "scene")) return;
             if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty1 = v, "난이도1", "difficulty1")) return;

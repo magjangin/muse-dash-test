@@ -15,6 +15,9 @@
     (같은 어셈블리로 빌드되므로 BmsChart/BmsNote의 internal setter도 그대로 사용 가능)
   -->
   <ItemGroup>
+    <Compile Include="..\muse dash test\Patches\Hwa\HwaManifest.cs" Link="UnderTest\HwaManifest.cs" />
+    <Compile Include="..\muse dash test\Patches\Hwa\HwaManifestLoader.cs" Link="UnderTest\HwaManifestLoader.cs" />
+    <Compile Include="..\muse dash test\Patches\Diagnostics\OffsetHookPatches.cs" Link="UnderTest\OffsetHookPatches.cs" />
     <Compile Include="..\muse dash test\Bms\*.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <!-- 게임 의존이 없는 순수 판정 규칙만 골라 링크합니다(Core 폴더 전체는 MelonLoader/Il2Cpp를 씁니다). -->
     <Compile Include="..\muse dash test\Core\PlayRecordMerge.cs" Link="UnderTest\%(Filename)%(Extension)" />
