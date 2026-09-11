@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -150,15 +150,15 @@ namespace muse_dash_test
                 bool finalIsFullCombo = merged.IsFullCombo;
                 bool finalIsAllPerfect = merged.IsAllPerfect;
 
-                int finalNoteCount = isNewHighScore ? noteCount : existing.noteCount;
-                int finalStandard = isNewHighScore ? standard : existing.standard;
-                int finalGears = isNewHighScore ? gears : existing.gears;
-                int finalHearts = isNewHighScore ? hearts : existing.hearts;
-                int finalBlueNotes = isNewHighScore ? blueNotes : existing.blueNotes;
-                int finalPerfect = isNewHighScore ? perfect : existing.perfect;
-                int finalGreat = isNewHighScore ? great : existing.great;
-                int finalMiss = isNewHighScore ? miss : existing.miss;
-                string finalSavedAt = isNewHighScore ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) : existing.savedAtUtc;
+                int finalNoteCount = isNewHighScore || existing == null ? noteCount : existing.noteCount;
+                int finalStandard = isNewHighScore || existing == null ? standard : existing.standard;
+                int finalGears = isNewHighScore || existing == null ? gears : existing.gears;
+                int finalHearts = isNewHighScore || existing == null ? hearts : existing.hearts;
+                int finalBlueNotes = isNewHighScore || existing == null ? blueNotes : existing.blueNotes;
+                int finalPerfect = isNewHighScore || existing == null ? perfect : existing.perfect;
+                int finalGreat = isNewHighScore || existing == null ? great : existing.great;
+                int finalMiss = isNewHighScore || existing == null ? miss : existing.miss;
+                string finalSavedAt = isNewHighScore || existing == null ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) : existing.savedAtUtc;
 
                 // 방금 플레이한 채보의 지문을 함께 남깁니다. 계산에 실패해도(null) 기록 저장 자체는 막지 않습니다.
                 string fingerprint = ChartFingerprint.ForUid(uid) ?? ChartFingerprint.NoChart;

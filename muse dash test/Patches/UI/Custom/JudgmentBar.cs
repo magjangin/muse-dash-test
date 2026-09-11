@@ -152,12 +152,10 @@ namespace muse_dash_test
                 float now = Time.time;
                 TrimExpiredTicks(now);
 
-                // 2. 화이트 텍스처 초기화
+                // 2. 화이트 텍스처 초기화 (유니티 내장 정적 싱글톤 활용으로 할당/메모리 제거)
                 if (whiteTex == null)
                 {
-                    whiteTex = new Texture2D(1, 1);
-                    whiteTex.SetPixel(0, 0, Color.white);
-                    whiteTex.Apply();
+                    whiteTex = Texture2D.whiteTexture;
                 }
 
                 // 3. 레이아웃 크기 및 좌표 산정 (화면 하단 중앙)

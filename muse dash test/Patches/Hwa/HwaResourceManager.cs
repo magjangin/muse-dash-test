@@ -130,7 +130,7 @@ namespace muse_dash_test
             if (!string.IsNullOrWhiteSpace(manifest.Uid))
             {
                 customClaimedUids.Add(manifest.Uid.Trim());
-                ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 숙주 uid '{manifest.Uid.Trim()}'를 커스텀 곳으로 등록했습니다.");
+                ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 숙주 uid '{manifest.Uid.Trim()}'를 커스텀 곡으로 등록했습니다.");
             }
 
             ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 등록 완료: {HwaManifestLoader.DescribeManifest(manifest)}");

@@ -98,6 +98,11 @@ namespace muse_dash_test
                 if (skeletonDataAsset == null || skeletonDataAsset.GetSkeletonData(true) == null)
                 {
                     ModLogger.Msg($"[CustomSkinInjector] {baseName} 스켈레톤 데이터 생성 실패");
+                    UnityEngine.Object.Destroy(texture);
+                    UnityEngine.Object.Destroy(atlasTextAsset);
+                    if (atlasAsset != null) UnityEngine.Object.Destroy(atlasAsset);
+                    UnityEngine.Object.Destroy(skeletonTextAsset);
+                    if (skeletonDataAsset != null) UnityEngine.Object.Destroy(skeletonDataAsset);
                     return null;
                 }
 

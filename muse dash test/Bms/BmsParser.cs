@@ -46,50 +46,54 @@ namespace muse_dash_test
             var bpmDefinitions = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
             float defaultBpm = 120f;
 
-            foreach (var rawLine in text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+            using (var reader = new StringReader(text))
             {
-                var line = StripComments(rawLine).Trim();
-                if (string.IsNullOrWhiteSpace(line))
+                string rawLine;
+                while ((rawLine = reader.ReadLine()) != null)
                 {
-                    continue;
-                }
-
-                // Check TryParseMeasureLine first as 95%+ lines in BMS are measure lines
-                if (TryParseMeasureLine(line, out int measure, out int channel, out string data))
-                {
-                    measureEvents.Add(new RawMeasureEvent
+                    var line = StripComments(rawLine).Trim();
+                    if (string.IsNullOrWhiteSpace(line))
                     {
-                        Measure = measure,
-                        Channel = channel,
-                        Data = NormalizeHexData(data),
-                    });
-                    continue;
-                }
-
-                if (TryParseHeaderBpm(line, out float headerBpm))
-                {
-                    defaultBpm = headerBpm;
-                    continue;
-                }
-
-                if (TryParseBpmAlias(line, out string bpmKey, out float bpmValue))
-                {
-                    bpmDefinitions[bpmKey] = bpmValue;
-                    continue;
-                }
-
-                if (TryParseMetadata(line, out string metaKey, out string metaValue))
-                {
-                    metadata[metaKey] = metaValue;
-                    if (string.Equals(metaKey, "TITLE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        chart.Title = metaValue;
+                        continue;
                     }
-                    else if (string.Equals(metaKey, "ARTIST", StringComparison.OrdinalIgnoreCase))
+
+                    // Check TryParseMeasureLine first as 95%+ lines in BMS are measure lines
+                    if (TryParseMeasureLine(line, out int measure, out int channel, out string data))
                     {
-                        chart.Artist = metaValue;
+                        measureEvents.Add(new RawMeasureEvent
+                        {
+                            Measure = measure,
+                            Channel = channel,
+                            Data = NormalizeHexData(data),
+                        });
+                        continue;
                     }
-                    continue;
+
+                    if (TryParseHeaderBpm(line, out float headerBpm))
+                    {
+                        defaultBpm = headerBpm;
+                        continue;
+                    }
+
+                    if (TryParseBpmAlias(line, out string bpmKey, out float bpmValue))
+                    {
+                        bpmDefinitions[bpmKey] = bpmValue;
+                        continue;
+                    }
+
+                    if (TryParseMetadata(line, out string metaKey, out string metaValue))
+                    {
+                        metadata[metaKey] = metaValue;
+                        if (string.Equals(metaKey, "TITLE", StringComparison.OrdinalIgnoreCase))
+                        {
+                            chart.Title = metaValue;
+                        }
+                        else if (string.Equals(metaKey, "ARTIST", StringComparison.OrdinalIgnoreCase))
+                        {
+                            chart.Artist = metaValue;
+                        }
+                        continue;
+                    }
                 }
             }
 

@@ -111,7 +111,7 @@ namespace muse_dash_test
                 var dataID = targetGlobal
                     ? GlobalDataBase.s_DbBattleStage.m_SelectedRole
                     : DataHelper.selectedRoleIndex;
-                if (ValidGirl(FavSave.FavGirl) && ValidGirl(dataID))
+                if (ValidGirl(FavSave.FavGirl) && ValidGirl(dataID) && _oldGirl.Count > 0)
                 {
                     var girlIdx = _oldGirl[_oldGirl.Count - 1];
                     _oldGirl.RemoveAt(_oldGirl.Count - 1);

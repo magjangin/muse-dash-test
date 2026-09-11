@@ -95,8 +95,13 @@ namespace muse_dash_test
                 }
 
                 string matchedUid = null;
+                string[] uidsSnapshot;
+                lock (virtualUids)
+                {
+                    uidsSnapshot = virtualUids.ToArray();
+                }
 
-                foreach (var uid in virtualUids)
+                foreach (var uid in uidsSnapshot)
                 {
                     if (TryGetSongDirectory(uid, out string songDir) && !string.IsNullOrEmpty(songDir))
                     {
