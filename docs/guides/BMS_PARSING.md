@@ -1,6 +1,6 @@
 # BMS 파싱 및 매핑 가이드 (BMS Parsing & Mapping Guide)
 
-이 문서는 모드 내부의 BMS 파싱 엔진(`BmsParser`, `BmsWavParser`, `BmsNoteMatcher`)이 Be-Music Source 차트 파일을 분석하여 뮤즈 대쉬의 실제 인게임 `MusicData` 노트로 변환하는 핵심 매핑 규칙과 시스템 사양을 설명합니다.
+이 문서는 모드 내부의 BMS 파싱 엔진(`BmsParser`, `BmsWavParser`, `BmsNoteMatcher`)이 Be-Music Source 차트 파일을 분석하여 뮤즈 대시의 실제 인게임 `MusicData` 노트로 변환하는 핵심 매핑 규칙과 시스템 사양을 설명합니다.
 
 ---
 

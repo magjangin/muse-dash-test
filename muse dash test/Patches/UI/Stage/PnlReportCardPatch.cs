@@ -34,7 +34,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
             InjectRecordData(__instance, uid, difficulty);
             InjectEvaluationRank(__instance);
 
-            // 오리지널 메소드 실행을 차단하여 가상 곡 데이터 누락으로 인한 NullReferenceException 방지
+            // 오리지널 메서드 실행을 차단하여 가상 곡 데이터 누락으로 인한 NullReferenceException 방지
             return false;
         }
         catch (Exception ex)

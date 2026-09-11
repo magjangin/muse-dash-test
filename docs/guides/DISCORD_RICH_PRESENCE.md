@@ -43,7 +43,7 @@ Il2Cpp.DiscordManager.SetUpdateActivity(bool isPlaying, string levelInfo)
 - **`IsStageSelectionContextActive()`**: `PnlStage`(곡 선택 패널) 또는 `PnlPreparation`(곡 준비 패널)의 `activeInHierarchy` 여부를 확인.
 - **`IsInBattleStageContext()`**: `PnlBattle`(배틀 패널)의 `activeInHierarchy` 여부를 확인.
 
-### 🔄 상태 전환 마트릭스
+### 🔄 상태 전환 매트릭스
 
 | 화면 컨텍스트 | `isSelectionActive` | `isInBattle` | `levelInfo` 변조 | `isPlaying` 강제 | 디스코드 최종 표기 |
 | :--- | :---: | :---: | :--- | :---: | :--- |

@@ -90,4 +90,4 @@
 3. **BMS 주입 / ZZ 복구 레이어 조작**
    * ❌ `NoteConfigData` 및 `MusicData`에는 알파/투명도 관련 필드가 존재하지 않아 데이터 주입 단계에서는 제어가 불가능합니다.
 4. **`Il2CppInterop` 오버로드 시그니처 미지정 오류**
-   * ❌ `OnNoteDisappear` / `NoteDisappearLogic` 패치 시 인자 타입을 명시하지 않으면 `AmbiguousMatchException`이 발생하여 패치 클래스 전체가 정묵적으로 등록 해제됩니다.
+   * ❌ `OnNoteDisappear` / `NoteDisappearLogic` 패치 시 인자 타입을 명시하지 않으면 `AmbiguousMatchException`이 발생하여 패치 클래스 전체가 조용히 등록 해제됩니다.

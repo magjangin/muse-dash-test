@@ -80,7 +80,7 @@ public MusicTagMetaData GetMusicInfoFromConfig(string uid)
 ---
 
 ### 3. `GetStageInfoByUidAndDiff()`
-**역추적 설명**: 곡 UID 및 난이도 키 조합(`{uid}_{diff}`)을 통해 스테이지 구성 정보(배경 씬 이름, 보스 이름, 프리팹 맵핑)를 가져옵니다.
+**역추적 설명**: 곡 UID 및 난이도 키 조합(`{uid}_{diff}`)을 통해 스테이지 구성 정보(배경 씬 이름, 보스 이름, 프리팹 매핑)를 가져옵니다.
 
 ```csharp
 public StageInfo GetStageInfoByUidAndDiff(string uid, int diff)

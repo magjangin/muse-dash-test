@@ -246,7 +246,7 @@ LevelDesignerNameTextObjectNames
 ```
 * **확인할 점**:
   * `m_GreatResult`와 `m_MissResult`가 모두 0이어야 All Perfect 조건이 만족됩니다.
-  * 커스텀 차트의 실제 노드 종류별 집계가 올바르게 작동했는지 `[APMod.Accuracy] Custom chart note counts: Standard=..., Gears=..., Hearts=..., BlueNotes=...` 로그를 통해 교차 검증합니다.
+  * 커스텀 차트의 실제 노트 종류별 집계가 올바르게 작동했는지 `[APMod.Accuracy] Custom chart note counts: Standard=..., Gears=..., Hearts=..., BlueNotes=...` 로그를 통해 교차 검증합니다.
 
 ### 2. HUD 폰트 캐싱 상태 점검
 올 퍼펙트 달성 시 골드 배너를 그리기 위해 인게임 메인 점수 폰트(`LuckiestGuy-Regular_150_115`)를 동적으로 캐싱해야 합니다.

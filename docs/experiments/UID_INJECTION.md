@@ -92,6 +92,6 @@ if(stage != null) {
 - `PnlStage` / `LongSongNameController` 관련 패치들 — UI에서 `selectedUid`를 처리하거나 강제 변경 로그를 남기는 위치입니다. (파일: muse dash test/Patches/UI/Stage/PnlStagePatch.cs)
 - `PnlMusicTagPatchLogger.ApplyCustomCellTitle()` — `cell.musicInfo.uid`로 셀을 식별해 제목을 변경합니다; 셀 레벨에서 UID를 검사하는 좋은 예제입니다. (파일: muse dash test/Patches/UI/Music/PnlMusicTagPatch.cs)
 - `PnlMusicDiagnostics.ExtractMusicInfo(...)` — 패널 객체에서 `MusicInfo`를 추출하는 유틸리티로, UI→데이터 연동 흐름을 이해하는 데 유용합니다. (파일: muse dash test/Patches/UI/Music/PnlMusicDiagnostics.Extraction.cs)
-- `DBStageInfoExperimentChart的` UID 처리 로직 — 노트/스테이지 도메인에서 UID를 생성/변환/할당하는 예시가 존재합니다. (파일: muse dash test/Patches/Database/Stage/DBStageInfoExperimentChart.cs)
+- `DBStageInfoExperimentChart`의 UID 처리 로직 — 노트/스테이지 도메인에서 UID를 생성/변환/할당하는 예시가 존재합니다. (파일: muse dash test/Patches/Database/Stage/DBStageInfoExperimentChart.cs)
 
 위 후보들은 `1999-0`을 생성·등록·선택 상태로 만드는 구현에서 직접 참고하거나 호출할 수 있는 지점들입니다. 문서 상단의 절차와 조합해 실제 구현을 진행하면 됩니다.

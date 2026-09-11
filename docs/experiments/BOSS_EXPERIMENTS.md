@@ -339,7 +339,7 @@ new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0
 
 ### 실시간 교체 설정 예시 (`DBStageInfoPatch.cs`)
 
-아래 타임라인은 첫 번째 흑호 보스가 공격 후 **완벽히 완전 퇴장(`out`)**한 뒤, 새로운 핑크 음악 보스로 교체되는 고난도 태그 매치 연출의 정석 예시입니다.
+아래 타임라인은 첫 번째 흑호 보스가 공격 후 **완전히 퇴장(`out`)**한 뒤, 새로운 핑크 음악 보스로 교체되는 고난도 태그 매치 연출의 정석 예시입니다.
 
 ```csharp
 private static readonly ExperimentNoteSpec[] ExperimentNotes =

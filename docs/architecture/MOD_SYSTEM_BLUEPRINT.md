@@ -145,7 +145,7 @@ $$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Gre
 
 ---
 
-## 6. 전체 문서 디렉토리 인덱스 (Documentation Index)
+## 6. 전체 문서 디렉터리 인덱스 (Documentation Index)
 
 모드의 각 기술 파트를 세부적으로 깊게 분석하고자 할 때 필요한 원천 마크다운 파일들의 위치와 참조 맵입니다.
 

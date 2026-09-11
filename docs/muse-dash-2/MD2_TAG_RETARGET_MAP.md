@@ -238,7 +238,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
 | SK1 | `SkeletonDataAsset` / `AtlasAsset` | `GetSkeletonData()`, `materials` | 후크(Prefix/Postfix) | Spine 스켈레톤 초기화 시 커스텀 텍스처/아틀라스 주입 | 🟡 | |
-| SK2 | `SpineActionController` | `PlayByKey(string, ...)` | 후크(Prefix) | 연타/홀드 도중 투명 노드가 원래 알파로 복원되는 것을 억제 | 🟡 | |
+| SK2 | `SpineActionController` | `PlayByKey(string, ...)` | 후크(Prefix) | 연타/홀드 도중 투명 노트가 원래 알파로 복원되는 것을 억제 | 🟡 | |
 
 ---
 
@@ -246,7 +246,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 **파일**: [RealTimeSwapper.cs](../../muse%20dash%20test/Integration/RealTimeSwapper.cs), [FavManager.cs](../../muse%20dash%20test/Patches/Fav/FavManager.cs)
 
-| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 item | 위험 | **MD2 이름 (← 채울 칸)** |
+| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
 | F1.1 | `AbstractGirlManager` | `InstanceGirl()`, `AwakeInit()` | 후크(Postfix) | 스킬 캐릭터 유지 상태에서 렌더링 외형 스킨 모델 덮어쓰기 | 🟡 | |
 | F1.2 | `MuseShow` / `CharCreate` | `OnEnable()` | 후크(Postfix) | 로비/캐릭터 선택창 외형 모델 실시간 갱신 | 🟡 | |

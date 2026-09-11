@@ -87,7 +87,7 @@ IL2CPP Interop 객체에 직접 바인딩하여 다루면 게임 업데이트 �
 ## 🛠️ 5. 확장 및 변형 개발자 가이드 (Developer Extension)
 
 ### 5.1 새로운 가상 곡을 추가하고 싶을 때
-[CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 파일 내의 `RegisterAll` 메소드 중간 지점(가상 곡 주입부)에 다음과 같이 신규 가상 곡 호출을 한 줄 적어넣으시면 즉시 적용됩니다.
+[CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 파일 내의 `RegisterAll` 메서드 중간 지점(가상 곡 주입부)에 다음과 같이 신규 가상 곡 호출을 한 줄 적어넣으시면 즉시 적용됩니다.
 
 ```csharp
 // "1999-3" 가상 곡 신규 추가 예시

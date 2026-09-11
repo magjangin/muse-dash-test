@@ -37,7 +37,7 @@ namespace muse_dash_test
             if (tagIndex == CustomTagRegistry.TagUid || tagIndex == -1)
             {
                 ModLogger.Verbose($"[RefreshStageDisplayMusics Patch] Bypassing: tagIndex={tagIndex}");
-                return false; // 원래 메소드 실행 차단
+                return false; // 원래 메서드 실행 차단
             }
             return true;
         }

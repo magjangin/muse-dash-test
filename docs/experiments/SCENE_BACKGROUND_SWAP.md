@@ -179,9 +179,9 @@ SceneZzTransformTracker.RestoreRuntimeObjects(__instance);      // 이미 생성
 
 ### 1. 배경 결정 로직 후킹 분리
 - 게임 엔진이 현재 실행 중인 스테이지의 씬 배경 리소스를 결정할 때 참조하는 멤버(예: `StageInfo` 혹은 `ActiveScene` 필드)를 파악합니다.
-- 배경 전환 지점(예: `SceneChangeController.ChangeScene` 호출 시점 또는 리소스를 매핑하여 실제 로딩하는 메소드)을 타깃팅하여, 게임 데이터 `musicList`를 건드리지 않고 **우리가 주입할 커스텀 배경 번호만 가로채서 주입**합니다.
+- 배경 전환 지점(예: `SceneChangeController.ChangeScene` 호출 시점 또는 리소스를 매핑하여 실제 로딩하는 메서드)을 타깃팅하여, 게임 데이터 `musicList`를 건드리지 않고 **우리가 주입할 커스텀 배경 번호만 가로채서 주입**합니다.
 
-### 2. 프리팹 맵핑 분리
+### 2. 프리팹 매핑 분리
 - 씬 코드(zz)에 따라 노트를 인스턴스화할 때, 노트 생성자가 참조하는 프리팹 매핑(UID -> Prefab 이름) 지점을 하모니 패치로 우회합니다.
 - `musicList`의 노트 UID가 원본 BMS 그대로 유지된 상태에서, 게임이 프리팹을 찾으려 할 때만 후킹하여 임시 렌더링용 zz가 포함된 프리팹 이름을 반환하도록 구현합니다.
 

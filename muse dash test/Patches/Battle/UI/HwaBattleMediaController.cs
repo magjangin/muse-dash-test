@@ -359,11 +359,11 @@ namespace muse_dash_test
                 if (shader != null)
                 {
                     renderer.material = new Material(shader);
-                    ModLogger.Msg($"[HwaBattleMediaController.Video] '{shader.name}' 쉐이더를 비디오 판넬에 주입했습니다.");
+                    ModLogger.Msg($"[HwaBattleMediaController.Video] '{shader.name}' 셰이더를 비디오 패널에 주입했습니다.");
                 }
                 else
                 {
-                    ModLogger.Warning("[HwaBattleMediaController.Video] 폴백 쉐이더를 찾지 못하여 기본 생성된 머티리얼을 재사용합니다.");
+                    ModLogger.Warning("[HwaBattleMediaController.Video] 폴백 셰이더를 찾지 못하여 기본 생성된 머티리얼을 재사용합니다.");
                 }
 
                 renderer.sortingLayerName = "Background";
