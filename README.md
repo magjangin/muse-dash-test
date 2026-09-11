@@ -210,7 +210,7 @@
 │   │       ├── Pnl/          # PnlStage 텍스트 탐색 헬퍼, 곡명 텍스트 대치
 │   │       │   ├── PnlStagePatchHelper*.cs
 │   │       │   └── SetSelectedMusicNameTxtPatch.cs
-│   │       └── Stage/        # 곡 선택/준비 화면, 기록 카드, 포스트카드, 랭크
+│   │       └── Stage/        # 곡 선택/준비 화면, 기록 카드, 리포트 카드, 랭크
 │   │           ├── CustomRecordUiPatchHelper.cs
 │   │           ├── PnlPreparationPatch.cs
 │   │           ├── PnlRankHookPatch.cs

@@ -285,7 +285,7 @@ BMS 파일 내용의 SHA-256 앞 16자리로 "지금 그 슬롯의 채보"를 �
 * **`ApplyCustomRecordToPnlRecord`**: 팝업 상세 카드 내 최대 콤보, 클리어 횟수(1/0), 정확도 등을 주입하고, 기록이 없는 항목은 하이픈(`-`) 처리합니다.
 
 ### 📂 [Patches/UI/Stage/PnlReportCardPatch.cs](../../muse%20dash%20test/Patches/UI/Stage/PnlReportCardPatch.cs) [NEW]
-플레이 최고 기록 포스트카드(`PnlReportCard`) 로드 시점에 원본 세이브 데이터 조회로 인한 NullReferenceException 크래시를 전격 방지하고 메타데이터를 직접 주입하는 Harmony 패치입니다.
+플레이 최고 기록 리포트 카드(`PnlReportCard`) 로드 시점에 원본 세이브 데이터 조회로 인한 NullReferenceException 크래시를 전격 방지하고 메타데이터를 직접 주입하는 Harmony 패치입니다.
 * **`RefreshBestRecord` (Prefix)**:
   - 게임 원본 메서드 실행을 전면 차단(`return false`)하여 강제 종료를 막습니다.
   - 가상 곡 폴더의 OGG/커버 메타데이터와 플레이 기록 JSON을 매핑하여 앨범 아트, 제목, 아티스트, 최고 스코어, 콤보, FC 리본을 그립니다.
