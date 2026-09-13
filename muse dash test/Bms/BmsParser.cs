@@ -45,6 +45,7 @@ namespace muse_dash_test
             var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var bpmDefinitions = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
             float defaultBpm = 120f;
+            bool sawNonPositiveHeaderBpm = false;
 
             using (var reader = new StringReader(text))
             {
@@ -71,7 +72,15 @@ namespace muse_dash_test
 
                     if (TryParseHeaderBpm(line, out float headerBpm))
                     {
-                        defaultBpm = headerBpm;
+                        // #BPM 0을 받아들이면 아래 시간 계산이 60 / 0이 되어 모든 노트 시간이 무한대가 됩니다.
+                        if (headerBpm > 0f)
+                        {
+                            defaultBpm = headerBpm;
+                        }
+                        else
+                        {
+                            sawNonPositiveHeaderBpm = true;
+                        }
                         continue;
                     }
 
@@ -132,6 +141,15 @@ namespace muse_dash_test
                 ModLogger.Warning(
                     $"[BmsParser] 채널 03(직접 BPM 변경)은 지원하지 않아 무시했습니다: {sourcePath ?? "(경로 없음)"}. "
                     + "BPM 변경은 '#BPMxx nnn' 선언과 채널 08로 적어 주세요.");
+            }
+
+            // 무한대 노트 시간은 모드가 게임 노트 값(Decimal)으로 옮기는 순간 예외가 되어 차트 주입이 통째로 실패합니다.
+            // 원인이 로그에 드러나도록 한 줄 남깁니다.
+            if (sawNonPositiveHeaderBpm)
+            {
+                ModLogger.Warning(
+                    $"[BmsParser] 0 이하인 #BPM 줄을 무시했습니다 (적용 BPM: {defaultBpm.ToString("0.###", CultureInfo.InvariantCulture)}): {sourcePath ?? "(경로 없음)"}. "
+                    + "'#BPM 120'처럼 0보다 큰 값을 적어 주세요.");
             }
 
             var notes = new List<BmsNote>();

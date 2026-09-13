@@ -111,6 +111,21 @@ namespace muse_dash_test.LogicTests
             Assert.Equal("default", chart.BpmChanges[0].Source);
         }
 
+        // #BPM 0은 60 / 0이 되어 모든 노트 시간이 무한대로 나왔고, 모드가 그 값을 게임 노트 값(Decimal)으로
+        // 바꾸는 순간 예외가 나 차트 주입이 통째로 실패했습니다. 0 이하의 헤더 BPM은 무시하고 기본값을 씁니다.
+        public static void ParseText_IgnoresNonPositiveHeaderBpm()
+        {
+            foreach (string header in new[] { "#BPM 0", "#BPM 0.0" })
+            {
+                var chart = BmsParser.ParseText(header + Environment.NewLine + "#00113:01");
+
+                Assert.Equal(120f, chart.DefaultBpm, header);
+                Assert.Equal(1, chart.Notes.Count, header);
+                Assert.False(float.IsInfinity(chart.Notes[0].Time) || float.IsNaN(chart.Notes[0].Time), header + ": 노트 시간은 유한해야 합니다.");
+                Assert.Equal(2.0f, chart.Notes[0].Time, header); // 120 BPM에서 1마디 = 4박 = 2초
+            }
+        }
+
         public static void ParseText_StripsSlashAndSemicolonComments()
         {
             var chart = BmsParser.ParseText("""
