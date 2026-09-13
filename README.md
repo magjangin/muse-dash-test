@@ -173,13 +173,12 @@
 │   │   │   └── Stage/        # 인메모리 차트 수명 주기 제어 및 BMS 주입
 │   │   │       ├── DBStageInfoPatch.cs
 │   │   │       └── DBStageInfoExperimentChart*.cs
-│   │   ├── Diagnostics/      # 판정 오프셋/딜레이 추적, UID 트레이스, 헬스 체크
+│   │   ├── Diagnostics/      # 판정 오프셋/딜레이 추적, 헬스 체크
 │   │   │   ├── CollabEndTimeDumpPatch.cs
 │   │   │   ├── DiscordManagerDebugPatch.cs
 │   │   │   ├── HwaChartDiagnostics.cs
 │   │   │   ├── OffsetHookPatches.cs
-│   │   │   ├── PatchHealthCheck.cs
-│   │   │   └── UidMethodTracePatches.cs
+│   │   │   └── PatchHealthCheck.cs
 │   │   ├── Fav/              # 커스텀 곡 즐겨찾기 관리
 │   │   │   └── FavManager.cs
 │   │   ├── Hwa/              # Hwa 리소스, 매니페스트, BGM 스왑, 동기화

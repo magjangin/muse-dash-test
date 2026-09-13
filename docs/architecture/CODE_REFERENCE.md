@@ -234,7 +234,7 @@ PC 스팀 빌드 내부에서 비활성화되어 있던 모바일 전용 터치 
 ### 📂 [Common/ModReflection.cs](../../muse%20dash%20test/Patches/Common/ModReflection.cs)
 IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 리플렉션·캐스팅으로 읽어오는 래퍼 도구입니다. 유니티 메인 스레드에서 런타임 오브젝트를 안전하게 추출합니다.
 
-### 📂 [UI/Music/PnlMusicDiagnostics.cs](../../muse%20dash%20test/Patches/UI/Music/PnlMusicDiagnostics.cs) & [PnlMusicDumper.cs](../../muse%20dash%20test/Patches/UI/Music/PnlMusicDumper.cs) [NEW]
+### 📂 [UI/Music/PnlMusicDiagnostics.cs](../../muse%20dash%20test/Patches/UI/Music/PnlMusicDiagnostics.cs) [NEW]
 * 리플렉션을 활용해 인메모리 유니티 UI 컴포넌트의 문자열 필드 값을 안전하게 디코딩하고 정밀 덤프해 주는 분석 및 로그 수집 도구입니다. (부속: `PnlMusicDiagnostics.AudioClip.cs`, `PnlMusicDiagnostics.Extraction.cs`)
 
 ### 📂 [UI/Pnl/PnlStagePatchHelper.Search.cs](../../muse%20dash%20test/Patches/UI/Pnl/PnlStagePatchHelper.Search.cs) [NEW]
@@ -246,9 +246,6 @@ IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 �
 
 ### 📂 [Diagnostics/PatchHealthCheck.cs](../../muse%20dash%20test/Patches/Diagnostics/PatchHealthCheck.cs) [NEW]
 * 모드 로드 시점에 게임 버전 업데이트 등으로 인해 깨진 패치 대상(Hook 실패 또는 메서드 구조 변형)이 있는지 유효성 무결성을 자가 진단하여 에러 및 결과를 요약 로깅하는 진단 모듈입니다.
-
-### 📂 [Diagnostics/UidMethodTracePatches.cs](../../muse%20dash%20test/Patches/Diagnostics/UidMethodTracePatches.cs)
-곡 로드, 차트 로딩, 노트 스폰 등 인게임 코어 시퀀스 전역에 핀포인트 추적 후크를 설치하여, 실행 시점의 메서드 트레이스 및 호출 시그니처 흐름을 실시간으로 파일에 기록하는 전문 디버깅 추적 모듈입니다.
 
 ### 📂 [UI/Music/MusicButtonCellPatch.cs](../../muse%20dash%20test/Patches/UI/Music/MusicButtonCellPatch.cs)
 곡 선택 리스트의 개별 곡 셀(`MusicButtonCell`) 클릭/초기화 수명 주기에 개입하여 곡 선택 상태를 추적하고, 가상 곡의 텍스트·커버 아트를 동적으로 주입하는 패치입니다.
