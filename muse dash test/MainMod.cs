@@ -173,6 +173,7 @@ namespace muse_dash_test
         {
             // 매 프레임 호출되므로 각 기능을 FeatureGuard로 격리합니다.
             // 람다 클로저 대신 정적 메서드를 전달하여 매 프레임 GC 가비지 생성을 차단합니다.
+            // (정적 메서드 그룹의 델리게이트 캐시는 C# 11부터입니다. csproj의 LangVersion을 낮추면 다시 매번 할당됩니다.)
             FeatureGuard.Run("Input.RealTimeSwap", UpdateRealTimeSwap);
             FeatureGuard.Run("ConfigFile.Reload", InputOverlay.LoadConfigIfNeeded);
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);

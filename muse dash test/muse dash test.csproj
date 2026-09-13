@@ -7,6 +7,9 @@
     <AssemblyName>muse-dash-custom-chart</AssemblyName>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- C# 11부터 정적 메서드 그룹을 델리게이트로 넘길 때 컴파일러가 캐시합니다. net6.0 기본값인 10에서는
+         MainMod.OnUpdate/OnGUI의 FeatureGuard.Run(이름, 메서드) 호출마다 Action이 새로 할당됩니다. -->
+    <LangVersion>11.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
