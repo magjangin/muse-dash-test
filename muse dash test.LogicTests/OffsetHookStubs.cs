@@ -50,7 +50,17 @@ namespace muse_dash_test
     }
     public static class PnlStagePatchHelper
     {
-        public static string GetCurrentSelectedMusicUid() => null;
+        // 진짜 구현은 FindObjectOfType<PnlStage>() 한 번에 PnlStage의 필드·프로퍼티를 전부
+        // 리플렉션으로 훑는 조회라 한 번이 비쌉니다. 그래서 호출 횟수를 세어, 오프셋 훅이
+        // 그 조회를 실제로 줄이는지 테스트에서 확인합니다.
+        public static string StubUid;
+        public static int CallCount;
+
+        public static string GetCurrentSelectedMusicUid()
+        {
+            CallCount++;
+            return StubUid;
+        }
     }
     public static class HwaResourceManager
     {

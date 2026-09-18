@@ -167,6 +167,10 @@ namespace muse_dash_test
             FeatureGuard.Run("Scene.ResetHitPoint", ExperimentHitPointInstaller.Reset);
             // 연타 도중 곡을 빠져나가면 구간 플래그가 켜진 채 남아 다음 곡까지 영향을 줍니다.
             FeatureGuard.Run("Scene.ResetSpineContractWindow", SpineActionContract.ResetWindow);
+            // 오프셋 훅이 들고 있는 폴백 UID 캐시를 버립니다. 씬이 바뀌면 곡도 바뀔 수 있습니다.
+            FeatureGuard.Run("Scene.ResetOffsetUidCache", OffsetHookPatches.ResetUidCache);
+            // 전역 오프셋 진단. Verbose일 때만 값을 읽고, 바뀌지 않았으면 아무것도 하지 않습니다.
+            FeatureGuard.Run("Scene.LogGlobalOffset", GlobalOffsetDiagnostics.LogGlobalOffsetIfChanged);
         }
 
         public override void OnUpdate()
@@ -174,6 +178,8 @@ namespace muse_dash_test
             // 매 프레임 호출되므로 각 기능을 FeatureGuard로 격리합니다.
             // 람다 클로저 대신 정적 메서드를 전달하여 매 프레임 GC 가비지 생성을 차단합니다.
             // (정적 메서드 그룹의 델리게이트 캐시는 C# 11부터입니다. csproj의 LangVersion을 낮추면 다시 매번 할당됩니다.)
+            // 아래 본문들은 전부 static이어야 합니다. 인스턴스 메서드 그룹은 대상 객체까지 함께
+            // 담아야 하므로 C# 11에서도 캐시되지 않고, 매 프레임 델리게이트를 새로 할당합니다.
             FeatureGuard.Run("Input.RealTimeSwap", UpdateRealTimeSwap);
             FeatureGuard.Run("ConfigFile.Reload", InputOverlay.LoadConfigIfNeeded);
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);
@@ -230,7 +236,7 @@ namespace muse_dash_test
         /// ("made in 화영왕")가 게임에 의해 덮어써졌는지 주기적으로 확인해 다시 적용합니다.
         /// (가상 노트 생성/주입은 여기가 아니라 DBStageInfoExperimentChart에서 차트 주입 시점에 수행됩니다.)
         /// </summary>
-        private void HandleExperimentStageUpdate()
+        private static void HandleExperimentStageUpdate()
         {
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {

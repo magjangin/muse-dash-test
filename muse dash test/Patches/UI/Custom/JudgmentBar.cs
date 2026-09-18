@@ -31,8 +31,20 @@ namespace muse_dash_test
         /// 지금 판정 기록을 남길 상태인지 여부입니다.
         /// 판정바를 끄는 창구가 둘(config.txt의 '판정바표시', MelonPreferences의 EnableJudgmentBar)이라
         /// 둘 다 확인합니다.
+        ///
+        /// <para>노트를 칠 때마다 도는 Harmony 훅(<c>GameTouchPlay.TouchResult</c>)도 이 값을 먼저 봅니다.
+        /// 그래서 <c>internal</c>입니다. 훅 쪽에서 써야 하니 접근 수준을 낮추지 마십시오.</para>
         /// </summary>
-        private static bool IsRecordingEnabled => ModConfig.EnableJudgmentBar && InputOverlay.showBar;
+        internal static bool IsRecordingEnabled => ModConfig.EnableJudgmentBar && InputOverlay.showBar;
+
+        /// <summary>
+        /// 쌓여 있던 잔상 틱을 비웁니다. 판정바가 꺼진 것을 확인한 자리에서 부릅니다.
+        /// 켜고 플레이하다 중간에 끈 경우, 목록을 줄이는 코드가 영영 실행되지 않는 것을 막습니다.
+        /// </summary>
+        internal static void DiscardHistory()
+        {
+            if (hitHistory.Count > 0) hitHistory.Clear();
+        }
 
         /// <summary>
         /// 유효 시간이 지난 틱을 제거합니다. 뒤에서부터 훑어 가비지를 만들지 않습니다.
@@ -63,7 +75,7 @@ namespace muse_dash_test
                 // 비우는 코드는 영영 실행되지 않았습니다.
                 if (!IsRecordingEnabled)
                 {
-                    if (hitHistory.Count > 0) hitHistory.Clear();
+                    DiscardHistory();
                     return;
                 }
 
@@ -267,6 +279,16 @@ namespace muse_dash_test
         {
             try
             {
+                // 판정바가 꺼져 있으면 여기서 끝냅니다. 아래 md.tick.ToString()과 파싱은 노트마다
+                // 도는 문자열 변환이라, 보이지도 않는 판정바를 위해 플레이 내내 할 일이 아닙니다.
+                // (게이트를 '쓰는 쪽'에만 달면 끈 상태에서 목록만 쌓입니다 — docs/guides/CHECKLIST.md
+                //  참고. 그래서 늘리는 곳과 같은 자리에서 비우는 것까지 함께 합니다.)
+                if (!JudgmentBar.IsRecordingEnabled)
+                {
+                    JudgmentBar.DiscardHistory();
+                    return;
+                }
+
                 // Miss(0) 또는 타격/판정 정보가 유효하지 않은 경우 무시
                 if (resultCode == 0 || tno == null || tno.md == null) return;
 

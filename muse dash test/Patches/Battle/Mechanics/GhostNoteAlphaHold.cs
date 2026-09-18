@@ -143,6 +143,11 @@ namespace muse_dash_test
         //
         //  원인이 확정되면 이 필드들과 ProbeCachedState / ReadMinAlpha / ScanAlpha /
         //  RecordProbePointer, 그리고 두 호출 지점을 통째로 지웁니다.
+        //
+        //  그때까지는 **로그 수준이 Verbose일 때만** 돕니다(기본값 꺼짐: config의 LogLevel /
+        //  EnableVerboseLog). 탐침이 붙은 자리가 노트마다 지나가는 조기 반환 경로이고, 한 번에
+        //  FindAnimation + 컬러 타임라인 전수 스캔을 하기 때문에, 켜 둔 채로는 노트가 날아오기
+        //  시작하는 그 순간에 비용이 몰립니다. ProbeBudget(상한)은 총량만 막고 그 순간은 못 막습니다.
         // ─────────────────────────────────────────────────────────────────────
 
         /// <summary>덮어쓸 당시의 SkeletonData 네이티브 포인터. 지금 것과 다르면 데이터가 다시 만들어진 것입니다.</summary>
@@ -187,7 +192,7 @@ namespace muse_dash_test
             // 이미 원하는 상태면 끝. 스켈레톤+애니메이션 조합당 한 번씩만 실제로 손댑니다.
             if (opaqueAnimations.TryGetValue(cacheKey, out bool state) && state == opaque)
             {
-                ProbeCachedState(controller, data, animationName, cacheKey, opaque);   // ← 임시 진단
+                ProbeCachedState(controller, data, animationName, cacheKey, opaque);   // ← 임시 진단 (Verbose에서만)
                 return;
             }
 
@@ -268,6 +273,9 @@ namespace muse_dash_test
         private static void ProbeCachedState(SpineActionController controller, Il2CppSpine.SkeletonData data,
                                              string animationName, string cacheKey, bool opaque)
         {
+            // 게이트 순서가 곧 성능입니다. 여기는 노트마다 지나가는 자리이므로
+            // 가장 싼 판정(로그 수준)을 맨 앞에 둡니다.
+            if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
             if (probeCount >= ProbeBudget) return;
 
             try

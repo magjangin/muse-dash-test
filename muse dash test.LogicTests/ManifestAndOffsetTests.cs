@@ -81,6 +81,40 @@ namespace muse_dash_test.LogicTests
             finally { Reset(); }
         }
 
+        public static void ExpensiveUidLookupIsNotRepeatedForEveryHookCall()
+        {
+            try
+            {
+                // 세션이 곡을 모르는 상태여야 폴백(비싼 리플렉션 조회)이 돕니다.
+                CustomPlaySession.Current.SelectedMusicUid = null;
+                CustomPlaySession.Current.LastClickedMusicUid = null;
+                PnlStagePatchHelper.StubUid = "1999-1";
+                HwaResourceManager.Manifest = new HwaManifest { Offset = -0.02 };
+                OffsetHookPatches.ResetUidCache();
+                PnlStagePatchHelper.CallCount = 0;
+
+                var stage = new StageBattleComponent { offset = 0f };
+                for (int i = 0; i < 20; i++)
+                {
+                    OffsetHookPatches.PostfixFixedOffset(stage);
+                }
+
+                // 훅을 20번 불러도 비싼 조회가 20번 돌지는 않습니다.
+                // (캐시 창이 100ms라 느린 머신에서 한 번 더 도는 것까지는 허용합니다.)
+                Assert.True(PnlStagePatchHelper.CallCount <= 2, $"비싼 UID 조회가 {PnlStagePatchHelper.CallCount}번 돌았습니다.");
+                // 캐시를 써도 주입 결과는 그대로여야 합니다.
+                Assert.Equal(-0.02f, stage.offset);
+
+                // 씬이 바뀌면 시간 만료를 기다리지 않고 바로 다시 조회해야 합니다.
+                int before = PnlStagePatchHelper.CallCount;
+                OffsetHookPatches.ResetUidCache();
+                OffsetHookPatches.PostfixFixedOffset(stage);
+                Assert.True(PnlStagePatchHelper.CallCount == before + 1,
+                    $"캐시를 버린 뒤 조회가 {PnlStagePatchHelper.CallCount - before}번 돌았습니다.");
+            }
+            finally { Reset(); }
+        }
+
         private static Action<StageBattleComponent>[] Hooks() => new Action<StageBattleComponent>[]
         {
             OffsetHookPatches.PostfixFixedOffset,
@@ -90,7 +124,11 @@ namespace muse_dash_test.LogicTests
         private static void Reset()
         {
             CustomPlaySession.Current.SelectedMusicUid = null;
+            CustomPlaySession.Current.LastClickedMusicUid = null;
             HwaResourceManager.Manifest = null;
+            PnlStagePatchHelper.StubUid = null;
+            PnlStagePatchHelper.CallCount = 0;
+            OffsetHookPatches.ResetUidCache();
         }
     }
 }

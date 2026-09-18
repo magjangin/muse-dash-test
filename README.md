@@ -176,6 +176,7 @@
 │   │   ├── Diagnostics/      # 판정 오프셋/딜레이 추적, 헬스 체크
 │   │   │   ├── CollabEndTimeDumpPatch.cs
 │   │   │   ├── DiscordManagerDebugPatch.cs
+│   │   │   ├── GlobalOffsetDiagnostics.cs
 │   │   │   ├── HwaChartDiagnostics.cs
 │   │   │   ├── OffsetHookPatches.cs
 │   │   │   └── PatchHealthCheck.cs
