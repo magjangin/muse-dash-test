@@ -117,7 +117,8 @@ namespace muse_dash_test
                 {
                     Tick = 0f,
                     Bpm = defaultBpm,
-                    Source = "default"
+                    Source = "default",
+                    Order = 0
                 }
             };
 
@@ -163,12 +164,15 @@ namespace muse_dash_test
                 AddNoteEvents(evt, lane, notes, noteCellWidth);
             }
 
+            // 같은 틱이면 선언 순서대로 적용합니다(기본 BPM이 항상 첫 항목).
+            // 예전에는 Source 이름으로 정렬해서 0틱의 "BPM01"이 "default"보다 먼저 적용되고
+            // 곧바로 기본 BPM에 덮여, 첫 마디의 BPM 변경이 통째로 사라졌습니다.
             bpmChanges.Sort((left, right) =>
             {
                 int tickCompare = left.Tick.CompareTo(right.Tick);
                 return tickCompare != 0
                     ? tickCompare
-                    : string.Compare(left.Source, right.Source, StringComparison.OrdinalIgnoreCase);
+                    : left.Order.CompareTo(right.Order);
             });
 
             // O(N + M) single sweep to calculate time for all notes
@@ -279,7 +283,8 @@ namespace muse_dash_test
                 {
                     Tick = evt.Measure + (i / (float)cellCount),
                     Bpm = bpm,
-                    Source = $"BPM{cell}"
+                    Source = $"BPM{cell}",
+                    Order = bpmChanges.Count
                 });
             }
         }

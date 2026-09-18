@@ -10,7 +10,10 @@ namespace muse_dash_test
     public static partial class BmsParser
     {
         private static readonly Regex HeaderBpmRegex = new Regex(@"^#BPM\s+([0-9]+(?:\.[0-9]+)?)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex BpmAliasRegex = new Regex(@"^#BPM([0-9A-Fa-f]{2})\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        // 표준 BMS는 "#BPM01 240"처럼 공백으로 값을 적습니다. 모드의 경고문과 BMS_PARSING.md도 그렇게 안내하므로
+        // 공백 구분을 ':'/'=' 구분과 함께 받습니다. ':'와 '='만 받던 시절에는 이 줄이 일반 메타데이터로 새어 나가
+        // 채널 08이 참조할 선언이 사라졌고, BPM 변경이 경고 없이 없던 일이 됐습니다.
+        private static readonly Regex BpmAliasRegex = new Regex(@"^#BPM([0-9A-Fa-f]{2})(?:\s*[:=]\s*|\s+)([0-9]+(?:\.[0-9]+)?)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex MeasureLineRegex = new Regex(@"^#(?<measure>\d{3})(?<channel>[0-9A-Fa-f]{2})\s*:\s*(?<data>[0-9A-Za-z\s]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex MetadataRegex = new Regex(@"^#(?<key>[A-Za-z0-9_]+)\s+(?<value>.+)$", RegexOptions.Compiled);
 

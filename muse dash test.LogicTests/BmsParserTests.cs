@@ -126,6 +126,46 @@ namespace muse_dash_test.LogicTests
             }
         }
 
+        // 표준 BMS는 "#BPM01 240"처럼 공백으로 값을 적습니다. 모드의 경고문과 BMS_PARSING.md도 이 표기를
+        // 안내하는데, 예전 정규식은 ':'나 '='를 반드시 요구해서 공백 표기를 BPM 선언이 아닌 일반 메타데이터로
+        // 흘려보냈습니다. 채널 08이 참조할 선언이 없으니 BPM 변경이 경고 한 줄 없이 사라졌습니다.
+        public static void ParseText_AcceptsSpaceSeparatedBpmAlias()
+        {
+            var chart = BmsParser.ParseText("""
+                #BPM 120
+                #BPM01 240
+                #00108:01
+                #00113:0001
+                """);
+
+            Assert.Equal(240f, chart.BpmDefinitions["01"]);
+            Assert.Equal(2, chart.BpmChanges.Count);
+            Assert.Equal(1.0f, chart.BpmChanges[1].Tick);
+            Assert.Equal(240f, chart.BpmChanges[1].Bpm);
+
+            // 0~1틱은 120 BPM(2초), 1~1.5틱은 240 BPM(0.5초).
+            Assert.Equal(2.5f, chart.Notes[0].Time);
+        }
+
+        // 0틱(첫 마디 시작)의 BPM 변경은 헤더 기본 BPM을 덮어야 합니다. 예전에는 같은 틱을 Source 문자열로
+        // 정렬해서 "BPM01"이 "default"보다 앞에 오고, 기본 BPM이 나중에 적용돼 변경이 통째로 무시됐습니다.
+        public static void ParseText_LetsZeroTickBpmChangeOverrideHeaderBpm()
+        {
+            var chart = BmsParser.ParseText("""
+                #BPM 120
+                #BPM01:240
+                #00008:01
+                #00113:01
+                """);
+
+            Assert.Equal(2, chart.BpmChanges.Count);
+            Assert.Equal("default", chart.BpmChanges[0].Source);
+            Assert.Equal("BPM01", chart.BpmChanges[1].Source);
+
+            // 0틱부터 240 BPM이므로 1마디는 4박 = 1초입니다.
+            Assert.Equal(1.0f, chart.Notes[0].Time);
+        }
+
         public static void ParseText_StripsSlashAndSemicolonComments()
         {
             var chart = BmsParser.ParseText("""

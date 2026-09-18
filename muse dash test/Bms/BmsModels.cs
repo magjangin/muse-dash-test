@@ -50,5 +50,9 @@ namespace muse_dash_test
         public float Tick { get; internal set; }
         public float Bpm { get; internal set; }
         public string Source { get; internal set; }
+
+        // 같은 틱에 여러 변경이 모였을 때의 적용 순서(작을수록 먼저). 기본 BPM이 0번이고 채보에서 읽은 변경이
+        // 선언 순서대로 그 뒤를 잇습니다. 이름 문자열로 정렬하면 0틱 변경이 기본 BPM보다 앞서 적용되고 곧바로 덮였습니다.
+        internal int Order { get; set; }
     }
 }
