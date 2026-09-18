@@ -160,18 +160,20 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(0.5f * MeasureSeconds, pairs[0].Duration);
         }
 
-        public static void RealChart_SplitsProjectileDtByBossMarker()
+        public static void RealChart_KeepsDeclaredProjectileDtOnBothMarkers()
         {
             var chart = Parse();
 
-            // 같은 UID(010601)에 같은 _dt0.8 선언이지만 _boss 유무로 dt가 갈립니다.
-            // (실제 차트에는 발사체 WAV가 선언만 돼 있고 아직 배치되진 않았습니다)
+            // 같은 UID(010601)에 같은 _dt0.8 선언이고, _boss 유무는 보스 액션만 가릅니다.
+            // 예전에는 _boss 쪽 dt만 0.7로 덮어써져서 선언값이 사라졌습니다.
             var withBoss = BmsBossSwapPlanner.ResolveWavInfo(chart, chart.Notes.First(n => n.RawValue == "00H"));
             var withoutBoss = BmsBossSwapPlanner.ResolveWavInfo(chart, chart.Notes.First(n => n.RawValue == "00I"));
 
             Assert.Equal(withBoss.Uid, withoutBoss.Uid);
-            Assert.Equal(0.7, withBoss.Dt, "_boss 항목의 선언 dt(0.8)가 0.7로 덮어써졌습니다.");
+            Assert.Equal(0.8, withBoss.Dt, "_boss 항목의 선언 dt(0.8)를 그대로 써야 합니다.");
             Assert.Equal(0.8, withoutBoss.Dt);
+            Assert.Equal("boss_far_atk_1_R", withBoss.BossAction);
+            Assert.Equal("", withoutBoss.BossAction);
         }
     }
 }
