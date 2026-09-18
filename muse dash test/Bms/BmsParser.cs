@@ -111,22 +111,18 @@ namespace muse_dash_test
             chart.Metadata = metadata;
             int noteCellWidth = DetectWavCellWidth(metadata);
 
-            var bpmChanges = new List<BpmChange>
-            {
-                new BpmChange
-                {
-                    Tick = 0f,
-                    Bpm = defaultBpm,
-                    Source = "default"
-                }
-            };
+            // 기본 BPM은 "0틱의 변경 이벤트"가 아니라 차트의 초기 상태입니다. 예전에는 채널 08의
+            // 변경과 같은 목록에 섞어 넣고 Source 문자열로 정렬했는데, 0마디에 적은 변경("BPM01")이
+            // "default"보다 앞에 정렬돼 먼저 적용되고 기본 BPM이 그것을 다시 덮어썼습니다.
+            // 그래서 선언된 변경만 따로 모아 정렬하고, 기본 BPM을 항상 맨 앞에 둡니다.
+            var declaredBpmChanges = new List<BpmChange>();
 
             bool sawDirectBpmChannel = false;
             foreach (var evt in measureEvents)
             {
                 if (evt.Channel == 0x08)
                 {
-                    AddBpmReferenceChanges(evt, bpmDefinitions, bpmChanges);
+                    AddBpmReferenceChanges(evt, bpmDefinitions, declaredBpmChanges);
                 }
                 else if (evt.Channel == 0x03)
                 {
@@ -163,13 +159,24 @@ namespace muse_dash_test
                 AddNoteEvents(evt, lane, notes, noteCellWidth);
             }
 
-            bpmChanges.Sort((left, right) =>
+            declaredBpmChanges.Sort((left, right) =>
             {
                 int tickCompare = left.Tick.CompareTo(right.Tick);
                 return tickCompare != 0
                     ? tickCompare
                     : string.Compare(left.Source, right.Source, StringComparison.OrdinalIgnoreCase);
             });
+
+            var bpmChanges = new List<BpmChange>(declaredBpmChanges.Count + 1)
+            {
+                new BpmChange
+                {
+                    Tick = 0f,
+                    Bpm = defaultBpm,
+                    Source = "default"
+                }
+            };
+            bpmChanges.AddRange(declaredBpmChanges);
 
             // O(N + M) single sweep to calculate time for all notes
             notes.Sort((left, right) =>
