@@ -21,6 +21,7 @@
 | [MOD_SYSTEM_BLUEPRINT.md](architecture/MOD_SYSTEM_BLUEPRINT.md) | 통합 시스템 설계도 및 기술 명세서 |
 | [CODE_REFERENCE.md](architecture/CODE_REFERENCE.md) | C# 파일별 역할·클래스·흐름 레퍼런스 |
 | [CAST_AND_CUSTOM_TAG_GUIDE.md](architecture/CAST_AND_CUSTOM_TAG_GUIDE.md) | 유니버설 래퍼 패턴 및 커스텀 태그 동적 주입 구조 |
+| [PERFORMANCE_REVIEW_2026-09-20.md](architecture/PERFORMANCE_REVIEW_2026-09-20.md) | 전체 추적 파일 성능 검색, 병목 후보·실행 근거·검증 결과 |
 
 ## 🛠️ guides/ — 제작·설정·운영 가이드
 
