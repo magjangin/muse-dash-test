@@ -95,7 +95,8 @@ namespace muse_dash_test
                 yield break;
             }
 
-            string oggPath = ResolveHwaOggPath(songDir);
+            // 배틀 BGM과 같은 규칙으로 고릅니다(SongAudioFiles). 미리듣기와 본 플레이가 다른 파일을 틀지 않게 합니다.
+            string oggPath = SongAudioFiles.ResolveBgmOggPath(songDir);
             if (string.IsNullOrWhiteSpace(oggPath) || !File.Exists(oggPath))
             {
                 ModLogger.Warning($"[MenuBGM] ogg 파일을 찾지 못했습니다: folder={songDir}");
@@ -279,32 +280,6 @@ namespace muse_dash_test
 
             string clipName = source.clip.name.ToLower();
             return !clipName.Contains("click") && !clipName.Contains("sfx") && !clipName.Contains("button");
-        }
-
-        private static string ResolveHwaOggPath(string folderPath)
-        {
-            try
-            {
-                if (!Directory.Exists(folderPath)) return null;
-                string[] oggFiles = Directory.GetFiles(folderPath, "*.ogg", SearchOption.AllDirectories);
-                if (oggFiles == null || oggFiles.Length == 0) return null;
-                Array.Sort(oggFiles, StringComparer.OrdinalIgnoreCase);
-
-                foreach (string oggFile in oggFiles)
-                {
-                    string lower = Path.GetFileNameWithoutExtension(oggFile).ToLowerInvariant();
-                    if (lower.Contains("bgm") || lower.Contains("battle") || lower.Contains("music") || lower.Contains("song") || lower.Contains("demo"))
-                    {
-                        return oggFile;
-                    }
-                }
-                return oggFiles[0];
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[MenuBGM] ogg 탐색 실패: {ex}");
-                return null;
-            }
         }
 
         private static IEnumerator MonitorAudioSource(AudioSource source, string uid, string clipName, int generation)

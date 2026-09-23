@@ -99,7 +99,8 @@ namespace muse_dash_test
                 ModLogger.Warning("[HwaBattleMediaController] 메인 카메라를 찾지 못했습니다.");
             }
 
-            string oggPath = ResolveHwaOggPath(songDir);
+            // 곡 선택 화면 미리듣기와 같은 규칙으로 고릅니다(SongAudioFiles).
+            string oggPath = SongAudioFiles.ResolveBgmOggPath(songDir);
             if (string.IsNullOrWhiteSpace(oggPath))
             {
                 ModLogger.Msg($"[HwaBattleMediaController] ogg 파일을 찾지 못했습니다: folder={songDir}");
@@ -197,59 +198,6 @@ namespace muse_dash_test
             finally
             {
                 request.Dispose();
-            }
-        }
-
-        private static string ResolveHwaOggPath(string folderPath)
-        {
-            try
-            {
-                if (!Directory.Exists(folderPath))
-                {
-                    return null;
-                }
-
-                string[] txtFiles = Directory.GetFiles(folderPath, "*.txt", SearchOption.AllDirectories);
-                string[] oggFiles = Directory.GetFiles(folderPath, "*.ogg", SearchOption.AllDirectories);
-
-                if (oggFiles == null || oggFiles.Length == 0)
-                {
-                    return null;
-                }
-
-                Array.Sort(oggFiles, StringComparer.OrdinalIgnoreCase);
-
-                if (txtFiles != null && txtFiles.Length > 0)
-                {
-                    Array.Sort(txtFiles, StringComparer.OrdinalIgnoreCase);
-                    foreach (string txtFile in txtFiles)
-                    {
-                        string stem = Path.GetFileNameWithoutExtension(txtFile);
-                        foreach (string oggFile in oggFiles)
-                        {
-                            if (string.Equals(Path.GetFileNameWithoutExtension(oggFile), stem, StringComparison.OrdinalIgnoreCase))
-                            {
-                                return oggFile;
-                            }
-                        }
-                    }
-                }
-
-                foreach (string oggFile in oggFiles)
-                {
-                    string lower = Path.GetFileNameWithoutExtension(oggFile).ToLowerInvariant();
-                    if (lower.Contains("bgm") || lower.Contains("battle") || lower.Contains("music") || lower.Contains("song"))
-                    {
-                        return oggFile;
-                    }
-                }
-
-                return oggFiles[0];
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[HwaBattleMediaController] ogg 탐색 실패: {ex}");
-                return null;
             }
         }
 
