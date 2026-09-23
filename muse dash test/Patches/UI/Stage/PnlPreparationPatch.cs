@@ -7,8 +7,6 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "OnEnable")]
 public class PnlPreparation_OnEnable_Patch
 {
-    public static void Prefix(Il2Cpp.PnlPreparation __instance) { }
-
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
         try
@@ -161,8 +159,6 @@ public class PnlPreparation_OnDownloadBestReport_Patch
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "RefreshUi")]
 public class PnlPreparation_RefreshUi_Patch
 {
-    public static void Prefix(Il2Cpp.PnlPreparation __instance) { }
-
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
         try

@@ -113,11 +113,5 @@ namespace muse_dash_test
                 }
             }
         }
-
-        /// <summary>지정 기능이 서킷 브레이커로 비활성화되었는지 여부입니다.</summary>
-        public static bool IsDisabled(string feature)
-        {
-            return States.TryGetValue(feature, out var state) && state.Disabled;
-        }
     }
 }

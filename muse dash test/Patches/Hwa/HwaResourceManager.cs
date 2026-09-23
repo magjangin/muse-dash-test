@@ -177,25 +177,6 @@ namespace muse_dash_test
             }
         }
 
-        /// <summary>실제로 모드가 생성한 1999-* 가상 커스텀 곡 UID인지 확인합니다.</summary>
-        public static bool IsCustomSong(string uid)
-        {
-            if (string.IsNullOrEmpty(uid)) return false;
-            return CustomContentIds.IsVirtualSong(uid);
-        }
-
-        /// <summary>
-        /// 가상 uid(1999-N) 또는 매니페스트가 숙주로 지정한 순정 uid(예: 66-0)면 true를 반환합니다.
-        /// 이 값은 "커스텀 시스템과 관련 있는 UID인지"만 뜻합니다. 실제 플레이에 커스텀 차트를
-        /// 적용할지는 선택 문맥까지 포함해서 <see cref="ShouldApplyCustomChartForSelection"/>로 판단해야 합니다.
-        /// </summary>
-        public static bool IsCustomRelatedUid(string uid)
-        {
-            if (string.IsNullOrEmpty(uid)) return false;
-            // 매니페스트가 아직 로드되기 전이라도 1999- 가상곡은 항상 커스텀 관련 UID로 간주(하위 호환).
-            return CustomContentIds.IsVirtualSong(uid) || customClaimedUids.Contains(uid);
-        }
-
         public static bool IsRegisteredCustomHostUid(string uid)
         {
             if (string.IsNullOrEmpty(uid)) return false;
@@ -264,13 +245,6 @@ namespace muse_dash_test
             return decision;
         }
 
-        public static bool ShouldApplyCustomChartForSelection(string uid, bool isExperimentModeActive)
-        {
-            var decision = DecideCustomChartForSelection(uid, isExperimentModeActive);
-            ModConfig.VerboseLog($"[HwaResourceManager.Debug] ShouldApplyCustomChartForSelection: uid={uid ?? "(null)"}, isExperimentModeActive={isExperimentModeActive}, isVirtualSong={decision.IsVirtualSong}, isRegisteredHost={decision.IsRegisteredHost}, result={decision.ShouldApply}, reason={decision.ReasonCode}, detail={decision.Description}");
-            return decision.ShouldApply;
-        }
-
         public static HwaManifest GetManifest(string uid)
         {
             if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))
@@ -278,18 +252,6 @@ namespace muse_dash_test
                 return manifest;
             }
             return null;
-        }
-
-        public static bool TryGetCachedHwaManifest(string uid, out string description)
-        {
-            if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))
-            {
-                description = HwaManifestLoader.DescribeManifest(manifest);
-                return true;
-            }
-
-            description = string.Empty;
-            return false;
         }
 
         public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string description)

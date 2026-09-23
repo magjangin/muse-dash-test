@@ -33,18 +33,7 @@ namespace muse_dash_test
     [Harmony]
     public static class FavManager
     {
-        public static PnlStage stagePnl;
-        public static GameObject girlTxt;
         public static List<int> _oldGirl = new();
-
-        internal static Component CopyComponent(Component original, GameObject destination)
-        {
-            var type = original.GetIl2CppType();
-            var copy = destination.AddComponent(type);
-            Il2CppSystem.Reflection.FieldInfo[] fields = type.GetFields();
-            foreach (var field in fields) field.SetValue(copy, field.GetValue(original));
-            return copy;
-        }
 
         public static bool ValidGirl(int girl)
         {
@@ -133,8 +122,6 @@ namespace muse_dash_test
         [HarmonyPatch(typeof(PnlStage), nameof(PnlStage.PreWarm))]
         private static void PnlStagePreWarmPostfix(PnlStage __instance)
         {
-            stagePnl = __instance;
-            
             // 실시간 교체 시스템 초기화
             RealTimeSwapManager.Initialize();
         }

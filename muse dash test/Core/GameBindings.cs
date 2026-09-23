@@ -41,8 +41,6 @@ namespace muse_dash_test
         /// <summary>Il2Cpp.PnlBattle — 인게임 배틀 패널.</summary>
         public static class PnlBattle
         {
-            /// <summary>리플렉션 타입 탐색용 단순 타입명(<see cref="PnlBattle_GameStart_Patch"/>에서 사용).</summary>
-            public const string TypeName = "PnlBattle";
             public const string MusicProgressInit = "MusicProgressInit";
             public const string GameStart = "GameStart";
         }

@@ -16,38 +16,8 @@ namespace muse_dash_test
     internal static partial class SceneZzTransformTracker
     {
         // 리플렉션 캐시
-        private static readonly Dictionary<Type, FieldInfo[]> FieldsCache = new Dictionary<Type, FieldInfo[]>();
-        private static readonly Dictionary<Type, PropertyInfo[]> PropertiesCache = new Dictionary<Type, PropertyInfo[]>();
         private static readonly Dictionary<Type, PropertyInfo> CountPropertyCache = new Dictionary<Type, PropertyInfo>();
         private static readonly Dictionary<Type, PropertyInfo> ItemPropertyCache = new Dictionary<Type, PropertyInfo>();
-
-        private static FieldInfo[] GetFieldsCached(Type type)
-        {
-            if (!FieldsCache.TryGetValue(type, out var fields))
-            {
-                fields = type.GetFields(DefaultFlags);
-                FieldsCache[type] = fields;
-            }
-            return fields;
-        }
-
-        private static PropertyInfo[] GetPropertiesCached(Type type)
-        {
-            if (!PropertiesCache.TryGetValue(type, out var props))
-            {
-                var list = new List<PropertyInfo>();
-                foreach (var prop in type.GetProperties(DefaultFlags))
-                {
-                    if (prop.CanRead && prop.GetIndexParameters().Length == 0)
-                    {
-                        list.Add(prop);
-                    }
-                }
-                props = list.ToArray();
-                PropertiesCache[type] = props;
-            }
-            return props;
-        }
 
         private static PropertyInfo GetCountProperty(Type type)
         {

@@ -250,14 +250,6 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 난이도 3~5를 0으로 두는 간이 오버로드입니다.
-        /// </summary>
-        internal static void InjectVirtualSong(MusicInfo originalInfo, string uid, string name, string author, string levelDesigner, int diff1, int diff2, List<string> musicList)
-        {
-            InjectVirtualSong(originalInfo, uid, name, author, levelDesigner, diff1, diff2, 0, 0, 0, musicList);
-        }
-
-        /// <summary>
         /// 원본 곡을 얇게 복제해 가상 곡으로 등록합니다.
         /// </summary>
         /// <remarks>

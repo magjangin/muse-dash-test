@@ -16,7 +16,6 @@ namespace muse_dash_test
     public class AlbumTagToggle_Init_Patch
     {
         private static Texture2D cachedCustomTexture;
-        private static Sprite cachedCustomSprite;
         private static bool hasTriedLoading = false;
 
         public static Texture2D GetCustomTexture()
@@ -72,36 +71,6 @@ namespace muse_dash_test
                 ModLogger.Error($"[APMod.TagIcon] 물리 텍스처 로딩 및 생성 중 예외 발생: {ex}");
             }
 
-            return null;
-        }
-
-        /// <summary>
-        /// 캐싱된 Texture2D로부터 Sprite를 생성하고 영구 캐싱하여 반환합니다.
-        /// </summary>
-        public static Sprite GetCustomSprite()
-        {
-            if (cachedCustomSprite != null)
-            {
-                return cachedCustomSprite;
-            }
-
-            Texture2D texture = GetCustomTexture();
-            if (texture != null)
-            {
-                try
-                {
-                    Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                    sprite.name = "CustomTagIconSprite";
-                    sprite.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC(UnloadUnusedAssets)에 의해 해제되는 현상 방지
-                    cachedCustomSprite = sprite;
-                    ModLogger.Msg("[APMod.TagIcon] Texture2D로부터 영구 Sprite 생성 완료!");
-                    return sprite;
-                }
-                catch (Exception ex)
-                {
-                    ModLogger.Error($"[APMod.TagIcon] Sprite 생성 중 예외 발생: {ex}");
-                }
-            }
             return null;
         }
 

@@ -27,51 +27,6 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 디버그용: 실제 인게임 플레이 시 공격 키 입력이 정상적으로 모니터링되는지 실시간 체크합니다.
-        /// </summary>
-        public static void UpdateKeyTest()
-        {
-            LoadConfigIfNeeded();
-
-            if (!keysLoaded)
-            {
-                checkTimer += Time.deltaTime;
-                if (checkTimer >= CheckInterval || airKeys.Count == 0)
-                {
-                    checkTimer = 0f;
-                    LoadPlayerKeybinds();
-                }
-                return;
-            }
-
-            for (int i = 0; i < airKeys.Count; i++)
-            {
-                var key = airKeys[i];
-                if (Input.GetKeyDown(key))
-                {
-                    ModLogger.Msg($"[InputOverlay.Test] 공중 공격 키 입력 감지 (KeyDown): {key}");
-                }
-                if (Input.GetKeyUp(key))
-                {
-                    ModLogger.Msg($"[InputOverlay.Test] 공중 공격 키 입력 해제 (KeyUp): {key}");
-                }
-            }
-
-            for (int i = 0; i < groundKeys.Count; i++)
-            {
-                var key = groundKeys[i];
-                if (Input.GetKeyDown(key))
-                {
-                    ModLogger.Msg($"[InputOverlay.Test] 지상 공격 키 입력 감지 (KeyDown): {key}");
-                }
-                if (Input.GetKeyUp(key))
-                {
-                    ModLogger.Msg($"[InputOverlay.Test] 지상 공격 키 입력 해제 (KeyUp): {key}");
-                }
-            }
-        }
-
-        /// <summary>
         /// StandloneCtrlConfig 로부터 유저가 커스텀 설정한 키 매핑 목록을 리플렉션으로 안전하게 읽어옵니다.
         /// 게임 데이터 구조: m_ButtonKeyEnties = Dictionary&lt;proposal, Dictionary&lt;keyName, List&lt;KeyCode&gt;&gt;&gt;.
         /// </summary>

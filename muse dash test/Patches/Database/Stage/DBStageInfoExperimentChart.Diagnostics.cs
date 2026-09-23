@@ -287,45 +287,4 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return $"(예외: {ex.GetType().Name})";
         }
     }
-
-    public static string GetBossActionGroup(string bossAction)
-    {
-        if (string.IsNullOrWhiteSpace(bossAction))
-        {
-            return "none";
-        }
-
-        if (bossAction == "boss_far_atk_2")
-        {
-            return "boss_far_atk_2";
-        }
-
-        if (bossAction == "boss_far_atk_1_R")
-        {
-            return "boss_far_atk_1_R";
-        }
-
-        return "other";
-    }
-
-    public static bool IsTargetDebugUid(string uid)
-    {
-        return uid == "090908" || uid == "090902" || uid == "090911";
-    }
-
-    public static bool IsTargetDebugXxyy(string uid)
-    {
-        string xxyy = GetUidXxyy(uid);
-        return xxyy == "0908" || xxyy == "0902" || xxyy == "0911";
-    }
-
-    public static string GetUidXxyy(string uid)
-    {
-        if (string.IsNullOrEmpty(uid) || uid.Length < 6)
-        {
-            return string.Empty;
-        }
-
-        return UidCode.Xx(uid) + UidCode.Yy(uid);
-    }
 }

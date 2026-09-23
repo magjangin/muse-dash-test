@@ -10,15 +10,11 @@ namespace muse_dash_test
     /// 커스텀 씬 전환 과정에서 변경된 MusicData의 식별자(Uid, noteUid 등)를 기록하고,
     /// 게임 런타임 중에 다시 원본 값으로 복구하거나 상태를 비교하는 역할을 담당하는 추적기입니다.
     /// 책임별로 다음 partial 파일들로 분리되어 있습니다:
-    ///   - SceneZzTransformTracker.ReflectionCache.cs : 리플렉션 스키마 탐색 및 캐시
-    ///   - SceneZzTransformTracker.Dump.cs             : 런타임 진단 덤프
+    ///   - SceneZzTransformTracker.ReflectionCache.cs : 리스트 폴백용 Count/Item 리플렉션 캐시
     ///   - SceneZzTransformTracker.Restore.cs          : 런타임 오브젝트 복구 로직
     /// </summary>
     internal static partial class SceneZzTransformTracker
     {
-        // 리플렉션 탐색 시 사용하는 기본 바인딩 플래그 상수
-        private const BindingFlags DefaultFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-
         /// <summary>
         /// 런타임 오브젝트 복구를 위해 보존하는 원본 MusicData의 식별 정보 구조체입니다.
         /// </summary>

@@ -82,15 +82,6 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 이번 프레임에 화면에 닿아 있는 손가락이 하나라도 있는지 여부입니다.
-        /// true인 동안에는 Windows가 승격시킨 마우스 이벤트를 무시해야 중복 판정이 나지 않습니다.
-        /// </summary>
-        public static bool AnyContactThisFrame()
-        {
-            return GetContacts().Count > 0;
-        }
-
-        /// <summary>
         /// 지금 마우스 입력을 무시해야 하는지 여부입니다.
         ///
         /// 터치스크린에 손가락이 닿아 있는 동안 Windows는 첫 손가락을 마우스 클릭으로도

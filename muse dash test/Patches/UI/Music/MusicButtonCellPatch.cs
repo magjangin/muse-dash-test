@@ -14,8 +14,6 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.OnButtonClicked))]
     public class MusicButtonCell_OnButtonClicked_Patch
     {
-        public static bool Prepare() => true;
-
         public static void Prefix(MusicButtonCell __instance)
         {
             try
@@ -51,19 +49,6 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(MusicButtonCell), nameof(MusicButtonCell.InitMusicCell), new Type[] { typeof(MusicInfo), typeof(int) })]
     public class MusicButtonCell_InitMusicCell_Patch
     {
-        public static bool Prepare() => true;
-
-        public static void Prefix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
-        {
-            try
-            {
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"MusicButtonCell.InitMusicCell Prefix 예외: {ex}");
-            }
-        }
-
         public static void Postfix(MusicButtonCell __instance, MusicInfo initMusicInfo, int tabIndex)
         {
             try

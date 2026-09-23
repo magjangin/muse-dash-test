@@ -74,15 +74,6 @@ namespace muse_dash_test
             }
         }
 
-        public static void Enable()  => WriteFlag(true);
-        public static void Disable() => WriteFlag(false);
-
-        public static void Toggle()
-        {
-            Reload();
-            WriteFlag(!IsEnabled);
-        }
-
         // ──────────────────────────────────────────────
         // 내부 유틸
         // ──────────────────────────────────────────────

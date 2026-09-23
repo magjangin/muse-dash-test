@@ -112,10 +112,5 @@ namespace muse_dash_test
                 // 동기화 보정 예외 무시
             }
         }
-
-        public static void ResetCooldown()
-        {
-            syncCooldownTimer = 0f;
-        }
     }
 }

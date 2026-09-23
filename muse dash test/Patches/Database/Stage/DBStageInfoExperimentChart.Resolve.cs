@@ -185,11 +185,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return System.Math.Round(value, ChartDecimals, System.MidpointRounding.AwayFromZero);
     }
 
-    public static double NormalizeShowTickValue(double value)
-    {
-        return System.Math.Round(value, ChartDecimals, System.MidpointRounding.AwayFromZero);
-    }
-
     public static double GetEffectiveDt(MusicData note)
     {
         return GetEffectiveDt(note, null);

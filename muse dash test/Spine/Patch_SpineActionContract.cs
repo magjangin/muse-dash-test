@@ -37,7 +37,7 @@ namespace muse_dash_test
         {
             try
             {
-                DumpSupplyCore(sac, requireNameFragment: true);
+                DumpSupplyCore(sac);
             }
             catch (Exception ex)
             {
@@ -45,30 +45,14 @@ namespace muse_dash_test
             }
         }
 
-        /// <summary>
-        /// 이름 필터("battle")를 무시하고 덤프합니다. 노트 오브젝트처럼 이름 규칙이 다른 대상용입니다.
-        /// 오브젝트 이름 단위 1회 덤프는 그대로 유지됩니다.
-        /// </summary>
-        public static void DumpSupplyForce(SpineActionController sac)
-        {
-            try
-            {
-                DumpSupplyCore(sac, requireNameFragment: false);
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Warning($"[SpineContract] 강제 공급 덤프 예외: {ex.Message}");
-            }
-        }
-
-        private static void DumpSupplyCore(SpineActionController sac, bool requireNameFragment)
+        private static void DumpSupplyCore(SpineActionController sac)
         {
             if (!DumpEnabled) return;
             if (sac == null) return;
 
             string objName = sac.gameObject.name;
             if (string.IsNullOrEmpty(objName)) return;
-            if (requireNameFragment && objName.IndexOf(TargetNameFragment, StringComparison.OrdinalIgnoreCase) < 0) return;
+            if (objName.IndexOf(TargetNameFragment, StringComparison.OrdinalIgnoreCase) < 0) return;
 
             if (!DumpedObjects.Add(objName)) return;
 

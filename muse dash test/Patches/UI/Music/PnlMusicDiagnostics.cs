@@ -24,31 +24,10 @@ namespace muse_dash_test
             public string ClipReason;
         }
 
-        public static IEnumerator ApplyAndLogMusicInfoAfterDelay(string source, object pnlInstance, float delaySeconds)
-        {
-            yield return new WaitForSeconds(delaySeconds);
-            ApplyAndLogMusicInfo(source, pnlInstance);
-        }
-
         public static IEnumerator DelayedApplyPrepMusicInfo(object pnlInstance, string source, float delaySeconds)
         {
             yield return new WaitForSeconds(delaySeconds);
             ApplyPrepMusicInfo(pnlInstance, source);
-        }
-
-        public static void ApplyAndLogMusicInfo(string source, object pnlInstance)
-        {
-            try
-            {
-                string resolvedUid = ResolveCustomMusicUid(pnlInstance);
-                if (!string.IsNullOrEmpty(resolvedUid))
-                {
-                    PnlMusicOverride.ApplySongTitleOverride(source, pnlInstance, resolvedUid);
-                }
-                var info = ExtractMusicInfo(pnlInstance, resolvedUid);
-                LogCompact(source, info);
-            }
-            catch (Exception ex) { ModLogger.Error($"ApplyAndLogMusicInfo 예외: {ex}"); }
         }
 
         public static void ApplyPrepMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
@@ -83,15 +62,6 @@ namespace muse_dash_test
                 LogCompact(source, info);
             }
             catch (Exception ex) { ModLogger.Error($"ApplyPrepMusicInfo 예외: {ex}"); }
-        }
-
-        public static void DumpMusicInfo(object pnlInstance)
-        {
-            try
-            {
-                ApplyAndLogMusicInfo("MusicInfo", pnlInstance);
-            }
-            catch (Exception ex) { ModLogger.Error($"DumpMusicInfo 예외: {ex}"); }
         }
 
         public static string ResolveCustomMusicUid(object pnlInstance)

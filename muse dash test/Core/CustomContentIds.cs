@@ -8,7 +8,6 @@ namespace muse_dash_test
         public const int TagIndex = 1999;
         public const string TagUid = "tag-muse-dash-test";
         public const string AlbumUid = "1999-0";
-        public const string VirtualAlbumPrefix = "1999-0";
         public const string VirtualSongPrefix = "1999-";
         public const string FallbackSourceMusicUid = "0-0";
 
@@ -21,9 +20,6 @@ namespace muse_dash_test
 
         public static bool IsVirtualSong(string uid) =>
             !string.IsNullOrEmpty(uid) && uid.StartsWith(VirtualSongPrefix, StringComparison.Ordinal) && uid != AlbumUid;
-
-        public static bool IsVirtualAlbum(string uid) =>
-            !string.IsNullOrEmpty(uid) && uid == AlbumUid;
 
         public static bool IsVirtualContent(string uid) =>
             !string.IsNullOrEmpty(uid) && uid.StartsWith(VirtualSongPrefix, StringComparison.Ordinal);

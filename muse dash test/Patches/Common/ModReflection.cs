@@ -2,7 +2,6 @@ using MelonLoader;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 
 namespace muse_dash_test
 {
@@ -188,17 +187,6 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// <see cref="GetValue"/> 결과를 float로 변환해 반환합니다. 멤버 부재 또는 변환 실패 시 fallback을 반환합니다.
-        /// </summary>
-        public static float GetFloat(object target, string memberName, float fallback = 0f, bool silent = false)
-        {
-            object value = GetValue(target, memberName, silent);
-            if (value == null) return fallback;
-            try { return Convert.ToSingle(value); }
-            catch { return fallback; }
-        }
-
-        /// <summary>
         /// 컴파일 타임 빌드 사양 차이 및 런타임 난독화 접두사를 극복하기 위해 다각적 패턴으로 멤버를 스캔하고 반환합니다.
         /// <para>- 패턴 1: 정확히 일치하는 프로퍼티 명칭</para>
         /// <para>- 패턴 2: 정확히 일치하는 필드 명칭</para>
@@ -328,63 +316,6 @@ namespace muse_dash_test
             }
 
             return Convert.ChangeType(value, underlying);
-        }
-
-        /// <summary>
-        /// [자가 진단 모듈] 대상 객체의 모든 프로퍼티와 필드 구조를 콘솔에 에러 등급으로 명확히 덤프합니다.
-        /// </summary>
-        public static void DumpObjectStructure(object target)
-        {
-            if (target == null)
-            {
-                ModLogger.Error("[ModReflection.Diagnostics] Dump 대상 객체가 null입니다.");
-                return;
-            }
-
-            Type type = target.GetType();
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"\n==================== [ModReflection 자가진단 리포트] ====================");
-            sb.AppendLine($"대상 객체 타입: {type.FullName}");
-            sb.AppendLine($"------------------------------------------------------------------------");
-            sb.AppendLine($"[프로퍼티 목록 (Properties)]");
-            
-            foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-            {
-                string valueStr = "(읽기 불가)";
-                if (prop.CanRead && prop.GetIndexParameters().Length == 0)
-                {
-                    try
-                    {
-                        var val = prop.GetValue(target);
-                        valueStr = val != null ? val.ToString() : "null";
-                    }
-                    catch (Exception ex)
-                    {
-                        valueStr = $"(예외: {ex.Message})";
-                    }
-                }
-                sb.AppendLine($"  - Name: {prop.Name} | Type: {prop.PropertyType.Name} | Value: {valueStr}");
-            }
-
-            sb.AppendLine($"------------------------------------------------------------------------");
-            sb.AppendLine($"[필드 목록 (Fields)]");
-            foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-            {
-                string valueStr = "null";
-                try
-                {
-                    var val = field.GetValue(target);
-                    valueStr = val != null ? val.ToString() : "null";
-                }
-                catch (Exception ex)
-                {
-                    valueStr = $"(예외: {ex.Message})";
-                }
-                sb.AppendLine($"  - Name: {field.Name} | Type: {field.FieldType.Name} | Value: {valueStr}");
-            }
-            sb.AppendLine($"========================================================================\n");
-
-            ModLogger.Error(sb.ToString());
         }
     }
 }

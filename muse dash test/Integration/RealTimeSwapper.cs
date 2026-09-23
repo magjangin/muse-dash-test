@@ -126,12 +126,7 @@ namespace muse_dash_test
         {
             return _isRealTimeMode;
         }
-        
-        public static bool IsInitialized()
-        {
-            return _isInitialized;
-        }
-        
+
         public static void ToggleRealTimeMode()
         {
             _isRealTimeMode = !_isRealTimeMode;
@@ -162,23 +157,6 @@ namespace muse_dash_test
                 ModLogger.Msg($"[FavGirl] 원래 스킬 캐릭터로 복원: {_originalSkillRole}");
             }
             ResetToggleState();
-        }
-        
-        public static void HandleOKeyPress()
-        {
-            if (_isInitialized)
-            {
-                RealTimeSwapper.OnKeyPressed();
-            }
-            else
-            {
-                ModLogger.Msg("[FavGirl] RealTimeSwapper가 초기화되지 않았습니다. 초기화를 시도합니다...");
-                Initialize();
-                if (_isInitialized)
-                {
-                    RealTimeSwapper.OnKeyPressed();
-                }
-            }
         }
         
         public static void PerformRealTimeSwap()

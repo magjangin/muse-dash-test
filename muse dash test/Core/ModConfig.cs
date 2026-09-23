@@ -42,7 +42,6 @@ namespace muse_dash_test
         public static bool EnableSpineSkin => SpineSkinEntry?.Value ?? true;
         public static bool EnableMobileTouch => MobileTouchEntry?.Value ?? true;
         public static bool EnableVerboseLog => VerboseLogEntry?.Value ?? false;
-        public static ModLogLevel ActiveLogLevel => ModLogger.CurrentLogLevel;
 
         private static readonly Dictionary<string, Func<bool>> FeatureMap = new Dictionary<string, Func<bool>>(StringComparer.OrdinalIgnoreCase);
 
@@ -164,21 +163,6 @@ namespace muse_dash_test
             //      그 플래그 파일을 만드는 유일한 경로라, 묶여 있으면 파일 생성조차 되지 않아
             //      사용자가 설정할 방법 자체가 사라집니다.
             // ────────────────────────────────────────────────────────────────────────
-        }
-
-        /// <summary>
-        /// 지정한 기능 식별자 또는 기능 키가 활성화되어 있는지 여부를 반환합니다.
-        /// </summary>
-        public static bool IsEnabled(string featureName)
-        {
-            if (string.IsNullOrEmpty(featureName)) return true;
-
-            if (FeatureMap.TryGetValue(featureName, out var checkFunc))
-            {
-                return checkFunc();
-            }
-
-            return true;
         }
 
         /// <summary>

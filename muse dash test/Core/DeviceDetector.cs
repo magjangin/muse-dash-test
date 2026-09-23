@@ -51,18 +51,6 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 배터리 탑재 여부입니다.
-        /// </summary>
-        public static bool HasBattery
-        {
-            get
-            {
-                if (!_initialized) Detect();
-                return _hasBattery;
-            }
-        }
-
-        /// <summary>
         /// 하드웨어 정보를 스캔하여 UMPC 여부를 판별합니다.
         /// </summary>
         public static void Detect()
