@@ -52,11 +52,15 @@ namespace muse_dash_test
                 string rawLine;
                 while ((rawLine = reader.ReadLine()) != null)
                 {
-                    var line = StripComments(rawLine).Trim();
-                    if (string.IsNullOrWhiteSpace(line))
+                    var trimmedLine = rawLine.Trim();
+                    if (trimmedLine.Length == 0 || IsCommentLine(trimmedLine))
                     {
                         continue;
                     }
+
+                    // 마디·BPM 줄은 형식이 정해져 있어 뒤에 붙은 주석을 떼어 내고 읽습니다.
+                    // 곡 정보(아래 TryParseMetadata)는 자유 텍스트라 떼지 않은 trimmedLine을 씁니다.
+                    var line = StripComments(trimmedLine).Trim();
 
                     // Check TryParseMeasureLine first as 95%+ lines in BMS are measure lines
                     if (TryParseMeasureLine(line, out int measure, out int channel, out string data))
@@ -90,7 +94,7 @@ namespace muse_dash_test
                         continue;
                     }
 
-                    if (TryParseMetadata(line, out string metaKey, out string metaValue))
+                    if (TryParseMetadata(trimmedLine, out string metaKey, out string metaValue))
                     {
                         metadata[metaKey] = metaValue;
                         if (string.Equals(metaKey, "TITLE", StringComparison.OrdinalIgnoreCase))

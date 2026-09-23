@@ -159,6 +159,18 @@ namespace muse_dash_test
             return builder.ToString();
         }
 
+        /// <summary>줄 전체가 주석('//' 또는 ';'로 시작)인지 판정합니다. 앞뒤 공백을 걷어 낸 줄을 넘겨 주세요.</summary>
+        private static bool IsCommentLine(string trimmedLine)
+        {
+            return trimmedLine.StartsWith("//", StringComparison.Ordinal)
+                || trimmedLine.StartsWith(";", StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// 줄 뒤에 붙은 '//' 또는 ';' 주석을 떼어 냅니다. 마디·BPM 줄에만 씁니다.
+        /// <para>두 표식이 섞여 있으면 먼저 나온 쪽에서 자릅니다. 예전에는 '//'를 늘 먼저 찾아서
+        /// "01 ; 메모 // 메모"가 ';' 뒤까지 남았고, 그 줄은 마디 줄로 읽히지 않았습니다.</para>
+        /// </summary>
         private static string StripComments(string line)
         {
             if (string.IsNullOrEmpty(line))
@@ -166,19 +178,14 @@ namespace muse_dash_test
                 return string.Empty;
             }
 
-            int commentIndex = line.IndexOf("//", StringComparison.Ordinal);
-            if (commentIndex >= 0)
-            {
-                return line.Substring(0, commentIndex);
-            }
+            int slashIndex = line.IndexOf("//", StringComparison.Ordinal);
+            int semicolonIndex = line.IndexOf(';');
 
-            commentIndex = line.IndexOf(';');
-            if (commentIndex >= 0)
-            {
-                return line.Substring(0, commentIndex);
-            }
+            int commentIndex = slashIndex < 0
+                ? semicolonIndex
+                : (semicolonIndex < 0 ? slashIndex : Math.Min(slashIndex, semicolonIndex));
 
-            return line;
+            return commentIndex >= 0 ? line.Substring(0, commentIndex) : line;
         }
     }
 }

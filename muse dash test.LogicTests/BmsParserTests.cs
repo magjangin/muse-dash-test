@@ -139,6 +139,34 @@ namespace muse_dash_test.LogicTests
             Assert.Equal("01", chart.Notes[0].RawValue);
         }
 
+        // 곡 정보는 자유 텍스트라 ';'나 '//'가 그대로 들어갈 수 있습니다.
+        // 예전에는 모든 줄에서 주석을 떼어 내서 "Rock; Roll"이 "Rock"으로, "AC//DC"가 "AC"로 잘렸습니다.
+        public static void ParseText_KeepsCommentMarkersInsideMetadataValues()
+        {
+            var chart = BmsParser.ParseText("""
+                #TITLE Rock; Roll
+                #ARTIST AC//DC
+                #WAV01 011001_a;b.wav
+                """);
+
+            Assert.Equal("Rock; Roll", chart.Title);
+            Assert.Equal("AC//DC", chart.Artist);
+            Assert.Equal("011001_a;b.wav", chart.Metadata["WAV01"]);
+        }
+
+        // 한 줄에 두 표식이 섞여 있으면 먼저 나온 쪽에서 잘라야 합니다.
+        // '//'를 늘 먼저 찾던 시절에는 "01 ; 메모 // 메모"가 ';' 뒤까지 남아 마디 줄로 읽히지 않았습니다.
+        public static void ParseText_CutsAtEarliestCommentMarker()
+        {
+            var chart = BmsParser.ParseText("""
+                #BPM 120
+                #00113:01 ; 첫 노트 // 지상
+                """);
+
+            Assert.Equal(1, chart.Notes.Count);
+            Assert.Equal("01", chart.Notes[0].RawValue);
+        }
+
         public static void ParseText_SortsNotesByTickThenChannel()
         {
             var chart = BmsParser.ParseText("""
