@@ -63,12 +63,13 @@ public static partial class PnlStagePatchHelper
         return false;
     }
 
-    public static string GetCurrentSelectedMusicUid()
+    /// <summary>
+    /// 활성 곡 선택 화면(PnlStage)이 들고 있는 곡의 UID를 직접 읽습니다. 없으면 null입니다.
+    /// <para>"현재 곡"이 필요하면 이걸 직접 부르지 말고 <see cref="CustomPlaySession.LastKnownMusicUid"/>를 쓰세요.
+    /// 그쪽이 세션 값을 먼저 보고, 그게 비어 있을 때만 이 탐색(씬 검색 + 리플렉션)을 합니다.</para>
+    /// </summary>
+    public static string FindSelectedMusicUidOnStage()
     {
-        if (!string.IsNullOrEmpty(CustomPlaySession.Current.SelectedMusicUid))
-        {
-            return CustomPlaySession.Current.SelectedMusicUid;
-        }
         try
         {
             var pnlStage = UnityEngine.Object.FindObjectOfType<PnlStage>();
@@ -100,7 +101,7 @@ public static partial class PnlStagePatchHelper
         }
         catch (System.Exception ex)
         {
-            ModLogger.Error($"GetCurrentSelectedMusicUid 예외: {ex}");
+            ModLogger.Error($"FindSelectedMusicUidOnStage 예외: {ex}");
         }
         return null;
     }

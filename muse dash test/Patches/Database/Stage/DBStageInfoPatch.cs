@@ -84,11 +84,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         try
         {
             // 진입 시점에 안전하게 현재 선택된 곡 UID를 확인하여 플래그 재업데이트
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
 
             if (!string.IsNullOrEmpty(uid))
             {

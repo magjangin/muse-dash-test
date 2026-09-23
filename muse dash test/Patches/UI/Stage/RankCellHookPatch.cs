@@ -19,8 +19,7 @@ namespace muse_dash_test.Patches.UI.Stage
         {
             try
             {
-                string uid = CustomPlaySession.Current.SelectedMusicUid;
-                if (string.IsNullOrEmpty(uid)) uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
 
                 float displayAcc = acc * 100f;
                 if (number <= 10)

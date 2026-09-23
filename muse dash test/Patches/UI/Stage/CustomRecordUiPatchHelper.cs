@@ -66,8 +66,7 @@ namespace muse_dash_test
             try
             {
                 if (prep == null) return;
-                string uid = CustomPlaySession.Current.SelectedMusicUid;
-                if (string.IsNullOrEmpty(uid)) uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 
                 int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
@@ -121,8 +120,7 @@ namespace muse_dash_test
             try
             {
                 if (pnlRecord == null) return;
-                string uid = CustomPlaySession.Current.SelectedMusicUid;
-                if (string.IsNullOrEmpty(uid)) uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 
                 int difficulty = CustomRecordStore.ResolveCurrentDifficulty();

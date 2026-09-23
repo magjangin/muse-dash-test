@@ -21,17 +21,6 @@ namespace muse_dash_test
         // 해당 key가 처음 출력되는 경우에만 true를 반환합니다. (HashSet.Add는 신규 추가 시 true)
         private static bool LogOnce(string key) => loggedOnce.Add(key);
 
-        // 현재 로드된 가상 곡의 UID를 안전하게 조회하는 헬퍼 메서드
-        private static string GetCurrentSongUid()
-        {
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-            }
-            return uid;
-        }
-
         // 1. StageBattleComponent.FixedOffset 후킹 및 커스텀 오프셋(소수점 최대 7자리 보존) 주입
         [HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.FixedOffset))]
         [HarmonyPostfix]
@@ -39,7 +28,7 @@ namespace muse_dash_test
         {
             try
             {
-                string uid = GetCurrentSongUid();
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!string.IsNullOrEmpty(uid) && CustomContentIds.IsVirtualSong(uid))
                 {
                     HwaManifest manifest = HwaResourceManager.GetManifest(uid);
@@ -68,7 +57,7 @@ namespace muse_dash_test
         {
             try
             {
-                string uid = GetCurrentSongUid();
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!string.IsNullOrEmpty(uid) && CustomContentIds.IsVirtualSong(uid))
                 {
                     HwaManifest manifest = HwaResourceManager.GetManifest(uid);
@@ -100,7 +89,7 @@ namespace muse_dash_test
         {
             try
             {
-                string uid = GetCurrentSongUid();
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!string.IsNullOrEmpty(uid) && CustomContentIds.IsVirtualSong(uid))
                 {
                     HwaManifest manifest = HwaResourceManager.GetManifest(uid);

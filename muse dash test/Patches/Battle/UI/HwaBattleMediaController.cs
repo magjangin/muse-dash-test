@@ -38,11 +38,7 @@ namespace muse_dash_test
             }
             try
             {
-                string debugUid = CustomPlaySession.Current.SelectedMusicUid;
-                if (string.IsNullOrEmpty(debugUid))
-                {
-                    debugUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
-                }
+                string debugUid = CustomPlaySession.Current.LastKnownMusicUid;
                 ModLogger.Msg($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, {CustomPlaySession.Current.DescribeApplyDecision()}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
 
                 if (battleMediaInjectionStarted)
@@ -69,11 +65,7 @@ namespace muse_dash_test
 
         private static void InjectBattleMedia()
         {
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
 
             string songDir = HwaResourceManager.HwaFolderPath;
             if (HwaResourceManager.TryGetSongDirectory(uid, out string customDir) && !string.IsNullOrEmpty(customDir))

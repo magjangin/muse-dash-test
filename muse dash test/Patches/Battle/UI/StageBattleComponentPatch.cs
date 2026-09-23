@@ -180,11 +180,7 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
             ModLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
         }
     }

@@ -35,11 +35,7 @@ public static partial class PnlStagePatchHelper
 
     public static bool ShouldApplyHwayoungwang()
     {
-        string uid = CustomPlaySession.Current.SelectedMusicUid;
-        if (string.IsNullOrEmpty(uid))
-        {
-            uid = GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-        }
+        string uid = CustomPlaySession.Current.LastKnownMusicUid;
         return CustomContentIds.IsVirtualSong(uid);
     }
 
@@ -63,11 +59,7 @@ public static partial class PnlStagePatchHelper
                 return;
             }
 
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
                 return;
@@ -101,11 +93,7 @@ public static partial class PnlStagePatchHelper
                 return;
             }
 
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
             if (string.IsNullOrEmpty(uid))
             {
                 return;

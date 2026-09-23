@@ -13,7 +13,7 @@ public class PnlPreparation_OnEnable_Patch
         {
             PnlMusicDiagnostics.ApplyPrepMusicInfo(__instance, "PnlPreparation.OnEnable");
             
-            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;
             if (CustomContentIds.IsVirtualSong(selectedUid))
             {
                 HwaMenuBgmController.TriggerMenuBgmChange(selectedUid);
@@ -73,11 +73,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
     {
         try
         {
-            string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
-            if (string.IsNullOrEmpty(selectedUid))
-            {
-                selectedUid = CustomPlaySession.Current.LastClickedMusicUid;
-            }
+            string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;
 
             ModConfig.VerboseLog($"[PnlPreparation.OnDownloadBestReport.{phase}] selectedUid={selectedUid ?? "(null)"}");
 

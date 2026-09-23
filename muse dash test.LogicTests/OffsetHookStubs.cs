@@ -43,14 +43,12 @@ namespace muse_dash_test
         public static CustomPlaySession Current { get; } = new();
         public string SelectedMusicUid;
         public string LastClickedMusicUid;
+        // 게임 밖에는 곡 선택 화면이 없으므로 실제 구현의 2단계(PnlStage 탐색)는 늘 비어 있는 셈입니다.
+        public string LastKnownMusicUid => !string.IsNullOrEmpty(SelectedMusicUid) ? SelectedMusicUid : LastClickedMusicUid;
     }
     public static class CustomContentIds
     {
         public static bool IsVirtualSong(string uid) => uid.StartsWith("1999-");
-    }
-    public static class PnlStagePatchHelper
-    {
-        public static string GetCurrentSelectedMusicUid() => null;
     }
     public static class HwaResourceManager
     {

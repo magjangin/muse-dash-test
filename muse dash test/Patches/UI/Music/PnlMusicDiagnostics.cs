@@ -66,20 +66,15 @@ namespace muse_dash_test
 
         public static string ResolveCustomMusicUid(object pnlInstance)
         {
-            string selected = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(selected)) selected = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            string selected = CustomPlaySession.Current.LastKnownMusicUid;
             if (!string.IsNullOrEmpty(selected))
             {
                 return CustomContentIds.IsVirtualSong(selected) ? selected : null;
             }
 
+            // 마지막 클릭 값은 LastKnownMusicUid가 이미 봤습니다. 여기까지 왔으면 패널 안에서 직접 찾습니다.
             string uid = TryFindCustomMusicUidInObject(pnlInstance, 0, new HashSet<object>());
-            if (!string.IsNullOrEmpty(uid)) return uid;
-
-            uid = CustomPlaySession.Current.LastClickedMusicUid;
-            if (!string.IsNullOrEmpty(uid) && CustomContentIds.IsVirtualSong(uid)) return uid;
-
-            return null;
+            return string.IsNullOrEmpty(uid) ? null : uid;
         }
 
         private static string TryFindCustomMusicUidInObject(object obj, int depth, HashSet<object> visited)
@@ -147,7 +142,8 @@ namespace muse_dash_test
 
         private static void LogCompact(string source, MusicInfo info)
         {
-            string uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
+            if (string.IsNullOrEmpty(uid)) uid = "(unknown)";
             string clip = Clean(info.Clip);
             string reason = string.IsNullOrWhiteSpace(info.Clip) ? $", 클립 사유={Clean(info.ClipReason)}" : "";
             ModLogger.Verbose($"{source}: 곡 이름={Clean(info.Title)}, UID={uid}, 음악 클립={clip}, 아티스트 이름={Clean(info.Artist)}, 레벨 디자이너=레벨 디자이너, 실제 이름={Clean(info.LevelDesigner)}{reason}");

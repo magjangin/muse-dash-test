@@ -16,11 +16,7 @@ public class GameMusicScene_LoadScene_Patch
                 return;
             }
 
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
 
             bool hasCachedScene = muse_dash_test.HwaResourceManager.TryGetCachedHwaScene(uid, out int scene);
             ModLogger.Msg($"[GameMusicScene.LoadScene] uid={uid ?? "(null)"}, sceneName={sceneName}, hasCachedScene={hasCachedScene}, resolvedScene={scene}");

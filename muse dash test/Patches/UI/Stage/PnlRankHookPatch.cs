@@ -58,7 +58,7 @@ namespace muse_dash_test.Patches.UI.Stage
         {
             try
             {
-                string uid = CustomPlaySession.Current.SelectedMusicUid ?? PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 ModLogger.Verbose($"👑 [PnlRank.Refresh] Called! force={force}, UID='{uid}'");
             }
             catch { }

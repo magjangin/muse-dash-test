@@ -79,12 +79,7 @@ namespace muse_dash_test
 
             try
             {
-                string uid = CustomPlaySession.Current.SelectedMusicUid;
-                if (string.IsNullOrEmpty(uid))
-                {
-                    uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid()
-                        ?? CustomPlaySession.Current.LastClickedMusicUid;
-                }
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
 
                 if (cachedCandidates == null)
                 {

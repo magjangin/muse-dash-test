@@ -15,8 +15,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
     {
         try
         {
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid)) uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
 
             if (!CustomContentIds.IsVirtualSong(uid))
             {

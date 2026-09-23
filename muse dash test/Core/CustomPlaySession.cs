@@ -22,8 +22,26 @@ namespace muse_dash_test
         public int TotalHearts { get; set; }
         public int TotalBlueNotes { get; set; }
 
-        public string LastKnownMusicUid =>
-            !string.IsNullOrEmpty(SelectedMusicUid) ? SelectedMusicUid : LastClickedMusicUid;
+        /// <summary>
+        /// 지금 다루는 곡의 UID입니다. "현재 곡"이 필요한 곳은 전부 이 한 곳을 거칩니다.
+        ///   1) <see cref="SelectedMusicUid"/> (곡 선택·준비 화면에서 곡이 바뀔 때마다 갱신)
+        ///   2) 곡 선택 화면(PnlStage)이 들고 있는 곡 — 1이 비어 있을 때만 씬을 뒤집니다
+        ///   3) <see cref="LastClickedMusicUid"/>
+        /// 셋 다 없으면 빈 문자열입니다.
+        /// <para>예전에는 이 순서를 10여 곳이 각자 적어 두었고, 이 프로퍼티만 2단계를 빼먹고 있었습니다.</para>
+        /// </summary>
+        public string LastKnownMusicUid
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(SelectedMusicUid)) return SelectedMusicUid;
+
+                string onStage = PnlStagePatchHelper.FindSelectedMusicUidOnStage();
+                if (!string.IsNullOrEmpty(onStage)) return onStage;
+
+                return LastClickedMusicUid;
+            }
+        }
 
         public string DescribeApplyDecision()
         {

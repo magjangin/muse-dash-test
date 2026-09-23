@@ -202,11 +202,7 @@ public class GameMusicScene_InitTimer_Patch
 
     private static string ResolveInitialRenderZz()
     {
-        string uid = muse_dash_test.CustomPlaySession.Current.SelectedMusicUid;
-        if (string.IsNullOrEmpty(uid))
-        {
-            uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? muse_dash_test.CustomPlaySession.Current.LastClickedMusicUid;
-        }
+        string uid = muse_dash_test.CustomPlaySession.Current.LastKnownMusicUid;
 
         if (muse_dash_test.HwaResourceManager.TryGetCachedHwaScene(uid, out int manifestScene))
         {

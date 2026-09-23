@@ -107,7 +107,7 @@ namespace muse_dash_test
             yield return new WaitForSeconds(0.2f);
 
             // 대기 시간 도중 다른 곡으로 선택이 넘어간 경우 로딩을 중단합니다.
-            if (generation != monitorGeneration || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
+            if (generation != monitorGeneration || CustomPlaySession.Current.LastKnownMusicUid != uid)
             {
                 yield break;
             }
@@ -137,7 +137,7 @@ namespace muse_dash_test
                 }
 
                 // 로드가 완료되었을 시점에도 유효성 검사 (사용자가 곡을 다시 변경했는지 여부)
-                if (generation != monitorGeneration || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
+                if (generation != monitorGeneration || CustomPlaySession.Current.LastKnownMusicUid != uid)
                 {
                     yield break;
                 }
@@ -302,7 +302,7 @@ namespace muse_dash_test
                 }
 
                 string currentClip = source.clip != null ? source.clip.name : "(null)";
-                if (currentClip != clipName || PnlStagePatchHelper.GetCurrentSelectedMusicUid() != uid)
+                if (currentClip != clipName || CustomPlaySession.Current.LastKnownMusicUid != uid)
                 {
                     ModLogger.Msg($"[MenuBGM.Monitor] 대상 클립 또는 선택 곡이 변경되어 모니터링을 종료합니다. (현재 클립: {currentClip})");
                     yield break;
@@ -323,7 +323,7 @@ namespace muse_dash_test
             {
                 if (__instance != null && __instance.gameObject != null && __instance.gameObject.name == "BGM")
                 {
-                    string selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                    string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;
                     string clipNameForLog = value != null ? value.name : "(null)";
 
                     // MD는 단일 씬(UISystem_PC) 구조라 씬 이름으로는 "곡 선택/준비 화면을 벗어났는지"를 구분할 수 없다.

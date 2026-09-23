@@ -71,11 +71,7 @@ namespace muse_dash_test.Patches.Battle.UI
         {
             try
             {
-                string uid = CustomPlaySession.Current.SelectedMusicUid;
-                if (string.IsNullOrEmpty(uid))
-                {
-                    uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid ?? "(unknown)";
-                }
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
 
                 ModLogger.Msg($"📊 [PnlVictory.Diagnostics] 결과 패치 상세 진단 (UID={uid}):");
 

@@ -240,11 +240,7 @@ public class Boss_InitBossObject_Patch
 
         try
         {
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
             if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart, out _))
             {
                 if (chart != null && chart.Notes != null)
@@ -292,11 +288,7 @@ public class Boss_InitBossObject_Patch
         if (boss == null) return;
         try
         {
-            string uid = CustomPlaySession.Current.SelectedMusicUid;
-            if (string.IsNullOrEmpty(uid))
-            {
-                uid = PnlStagePatchHelper.GetCurrentSelectedMusicUid() ?? CustomPlaySession.Current.LastClickedMusicUid;
-            }
+            string uid = CustomPlaySession.Current.LastKnownMusicUid;
             if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart, out _))
             {
                 if (chart != null)

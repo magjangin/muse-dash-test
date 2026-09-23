@@ -88,7 +88,7 @@ if(stage != null) {
 - `Il2CppAssets.Scripts.Database.MusicInfo` 접근자: `get_uid()` / `set_uid()` — `MusicInfo`의 uid를 읽고 쓸 수 있습니다. (참조: reflect_output.txt)
 - `GlobalDataBase.dbMusicTag.AddCustomAlbumTagsSort(int)` — 커스텀 태그 UID를 태그 정렬 목록에 등록합니다. (파일: muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
 - `GlobalDataBase.dbMusicTag.AddAlbumTagData(int, AlbumTagInfo)` — 앨범/태그 데이터를 글로벌 DB에 최종 등록합니다. (파일: muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
-- `PnlStagePatchHelper.GetCurrentSelectedMusicUid()` — `PnlStage` 인스턴스에서 현재 선택된 곡의 UID를 검색하는 헬퍼입니다. (파일: muse dash test/Patches/UI/Pnl/PnlStagePatchHelper.cs)
+- `CustomPlaySession.Current.LastKnownMusicUid` — 현재 곡 UID를 해석하는 유일한 창구입니다(세션 선택 → `PnlStage` → 마지막 클릭 순). `PnlStage`를 직접 뒤지는 단계는 `PnlStagePatchHelper.FindSelectedMusicUidOnStage()`가 맡습니다. (파일: muse dash test/Core/CustomPlaySession.cs, muse dash test/Patches/UI/Pnl/PnlStagePatchHelper.TextDebug.cs)
 - `PnlStage` / `LongSongNameController` 관련 패치들 — UI에서 `selectedUid`를 처리하거나 강제 변경 로그를 남기는 위치입니다. (파일: muse dash test/Patches/UI/Stage/PnlStagePatch.cs)
 - `PnlMusicTagPatchLogger.ApplyCustomCellTitle()` — `cell.musicInfo.uid`로 셀을 식별해 제목을 변경합니다; 셀 레벨에서 UID를 검사하는 좋은 예제입니다. (파일: muse dash test/Patches/UI/Music/PnlMusicTagPatch.cs)
 - `PnlMusicDiagnostics.ExtractMusicInfo(...)` — 패널 객체에서 `MusicInfo`를 추출하는 유틸리티로, UI→데이터 연동 흐름을 이해하는 데 유용합니다. (파일: muse dash test/Patches/UI/Music/PnlMusicDiagnostics.Extraction.cs)

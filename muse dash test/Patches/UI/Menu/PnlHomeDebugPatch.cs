@@ -24,8 +24,7 @@ namespace muse_dash_test.Patches.UI.Menu
         {
             try
             {
-                string selectedUid = CustomPlaySession.Current.SelectedMusicUid;
-                if (string.IsNullOrEmpty(selectedUid)) selectedUid = PnlStagePatchHelper.GetCurrentSelectedMusicUid();
+                string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;
 
                 GameObject bgmGo = GameObject.Find("BGM");
                 AudioSource bgmSource = bgmGo != null ? bgmGo.GetComponent<AudioSource>() : null;
