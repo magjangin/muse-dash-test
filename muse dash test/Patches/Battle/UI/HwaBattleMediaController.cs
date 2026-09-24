@@ -25,19 +25,8 @@ namespace muse_dash_test
             string clipDesc = DescribeAudioClip(injectedClip);
             battleMediaInjectionStarted = false;
             injectedAudioSource = null;
-            if (injectedClip != null)
-            {
-                try
-                {
-                    UnityEngine.Object.Destroy(injectedClip);
-                    ModLogger.Verbose($"[HwaBattleMediaController.Memory] 이전 커스텀 배틀 클립 해제: {clipDesc}");
-                }
-                catch (Exception ex)
-                {
-                    ModLogger.Warning($"[HwaBattleMediaController.Memory] 이전 클립 해제 중 예외: {ex.Message}");
-                }
-                injectedClip = null;
-            }
+            // 참조만 끊고 Destroy하지 않습니다. 이유는 Lifecycle.cs StopMedia의 [중요] 주석을 보십시오.
+            injectedClip = null;
             ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, ManagedHeap={currentMem / 1048576f:F2}MB)");
         }
 
@@ -186,8 +175,6 @@ namespace muse_dash_test
 
                 string beforeState = DescribeAudioSource(targetSource);
 
-                AudioClip previousInjected = injectedClip;
-
                 targetSource.clip = clip;
                 targetSource.loop = true;
                 targetSource.playOnAwake = false;
@@ -195,19 +182,6 @@ namespace muse_dash_test
                 targetSource.Play();
                 injectedAudioSource = targetSource;
                 injectedClip = clip;
-
-                if (previousInjected != null && previousInjected != clip)
-                {
-                    try
-                    {
-                        UnityEngine.Object.Destroy(previousInjected);
-                        ModLogger.Verbose($"[HwaBattleMediaController] 직전 주입 클립 해제: {previousInjected.name}");
-                    }
-                    catch (Exception ex)
-                    {
-                        ModLogger.Warning($"[HwaBattleMediaController] 직전 클립 해제 중 예외: {ex.Message}");
-                    }
-                }
 
                 long heapMem = GC.GetTotalMemory(false);
                 ModLogger.Msg($"[HwaBattleMediaController.Memory] 배틀 BGM 주입 완료 (ManagedHeap={heapMem / 1048576f:F2}MB): loadedClip={DescribeAudioClip(clip)}");

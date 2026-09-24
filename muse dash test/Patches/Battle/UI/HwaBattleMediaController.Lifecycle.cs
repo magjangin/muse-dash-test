@@ -133,10 +133,13 @@ namespace muse_dash_test
                 // 아직 이 클립을 참조 중이라, 여기서 파괴하면 BattleEnd가 복귀해 파괴된 클립을 건드려
                 // NullReferenceException으로 죽고(매 프레임 반복), 결과 화면으로 절대 넘어가지 못합니다.
                 // (v0.7.6에서 이 Destroy가 추가되며 결과창 회귀가 발생함.)
-                // 메모리 누수는 이미 안전한 시점에 처리됩니다:
-                //   1) 다음 배틀 주입 시 previousInjected 클립을 파괴 (HwaBattleMediaController.cs)
-                //   2) ResetState()의 방어적 파괴
-                // 따라서 여기서는 우리 참조만 남겨두고 파괴하지 않습니다.
+                //
+                // 배틀 클립은 여기뿐 아니라 이 모드 어디에서도 Destroy하지 않습니다.
+                // v0.8.1(ce217a9)은 여기 것만 빼고 ResetState()와 다음 배틀 주입 시점의 파괴는 남겼는데,
+                // 같은 날 b14b0a5가 결과창 멈춤을 막으려고 그 둘도 뺐습니다. 그런데 이 주석은 그 뒤로도
+                // 둘이 남아 있다고 적혀 있었고, a5fe2ce가 둘을 되살렸다가 바로 다음 커밋에서 다시 뺐습니다.
+                // ResetState()가 우리 참조를 끊으므로 곡마다 쌓이지는 않으며, 누수가 실측된 적도 없습니다.
+                // 다시 넣으려면 결과창 진입·일시정지 후 재시작·결과창 재도전을 실제로 밟아 확인하십시오.
 
                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
                 if (bgmGo != null)

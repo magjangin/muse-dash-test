@@ -12,12 +12,10 @@ namespace muse_dash_test.Patches
         public static Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget ActiveTarget { get; set; }
         public static Font PremiumFont { get; set; }
         public static bool AttemptedFontCache { get; set; }
-        public static bool IsVictoryBannerActive { get; set; }
 
         public static void ResetSession()
         {
             ActiveTarget = null;
-            IsVictoryBannerActive = false;
             AttemptedFontCache = false;
         }
     }
@@ -105,6 +103,9 @@ namespace muse_dash_test.Patches
                     ModLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
 
+                // 아래 진단 로그는 게임 원래 값과 비교하려는 것이므로, 덮어쓰기 '전에' 받아 둡니다.
+                float rawGetAccuracy = __result;
+
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
                     float accuracyNew = AccuracyCalculator.CalculateTrueAccuracyNew(__instance);
@@ -113,7 +114,6 @@ namespace muse_dash_test.Patches
 
                 if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
                 {
-                    float rawGetAccuracy = __result;
                     float rawGetTrueAccuracy = __instance.GetTrueAccuracy();
                     float rawGetTrueAccuracyNew = __instance.GetTrueAccuracyNew();
 

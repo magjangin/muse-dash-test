@@ -29,11 +29,16 @@ namespace muse_dash_test.Patches
         /// 게임 전역 API에 걸려 있어 노트 타격음까지 <i>모든</i> 효과음마다 실행됩니다.
         /// <see cref="IsFullComboClip"/>을 먼저 부르면 그때마다 <c>clip.name</c>을 IL2CPP에서
         /// 마샬링(문자열 할당)하게 되므로, 곡당 수천 번의 불필요한 할당이 생깁니다.
-        /// 이 검사는 정적 필드 하나만 보므로 사실상 공짜이고, 결과창 밖에서는 여기서 끝납니다.</para>
+        /// 이 검사는 정적 필드 하나만 보므로 사실상 공짜입니다. 다만 TaskStageTarget은 첫 득점 때
+        /// 캐시되므로, 여기서 끝나는 건 곡 선택 화면 등 배틀 밖이고 플레이 중에는 통과합니다.</para>
+        /// <para><b>승리 배너 표시 여부로 더 좁히면 안 됩니다.</b> FC 효과음은 OnShowVictory 이벤트
+        /// 처리 도중에 울리므로 <c>PnlVictory2dManager.OnShowVictory</c> Postfix보다 먼저입니다
+        /// (로그: 뮤트 줄이 "OnShowVictory Postfix 감지!"보다 1ms 앞섭니다). a5fe2ce가 Postfix에서 켜는
+        /// 플래그를 여기 조건에 넣었다가 뮤트가 한 번도 걸리지 않게 됐습니다.</para>
         /// </summary>
         public static bool IsResultContextActive()
         {
-            return VictoryDataCache.IsVictoryBannerActive && VictoryDataCache.ActiveTarget != null;
+            return VictoryDataCache.ActiveTarget != null;
         }
 
         /// <summary>현재 결과가 ALL PERFECT(풀콤보 + Great 0 + Miss 0)인지 판정합니다.</summary>

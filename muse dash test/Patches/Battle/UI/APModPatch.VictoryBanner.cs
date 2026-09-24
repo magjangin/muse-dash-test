@@ -41,7 +41,6 @@ namespace muse_dash_test.Patches
             if (!ModConfig.EnableAPMod) return;
             try
             {
-                VictoryDataCache.IsVictoryBannerActive = true;
                 ModLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
                 VictoryFlowGuard.StartGuard();
 
