@@ -44,7 +44,7 @@ namespace muse_dash_test
             {
                 if (string.IsNullOrEmpty(uid)) return null;
 
-                if (!HwaResourceManager.TryGetCachedHwaBmsChart(uid, out BmsChart chart, out _)
+                if (!HwaResourceManager.TryGetCachedHwaBmsChart(uid, out BmsChart chart)
                     || chart == null
                     || string.IsNullOrEmpty(chart.SourcePath))
                 {

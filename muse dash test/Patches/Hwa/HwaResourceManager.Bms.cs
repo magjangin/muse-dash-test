@@ -10,26 +10,26 @@ namespace muse_dash_test
     /// </summary>
     public static partial class HwaResourceManager
     {
-        public static bool TryGetCachedHwaBmsChart(string uid, out BmsChart chart, out string description)
+        public static bool TryGetCachedHwaBmsChart(string uid, out BmsChart chart)
         {
             chart = null;
-            description = string.Empty;
+            if (uid == null) return false;
 
-            bool found = false;
             lock (cachedBmsCharts)
             {
-                if (uid != null)
-                {
-                    found = cachedBmsCharts.TryGetValue(uid, out chart);
-                }
+                return cachedBmsCharts.TryGetValue(uid, out chart) && chart != null;
             }
+        }
 
-            if (found && chart != null)
+        public static bool TryGetCachedHwaBmsChart(string uid, out BmsChart chart, out string description)
+        {
+            if (TryGetCachedHwaBmsChart(uid, out chart))
             {
                 description = HwaChartDiagnostics.DescribeBmsChart(chart);
                 return true;
             }
 
+            description = string.Empty;
             return false;
         }
 

@@ -17,12 +17,13 @@ namespace muse_dash_test
         private static readonly List<UnityEngine.KeyCode> activeAirKeys = new List<UnityEngine.KeyCode>();
         private static readonly List<UnityEngine.KeyCode> activeGroundKeys = new List<UnityEngine.KeyCode>();
         private static bool keysLoaded = false;
-        private static float checkTimer = 0f;
         private const float CheckInterval = 2.0f; // 키 세팅 재스캔 간격 (설정 변경 연동)
+        private static float checkTimer = CheckInterval;
 
         public static void ResetCache()
         {
             keysLoaded = false;
+            checkTimer = CheckInterval;
             ModLogger.Msg("[InputOverlay] 키 바인딩 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
         }
 

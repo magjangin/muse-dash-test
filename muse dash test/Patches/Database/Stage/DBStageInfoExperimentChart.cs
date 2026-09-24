@@ -43,12 +43,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         musicList.Add(anchor);
 
         var runtimeSpecs = BuildRuntimeExperimentNotes(ExperimentNotes);
+        bool usedBmsSpecs = false;
         if (UseBmsInjection && muse_dash_test.HwaResourceManager.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
         {
             var bmsSpecs = BuildBmsExperimentNotes(bmsChart, activeUid);
             if (bmsSpecs.Count > 0)
             {
                 runtimeSpecs = BuildRuntimeExperimentNotes(bmsSpecs);
+                usedBmsSpecs = true;
                 ModLogger.Msg($"[ExperimentChart.Bms] BMS 차트 주입 사용: specs={runtimeSpecs.Count}, {bmsDescription}");
             }
             else
@@ -72,7 +74,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         SceneZzTransformTracker.ClearBmsOriginalIdentities();
-        if (UseBmsInjection && muse_dash_test.HwaResourceManager.TryGetCachedHwaBmsChart(activeUid, out _, out _) && musicList.Count > 1)
+        if (usedBmsSpecs && musicList.Count > 1)
         {
             ApplyBmsDoubleState(musicList, 1);
             SortBmsNotesByShowTick(musicList, 1);

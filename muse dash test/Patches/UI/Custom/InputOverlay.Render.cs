@@ -88,7 +88,7 @@ namespace muse_dash_test
             if (!keysLoaded)
             {
                 checkTimer += Time.deltaTime;
-                if (checkTimer >= CheckInterval || airKeys.Count == 0)
+                if (checkTimer >= CheckInterval)
                 {
                     checkTimer = 0f;
                     LoadPlayerKeybinds();

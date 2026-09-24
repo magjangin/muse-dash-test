@@ -28,6 +28,16 @@ namespace muse_dash_test
                 return;
             }
 
+            if (currentLoadingUid == uid && injectedMenuClip != null)
+            {
+                AudioSource currentSource = FindMenuAudioSource();
+                if (currentSource != null && currentSource.clip == injectedMenuClip && currentSource.isPlaying)
+                {
+                    ModLogger.Verbose($"[MenuBGM] uid={uid}는 이미 재생 중이므로 재로드를 건너뜁니다.");
+                    return;
+                }
+            }
+
             currentLoadingUid = uid;
             // 이번 요청의 세대 번호를 코루틴에 넘겨 줍니다. uid만으로는 A→B→A처럼 같은 곡으로
             // 되돌아온 경우 낡은 코루틴이 자기가 낡았다는 걸 알 수 없습니다(아래 코루틴 주석 참고).

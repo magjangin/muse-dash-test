@@ -33,7 +33,7 @@ namespace muse_dash_test.Patches
         /// </summary>
         public static bool IsResultContextActive()
         {
-            return VictoryDataCache.ActiveTarget != null;
+            return VictoryDataCache.IsVictoryBannerActive && VictoryDataCache.ActiveTarget != null;
         }
 
         /// <summary>현재 결과가 ALL PERFECT(풀콤보 + Great 0 + Miss 0)인지 판정합니다.</summary>

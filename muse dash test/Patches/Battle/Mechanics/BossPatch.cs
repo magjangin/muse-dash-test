@@ -241,28 +241,24 @@ public class Boss_InitBossObject_Patch
         try
         {
             string uid = CustomPlaySession.Current.LastKnownMusicUid;
-            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart, out _))
+            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart))
             {
                 if (chart != null && chart.Notes != null)
                 {
-                    // 시간 순서대로 정렬하여 첫 번째 'in' 노트를 검색
-                    var firstInNote = chart.Notes
-                        .OrderBy(n => n.Time)
-                        .ThenBy(n => n.Tick)
-                        .FirstOrDefault(n => 
-                        {
-                            var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, n);
-                            return wavInfo != null && string.Equals(wavInfo.BossTransition, "in", System.StringComparison.OrdinalIgnoreCase);
-                        });
-
-                    if (firstInNote != null)
+                    // BMS 노트는 Tick/Time 순으로 이미 정렬되어 있으므로 첫 번째 'in' 노트를 순차 탐색
+                    for (int i = 0; i < chart.Notes.Count; i++)
                     {
-                        var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, firstInNote);
-                        if (wavInfo != null && !string.IsNullOrWhiteSpace(wavInfo.BossName) && wavInfo.BossScene >= 0)
+                        var n = chart.Notes[i];
+                        var wavInfo = BmsBossSwapPlanner.ResolveWavInfo(chart, n);
+                        if (wavInfo != null && string.Equals(wavInfo.BossTransition, "in", System.StringComparison.OrdinalIgnoreCase))
                         {
-                            bossName = wavInfo.BossName;
-                            bossScene = wavInfo.BossScene;
-                            return true;
+                            if (!string.IsNullOrWhiteSpace(wavInfo.BossName) && wavInfo.BossScene >= 0)
+                            {
+                                bossName = wavInfo.BossName;
+                                bossScene = wavInfo.BossScene;
+                                return true;
+                            }
+                            break;
                         }
                     }
                 }
@@ -289,7 +285,7 @@ public class Boss_InitBossObject_Patch
         try
         {
             string uid = CustomPlaySession.Current.LastKnownMusicUid;
-            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart, out _))
+            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart))
             {
                 if (chart != null)
                 {

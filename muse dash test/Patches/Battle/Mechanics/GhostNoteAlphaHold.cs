@@ -73,7 +73,7 @@ namespace muse_dash_test
             try
             {
                 var note = controller.m_MusicData?.noteData;
-                if (note != null)
+                if (note != null && (note.type != 0 || !string.IsNullOrEmpty(note.uid)))
                 {
                     return note.type == GhostType || IsGhostUid(note.uid);
                 }
@@ -268,7 +268,7 @@ namespace muse_dash_test
         private static void ProbeCachedState(SpineActionController controller, Il2CppSpine.SkeletonData data,
                                              string animationName, string cacheKey, bool opaque)
         {
-            if (probeCount >= ProbeBudget) return;
+            if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose) || probeCount >= ProbeBudget) return;
 
             try
             {

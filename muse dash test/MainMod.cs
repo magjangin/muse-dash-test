@@ -167,6 +167,7 @@ namespace muse_dash_test
             FeatureGuard.Run("Scene.ResetHitPoint", ExperimentHitPointInstaller.Reset);
             // 연타 도중 곡을 빠져나가면 구간 플래그가 켜진 채 남아 다음 곡까지 영향을 줍니다.
             FeatureGuard.Run("Scene.ResetSpineContractWindow", SpineActionContract.ResetWindow);
+            FeatureGuard.Run("Scene.ResetVictoryCache", Patches.VictoryDataCache.ResetSession);
         }
 
         public override void OnUpdate()
@@ -230,7 +231,7 @@ namespace muse_dash_test
         /// ("made in 화영왕")가 게임에 의해 덮어써졌는지 주기적으로 확인해 다시 적용합니다.
         /// (가상 노트 생성/주입은 여기가 아니라 DBStageInfoExperimentChart에서 차트 주입 시점에 수행됩니다.)
         /// </summary>
-        private void HandleExperimentStageUpdate()
+        private static void HandleExperimentStageUpdate()
         {
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {

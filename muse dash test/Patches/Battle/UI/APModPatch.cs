@@ -12,6 +12,14 @@ namespace muse_dash_test.Patches
         public static Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget ActiveTarget { get; set; }
         public static Font PremiumFont { get; set; }
         public static bool AttemptedFontCache { get; set; }
+        public static bool IsVictoryBannerActive { get; set; }
+
+        public static void ResetSession()
+        {
+            ActiveTarget = null;
+            IsVictoryBannerActive = false;
+            AttemptedFontCache = false;
+        }
     }
 
     // Cache the TaskStageTarget instance during gameplay when score is updated
@@ -97,31 +105,32 @@ namespace muse_dash_test.Patches
                     ModLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
 
-                // 버그 분석을 위해 TaskStageTarget의 원래 변수 값들을 캡처합니다.
-                float rawGetAccuracy = __result;
-                float rawGetTrueAccuracy = __instance.GetTrueAccuracy();
-                float rawGetTrueAccuracyNew = __instance.GetTrueAccuracyNew();
-
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
                     float accuracyNew = AccuracyCalculator.CalculateTrueAccuracyNew(__instance);
                     __result = (float)Math.Round(accuracyNew, 3);
                 }
 
-                // 원래의 로깅 형식 요구사항에 맞춰 그대로 한 줄 출력합니다.
-                ModLogger.Msg($"[APMod.Debug.Accuracy] " +
-                                $"m_MusicCount={__instance.m_MusicCount}, " +
-                                $"m_PerfectResult={__instance.m_PerfectResult}, " +
-                                $"m_GreatResult={__instance.m_GreatResult}, " +
-                                $"m_MissResult={__instance.m_MissResult}, " +
-                                $"m_CoolResult={__instance.m_CoolResult}, " +
-                                $"m_HitCount={__instance.m_HitCount}, " +
-                                $"m_LongPressCount={__instance.m_LongPressCount}, " +
-                                $"m_LongPressHitCount={__instance.m_LongPressHitCount}, " +
-                                $"m_EnergyCount={__instance.m_EnergyCount}, " +
-                                $"GetAccuracy()={rawGetAccuracy:F6}, " +
-                                $"GetTrueAccuracy()={rawGetTrueAccuracy:F6}, " +
-                                $"GetTrueAccuracyNew()={rawGetTrueAccuracyNew:F6}");
+                if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+                {
+                    float rawGetAccuracy = __result;
+                    float rawGetTrueAccuracy = __instance.GetTrueAccuracy();
+                    float rawGetTrueAccuracyNew = __instance.GetTrueAccuracyNew();
+
+                    ModLogger.Verbose($"[APMod.Debug.Accuracy] " +
+                                    $"m_MusicCount={__instance.m_MusicCount}, " +
+                                    $"m_PerfectResult={__instance.m_PerfectResult}, " +
+                                    $"m_GreatResult={__instance.m_GreatResult}, " +
+                                    $"m_MissResult={__instance.m_MissResult}, " +
+                                    $"m_CoolResult={__instance.m_CoolResult}, " +
+                                    $"m_HitCount={__instance.m_HitCount}, " +
+                                    $"m_LongPressCount={__instance.m_LongPressCount}, " +
+                                    $"m_LongPressHitCount={__instance.m_LongPressHitCount}, " +
+                                    $"m_EnergyCount={__instance.m_EnergyCount}, " +
+                                    $"GetAccuracy()={rawGetAccuracy:F6}, " +
+                                    $"GetTrueAccuracy()={rawGetTrueAccuracy:F6}, " +
+                                    $"GetTrueAccuracyNew()={rawGetTrueAccuracyNew:F6}");
+                }
             }
             catch (Exception ex)
             {

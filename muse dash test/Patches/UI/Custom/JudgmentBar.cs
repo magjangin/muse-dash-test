@@ -32,7 +32,7 @@ namespace muse_dash_test
         /// 판정바를 끄는 창구가 둘(config.txt의 '판정바표시', MelonPreferences의 EnableJudgmentBar)이라
         /// 둘 다 확인합니다.
         /// </summary>
-        private static bool IsRecordingEnabled => ModConfig.EnableJudgmentBar && InputOverlay.showBar;
+        public static bool IsRecordingEnabled => ModConfig.EnableJudgmentBar && InputOverlay.showBar;
 
         /// <summary>
         /// 유효 시간이 지난 틱을 제거합니다. 뒤에서부터 훑어 가비지를 만들지 않습니다.
@@ -267,6 +267,8 @@ namespace muse_dash_test
         {
             try
             {
+                if (!JudgmentBar.IsRecordingEnabled) return;
+
                 // Miss(0) 또는 타격/판정 정보가 유효하지 않은 경우 무시
                 if (resultCode == 0 || tno == null || tno.md == null) return;
 

@@ -197,8 +197,8 @@ namespace muse_dash_test
                 HwaBattleMediaController.ResetState();
                 HwaBattleMediaController.StartBattleMediaInjection();
 
-                // APMod (All Perfect Mod) 폰트 탐색 상태 리셋
-                Patches.VictoryDataCache.AttemptedFontCache = false;
+                // APMod (All Perfect Mod) 세션 상태 리셋 (ActiveTarget, BannerActive, FontCache 초기화)
+                Patches.VictoryDataCache.ResetSession();
             }
             catch (Exception ex)
             {
