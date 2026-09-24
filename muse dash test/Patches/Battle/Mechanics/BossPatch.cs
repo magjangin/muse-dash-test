@@ -355,7 +355,8 @@ public class Boss_InitBossObject_Patch
 
             if (CustomPlaySession.Current.IsDynamicBossSwap)
             {
-                ModLogger.Msg("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
+                // 배틀 도중 swap마다 도는 자리라 Verbose입니다(바로 위 '호출' 줄이 이미 Info로 남습니다).
+                ModLogger.Verbose("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
                 return;
             }
 
@@ -408,6 +409,7 @@ public class Boss_InitBossObject_Patch
 
 // 진단용 로깅 패치: SceneBossChange 호출 흐름만 추적합니다.
 // (idx 재작성 기믹은 사용되지 않아 제거했으며, 필요 시 Prefix에서 ref idx를 조정해 복원할 수 있습니다.)
+// 배틀 도중 씬이 바뀔 때마다(공식곡 포함) 불리므로 Verbose에만 남깁니다. 보려면 LogLevel=Verbose.
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "SceneBossChange", new Type[] { typeof(int) })]
 public class Boss_SceneBossChange_Patch
 {
@@ -415,7 +417,7 @@ public class Boss_SceneBossChange_Patch
     {
         try
         {
-            ModLogger.Msg($"Il2Cpp.Boss.SceneBossChange 호출: idx={idx}, instance={__instance}");
+            ModLogger.Verbose($"Il2Cpp.Boss.SceneBossChange 호출: idx={idx}, instance={__instance}");
         }
         catch (Exception ex)
         {
@@ -427,7 +429,7 @@ public class Boss_SceneBossChange_Patch
     {
         try
         {
-            ModLogger.Msg($"Il2Cpp.Boss.SceneBossChange 완료: idx={idx}");
+            ModLogger.Verbose($"Il2Cpp.Boss.SceneBossChange 완료: idx={idx}");
         }
         catch (Exception ex)
         {

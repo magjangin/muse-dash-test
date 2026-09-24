@@ -240,7 +240,7 @@ LevelDesignerNameTextObjectNames
 올 퍼펙트(All Perfect) 판정이나 결과 화면의 골드 배너 연출이 동작하지 않는 경우 아래 로그와 설정을 점검하십시오.
 
 ### 1. 정확도 디버그 로그 확인
-플레이가 끝날 때 콘솔에 아래와 같은 로그가 남는지 확인합니다.
+이 로그는 `GetAccuracy`가 불릴 때마다 찍히므로 **`LogLevel = "Verbose"`일 때만** 나옵니다(아래 “수동 로그 레벨 설정” 절 참고). Verbose로 바꾼 뒤 플레이가 끝날 때 콘솔에 아래와 같은 로그가 남는지 확인합니다.
 ```text
 [APMod.Debug.Accuracy] m_MusicCount=0, m_PerfectResult=351, m_GreatResult=0, m_MissResult=0, m_CoolResult=0, m_HitCount=351, m_LongPressCount=10, m_LongPressHitCount=10, m_EnergyCount=0, GetAccuracy()=0.854000, GetTrueAccuracy()=0.914062, GetTrueAccuracyNew()=0.854015
 ```
@@ -264,7 +264,8 @@ v0.10.0부터 **하드웨어 자동 감지(`DeviceDetector`)**와 **동적 로�
 ### 1. UMPC(핸드헬드) 환경에서의 자동 음소거 (Auto Mode)
 * **배경**: ROG Ally, Steam Deck, Legion Go 등 UMPC 기기는 저전력(TDP 15~25W) 및 공유 메모리 구조를 가집니다. 게임 루프 또는 차트 파싱(롱노트·샌드백 매칭 수백 건) 시 콘솔 문자열 렌더링 및 디스크 파일 I/O로 인한 순간 끊김(Stuttering/프레임 드랍)이 발생할 수 있습니다.
 * **동작**: 시작 시 UMPC가 감지되면 로그 레벨이 **`Error`**(치명적 오류만)로 자동 강하됩니다.
-* **단일 창구 (`ModLogger`)**: 모드 내부의 모든 로그는 `ModLogger.Msg/Warning/Error`를 거치며, 레벨에 미달하면 호출부에서 곧바로 반환되어 문자열 조립·콘솔 렌더링·파일 I/O가 아예 일어나지 않습니다. 일반 플레이 중에는 로그가 조용하게 유지됩니다.
+* **단일 창구 (`ModLogger`)**: 모드 내부의 모든 로그는 `ModLogger.Msg/Warning/Verbose/Error`를 거치며, 레벨에 미달하면 콘솔 렌더링·파일 I/O가 일어나지 않습니다. 일반 플레이 중에는 로그가 조용하게 유지됩니다.
+* **문자열 조립도 생략**: `ModLogger.Msg/Warning/Verbose($"...")`처럼 보간 문자열로 부르면 전용 핸들러(`ModLogMessageHandler`)가 받아서, 레벨이 꺼져 있을 때는 문자열을 만들지 않고 `{...}` 안의 식도 평가하지 않습니다. 그러니 로그 구멍 안에 “로그를 안 찍어도 꼭 실행돼야 하는 일”을 넣지 마십시오. (예전에는 레벨 판정 전에 문자열이 먼저 완성돼, 기본 설정에서도 Verbose 문자열 125곳이 매번 만들어졌다 버려졌습니다.)
 * **참고**: v0.10.0에는 `MelonLogger`를 Harmony로 전역 가로채는 방식이 있었지만, MelonLoader 0.7.3에서 관리 메서드 디투어가 NRE로 실패해 음소거가 아예 걸리지 않았습니다. 시작 로그에 `Failed to HarmonyInit PatchAll: muse_dash_test.MelonLoggerInterceptor`가 보인다면 그 버전입니다. 현재는 제거되었습니다.
 
 ### 2. 수동 로그 레벨 설정 (`MelonPreferences.cfg`)

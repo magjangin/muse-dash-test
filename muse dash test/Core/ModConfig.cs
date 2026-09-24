@@ -202,5 +202,11 @@ namespace muse_dash_test
         {
             ModLogger.Verbose(msg);
         }
+
+        /// <summary><c>$"..."</c> 전용 오버로드입니다. Verbose가 꺼져 있으면 문자열을 만들지 않습니다(<see cref="ModLogMessageHandler{TLevel}"/>).</summary>
+        public static void VerboseLog(ref ModLogMessageHandler<VerboseLogLevel> msg)
+        {
+            ModLogger.Verbose(ref msg);
+        }
     }
 }

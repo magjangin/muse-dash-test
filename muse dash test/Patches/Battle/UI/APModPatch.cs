@@ -97,10 +97,8 @@ namespace muse_dash_test.Patches
                     ModLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
 
-                // 버그 분석을 위해 TaskStageTarget의 원래 변수 값들을 캡처합니다.
+                // 덮어쓰기 전의 원래 값을 진단 로그용으로 잡아 둡니다.
                 float rawGetAccuracy = __result;
-                float rawGetTrueAccuracy = __instance.GetTrueAccuracy();
-                float rawGetTrueAccuracyNew = __instance.GetTrueAccuracyNew();
 
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
@@ -108,8 +106,12 @@ namespace muse_dash_test.Patches
                     __result = (float)Math.Round(accuracyNew, 3);
                 }
 
-                // 원래의 로깅 형식 요구사항에 맞춰 그대로 한 줄 출력합니다.
-                ModLogger.Msg($"[APMod.Debug.Accuracy] " +
+                // 원래의 로깅 형식 그대로 한 줄 출력합니다. GetAccuracy가 불릴 때마다(공식곡 포함) 도는 자리라
+                // Verbose입니다. GetTrueAccuracy()/GetTrueAccuracyNew()는 이 로그를 위해서만 부르는 것이라
+                // 보간 구멍 안에 두었습니다. Verbose가 꺼져 있으면 두 호출(과 필드 읽기)은 실행되지 않습니다.
+                // (예전에는 로그 레벨과 무관하게 매번 두 메서드를 더 불렀습니다. 둘 다 아래 Postfix가 붙어 있어
+                //  커스텀 곡에서는 리플렉션 계산까지 따라 돌았습니다.)
+                ModLogger.Verbose($"[APMod.Debug.Accuracy] " +
                                 $"m_MusicCount={__instance.m_MusicCount}, " +
                                 $"m_PerfectResult={__instance.m_PerfectResult}, " +
                                 $"m_GreatResult={__instance.m_GreatResult}, " +
@@ -120,8 +122,8 @@ namespace muse_dash_test.Patches
                                 $"m_LongPressHitCount={__instance.m_LongPressHitCount}, " +
                                 $"m_EnergyCount={__instance.m_EnergyCount}, " +
                                 $"GetAccuracy()={rawGetAccuracy:F6}, " +
-                                $"GetTrueAccuracy()={rawGetTrueAccuracy:F6}, " +
-                                $"GetTrueAccuracyNew()={rawGetTrueAccuracyNew:F6}");
+                                $"GetTrueAccuracy()={__instance.GetTrueAccuracy():F6}, " +
+                                $"GetTrueAccuracyNew()={__instance.GetTrueAccuracyNew():F6}");
             }
             catch (Exception ex)
             {

@@ -27,7 +27,8 @@ namespace muse_dash_test
                     value = 0;
                     if (shouldLogCurrent)
                     {
-                        ModLogger.Msg("[FeverPatch] 피버 게이지 충전 차단 적용 (value -> 0)");
+                        // 연주 중 10초마다 반복되는 줄이라 Verbose입니다. (설정 값은 config.txt 적용 로그에 이미 남습니다)
+                        ModLogger.Verbose("[FeverPatch] 피버 게이지 충전 차단 적용 (value -> 0)");
                     }
                 }
             }
