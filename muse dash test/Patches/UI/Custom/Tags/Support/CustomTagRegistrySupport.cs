@@ -6,6 +6,7 @@ using Il2CppAssets.Scripts.PeroTools.Commons;
 using Il2CppAssets.Scripts.PeroTools.Managers;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 using static Il2CppAssets.Scripts.Database.DBConfigCustomTags;
@@ -323,11 +324,12 @@ namespace muse_dash_test
             // musicName은 필드에 써도 화면에 반영되지 않아(렌더링은 아래 마스크가 담당) 제거했습니다.
             wrapper.author = author;
             wrapper.levelDesigner = levelDesigner;
-            wrapper.difficulty1 = diff1;
-            wrapper.difficulty2 = diff2;
-            wrapper.difficulty3 = diff3;
-            wrapper.difficulty4 = diff4;
-            wrapper.difficulty5 = diff5;
+            // 게임의 난이도 필드는 문자열입니다(MusicInfoWrapper.difficulty1 참고).
+            wrapper.difficulty1 = diff1.ToString(CultureInfo.InvariantCulture);
+            wrapper.difficulty2 = diff2.ToString(CultureInfo.InvariantCulture);
+            wrapper.difficulty3 = diff3.ToString(CultureInfo.InvariantCulture);
+            wrapper.difficulty4 = diff4.ToString(CultureInfo.InvariantCulture);
+            wrapper.difficulty5 = diff5.ToString(CultureInfo.InvariantCulture);
 
             // 제목 렌더링용 마스크만 남깁니다. "music"은 제목이 아니라 음원 에셋 키라서
             // 마스크로 덮으면 필드를 덮어쓴 것과 같은 효과가 나므로 넣지 않습니다.

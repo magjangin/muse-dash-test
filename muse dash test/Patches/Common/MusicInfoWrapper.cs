@@ -79,47 +79,51 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 난이도 1단계(보통 Easy)의 레벨 수치 값
+        /// 난이도 1단계(보통 Easy)의 레벨 표기.
+        /// <para><b>게임 필드가 <c>string</c>이므로 래퍼도 문자열로 둡니다.</b> 공식 곡 중에는 숫자가 아닌
+        /// 값을 가진 곡이 있어서(50-1 "ペロペロ in the Universe"), 예전처럼 <c>int</c>로 읽으면
+        /// <c>Convert.ChangeType</c>이 던져 그 곡을 고를 때 [ERROR] 로그가 남았습니다(세션당 1회).
+        /// 숫자가 필요하면 <c>int.TryParse</c>로 직접 변환하십시오(PnlReportCardPatch 참고).</para>
         /// </summary>
-        public int difficulty1
+        public string difficulty1
         {
-            get => Get<int>("difficulty1");
+            get => Get<string>("difficulty1");
             set => Set("difficulty1", value);
         }
 
         /// <summary>
-        /// 난이도 2단계(보통 Hard)의 레벨 수치 값
+        /// 난이도 2단계(보통 Hard)의 레벨 표기(문자열, <see cref="difficulty1"/> 참고)
         /// </summary>
-        public int difficulty2
+        public string difficulty2
         {
-            get => Get<int>("difficulty2");
+            get => Get<string>("difficulty2");
             set => Set("difficulty2", value);
         }
 
         /// <summary>
-        /// 난이도 3단계(보통 Master)의 레벨 수치 값
+        /// 난이도 3단계(보통 Master)의 레벨 표기(문자열, <see cref="difficulty1"/> 참고)
         /// </summary>
-        public int difficulty3
+        public string difficulty3
         {
-            get => Get<int>("difficulty3");
+            get => Get<string>("difficulty3");
             set => Set("difficulty3", value);
         }
 
         /// <summary>
-        /// 난이도 4단계(보통 Another / Special)의 레벨 수치 값
+        /// 난이도 4단계(보통 Another / Special)의 레벨 표기(문자열, <see cref="difficulty1"/> 참고)
         /// </summary>
-        public int difficulty4
+        public string difficulty4
         {
-            get => Get<int>("difficulty4");
+            get => Get<string>("difficulty4");
             set => Set("difficulty4", value);
         }
 
         /// <summary>
-        /// 난이도 5단계(히든 등의 특수 채보)의 레벨 수치 값
+        /// 난이도 5단계(히든 등의 특수 채보)의 레벨 표기(문자열, <see cref="difficulty1"/> 참고)
         /// </summary>
-        public int difficulty5
+        public string difficulty5
         {
-            get => Get<int>("difficulty5");
+            get => Get<string>("difficulty5");
             set => Set("difficulty5", value);
         }
     }

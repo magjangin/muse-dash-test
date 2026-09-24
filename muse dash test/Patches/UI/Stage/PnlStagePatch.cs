@@ -289,12 +289,17 @@ public class PnlStage_RefreshDiffUI_Patch
                     HwaMenuBgmController.TriggerMenuBgmChange(musicInfo.uid);
                 }
             }
-            string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
-            string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-            
-            var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
-            string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}', diff1={infoWrap.difficulty1}" : "(null)";
-            ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Prefix: musicNameTitle='{musicText}', artistNameTitle='{artistText}' | [Passed musicInfo details]: {argDetails}");
+            // 곡을 고를 때마다 도는 자리입니다. 아래는 리플렉션으로 필드 다섯 개를 읽는 진단이라
+            // 로그 수준이 Verbose가 아니면 만들지도 않습니다.
+            if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+            {
+                string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
+                string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
+
+                var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
+                string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}', diff1='{infoWrap.difficulty1}'" : "(null)";
+                ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Prefix: musicNameTitle='{musicText}', artistNameTitle='{artistText}' | [Passed musicInfo details]: {argDetails}");
+            }
         }
         catch (Exception ex) { ModLogger.Error($"PnlStage.RefreshDiffUI Prefix 예외: {ex}"); }
     }
