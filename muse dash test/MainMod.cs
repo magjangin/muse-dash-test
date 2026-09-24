@@ -67,15 +67,6 @@ namespace muse_dash_test
                 EmbeddedResource.EnsureTagIcon(hwaTagImageFolderPath);
             }, maxConsecutiveFailures: 0);
 
-            // skins 폴더 생성 및 샘플 skins.txt 추출 (FavGirl 실시간 외형 교체 설정)
-            FeatureGuard.Run("Init.SkinsConfig", () =>
-            {
-                string skinsFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "skins");
-                Directory.CreateDirectory(skinsFolderPath);
-                ModLogger.Msg($"skins 폴더를 확인/생성했습니다: {skinsFolderPath}");
-                EnsureSampleSkinsFile(skinsFolderPath);
-            }, maxConsecutiveFailures: 0);
-
             // skin test 폴더 + 세트별 하위 폴더 생성 (커스텀 Spine 스킨 주입용 원본 파일 위치)
             // 예: skin test/char_3_black/char_3_black.png/.atlas/.json 세트를 두면 black_girl_battle에 주입됨
             FeatureGuard.Run("Init.SpineSkinFolder", () =>
@@ -90,17 +81,6 @@ namespace muse_dash_test
 
             // hwa 매니페스트 사전 로드
             FeatureGuard.Run("Init.PreloadManifest", HwaResourceManager.PreloadHwaManifest, maxConsecutiveFailures: 0);
-
-            // FavGirl 즐겨찾기 설정 및 핫키 정보 초기화.
-            // 이 블록에서 유일하게 FeatureGuard 밖에 있던 호출이었습니다. 여기서 던지면
-            // OnInitializeMelon이 통째로 중단되어 바로 아래 Discord 초기화까지 함께 죽습니다.
-            // (기능 토글에는 묶지 않습니다. FavSave.favGirl은 FavManager의 Harmony 패치들이
-            //  토글과 무관하게 읽으므로, 로드를 건너뛰면 그쪽이 전부 null을 보게 됩니다.)
-            FeatureGuard.Run("Init.FavSave", FavSave.Load, maxConsecutiveFailures: 0);
-            ModLogger.Msg("=== FavGirl 실시간 교체 기능 활성화 ===");
-            ModLogger.Msg("P키: 실시간 교체 모드 켜기/끄기");
-            ModLogger.Msg("O키: 실시간 교체 실행 (모드 활성화 후)");
-            ModLogger.Msg("======================================");
 
             // Discord Rich Presence 초기화
             FeatureGuard.Run("Init.DiscordRPC", DiscordPresenceManager.Initialize, maxConsecutiveFailures: 0);
@@ -127,34 +107,6 @@ namespace muse_dash_test
             }
         }
 
-        /// <summary>
-        /// FavGirl 실시간 외형 교체용 샘플 skins.txt를 생성합니다(이미 존재하면 건너뜀).
-        /// 형식은 RealTimeSwapper.ReadSkinSettings의 파싱 규칙과 일치해야 합니다:
-        /// '#'로 시작하는 줄은 주석, 그 외 첫 유효 줄을 쉼표로 나눈 3개 토큰(스킬/외형/3번째 슬롯)을 사용.
-        /// </summary>
-        private static void EnsureSampleSkinsFile(string skinsFolderPath)
-        {
-            string skinsTxtPath = Path.Combine(skinsFolderPath, "skins.txt");
-            if (File.Exists(skinsTxtPath)) return;
-
-            try
-            {
-                string sample =
-                    "# FavGirl 실시간 외형 교체 설정 파일\r\n" +
-                    "# 형식: 스킬캐릭터, 외형캐릭터, 3번째슬롯  (쉼표로 구분, 3개 필요)\r\n" +
-                    "# '#'로 시작하는 줄은 주석이며, 첫 유효 줄만 사용됩니다.\r\n" +
-                    "# 사용법: 게임 내에서 P키로 실시간 교체 모드를 켜고, O키로 아래 3개 슬롯을 순환 적용합니다.\r\n" +
-                    "# 캐릭터 토큰 예시: RIN_BASS, BURO_PILOT, MARIJA_BLACK, MARIJA_DEVIL, MIKU_HATSUNE, MARISA, AMIYA 등\r\n" +
-                    "MARIJA_BLACK, MARIJA_DEVIL, RIN_BASS\r\n";
-                File.WriteAllText(skinsTxtPath, sample, new System.Text.UTF8Encoding(true));
-                ModLogger.Msg($"[FavGirl] 샘플 skins.txt를 생성했습니다: {skinsTxtPath}");
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[FavGirl] 샘플 skins.txt 생성 중 예외 발생: {ex}");
-            }
-        }
-
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
             ModLogger.Msg($"씬이 로드되었습니다: {sceneName} (빌드 인덱스: {buildIndex})");
@@ -175,22 +127,12 @@ namespace muse_dash_test
             // 매 프레임 호출되므로 각 기능을 FeatureGuard로 격리합니다.
             // 람다 클로저 대신 정적 메서드를 전달하여 매 프레임 GC 가비지 생성을 차단합니다.
             // (정적 메서드 그룹의 델리게이트 캐시는 C# 11부터입니다. csproj의 LangVersion을 낮추면 다시 매번 할당됩니다.)
-            FeatureGuard.Run("Input.RealTimeSwap", UpdateRealTimeSwap);
             FeatureGuard.Run("ConfigFile.Reload", InputOverlay.LoadConfigIfNeeded);
             FeatureGuard.Run("HwaSync.Battle", HwaSyncManager.HandleBattleSynchronization);
             FeatureGuard.Run("StageCheck", UpdateStageCheck);
             FeatureGuard.Run("ExperimentStage", HandleExperimentStageUpdate);
             FeatureGuard.Run("ExperimentHitPoint", UpdateExperimentHitPoint);
             FeatureGuard.Run("DiscordRPC.Update", DiscordPresenceManager.Update);
-        }
-
-        private static void UpdateRealTimeSwap()
-        {
-            RealTimeSwapper.CheckForOKeyPress();
-            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.P))
-            {
-                RealTimeSwapManager.ToggleRealTimeMode();
-            }
         }
 
         private static void UpdateStageCheck()

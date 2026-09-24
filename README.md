@@ -33,10 +33,11 @@
   * 인게임 HUD 스코어 컴포넌트(`ChangeScoreValue`)로부터 뮤즈 대시 메인 서체인 `LuckiestGuy-Regular` 등의 **프리미엄 시그니처 폰트를 실시간 추출/캐싱**하여 결과창에 완벽히 연동시켰으며, 입체적인 3D 섀도우 및 검은색 아웃라인(`Outline`) 효과까지 그대로 재현해 인게임 정체성을 지켰습니다.
 
 * **ModConfig Feature Toggle System (개별 기능 온/오프 제어 시스템) [v0.9.3]** ✅
-  * `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 카테고리를 통해 12가지 개별 기능(커스텀 차트, 스킨 스왑, 입력 오버레이, 판정바, 디스코드 RPC, 체력바, AP 패치, 오토플레이, 강제 올퍼펙트 등)을 자유롭게 활성화/비활성화할 수 있습니다.
+  * `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 카테고리를 통해 12가지 개별 기능(커스텀 차트, 입력 오버레이, 판정바, 디스코드 RPC, 체력바, AP 패치, 오토플레이, 강제 올퍼펙트, 모바일 터치 등)을 자유롭게 활성화/비활성화할 수 있습니다.
 
-* **Real-Time FavGirl Swapper (인게임/준비화면 실시간 캐릭터 & 스킨 스왑)** ✅
-  * 인게임 및 곡 선택/준비 화면에서 `P` / `O` 핫키를 눌러 현재 플레이어 캐릭터와 스킨을 실시간으로 핫스왑 조작할 수 있는 편의 기능을 제공합니다.
+* ~~**Real-Time FavGirl Swapper (인게임/준비화면 실시간 캐릭터 & 스킨 스왑)**~~ 🗑️ **제거됨**
+  * 스킬 캐릭터와 외형 캐릭터를 따로 고르는 이 기능이 **2026년 9월 25일 업데이트로 바닐라(게임 본편)에 정식으로 들어가서, 모드로 할 필요가 없어졌습니다.**
+  * `P` / `O` 핫키, `skins/skins.txt`, `EnableRealTimeSwap` 설정이 모두 함께 빠졌습니다. 기존 설정이 남아 있어도 무시됩니다(아래 Configuration 절 참고).
 
 * **In-Game Input Overlay & Judgment Bar (키 입력 오버레이 & 판정 타임라인 시각화)** ✅
   * 인게임 플레이 중 실시간 키보드 입력 상황을 직관적인 HUD 오버레이로 표시하며, 화면 하단에 판정 타임라인(`JudgmentBar`)을 그래픽으로 시각화합니다.
@@ -83,7 +84,7 @@
 | **ALL PERFECT! 배너 동적 교체 및 폰트/외곽선 적용** | ✅ 완료 |
 | **ModConfig 개별 기능 토글 제어 (`MelonPreferences.cfg`)** | ✅ 완료 (v0.9.3) |
 | **인게임 키 입력 오버레이 (`InputOverlay`) & 판정바 (`JudgmentBar`) 표시** | ✅ 완료 |
-| **`P`/`O` 핫키 기반 실시간 캐릭터/스킨 핫스왑 (`RealTimeSwapper`)** | ✅ 완료 |
+| ~~`P`/`O` 핫키 기반 실시간 캐릭터/스킨 핫스왑 (`RealTimeSwapper`)~~ | 🗑️ 제거 (2026-09-25 바닐라 정식 도입) |
 | **Spine 커스텀 스킨 런타임 텍스처/아틀라스 주입 (`Spine/`)** | ✅ 완료 |
 | **오토 플레이(`AutoPlay`) 및 강제 올퍼펙트(`ForcePerfect`) 조작 패치** | ✅ 완료 |
 | **오프라인 샌드박스 플래그 제어 및 실시간 토글** | ✅ 완료 |
@@ -122,6 +123,7 @@
   * **반영 계획:** 발견된 신규 특수 노트(Note Freeze, RGB Split glitch, Old TV CRT, Pixelate, Grayscale, Wave Shader, Quiz Question 등)를 BMS 파서 및 `#WAV` 매핑 테이블에 이식하여 커스텀 차트에서 기믹 노트로 완벽 사용할 수 있도록 정식 반영할 예정입니다.
 * **진행 예정**: BMS 특정 채널 이벤트를 감지해 배경 블러, Fever 트리거 강제 작동 등 시네마틱 카메라/HUD 연출 확장
 * **보류**: 커스텀 곡 대사(Dialog) 주입 — 동작하는 프로토타입까지 검증했으나 우선순위 조정으로 본체에서 제거했습니다. 훅 지점, 실측 스타일 값, 알려진 파싱 함정까지 [DIALOG_INJECTION.md](docs/experiments/DIALOG_INJECTION.md)에 보존해 두었습니다.
+* **제거**: FavGirl 실시간 캐릭터/스킨 스왑 (`P`/`O` 핫키) — 2026년 9월 25일 업데이트로 바닐라에 정식 도입되어 모드가 필요 없어졌습니다. 마지막으로 포함된 코드는 커밋 `42440fb`에서 볼 수 있습니다.
 
 
 ### DLC 메타데이터 정리의 목적
@@ -142,11 +144,10 @@
 │   ├── Core/                 # 하드웨어 감지, 로그 레벨 제어, 예외 격리, 터치 판독, 세션/기록 저장소, ModConfig 통합 설정
 │   │   ├── DeviceDetector.cs # UMPC/핸드헬드 하드웨어 자동 판별
 │   │   ├── ModLogger.cs      # 모드 로그의 단일 창구 & 레벨 동적 제어
-│   │   ├── ModConfig.cs      # MelonPreferences 기반 13개 개별 기능 및 LogLevel 제어
+│   │   ├── ModConfig.cs      # MelonPreferences 기반 12개 개별 기능 및 LogLevel 제어
 │   │   └── ...
-│   ├── Integration/          # Discord RPC 연동 및 실시간 리소스/스킨 스와퍼 (P/O 단축키)
-│   │   ├── DiscordPresenceManager.cs
-│   │   └── RealTimeSwapper.cs
+│   ├── Integration/          # Discord RPC 연동
+│   │   └── DiscordPresenceManager.cs
 │   ├── Patches/              # Harmony 런타임 패치 클래스들
 │   │   ├── Battle/           # 인게임 배틀 제어 및 연출
 │   │   │   ├── Mechanics/    # 오토플레이, 피버 차단, 보스 런타임 스왑
@@ -179,8 +180,6 @@
 │   │   │   ├── HwaChartDiagnostics.cs
 │   │   │   ├── OffsetHookPatches.cs
 │   │   │   └── PatchHealthCheck.cs
-│   │   ├── Fav/              # 커스텀 곡 즐겨찾기 관리
-│   │   │   └── FavManager.cs
 │   │   ├── Hwa/              # Hwa 리소스, 매니페스트, BGM 스왑, 동기화
 │   │   │   ├── HwaManifest.cs
 │   │   │   ├── HwaManifestLoader.cs
@@ -270,7 +269,6 @@
 | 설정 키 (Entry) | 기본값 | 기능 설명 |
 |---|---|---|
 | `EnableCustomChart` | `true` | 커스텀 차트 로더, 인메모리 BMS 주입, 실험 차트 HitPoints 프리팹 설치 활성화 |
-| `EnableRealTimeSwap` | `true` | FavGirl 실시간 소녀/스킨 핫스왑 조작 활성화 (`P` / `O` 단축키) |
 | `EnableInputOverlay` | `true` | 인게임 실시간 키보드 입력 오버레이 HUD 표시 |
 | `EnableJudgmentBar` | `true` | 화면 하단 판정 타임라인 시각화 그래프 UI 표시 |
 | `EnableDiscordRPC` | `true` | Discord Rich Presence 실시간 상태 연동 |
@@ -281,6 +279,14 @@
 | `EnableForcePerfect` | `true` | All-Perfect 파라미터 모드 (강제 퍼펙트 판정) 활성화 |
 | `EnableBattleMedia` | `true` | 배틀 커스텀 BGA 비디오/미디어 재생기 활성화 |
 | `EnableSpineSkin` | `true` | Spine 커스텀 스킨 텍스처/아틀라스 런타임 주입 활성화 |
+| `EnableMobileTouch` | `true` | 모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화 |
+
+> **제거된 설정 (FavGirl)** — 실시간 캐릭터/스킨 스왑은 2026년 9월 25일 업데이트로 바닐라에 정식 도입되어 모드에서 뺐습니다.
+> 이전 버전이 만든 아래 항목은 이제 아무 코드도 읽지 않으므로, 남아 있어도 무해하고 지워도 됩니다.
+>
+> * `MelonPreferences.cfg`의 `EnableRealTimeSwap` 키
+> * `MelonPreferences.cfg`의 `[muse-dash-custom-chart]` 카테고리 (`favGirl`, `conditionalHideScoreDetails`)
+> * 게임 폴더의 `skins/` 폴더 (`skins.txt`). Spine 커스텀 스킨용 `skin test/` 폴더와는 별개이니 헷갈리지 마세요.
 
 ---
 

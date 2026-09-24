@@ -242,15 +242,12 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 ---
 
-## 🔄 실시간 소녀/스킨 교체 (FavGirl) 재타깃팅 지도
+## 🔄 실시간 소녀/스킨 교체 (FavGirl) — 🗑️ 제거됨, 재타깃팅 불필요
 
-**파일**: [RealTimeSwapper.cs](../../muse%20dash%20test/Integration/RealTimeSwapper.cs), [FavManager.cs](../../muse%20dash%20test/Patches/Fav/FavManager.cs)
-
-| # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
-|---|---|---|---|---|---|---|
-| F1.1 | `AbstractGirlManager` | `InstanceGirl()`, `AwakeInit()` | 후크(Postfix) | 스킬 캐릭터 유지 상태에서 렌더링 외형 스킨 모델 덮어쓰기 | 🟡 | |
-| F1.2 | `MuseShow` / `CharCreate` | `OnEnable()` | 후크(Postfix) | 로비/캐릭터 선택창 외형 모델 실시간 갱신 | 🟡 | |
-| F1.3 | `RealTimeSwapper` | `CheckForOKeyPress()`, P키 토글 | 매프레임 틱 | P키(모드 토글), O키(슬롯 순환) 핫키 입력 감지 | 🟢 | |
+스킬 캐릭터와 외형 캐릭터를 따로 고르는 기능이 **2026년 9월 25일 업데이트로 바닐라에 정식 도입되어 모드에서 뺐습니다.**
+`RealTimeSwapper.cs`, `FavManager.cs`, `FavSave.cs`가 모두 삭제되었으므로 MD2로 옮길 대상도 없습니다.
+(1편에서 걸던 훅은 `AbstractGirlManager.InstanceGirl` / `AwakeInit`, `MuseShow.OnEnable`, `CharCreate.OnEnable`,
+`PnlVictory.OnVictory`, `RoleBattleSubControl.Init`였습니다. 코드가 필요하면 커밋 `42440fb`에서 볼 수 있습니다.)
 
 ---
 
