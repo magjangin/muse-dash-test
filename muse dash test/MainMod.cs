@@ -229,8 +229,11 @@ namespace muse_dash_test
         /// 커스텀 차트 적용 중이고 인게임 스테이지에 들어가 있으면, 체력바 텍스트 워터마크
         /// ("made in 화영왕")가 게임에 의해 덮어써졌는지 주기적으로 확인해 다시 적용합니다.
         /// (가상 노트 생성/주입은 여기가 아니라 DBStageInfoExperimentChart에서 차트 주입 시점에 수행됩니다.)
+        /// <para>반드시 <c>static</c>이어야 합니다. OnUpdate가 매 프레임 이 메서드를 FeatureGuard.Run에 넘기는데,
+        /// C# 11의 델리게이트 캐시는 정적 메서드 그룹에만 적용됩니다. 인스턴스 메서드였던 동안은
+        /// 매 프레임 Action이 새로 할당되고 있었습니다(주변 호출 중 유일한 예외였습니다).</para>
         /// </summary>
-        private void HandleExperimentStageUpdate()
+        private static void HandleExperimentStageUpdate()
         {
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {

@@ -35,6 +35,17 @@ namespace muse_dash_test
         private static bool IsRecordingEnabled => ModConfig.EnableJudgmentBar && InputOverlay.showBar;
 
         /// <summary>
+        /// 판정바가 꺼져 있으면 그동안 쌓인 기록을 한 번 비우고 true를 돌려줍니다.
+        /// 기록을 늘리는 곳(<see cref="RegisterHit"/>)과 그 앞단 훅이 같은 판정을 쓰도록 한곳에 모았습니다.
+        /// </summary>
+        internal static bool ClearIfRecordingDisabled()
+        {
+            if (IsRecordingEnabled) return false;
+            if (hitHistory.Count > 0) hitHistory.Clear();
+            return true;
+        }
+
+        /// <summary>
         /// 유효 시간이 지난 틱을 제거합니다. 뒤에서부터 훑어 가비지를 만들지 않습니다.
         /// </summary>
         private static void TrimExpiredTicks(float now)
@@ -61,11 +72,7 @@ namespace muse_dash_test
                 // Harmony 훅(GameTouchPlay.TouchResult)에는 아무 게이트가 없었습니다.
                 // 그래서 판정바를 끈 채 플레이하면 hitHistory에 노트마다 계속 쌓이기만 하고
                 // 비우는 코드는 영영 실행되지 않았습니다.
-                if (!IsRecordingEnabled)
-                {
-                    if (hitHistory.Count > 0) hitHistory.Clear();
-                    return;
-                }
+                if (ClearIfRecordingDisabled()) return;
 
                 // 초 단위를 밀리초 단위로 변환
                 float offsetMs = gapInSeconds * 1000f;
@@ -267,6 +274,11 @@ namespace muse_dash_test
         {
             try
             {
+                // 판정바가 꺼져 있으면 아래 작업(노트 tick을 문자열로 꺼내 파싱)을 아예 하지 않습니다.
+                // 노트를 칠 때마다 도는 훅이라, 예전처럼 계산을 다 끝낸 뒤 RegisterHit 안에서야
+                // 꺼짐을 확인하면 쓰지도 않을 값을 매 타격마다 만들게 됩니다.
+                if (JudgmentBar.ClearIfRecordingDisabled()) return;
+
                 // Miss(0) 또는 타격/판정 정보가 유효하지 않은 경우 무시
                 if (resultCode == 0 || tno == null || tno.md == null) return;
 

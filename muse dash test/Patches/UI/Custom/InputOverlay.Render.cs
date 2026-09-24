@@ -87,12 +87,7 @@ namespace muse_dash_test
             // 키 정보가 로드되지 않았다면 로드를 시도합니다.
             if (!keysLoaded)
             {
-                checkTimer += Time.deltaTime;
-                if (checkTimer >= CheckInterval || airKeys.Count == 0)
-                {
-                    checkTimer = 0f;
-                    LoadPlayerKeybinds();
-                }
+                TryLoadKeybindsThrottled();
                 return;
             }
 

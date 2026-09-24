@@ -203,6 +203,12 @@ namespace muse_dash_test
 
                 // APMod (All Perfect Mod) 폰트 탐색 상태 리셋
                 Patches.VictoryDataCache.AttemptedFontCache = false;
+
+                // 이전 배틀의 TaskStageTarget을 들고 있지 않도록 비웁니다. 예전에는 한 번 채워지면 끝까지
+                // 남아서, 이번 배틀에서 아직 채워지기 전(첫 타격 전)에 묻는 쪽이 지난 판의 판정을 봤습니다.
+                // 이번 배틀의 값은 AddScore/GetAccuracy/IsFullCombo 훅이 다시 채웁니다.
+                Patches.VictoryDataCache.ActiveTarget = null;
+                Patches.AllPerfectSound.ResetClipCache();
             }
             catch (Exception ex)
             {
