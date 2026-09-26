@@ -194,6 +194,24 @@ namespace muse_dash_test
 
         private static AudioSource FindBattleAudioSource()
         {
+            // 게임 6.7.0부터 AudioManager가 BGM 옆에 "BGM_OneShot"(m_BgmOneShotSource) 소스를 하나 더 만듭니다.
+            // 아래 이름 스캔만 쓰면 FindObjectsOfType 순서에 따라 그쪽이 먼저 걸려, 원곡은 진짜 BGM에서 그대로
+            // 나오고 커스텀 곡은 옆에서 따로 나와 둘이 겹쳐 들립니다. 그래서 게임이 원곡을 트는 소스를 직접 씁니다.
+            try
+            {
+                var audioManager = Il2CppAssets.Scripts.PeroTools.Commons.Singleton<Il2CppAssets.Scripts.PeroTools.Managers.AudioManager>.instance;
+                AudioSource gameBgm = audioManager != null ? audioManager.bgm : null;
+                if (gameBgm != null && gameBgm.gameObject != null)
+                {
+                    return gameBgm;
+                }
+                ModLogger.Warning("[HwaBattleMediaController] AudioManager.bgm을 얻지 못해 이름 스캔으로 대상 AudioSource를 찾습니다.");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[HwaBattleMediaController] AudioManager.bgm 조회 실패, 이름 스캔으로 대체: {ex.Message}");
+            }
+
             try
             {
                 AudioSource[] sources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
@@ -211,6 +229,11 @@ namespace muse_dash_test
                     }
 
                     string objectName = source.gameObject.name ?? string.Empty;
+                    if (objectName.IndexOf("OneShot", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        continue;
+                    }
+
                     string clipName = source.clip != null ? source.clip.name : string.Empty;
                     if (LooksLikeBattleAudio(objectName) || LooksLikeBattleAudio(clipName))
                     {
