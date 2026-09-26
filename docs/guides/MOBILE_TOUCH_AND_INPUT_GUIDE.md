@@ -86,7 +86,7 @@ public static class PnlPlaySetting_MobileInputPatch
 
 `Input.touchSupported`가 `True`라고 해서 터치가 들어온다는 뜻이 아닙니다. 이 값은 OS 능력 조회 결과를 반영할 뿐이고, 실제로는 접점이 하나도 전달되지 않습니다. 게임에 도착하는 것은 Windows가 승격시킨 마우스 이벤트뿐이며, **승격은 손가락 1개만 지원**하므로 공중/지상 동시 입력이 원천적으로 불가능해집니다.
 
-한편 게임의 [`IControlable`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets.Scripts.GameCore.Controller/IControlable.cs)에는 `GetTouchs(List<TouchControl>)`가 존재하고 `Unity.InputSystem.dll` 풀 패키지가 탑재되어 있습니다. **게임 자체가 이미 Input System 기반이며, 죽어 있던 것은 레거시 경로 하나뿐이었습니다.**
+한편 게임의 [`IControlable`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets/Scripts/GameCore/Controller/IControlable.cs)에는 `GetTouchs(List<TouchControl>)`가 존재하고 `Unity.InputSystem.dll` 풀 패키지가 탑재되어 있습니다. **게임 자체가 이미 Input System 기반이며, 죽어 있던 것은 레거시 경로 하나뿐이었습니다.**
 
 따라서 접점 판독은 [`TouchInput`](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Core/TouchInput.cs)이 전담합니다.
 
@@ -114,7 +114,7 @@ Vector2 pos = t.position.ReadValue();
 손가락이 화면에 없을 때는 실제 마우스가 평소대로 동작합니다.
 
 ### 3.2 PC 입력 파이프라인 분석
-배틀 입력은 **[`StandloneController`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets.Scripts.GameCore.Controller/StandloneController.cs)**와 **[`InputManager`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets.Scripts.PeroTools.Managers/InputManager.cs)**의 3대 메서드를 통해 폴링됩니다:
+배틀 입력은 **[`StandloneController`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets/Scripts/GameCore/Controller/StandloneController.cs)**와 **[`InputManager`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets/Scripts/PeroTools/Managers/InputManager.cs)**의 3대 메서드를 통해 폴링됩니다:
 1. `GetButtonDown(MDButtonType buttonName)`: 타격 시작 프레임
 2. `GetButton(MDButtonType buttonName)`: 홀드(롱노트 및 점프 체공 유지) 프레임
 3. `GetButtonUp(MDButtonType buttonName)`: 키 릴리즈 프레임
