@@ -331,6 +331,74 @@ Access to the path 'C:\Users\...\AppData\Roaming\NuGet\NuGet.Config' is denied.
 6. 노트 실험이면 `실험 노트 추가` 로그의 UID/type/pathway/prefab을 확인합니다.
 7. 보스 실험이면 `Boss.InitBossObject: 변경 적용` 로그를 확인합니다.
 
+## 모드 탓이 아닌 것으로 보이는 에러
+
+콘솔에 빨간 줄이 떠도 모드 코드가 원인이 아닐 수 있습니다. 아래는 추적해 보고 게임 쪽 문제로 결론 낸(또는 그렇게 보고 보류한) 에러입니다.
+같은 에러를 다시 보면 여기부터 확인하세요.
+
+### 괴도 린 + Bad Apple: `GirlActionController.GhostDisappear` NRE (보류, 2026-09-27)
+
+**증상** — 플레이 중 콘솔에 아래 에러가 한 번 찍힙니다.
+
+```text
+[ERROR] [Il2CppInterop] During invoking native->managed trampoline
+System.NullReferenceException: Object reference not set to an instance of an object.
+  at DG.Tweening.ShortcutExtensions.DOFloat (UnityEngine.Material target, ...)
+  at GirlActionController.GhostDisappear (System.Single dt)
+  at GirlActionController.GhostAttack (...)
+  at GirlActionController.AttackQuick (...)
+  at AttacksController.PlayAttackAnim / ShowAttackEffect / ShowAttack (...)
+  at GameLogic.GameTouchPlay.TouchResult (...)
+```
+
+**조건** — 세 가지가 모두 맞을 때만 납니다.
+
+- 캐릭터: 괴도 린("두 얼굴의 괴도", 배틀 오브젝트 `thief_girl_battle(Clone)`)
+- 곡: Bad Apple!! feat. Nomico (`42-0`)
+- 입력: 홀드를 누른 채 반대쪽 단노트를 칠 때. 본체가 홀드에 묶여 있어 분신이 대신 치는 순간입니다(`GhostAttack`).
+  홀드 + 단노트는 플레이하면서 눈으로 확인한 것이고, 로그에는 어느 노트에서 났는지 찍히지 않습니다.
+  곡 시작 후 에러 시점이 29초, 74초, 75초로 매번 달랐던 것도 이 때문으로 봅니다.
+
+**실측** (2026-09-27, 게임 6.7.0)
+
+| 캐릭터 | 곡 | 모드 설정 | 결과 |
+| --- | --- | --- | --- |
+| 괴도 린 | Bad Apple | 평소 설정(강제퍼펙트 켬) | 에러 |
+| 괴도 린 | Bad Apple | 강제퍼펙트 끔 | 에러 |
+| 괴도 린 | Bad Apple | 모든 기능 끔(`MelonPreferences.cfg`의 `Enable*` 전부 + `config.txt` 토글) | 에러 |
+| 괴도 린 | 0-40(클리어), 74-4, 48-8 | 평소 설정 | 에러 없음 |
+| `black_girl` | Bad Apple | 평소 설정(스킨 주입 포함) | 클리어, 에러 없음 |
+
+**크래시가 아닙니다.** 게임이 스스로 꺼진 적은 없습니다. 세 번 모두 빨간 줄을 보고 일시정지한 뒤 직접 종료했습니다
+(`Player.log`에 `PnlBattle.OnPauseClicked` 다음 정상 종료 절차가 남아 있습니다).
+에러가 난 뒤에도 곡이 끝까지 진행되는지는 아직 확인하지 않았습니다.
+
+**게임 쪽으로 보는 이유와 한계**
+
+- 예외가 난 곳은 게임 코드이고, 모드에는 괴도 린을 따로 다루는 코드가 없습니다.
+- 모든 기능을 꺼도 났습니다. 다만 기능을 꺼도 `PatchInstaller`가 Harmony 패치는 전부 겁니다. 그래서 `TouchResult` 훅은 남아 있었고,
+  빨간 줄은 그 훅을 지나가는 예외를 Il2CppInterop이 찍은 것입니다. **모드 DLL을 뺀 순정 상태로는 확인하지 않았으므로 확정은 아닙니다.**
+
+**게임 코드 단서** (`Decompiled/`)
+
+- `DOFloat`가 맨 먼저 하는 일이 `target` 머티리얼 접근입니다. 그래서 분신 페이드용 머티리얼 배열 `GirlActionController.ghostMtrl`에
+  빈 칸(null 또는 파괴된 머티리얼)이 있는 것으로 추정합니다.
+- Bad Apple 전용 로직이 따로 있습니다. 롱노트는 `TouhouLogic.ReplaceBadAppleLongPress(ref MusicData)`와 `SetLongCatchColor`가 처리하고,
+  실루엣 교체는 `GameMainSpecialLogic.BadAppleLogic`, `ReplaceTools`/`ReplaceSpine`/`ReplaceSkeletonCustomMaterials`가 합니다.
+  캐릭터마다 `CharacterEnterConfig.isReplaceBadapple` 플래그도 있습니다.
+
+**다시 볼 때 할 일**
+
+1. `Mods/muse-dash-custom-chart.dll`을 잠깐 빼고 같은 조건으로 플레이합니다. 모드가 없으면 콘솔 빨간 줄은 안 뜨지만,
+   에러가 났다면 `%USERPROFILE%\AppData\LocalLow\PeroPeroGames\MuseDash\Player.log`에 `GhostDisappear`가 남습니다. 찍히면 순정 버그로 확정입니다.
+2. 에러가 떠도 끄지 말고 결과 화면까지 가 봅니다. 끝까지 가면 콘솔에 한 줄 찍히는 것 말고는 해가 없습니다.
+3. 모드에서 막기로 한다면 검토했던 안이 있습니다. `GhostDisappear` Prefix에서 `ghostMtrl`의 빈 칸을 같은 배열의 살아 있는 머티리얼로 채우는 것입니다.
+   게임이 같은 길이의 트윈 배열(`m_GhostDisapparTwn`)을 들고 있을 수 있으니 배열 길이는 유지합니다.
+   인게임에서 한 번도 돌려 보기 전에 되돌렸으므로 효과는 검증되지 않았습니다.
+   `GhostDisappear`는 public·non-virtual이라 [체크리스트](CHECKLIST.md)의 IL2CPP 패치 함정 대상은 아닙니다.
+
+당장 피하려면 Bad Apple만 다른 캐릭터로 플레이하면 됩니다.
+
 ## 세이브 데이터 위치와 진행도 초기화
 
 Muse Dash의 실제 계정 진행도는 두 곳에 나뉘어 저장됩니다.
