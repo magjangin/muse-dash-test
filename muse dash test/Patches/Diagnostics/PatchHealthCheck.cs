@@ -19,41 +19,24 @@ namespace muse_dash_test
             {
                 var missing = new List<string>();
                 var unresolvable = new List<string>();
+                var unreadable = new List<string>();
                 var dynamicTargets = new List<string>();
                 var seen = new HashSet<string>(StringComparer.Ordinal);
                 int total = 0;
 
-                foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
+                // 게임 업데이트로 타입이 사라졌을 때가 이 점검이 가장 필요한 순간인데, 예전에는 그때 통째로 죽었습니다.
+                // [HarmonyPatch(typeof(사라진타입))] 클래스 하나에서 GetCustomAttributes가 TypeLoadException을 던지면
+                // 바깥 catch로 빠져 나머지 클래스는 점검조차 안 됐습니다(2026-09-27 실측, .NET 6/10 동일).
+                // 그래서 타입 목록은 MelonLoader와 같은 GetValidTypes로 받고, 클래스마다 따로 격리합니다.
+                foreach (var type in Assembly.GetExecutingAssembly().GetValidTypes())
                 {
-                    var classAttrs = type.GetCustomAttributes(typeof(HarmonyPatch), true);
-                    if (classAttrs == null || classAttrs.Length == 0) continue;
-
-                    // 대상을 런타임에 계산하는 패치(TargetMethod/TargetMethods)는 정적 점검이 불가능합니다.
-                    // 조용히 빼면 "전부 정상"에 묻히므로, 못 봤다는 사실을 따로 남깁니다.
-                    if (HasDynamicTargets(type))
+                    try
                     {
-                        dynamicTargets.Add(type.Name);
-                        continue;
+                        CheckPatchClass(type, seen, missing, unresolvable, dynamicTargets, ref total);
                     }
-
-                    PatchTarget classTarget = Merge(default(PatchTarget), classAttrs);
-
-                    foreach (var target in EnumerateTargets(type, classTarget))
+                    catch (Exception ex)
                     {
-                        string label = $"{type.Name} → {target.Describe()}";
-                        if (!seen.Add(label)) continue;
-
-                        if (target.DeclaringType == null)
-                        {
-                            unresolvable.Add(label);
-                            continue;
-                        }
-
-                        total++;
-                        if (!TargetExists(target.DeclaringType, target.MethodName, target.ArgumentTypes, target.MethodType))
-                        {
-                            missing.Add(label);
-                        }
+                        unreadable.Add($"{type.Name}: {ex.GetType().Name}: {ex.Message}");
                     }
                 }
 
@@ -67,6 +50,15 @@ namespace muse_dash_test
                     foreach (var m in missing)
                     {
                         ModLogger.Warning($"[PatchHealth]   - {m}");
+                    }
+                }
+
+                if (unreadable.Count > 0)
+                {
+                    ModLogger.Warning($"[PatchHealth] 어트리뷰트를 읽지 못한 패치 클래스 {unreadable.Count}개(대상 타입이 게임에서 사라졌을 수 있음):");
+                    foreach (var u in unreadable)
+                    {
+                        ModLogger.Warning($"[PatchHealth]   - {u}");
                     }
                 }
 
@@ -90,6 +82,47 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 ModLogger.Error($"[PatchHealth] 패치 점검 중 예외: {ex}");
+            }
+        }
+
+        /// <summary>패치 클래스 하나의 대상들을 점검해 결과 목록에 더합니다. 패치 클래스가 아니면 아무것도 하지 않습니다.</summary>
+        private static void CheckPatchClass(
+            Type type,
+            HashSet<string> seen,
+            List<string> missing,
+            List<string> unresolvable,
+            List<string> dynamicTargets,
+            ref int total)
+        {
+            var classAttrs = type.GetCustomAttributes(typeof(HarmonyPatch), true);
+            if (classAttrs == null || classAttrs.Length == 0) return;
+
+            // 대상을 런타임에 계산하는 패치(TargetMethod/TargetMethods)는 정적 점검이 불가능합니다.
+            // 조용히 빼면 "전부 정상"에 묻히므로, 못 봤다는 사실을 따로 남깁니다.
+            if (HasDynamicTargets(type))
+            {
+                dynamicTargets.Add(type.Name);
+                return;
+            }
+
+            PatchTarget classTarget = Merge(default(PatchTarget), classAttrs);
+
+            foreach (var target in EnumerateTargets(type, classTarget))
+            {
+                string label = $"{type.Name} → {target.Describe()}";
+                if (!seen.Add(label)) continue;
+
+                if (target.DeclaringType == null)
+                {
+                    unresolvable.Add(label);
+                    continue;
+                }
+
+                total++;
+                if (!TargetExists(target.DeclaringType, target.MethodName, target.ArgumentTypes, target.MethodType))
+                {
+                    missing.Add(label);
+                }
             }
         }
 
@@ -179,7 +212,8 @@ namespace muse_dash_test
             }
         }
 
-        private static bool IsPatchMethod(MethodInfo method)
+        /// <summary>Harmony가 패치 메서드로 취급하는 메서드인지 확인합니다. <see cref="PatchInstaller"/>도 이 기준을 씁니다.</summary>
+        internal static bool IsPatchMethod(MethodInfo method)
         {
             for (int i = 0; i < PatchMethodNames.Length; i++)
             {

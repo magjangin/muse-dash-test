@@ -7,6 +7,8 @@ using UnityEngine;
 [assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", "0.10.6", "화영왕")]
 [assembly: MelonColor(255, 147, 112, 219)] // 모드 이름 색상: 보라색(MediumPurple #9370DB)
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
+// 패치는 MelonLoader가 아니라 OnInitializeMelon 첫 줄의 PatchInstaller가 겁니다(깨진 패치를 걸지 않기 위해).
+[assembly: HarmonyDontPatchAll]
 
 namespace muse_dash_test
 {
@@ -21,6 +23,10 @@ namespace muse_dash_test
 
         public override void OnInitializeMelon()
         {
+            // 예전에 MelonLoader가 패치를 걸던 자리와 같은 시점이 되도록 맨 먼저 겁니다. 이 아래 초기화는
+            // 전부 패치가 걸린 뒤에 돌던 코드입니다. 이유와 동작은 PatchInstaller 주석을 보십시오.
+            PatchInstaller.ApplyAll(HarmonyInstance, MelonAssembly.Assembly);
+
             DeviceDetector.Detect();
             ModConfig.Load();
 

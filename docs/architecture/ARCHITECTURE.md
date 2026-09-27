@@ -33,7 +33,8 @@
 ```mermaid
 flowchart TD
     A["MelonLoader loads DLL"] --> B["MainMod.OnInitializeMelon"]
-    B --> C["PatchHealthCheck.Run"]
+    B --> C0["PatchInstaller.ApplyAll"]
+    C0 --> C["PatchHealthCheck.Run"]
     B --> D["HwaResourceManager.PreloadHwaManifest"]
     D --> E["Discover hwa song folders"]
     E --> F["Load info.txt manifest"]
@@ -63,7 +64,11 @@ flowchart TD
 
 `FeatureGuard`는 매 프레임 또는 씬 전환에서 호출되는 기능을 감싸서 한 기능의 예외가 전체 모드를 죽이지 않게 합니다. 새 기능을 `OnUpdate`, `OnGUI`, 씬 이벤트에 넣을 때는 가능하면 `FeatureGuard.Run("기능명", ...)`으로 감쌉니다.
 
-`PatchHealthCheck`는 게임 업데이트 후 Harmony 대상 메서드가 사라졌는지 확인합니다. 패치가 갑자기 동작하지 않으면 먼저 이 로그를 봅니다.
+`PatchHealthCheck`는 게임 업데이트 후 Harmony 대상 메서드가 사라졌는지 확인합니다. 패치가 갑자기 동작하지 않으면 먼저 이 로그를 봅니다. 대상 타입이 사라진 클래스가 있어도 그 클래스만 따로 보고하고 나머지 점검은 계속합니다.
+
+`PatchInstaller`는 MelonLoader 대신 패치를 겁니다(`[assembly: HarmonyDontPatchAll]`). 걸기 전에 패치 메서드를 미리 JIT 해 보고, 현재 게임 빌드에서 컴파일되지 않는 클래스(본문이 쓰던 게임 멤버가 사라진 경우)는 걸지 않습니다. 그런 패치가 걸린 채로 두면 호출마다 `During invoking native->managed trampoline` 에러가 나고, Prefix였다면 게임 원본 메서드까지 실행되지 않습니다. 패치 본문 안의 try/catch로는 이 예외를 잡을 수 없습니다.
+
+게임 멤버를 만지는 코드에 폴백을 붙일 때는 멤버 접근을 **별도 메서드로 분리**해야 폴백이 실제로 돕니다. 같은 메서드에 두면 멤버가 사라졌을 때 메서드 전체가 JIT에 실패해 폴백까지 같이 죽습니다(`GameBgmSource` 참고).
 
 `GameBindings`는 컴파일러가 검증하지 못하는 문자열 메서드명을 모으는 곳입니다. 새 raw 문자열 패치 대상이 생기면 가능한 한 여기에 추가합니다.
 
@@ -123,7 +128,7 @@ flowchart TD
 
 게임 업데이트 뒤 문제가 생기면 아래 순서로 봅니다.
 
-1. `Latest.log`에서 `[PatchHealth]` 경고 확인
+1. `Latest.log`에서 `[PatchInstaller]`, `[PatchHealth]` 경고 확인 (`[PatchInstaller] ... 패치를 걸지 않았습니다` 뒤의 예외 메시지가 사라진 멤버 이름입니다)
 2. 깨진 메서드명이 있으면 `GameBindings.cs` 또는 해당 `[HarmonyPatch]` 문자열 확인
 3. 커스텀 곡이 안 보이면 `CustomTagRegistry`와 `MusicTagManager.InitAlbumTagInfo` 패치 확인
 4. 곡은 보이는데 차트가 순정이면 `CustomPlaySession.ShouldApplyExperimentChart` 확인

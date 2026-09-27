@@ -179,7 +179,8 @@
 │   │   │   ├── DiscordManagerDebugPatch.cs
 │   │   │   ├── HwaChartDiagnostics.cs
 │   │   │   ├── OffsetHookPatches.cs
-│   │   │   └── PatchHealthCheck.cs
+│   │   │   ├── PatchHealthCheck.cs
+│   │   │   └── PatchInstaller.cs  # 패치 적용 (게임 빌드에서 컴파일 안 되는 패치는 걸지 않음)
 │   │   ├── Hwa/              # Hwa 리소스, 매니페스트, BGM 스왑, 동기화
 │   │   │   ├── HwaManifest.cs
 │   │   │   ├── HwaManifestLoader.cs

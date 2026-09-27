@@ -64,10 +64,14 @@ namespace muse_dash_test
             monitorGeneration++;
             try
             {
-                GameObject bgmGo = GameObject.Find("BGM");
-                if (bgmGo == null) return;
+                AudioSource src = GameBgmSource.TryGet(out _);
+                if (src == null)
+                {
+                    GameObject bgmGo = GameObject.Find("BGM");
+                    if (bgmGo == null) return;
+                    src = bgmGo.GetComponent<AudioSource>();
+                }
 
-                AudioSource src = bgmGo.GetComponent<AudioSource>();
                 if (src != null && injectedMenuClip != null && src.clip == injectedMenuClip)
                 {
                     src.Stop();
@@ -207,6 +211,15 @@ namespace muse_dash_test
         {
             try
             {
+                // 게임이 원곡을 트는 소스를 먼저 씁니다. 이름 검색과 스캔은 그걸 못 얻었을 때만 탑니다(GameBgmSource 참고).
+                AudioSource gameBgm = GameBgmSource.TryGet(out string failure);
+                if (gameBgm != null && gameBgm.gameObject.activeInHierarchy)
+                {
+                    ModLogger.Verbose($"[MenuBGM] AudioManager.bgm 사용: GO={gameBgm.gameObject.name}");
+                    return gameBgm;
+                }
+                ModLogger.Verbose($"[MenuBGM] AudioManager.bgm을 쓰지 못해 이름으로 찾습니다: {failure ?? "비활성 상태"}");
+
                 // 0단계: 핀포인트로 "BGM" 오브젝트 검색 시도
                 GameObject bgmGo = GameObject.Find("BGM");
                 if (bgmGo != null)
@@ -262,6 +275,8 @@ namespace muse_dash_test
                     foreach (AudioSource candidate in sources)
                     {
                         if (candidate == null || candidate.gameObject == null || !candidate.gameObject.activeInHierarchy) continue;
+                        // "BGM_OneShot"은 이름에 bgm이 들어 있어 아래 부분 일치에 걸립니다(6.7.0 배틀 사고와 같은 함정).
+                        if (GameBgmSource.IsOneShotSource(candidate)) continue;
                         if (predicate(candidate)) return candidate;
                     }
 
