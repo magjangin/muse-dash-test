@@ -23,11 +23,11 @@ namespace muse_dash_test
     /// 별도 메서드로 두었습니다. 업데이트로 그 멤버가 사라지면 그 메서드만 JIT에 실패하고, 호출부의 try가 잡아
     /// 가이드만 꺼집니다(<see cref="GameBgmSource"/>와 같은 이유). 선택창 자체는 영향을 받지 않습니다.</para>
     /// </summary>
-    public static class HiddenUnlockGuide
+    public static partial class HiddenUnlockGuide
     {
         private const string GuideObjectName = "HwaHiddenUnlockGuide";
 
-        // 위치·크기는 인게임에서 보며 맞출 자리입니다. 아티스트 이름 줄의 아래 가장자리에 붙고 폭은 그 줄을 따릅니다.
+        // 위치·크기는 인게임에서 보며 맞출 자리입니다. 아티스트 이름 글자 아래쪽에서 이만큼 띄웁니다(아티스트 줄 좌표 단위).
         private const float GapBelowArtist = 4f;
         private const float FontScale = 0.8f;
         private static readonly Color GuideColor = new Color(1f, 0.86f, 0.35f, 1f);
@@ -37,6 +37,9 @@ namespace muse_dash_test
         // 읽기가 예외로 실패하면(게임 구조 변경) 곡을 고를 때마다 다시 던지지 않도록 세션 동안 접습니다.
         private static bool tableUnavailable;
 
+        // 만든 문구 오브젝트. 선택창 패널이 파괴되면 Unity 쪽 == null이 참이 되어 다시 만듭니다.
+        private static Text guideText;
+
         /// <summary>선택 곡이 바뀔 때마다 부릅니다. 히든이 없거나 기능이 꺼져 있으면 문구를 숨깁니다.</summary>
         public static void Refresh(PnlStage pnlStage, MusicInfo musicInfo)
         {
@@ -45,18 +48,19 @@ namespace muse_dash_test
 
             string text = ModConfig.EnableHiddenGuide && musicInfo != null ? FindGuide(musicInfo.uid) : null;
 
-            // 보여줄 게 없으면 새로 만들지 않고, 이미 만든 게 있을 때만 숨깁니다.
-            Text guide = text != null ? GetOrCreateGuideText(artist) : FindGuideText(artist);
-            if (guide == null) return;
-
             if (text == null)
             {
-                guide.gameObject.SetActive(false);
+                // 보여줄 게 없으면 새로 만들지 않고, 이미 만든 게 있을 때만 숨깁니다.
+                if (guideText != null) guideText.gameObject.SetActive(false);
                 return;
             }
 
+            Text guide = GetOrCreateGuideText(pnlStage.transform, artist);
             guide.text = text;
             guide.gameObject.SetActive(true);
+            // 곡마다 아티스트 줄 길이와 위치가 달라질 수 있어 매번 다시 맞춥니다.
+            PlaceBelowArtist(guide, artist);
+            LogPlacementOnce(guide, artist);
         }
 
         private static string FindGuide(string uid)
@@ -119,25 +123,27 @@ namespace muse_dash_test
             }
         }
 
-        private static Text FindGuideText(Text artist)
+        /// <summary>
+        /// 문구 오브젝트를 선택창 패널 최상위(<paramref name="panelRoot"/>)의 마지막 자식으로 만듭니다.
+        ///
+        /// <para><b>아티스트 줄의 자식으로 두지 않는 이유</b>: 처음에는 그렇게 만들었는데 인게임에서 보이지 않았습니다
+        /// (2026-09-27, 히든 곡 0-11 선택, 데이터 로드·예외 없음 확인). 이 게임은 긴 곡명을 <c>Mask</c> +
+        /// <c>LongSongNameController</c> 안에서 스크롤시키는데(곡 목록 셀 프리팹에서 확인), 헤더도 그렇다면
+        /// 줄 아래에 붙인 자식은 마스크 밖이라 통째로 잘립니다. 뒤에 그려지는 다른 UI에 가려졌을 수도 있습니다.
+        /// 패널 최상위의 마지막 자식은 두 경우 모두 피합니다. 선택창이 닫히면 여전히 같이 사라집니다.</para>
+        /// </summary>
+        private static Text GetOrCreateGuideText(Transform panelRoot, Text artist)
         {
-            Transform existing = artist.transform.Find(GuideObjectName);
-            return existing != null ? existing.GetComponent<Text>() : null;
-        }
+            if (guideText != null) return guideText;
 
-        private static Text GetOrCreateGuideText(Text artist)
-        {
-            Text guide = FindGuideText(artist);
-            if (guide != null) return guide;
-
-            // 아티스트 줄의 자식으로 둡니다. 선택창이 닫히거나 그 줄이 숨겨지면 같이 사라집니다.
             var go = new GameObject(GuideObjectName);
-            go.transform.SetParent(artist.transform, false);
+            go.transform.SetParent(panelRoot, false);
 
-            guide = go.AddComponent<Text>();
+            Text guide = go.AddComponent<Text>();
             guide.font = artist.font; // 게임 폰트라 한글이 그대로 나옵니다.
             guide.fontSize = Mathf.Max(12, Mathf.RoundToInt(artist.fontSize * FontScale));
-            guide.alignment = artist.alignment;
+            // 선택창 헤더가 가운데 정렬이라(스크린샷 기준) 가운데 위쪽에 맞춥니다. 위치는 PlaceBelowArtist가 정합니다.
+            guide.alignment = TextAnchor.UpperCenter;
             guide.color = GuideColor;
             guide.horizontalOverflow = HorizontalWrapMode.Overflow;
             guide.verticalOverflow = VerticalWrapMode.Overflow;
@@ -149,14 +155,43 @@ namespace muse_dash_test
             outline.effectDistance = new Vector2(1.5f, -1.5f);
 
             RectTransform rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -GapBelowArtist);
-            rect.sizeDelta = new Vector2(0f, guide.fontSize * 1.3f);
 
-            ModLogger.Verbose($"[HiddenGuide] 가이드 텍스트 생성: parent={artist.gameObject.name}, font={artist.font?.name ?? "(null)"}, fontSize={guide.fontSize}");
+            guideText = guide;
             return guide;
+        }
+
+        /// <summary>
+        /// 문구의 위쪽 가운데를 아티스트 이름 글자의 아래쪽 가운데에 맞춥니다.
+        /// 부모가 달라도 월드 좌표로 맞추므로 계층과 상관없이 같은 자리에 옵니다. 크기도 아티스트 줄의 실제 배율을 따릅니다.
+        /// </summary>
+        private static void PlaceBelowArtist(Text guide, Text artist)
+        {
+            RectTransform artistRect = artist.rectTransform;
+            RectTransform guideRect = guide.rectTransform;
+            Rect r = artistRect.rect;
+
+            // 아티스트 줄의 사각형이 글자보다 클 수 있어서, 정렬 방식으로 실제 글자 아래쪽을 계산합니다.
+            float textHeight = Mathf.Min(artist.preferredHeight, r.height > 0f ? r.height : artist.preferredHeight);
+            int vertical = (int)artist.alignment / 3; // TextAnchor: 0~2 Upper, 3~5 Middle, 6~8 Lower
+            float glyphBottom = vertical == 0 ? r.yMax - textHeight
+                : vertical == 1 ? r.center.y - textHeight / 2f
+                : r.yMin;
+
+            // 크기: 아티스트 줄과 같은 월드 배율이 되도록 부모 배율로 나눕니다.
+            Vector3 artistScale = artistRect.lossyScale;
+            Vector3 parentScale = guideRect.parent != null ? guideRect.parent.lossyScale : Vector3.one;
+            guideRect.localScale = new Vector3(
+                parentScale.x != 0f ? artistScale.x / parentScale.x : 1f,
+                parentScale.y != 0f ? artistScale.y / parentScale.y : 1f,
+                1f);
+            guideRect.sizeDelta = new Vector2(Mathf.Max(r.width, 600f), guide.fontSize * 1.3f);
+
+            guideRect.position = artistRect.TransformPoint(new Vector3(r.center.x, glyphBottom - GapBelowArtist, 0f));
+            // 같은 패널 안에서 가장 나중에 그려지게 합니다(다른 UI에 가려지지 않게).
+            guideRect.SetAsLastSibling();
         }
     }
 
