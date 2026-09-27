@@ -357,7 +357,7 @@ System.NullReferenceException: Object reference not set to an instance of an obj
 - 곡: Bad Apple!! feat. Nomico (`42-0`)
 - 입력: 홀드를 누른 채 반대쪽 단노트를 칠 때. 본체가 홀드에 묶여 있어 분신이 대신 치는 순간입니다(`GhostAttack`).
   홀드 + 단노트는 플레이하면서 눈으로 확인한 것이고, 로그에는 어느 노트에서 났는지 찍히지 않습니다.
-  곡 시작 후 에러 시점이 29초, 74초, 75초로 매번 달랐던 것도 이 때문으로 봅니다.
+  첫 에러 시점이 곡 시작 후 29초로 이르게 난 판도 있고 74~75초에 난 판도 있었던 것도 이 때문으로 봅니다.
 
 **실측** (2026-09-27, 게임 6.7.0)
 
@@ -366,12 +366,14 @@ System.NullReferenceException: Object reference not set to an instance of an obj
 | 괴도 린 | Bad Apple | 평소 설정(강제퍼펙트 켬) | 에러 |
 | 괴도 린 | Bad Apple | 강제퍼펙트 끔 | 에러 |
 | 괴도 린 | Bad Apple | 모든 기능 끔(`MelonPreferences.cfg`의 `Enable*` 전부 + `config.txt` 토글) | 에러 |
+| 괴도 린 | Bad Apple | 평소 설정 + 아래 3번의 진단 가드를 넣은 빌드 | 에러 8번, **결과 화면까지 클리어** |
 | 괴도 린 | 0-40(클리어), 74-4, 48-8 | 평소 설정 | 에러 없음 |
 | `black_girl` | Bad Apple | 평소 설정(스킨 주입 포함) | 클리어, 에러 없음 |
 
-**크래시가 아닙니다.** 게임이 스스로 꺼진 적은 없습니다. 세 번 모두 빨간 줄을 보고 일시정지한 뒤 직접 종료했습니다
+**크래시가 아닙니다.** 게임이 스스로 꺼진 적은 없습니다. 앞의 세 판은 빨간 줄을 보고 일시정지한 뒤 직접 종료했습니다
 (`Player.log`에 `PnlBattle.OnPauseClicked` 다음 정상 종료 절차가 남아 있습니다).
-에러가 난 뒤에도 곡이 끝까지 진행되는지는 아직 확인하지 않았습니다.
+끝까지 친 판에서는 홀드 + 단노트마다 에러가 났지만(8번, 3~4초 간격) 곡은 멈추지 않고 결과 화면까지 갔습니다.
+분신이 화면에서 제대로 사라지는지는 확인하지 않았습니다.
 
 **게임 쪽으로 보는 이유와 한계**
 
@@ -381,8 +383,9 @@ System.NullReferenceException: Object reference not set to an instance of an obj
 
 **게임 코드 단서** (`Decompiled/`)
 
-- `DOFloat`가 맨 먼저 하는 일이 `target` 머티리얼 접근입니다. 그래서 분신 페이드용 머티리얼 배열 `GirlActionController.ghostMtrl`에
-  빈 칸(null 또는 파괴된 머티리얼)이 있는 것으로 추정합니다.
+- 분신 페이드용 머티리얼 배열 `GirlActionController.ghostMtrl`이 비어 있습니다(실측). 괴도 린은 이 배열이 **길이 1이고 그 한 칸이 비어** 있습니다.
+  진단 가드 로그: `[GhostGuard] 분신 머티리얼 빈 칸 1/1개 (목록=[0]=(빈 칸)), obj=thief_girl_battle(Clone), uid=42-0`.
+  `DOFloat`가 맨 먼저 하는 일이 `target` 머티리얼 접근이라 여기서 NRE가 납니다.
 - Bad Apple 전용 로직이 따로 있습니다. 롱노트는 `TouhouLogic.ReplaceBadAppleLongPress(ref MusicData)`와 `SetLongCatchColor`가 처리하고,
   실루엣 교체는 `GameMainSpecialLogic.BadAppleLogic`, `ReplaceTools`/`ReplaceSpine`/`ReplaceSkeletonCustomMaterials`가 합니다.
   캐릭터마다 `CharacterEnterConfig.isReplaceBadapple` 플래그도 있습니다.
@@ -391,10 +394,14 @@ System.NullReferenceException: Object reference not set to an instance of an obj
 
 1. `Mods/muse-dash-custom-chart.dll`을 잠깐 빼고 같은 조건으로 플레이합니다. 모드가 없으면 콘솔 빨간 줄은 안 뜨지만,
    에러가 났다면 `%USERPROFILE%\AppData\LocalLow\PeroPeroGames\MuseDash\Player.log`에 `GhostDisappear`가 남습니다. 찍히면 순정 버그로 확정입니다.
-2. 에러가 떠도 끄지 말고 결과 화면까지 가 봅니다. 끝까지 가면 콘솔에 한 줄 찍히는 것 말고는 해가 없습니다.
-3. 모드에서 막기로 한다면 검토했던 안이 있습니다. `GhostDisappear` Prefix에서 `ghostMtrl`의 빈 칸을 같은 배열의 살아 있는 머티리얼로 채우는 것입니다.
-   게임이 같은 길이의 트윈 배열(`m_GhostDisapparTwn`)을 들고 있을 수 있으니 배열 길이는 유지합니다.
-   인게임에서 한 번도 돌려 보기 전에 되돌렸으므로 효과는 검증되지 않았습니다.
+2. 분신이 사라지지 않고 남는 등 화면에 이상이 있는지 봅니다. 없으면 실제 피해는 콘솔의 빨간 줄뿐입니다.
+3. 모드에서 막기로 한다면, **"같은 배열의 살아 있는 머티리얼로 빈 칸 채우기" 안은 통하지 않습니다.**
+   `GhostDisappear` Prefix로 시험했고, 훅은 제대로 걸렸습니다(스택에 `DMD<Il2Cpp.GirlActionController::GhostDisappear>`).
+   하지만 괴도 린은 유일한 칸이 비어 있어 채울 머티리얼이 없었습니다. 이 가드는 커밋하지 않고 버렸습니다.
+   남은 선택지와 각각의 위험은 이렇습니다.
+   - Finalizer로 예외를 삼키기: 빨간 줄은 사라집니다. 하지만 `GhostDisappear`의 나머지(트윈 시퀀스, 완료 콜백 `_GhostDisappear_b__50_0`)가
+     실행되지 않아 분신이 남을 수 있습니다.
+   - 분신 렌더러의 현재 머티리얼로 채우기: 그 머티리얼이 본체와 공유하는 아틀라스 머티리얼이면 본체까지 같이 페이드될 수 있습니다.
    `GhostDisappear`는 public·non-virtual이라 [체크리스트](CHECKLIST.md)의 IL2CPP 패치 함정 대상은 아닙니다.
 
 당장 피하려면 Bad Apple만 다른 캐릭터로 플레이하면 됩니다.
