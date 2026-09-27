@@ -12,8 +12,9 @@ using UnityEngine.UI;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 곡 선택창(PnlStage)에서 고른 곡에 히든이 있으면, 아티스트 이름 줄 바로 아래에 해금 조건을 한 줄로 띄웁니다.
-    /// 예: "히든 해금: Master 버튼 여러 번 연타". 문구 규칙은 <see cref="HiddenUnlockText"/>에 있습니다.
+    /// 곡 선택창(PnlStage)에서 고른 곡에 히든이 있으면, 위쪽 탭 줄("기본 패키지 Q / 음악 팩 E") 바로 아래에
+    /// 해금 조건을 한 줄로 띄웁니다. 예: "히든 해금: Master 버튼 여러 번 연타".
+    /// 문구 규칙은 <see cref="HiddenUnlockText"/>, 놓는 자리는 HiddenUnlockGuide.Placement.cs에 있습니다.
     ///
     /// <para><b>데이터 출처</b>: 게임 설정 <c>DBConfigHideMusic</c>(에셋 <c>hideMusic</c>)의 곡별
     /// <c>invokeType</c> / <c>diffIndex</c>만 씁니다. 게임은 세션 중 이 설정을 바꾸지 않으므로 처음 한 번
@@ -27,8 +28,7 @@ namespace muse_dash_test
     {
         private const string GuideObjectName = "HwaHiddenUnlockGuide";
 
-        // 위치·크기는 인게임에서 보며 맞출 자리입니다. 아티스트 이름 글자 아래쪽에서 이만큼 띄웁니다(아티스트 줄 좌표 단위).
-        private const float GapBelowArtist = 4f;
+        // 글자 크기는 아티스트 이름의 0.8배, 색은 연한 금색입니다. 띄우는 간격은 Placement 쪽에 있습니다.
         private const float FontScale = 0.8f;
         private static readonly Color GuideColor = new Color(1f, 0.86f, 0.35f, 1f);
 
@@ -43,11 +43,9 @@ namespace muse_dash_test
         /// <summary>선택 곡이 바뀔 때마다 부릅니다. 히든이 없거나 기능이 꺼져 있으면 문구를 숨깁니다.</summary>
         public static void Refresh(PnlStage pnlStage, MusicInfo musicInfo)
         {
+            // 아티스트 이름은 글꼴·크기의 기준이자, 탭 줄을 못 찾았을 때의 대체 자리입니다.
             Text artist = pnlStage != null ? pnlStage.artistNameTitle : null;
             if (artist == null) return;
-
-            // 탭 줄 아래로 옮기기 위한 위치 조사(세션당 1회). 경로가 확정되면 걷어냅니다.
-            if (ModConfig.EnableHiddenGuide) LogTagBarCandidatesOnce(pnlStage);
 
             string text = ModConfig.EnableHiddenGuide && musicInfo != null ? FindGuide(musicInfo.uid) : null;
 
@@ -58,12 +56,12 @@ namespace muse_dash_test
                 return;
             }
 
-            Text guide = GetOrCreateGuideText(ResolveGuideParent(artist, pnlStage.transform), artist);
+            Text guide = GetOrCreateGuideText(pnlStage.transform, artist);
             guide.text = text;
             guide.gameObject.SetActive(true);
-            // 곡마다 아티스트 줄 길이와 위치가 달라질 수 있어 매번 다시 맞춥니다.
-            PlaceBelowArtist(guide, artist);
-            LogPlacementOnce(guide, artist);
+            // 탭 버튼 구성이나 아티스트 줄 길이가 바뀔 수 있어 매번 다시 맞춥니다.
+            Place(guide, pnlStage, artist);
+            LogPlacementOnce(guide, pnlStage.transform);
         }
 
         private static string FindGuide(string uid)
@@ -124,89 +122,6 @@ namespace muse_dash_test
                 if (info == null || string.IsNullOrEmpty(info.musicUid)) continue;
                 into.Add((info.musicUid, info.invokeType, info.diffIndex));
             }
-        }
-
-        /// <summary>
-        /// 문구를 둘 부모: 아티스트 줄을 그리는 캔버스(가장 가까운 <c>Canvas</c>)입니다. 없으면 선택창 패널 최상위.
-        ///
-        /// <para><b>실측으로 정한 자리입니다</b>(2026-09-27, 6.7.0, <see cref="LogPlacementOnce"/> 로그):
-        /// <c>TxtArtist &lt;- ImgArtistMask[Mask] &lt;- Info[Canvas order=4] &lt;- StageUi &lt;- PnlStage[Canvas order=2]</c>.</para>
-        /// <list type="number">
-        /// <item><description>처음에는 아티스트 줄의 자식으로 만들었는데, 그 줄이 <c>ImgArtistMask</c> 마스크 안이라
-        /// 줄 아래에 붙인 문구가 통째로 잘렸습니다.</description></item>
-        /// <item><description>다음에는 <c>PnlStage</c>의 마지막 자식으로 옮겼는데, 헤더 <c>Info</c>가 따로 캔버스(순서 4)라
-        /// <c>PnlStage</c> 캔버스(순서 2)에 그린 문구가 헤더 배경 밑에 깔렸습니다. 위치는 맞았습니다.</description></item>
-        /// </list>
-        /// <para>아티스트와 같은 캔버스에 두면 그리는 순서가 같고, 마스크(<c>ImgArtistMask</c>)는 그 캔버스의 자식이라
-        /// 문구는 마스크 밖에 놓입니다. 그 캔버스의 마지막 자식으로 두어 헤더 안에서 가장 나중에 그려지게 합니다.</para>
-        /// </summary>
-        private static Transform ResolveGuideParent(Text artist, Transform panelRoot)
-        {
-            Canvas canvas = artist.canvas;
-            return canvas != null ? canvas.transform : panelRoot;
-        }
-
-        /// <summary>문구 오브젝트를 <paramref name="parent"/>의 자식으로 만듭니다. 선택창이 닫히면 같이 사라집니다.</summary>
-        private static Text GetOrCreateGuideText(Transform parent, Text artist)
-        {
-            if (guideText != null) return guideText;
-
-            var go = new GameObject(GuideObjectName);
-            go.transform.SetParent(parent, false);
-
-            Text guide = go.AddComponent<Text>();
-            guide.font = artist.font; // 게임 폰트라 한글이 그대로 나옵니다.
-            guide.fontSize = Mathf.Max(12, Mathf.RoundToInt(artist.fontSize * FontScale));
-            // 선택창 헤더가 가운데 정렬이라(스크린샷 기준) 가운데 위쪽에 맞춥니다. 위치는 PlaceBelowArtist가 정합니다.
-            guide.alignment = TextAnchor.UpperCenter;
-            guide.color = GuideColor;
-            guide.horizontalOverflow = HorizontalWrapMode.Overflow;
-            guide.verticalOverflow = VerticalWrapMode.Overflow;
-            // 문구가 난이도 버튼 위에 겹쳐도 클릭을 가로채면 안 됩니다. 히든 해금이 바로 그 버튼 연타입니다.
-            guide.raycastTarget = false;
-
-            var outline = go.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
-
-            RectTransform rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 1f);
-
-            guideText = guide;
-            return guide;
-        }
-
-        /// <summary>
-        /// 문구의 위쪽 가운데를 아티스트 이름 글자의 아래쪽 가운데에 맞춥니다.
-        /// 부모가 달라도 월드 좌표로 맞추므로 계층과 상관없이 같은 자리에 옵니다. 크기도 아티스트 줄의 실제 배율을 따릅니다.
-        /// </summary>
-        private static void PlaceBelowArtist(Text guide, Text artist)
-        {
-            RectTransform artistRect = artist.rectTransform;
-            RectTransform guideRect = guide.rectTransform;
-            Rect r = artistRect.rect;
-
-            // 아티스트 줄의 사각형이 글자보다 클 수 있어서, 정렬 방식으로 실제 글자 아래쪽을 계산합니다.
-            float textHeight = Mathf.Min(artist.preferredHeight, r.height > 0f ? r.height : artist.preferredHeight);
-            int vertical = (int)artist.alignment / 3; // TextAnchor: 0~2 Upper, 3~5 Middle, 6~8 Lower
-            float glyphBottom = vertical == 0 ? r.yMax - textHeight
-                : vertical == 1 ? r.center.y - textHeight / 2f
-                : r.yMin;
-
-            // 크기: 아티스트 줄과 같은 월드 배율이 되도록 부모 배율로 나눕니다.
-            Vector3 artistScale = artistRect.lossyScale;
-            Vector3 parentScale = guideRect.parent != null ? guideRect.parent.lossyScale : Vector3.one;
-            guideRect.localScale = new Vector3(
-                parentScale.x != 0f ? artistScale.x / parentScale.x : 1f,
-                parentScale.y != 0f ? artistScale.y / parentScale.y : 1f,
-                1f);
-            guideRect.sizeDelta = new Vector2(Mathf.Max(r.width, 600f), guide.fontSize * 1.3f);
-
-            guideRect.position = artistRect.TransformPoint(new Vector3(r.center.x, glyphBottom - GapBelowArtist, 0f));
-            // 같은 패널 안에서 가장 나중에 그려지게 합니다(다른 UI에 가려지지 않게).
-            guideRect.SetAsLastSibling();
         }
     }
 

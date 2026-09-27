@@ -58,9 +58,9 @@
   * 인게임 배틀에서 마우스 좌/우 클릭 및 터치스크린 입력을 공중/지상 타격 및 점프 체공(롱노트 홀드)으로 실시간 변환 주입하며, PC 기본 키 매핑 간섭을 원천 차단하는 상호 배타적 필터링이 적용되었습니다.
   * **터치스크린 10접점 멀티터치 지원**: ROG Ally, 스팀덱, 서피스 등에서 두 손가락으로 공중/지상 동시 입력이 가능합니다. 레거시 `UnityEngine.Input`이 Windows 스탠드얼론에서 터치를 읽지 못하는 문제를 새 Input System 전환으로 해결했으며, Windows의 마우스 승격으로 인한 이중 판정도 차단합니다. (→ [MOBILE_TOUCH_AND_INPUT_GUIDE.md](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md))
 * **Hidden Unlock Guide (곡 선택창 히든 해금 조건 표시) [NEW]**
-  * 곡 선택창에서 히든이 있는 곡을 고르면 아티스트 이름 아래에 해금 조건을 한 줄로 띄웁니다. 예: `히든 해금: Master 버튼 여러 번 연타`
+  * 곡 선택창에서 히든이 있는 곡을 고르면 위쪽 탭 줄("기본 패키지 Q / 음악 팩 E") 바로 아래에 해금 조건을 한 줄로 띄웁니다. 예: `히든 해금: Master 버튼 여러 번 연타`
   * 게임에 들어 있는 해금 방식 데이터(`hideMusic`, 6.7.0 기준 119곡)만 씁니다. 정확한 횟수나 "특수 조건"의 내용은 데이터에 없어서 적지 않습니다. 공식 힌트 문구(수수께끼형)는 쓰지 않습니다.
-  * 인게임 표시 위치는 아직 확인 전입니다.
+  * 탭 줄을 찾지 못하면(게임 업데이트 등) 아티스트 이름 아래로 대신 표시합니다. 아티스트 이름 아래 표시는 인게임에서 확인했고, 탭 줄 아래 표시는 확인 전입니다.
 * **UMPC Hardware Auto-Detection & Lag Optimization (UMPC 자동 감지 및 로그 레벨 렉 최적화) [v0.10.0]** ✅
   * ASUS ROG Ally, Valve Steam Deck, Lenovo Legion Go, AYANEO, GPD 등 핸드헬드 기기 및 배터리/내장 APU 환경을 시작 시 자동 감지합니다 (`DeviceDetector`).
   * UMPC 환경에서는 콘솔 출력 및 파일 I/O 부하로 인한 순간적인 프레임 드랍(스터터링)을 방지하기 위해 기본 로그 레벨을 `Error`로 대폭 낮춥니다. 모드의 모든 로그는 `ModLogger`를 단일 창구로 지나가며, 레벨에 미달하는 출력은 호출부에서 곧바로 차단됩니다.
@@ -215,7 +215,7 @@
 │   │       │   └── SetSelectedMusicNameTxtPatch.cs
 │   │       └── Stage/        # 곡 선택/준비 화면, 기록 카드, 리포트 카드, 랭크
 │   │           ├── CustomRecordUiPatchHelper.cs
-│   │           ├── HiddenUnlockGuide.cs  # 곡 선택창 히든 해금 조건 표시 (문구 규칙: Core/HiddenUnlockText.cs)
+│   │           ├── HiddenUnlockGuide*.cs # 곡 선택창 히든 해금 조건 표시 (데이터·배치·진단 3파일, 문구 규칙: Core/HiddenUnlockText.cs)
 │   │           ├── PnlPreparationPatch.cs
 │   │           ├── PnlRankHookPatch.cs
 │   │           ├── PnlRecordPatch.cs
