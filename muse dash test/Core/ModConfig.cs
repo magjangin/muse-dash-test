@@ -13,6 +13,7 @@ namespace muse_dash_test
         public static MelonPreferences_Category Category { get; private set; }
 
         public static MelonPreferences_Entry<bool> CustomChartEntry { get; private set; }
+        public static MelonPreferences_Entry<bool> HiddenGuideEntry { get; private set; }
         public static MelonPreferences_Entry<bool> InputOverlayEntry { get; private set; }
         public static MelonPreferences_Entry<bool> JudgmentBarEntry { get; private set; }
         public static MelonPreferences_Entry<bool> DiscordRpcEntry { get; private set; }
@@ -28,6 +29,7 @@ namespace muse_dash_test
         public static MelonPreferences_Entry<string> LogLevelEntry { get; private set; }
 
         public static bool EnableCustomChart => CustomChartEntry?.Value ?? true;
+        public static bool EnableHiddenGuide => HiddenGuideEntry?.Value ?? true;
         public static bool EnableInputOverlay => InputOverlayEntry?.Value ?? true;
         public static bool EnableJudgmentBar => JudgmentBarEntry?.Value ?? true;
         public static bool EnableDiscordRPC => DiscordRpcEntry?.Value ?? true;
@@ -50,6 +52,7 @@ namespace muse_dash_test
             Category = MelonPreferences.CreateCategory("muse-dash-custom-chart-features", "Muse Dash Mod Feature Toggles");
 
             CustomChartEntry = Category.CreateEntry("EnableCustomChart", true, description: "커스텀 차트 및 BMS 주입/로드 기능 활성화");
+            HiddenGuideEntry = Category.CreateEntry("EnableHiddenGuide", true, description: "곡 선택창에 히든 해금 조건(예: Master 버튼 여러 번 연타) 표시 활성화");
             InputOverlayEntry = Category.CreateEntry("EnableInputOverlay", true, description: "인게임 키 입력 오버레이 HUD 표시 활성화");
             JudgmentBarEntry = Category.CreateEntry("EnableJudgmentBar", true, description: "인게임 판정바 UI 그래픽 표시 활성화");
             DiscordRpcEntry = Category.CreateEntry("EnableDiscordRPC", true, description: "Discord Rich Presence 연동 상태 표시 활성화");

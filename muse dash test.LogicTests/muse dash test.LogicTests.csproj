@@ -23,5 +23,6 @@
     <Compile Include="..\muse dash test\Core\PlayRecordMerge.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\MusicDecimalText.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\SongAudioFiles.cs" Link="UnderTest\%(Filename)%(Extension)" />
+    <Compile Include="..\muse dash test\Core\HiddenUnlockText.cs" Link="UnderTest\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
