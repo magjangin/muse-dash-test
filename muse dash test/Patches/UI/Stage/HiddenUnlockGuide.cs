@@ -61,7 +61,6 @@ namespace muse_dash_test
             guide.gameObject.SetActive(true);
             // 탭 버튼 구성이나 아티스트 줄 길이가 바뀔 수 있어 매번 다시 맞춥니다.
             Place(guide, pnlStage, artist);
-            LogPlacementOnce(guide, pnlStage.transform);
         }
 
         private static string FindGuide(string uid)

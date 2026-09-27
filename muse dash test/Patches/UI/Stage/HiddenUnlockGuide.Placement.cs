@@ -10,11 +10,14 @@ namespace muse_dash_test
     /// 가이드 문구를 어디에 둘지 정합니다. 1순위는 곡 선택창 위쪽 탭 줄("기본 패키지 Q / 음악 팩 E") 바로 아래,
     /// 탭 줄을 못 찾으면 아티스트 이름 바로 아래입니다.
     ///
-    /// <para><b>실측한 계층</b>(2026-09-27, 6.7.0, HiddenUnlockGuide.Diagnostics 로그). 둘 다 게임 씬에 직접 들어 있어
-    /// 에셋 번들로는 볼 수 없었습니다.</para>
+    /// <para><b>실측한 계층</b>(2026-09-27, 6.7.0). 둘 다 게임 씬에 직접 들어 있어 에셋 번들로는 볼 수 없어서,
+    /// 한동안 조상 경로를 로그로 남기는 진단 파일(HiddenUnlockGuide.Diagnostics.cs)을 두고 확정했습니다.
+    /// 탭 줄 아래 표시가 인게임에서 확인된 뒤 걷어냈습니다(커밋 이력에 남아 있습니다). 게임 업데이트로 다시
+    /// 안 보이게 되면 그 파일을 되살려 경로부터 보십시오.</para>
     /// <code>
     /// 탭 줄   : BtnOwn[Button] 580x80 &lt;- Tag&amp;Difficulty&amp;Dlc &lt;- StageUi &lt;- PnlStage[Canvas order=2]  (BtnDlc도 같은 부모)
     /// 아티스트: TxtArtist &lt;- ImgArtistMask[Mask] &lt;- Info[Canvas order=4] &lt;- StageUi &lt;- PnlStage
+    /// 확인된 최종 자리: HwaHiddenUnlockGuide 1360x42 &lt;- Tag&amp;Difficulty&amp;Dlc, 부모 기준 (0,-100), PnlStage 캔버스
     /// </code>
     /// </summary>
     public static partial class HiddenUnlockGuide
