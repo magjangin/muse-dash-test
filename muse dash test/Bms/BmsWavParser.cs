@@ -25,6 +25,9 @@ namespace muse_dash_test
         private static readonly Regex DtRegex = new Regex(@"_dt([0-9]+(?:\.[0-9]+)?)(?:\.wav)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex UidRegex = new Regex(@"^([0-9]{6})", RegexOptions.Compiled);
 
+        // 보스를 동반한 발사체/톱니 노트에서 파일명에 _dt 선언이 없을 때 쓰는 기본 선행 표시 시간.
+        private const double BossProjectileDefaultDt = 0.7;
+
         // UID 앞 4자리 → NoteType (접두사 우선 매핑)
         private static readonly Dictionary<string, (int noteType, string keyAudio)> UidPrefixNoteType =
             new Dictionary<string, (int, string)>(StringComparer.OrdinalIgnoreCase)
@@ -164,7 +167,13 @@ namespace muse_dash_test
                 else if (XxyyProjectileAction.TryGetValue(xxyy, out string mappedAction))
                     info.BossAction = mappedAction;
 
-                info.Dt = 0.7;
+                // 보스의 사전 전조 애니메이션 시간을 확보하려고 dt를 0.7초로 당겨 주는 자리입니다.
+                // 예전에는 파일명에 적은 _dt를 무조건 덮어써서, 실제 차트의 _boss 항목 66개에
+                // 선언된 _dt0.8이 배치되는 순간 전부 0.7이 됐습니다. 선언이 없을 때만 기본값을 씁니다.
+                if (info.Dt < 0.0)
+                {
+                    info.Dt = BossProjectileDefaultDt;
+                }
             }
             else
             {

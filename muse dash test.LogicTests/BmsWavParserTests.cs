@@ -130,17 +130,29 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(0.8, withoutBoss.Dt);
         }
 
-        public static void ParseWavName_BossMarkerOverwritesDeclaredDt()
+        public static void ParseWavName_KeepsDeclaredDtOnBossProjectile()
         {
-            // ⚠ ApplyBossProjectileAction이 파일명에 선언된 dt를 0.7로 덮어씁니다.
-            // 같은 UID(010601)라도 _boss 유무에 따라 접근 시간이 0.7 / 0.8로 갈립니다.
-            // 실제 차트에는 _boss 항목 66개(발사체 1/2/3 × 지상/공중 × 11씬)가 전부 _dt0.8로
-            // "선언"돼 있지만 아직 마디에 배치된 발사체 노트는 0개라, 현재는 잠재 버그입니다.
+            // 예전에는 ApplyBossProjectileAction이 파일명에 선언된 dt를 0.7로 덮어썼습니다.
+            // 실제 차트의 _boss 항목 66개(발사체 1/2/3 × 지상/공중 × 11씬)가 전부 _dt0.8로 선언돼
+            // 있어서, 그 노트를 마디에 배치하는 순간 선언값이 전부 0.7로 바뀔 상태였습니다.
             var withBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 액션 사용 지상_boss_dt0.8.wav");
             var withoutBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 없이 지상_dt0.8.wav");
 
-            Assert.Equal(0.7, withBoss.Dt, "선언된 _dt0.8이 0.7로 덮어써졌습니다.");
+            Assert.Equal(0.8, withBoss.Dt, "선언된 _dt0.8을 그대로 써야 합니다.");
+            Assert.Equal("boss_far_atk_1_R", withBoss.BossAction);
             Assert.Equal(0.8, withoutBoss.Dt);
+        }
+
+        public static void ParseWavName_UsesDefaultDtWhenBossProjectileDeclaresNone()
+        {
+            // _dt 선언이 없으면 보스 전조 애니메이션 시간을 확보하는 기본값 0.7이 들어갑니다.
+            var withBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 액션 사용 지상_boss.wav");
+
+            Assert.Equal(0.7, withBoss.Dt);
+            Assert.Equal("boss_far_atk_1_R", withBoss.BossAction);
+
+            // 0을 명시한 경우도 선언값이므로 기본값이 끼어들지 않아야 합니다.
+            Assert.Equal(0.0, BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 액션 사용 지상_boss_dt0.wav").Dt);
         }
 
         public static void ParseWavName_UidTypeWinsOverNameKeywords()

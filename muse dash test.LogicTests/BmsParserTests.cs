@@ -93,6 +93,29 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(3.0f, chart.Notes[0].Time);
         }
 
+        // 0마디에 적은 BPM 변경은 기본 BPM(#BPM)을 이겨야 합니다. 예전에는 기본 BPM을 0틱의 변경
+        // 이벤트로 같은 목록에 넣고 Source 문자열로 정렬해서, "BPM01"이 "default"보다 앞에 정렬되고
+        // 기본 BPM이 그 뒤에 다시 적용됐습니다. 차트 전체가 의도한 BPM이 아닌 기본 BPM으로 계산됐습니다.
+        public static void ParseText_BpmChangeAtTickZeroBeatsDefaultBpm()
+        {
+            var chart = BmsParser.ParseText("""
+                #BPM 120
+                #BPM01:240
+                #00008:01
+                #00113:01
+                """);
+
+            // 기본 BPM이 먼저(초기 상태), 0마디의 변경이 그 뒤에 적용됩니다.
+            Assert.Equal(2, chart.BpmChanges.Count);
+            Assert.Equal("default", chart.BpmChanges[0].Source);
+            Assert.Equal(0f, chart.BpmChanges[1].Tick);
+            Assert.Equal(240f, chart.BpmChanges[1].Bpm);
+
+            // 240 BPM에서 1마디 = 4박 = 1초입니다. (120 BPM이면 2초)
+            Assert.Equal(1.0f, chart.Notes[0].Time);
+            Assert.Equal(1.0f, BmsParser.CalculateTime(1f, chart.BpmChanges));
+        }
+
         // 채널 03(직접 BPM 변경)은 지원하지 않습니다. BPM 변경은 #BPMxx + 채널 08만 씁니다.
         //
         // 예전에는 채널 03을 읽되 셀을 10진수로 먼저 파싱했는데, BMS 스펙상 이 채널은 항상
