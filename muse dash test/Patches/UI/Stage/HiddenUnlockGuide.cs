@@ -46,6 +46,9 @@ namespace muse_dash_test
             Text artist = pnlStage != null ? pnlStage.artistNameTitle : null;
             if (artist == null) return;
 
+            // 탭 줄 아래로 옮기기 위한 위치 조사(세션당 1회). 경로가 확정되면 걷어냅니다.
+            if (ModConfig.EnableHiddenGuide) LogTagBarCandidatesOnce(pnlStage);
+
             string text = ModConfig.EnableHiddenGuide && musicInfo != null ? FindGuide(musicInfo.uid) : null;
 
             if (text == null)
