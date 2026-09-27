@@ -55,7 +55,7 @@ namespace muse_dash_test
                 return;
             }
 
-            Text guide = GetOrCreateGuideText(pnlStage.transform, artist);
+            Text guide = GetOrCreateGuideText(ResolveGuideParent(artist, pnlStage.transform), artist);
             guide.text = text;
             guide.gameObject.SetActive(true);
             // 곡마다 아티스트 줄 길이와 위치가 달라질 수 있어 매번 다시 맞춥니다.
@@ -124,20 +124,32 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 문구 오브젝트를 선택창 패널 최상위(<paramref name="panelRoot"/>)의 마지막 자식으로 만듭니다.
+        /// 문구를 둘 부모: 아티스트 줄을 그리는 캔버스(가장 가까운 <c>Canvas</c>)입니다. 없으면 선택창 패널 최상위.
         ///
-        /// <para><b>아티스트 줄의 자식으로 두지 않는 이유</b>: 처음에는 그렇게 만들었는데 인게임에서 보이지 않았습니다
-        /// (2026-09-27, 히든 곡 0-11 선택, 데이터 로드·예외 없음 확인). 이 게임은 긴 곡명을 <c>Mask</c> +
-        /// <c>LongSongNameController</c> 안에서 스크롤시키는데(곡 목록 셀 프리팹에서 확인), 헤더도 그렇다면
-        /// 줄 아래에 붙인 자식은 마스크 밖이라 통째로 잘립니다. 뒤에 그려지는 다른 UI에 가려졌을 수도 있습니다.
-        /// 패널 최상위의 마지막 자식은 두 경우 모두 피합니다. 선택창이 닫히면 여전히 같이 사라집니다.</para>
+        /// <para><b>실측으로 정한 자리입니다</b>(2026-09-27, 6.7.0, <see cref="LogPlacementOnce"/> 로그):
+        /// <c>TxtArtist &lt;- ImgArtistMask[Mask] &lt;- Info[Canvas order=4] &lt;- StageUi &lt;- PnlStage[Canvas order=2]</c>.</para>
+        /// <list type="number">
+        /// <item><description>처음에는 아티스트 줄의 자식으로 만들었는데, 그 줄이 <c>ImgArtistMask</c> 마스크 안이라
+        /// 줄 아래에 붙인 문구가 통째로 잘렸습니다.</description></item>
+        /// <item><description>다음에는 <c>PnlStage</c>의 마지막 자식으로 옮겼는데, 헤더 <c>Info</c>가 따로 캔버스(순서 4)라
+        /// <c>PnlStage</c> 캔버스(순서 2)에 그린 문구가 헤더 배경 밑에 깔렸습니다. 위치는 맞았습니다.</description></item>
+        /// </list>
+        /// <para>아티스트와 같은 캔버스에 두면 그리는 순서가 같고, 마스크(<c>ImgArtistMask</c>)는 그 캔버스의 자식이라
+        /// 문구는 마스크 밖에 놓입니다. 그 캔버스의 마지막 자식으로 두어 헤더 안에서 가장 나중에 그려지게 합니다.</para>
         /// </summary>
-        private static Text GetOrCreateGuideText(Transform panelRoot, Text artist)
+        private static Transform ResolveGuideParent(Text artist, Transform panelRoot)
+        {
+            Canvas canvas = artist.canvas;
+            return canvas != null ? canvas.transform : panelRoot;
+        }
+
+        /// <summary>문구 오브젝트를 <paramref name="parent"/>의 자식으로 만듭니다. 선택창이 닫히면 같이 사라집니다.</summary>
+        private static Text GetOrCreateGuideText(Transform parent, Text artist)
         {
             if (guideText != null) return guideText;
 
             var go = new GameObject(GuideObjectName);
-            go.transform.SetParent(panelRoot, false);
+            go.transform.SetParent(parent, false);
 
             Text guide = go.AddComponent<Text>();
             guide.font = artist.font; // 게임 폰트라 한글이 그대로 나옵니다.
