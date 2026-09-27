@@ -43,12 +43,38 @@ namespace muse_dash_test
         public static CustomPlaySession Current { get; } = new();
         public string SelectedMusicUid;
         public string LastClickedMusicUid;
-        // 게임 밖에는 곡 선택 화면이 없으므로 실제 구현의 2단계(PnlStage 탐색)는 늘 비어 있는 셈입니다.
-        public string LastKnownMusicUid => !string.IsNullOrEmpty(SelectedMusicUid) ? SelectedMusicUid : LastClickedMusicUid;
+        // 실제 구현과 같은 순서입니다: SelectedMusicUid → PnlStage 탐색 → LastClickedMusicUid.
+        public string LastKnownMusicUid
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(SelectedMusicUid)) return SelectedMusicUid;
+
+                string onStage = PnlStagePatchHelper.FindSelectedMusicUidOnStage();
+                if (!string.IsNullOrEmpty(onStage)) return onStage;
+
+                return LastClickedMusicUid;
+            }
+        }
     }
     public static class CustomContentIds
     {
         public static bool IsVirtualSong(string uid) => uid.StartsWith("1999-");
+    }
+    public static class PnlStagePatchHelper
+    {
+        // 진짜 구현은 FindObjectOfType<PnlStage>() 한 번에 PnlStage의 필드·프로퍼티를 전부
+        // 리플렉션으로 훑는 조회라 한 번이 비쌉니다. 그래서 호출 횟수를 세어, 오프셋 훅이
+        // 그 조회를 실제로 줄이는지 테스트에서 확인합니다. 게임 밖에는 곡 선택 화면이 없으므로
+        // StubUid를 정하지 않으면 늘 비어 있습니다.
+        public static string StubUid;
+        public static int CallCount;
+
+        public static string FindSelectedMusicUidOnStage()
+        {
+            CallCount++;
+            return StubUid;
+        }
     }
     public static class HwaResourceManager
     {
