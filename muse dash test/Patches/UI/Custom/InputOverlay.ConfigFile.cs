@@ -33,7 +33,7 @@ namespace muse_dash_test
         /// 설정값은 그대로 둔 채 파일 전체를 새 레이아웃으로 다시 씁니다.
         /// (레이아웃만 바뀌면 키 목록은 그대로라 '누락/중복' 검사만으로는 갱신되지 않기 때문입니다.)
         /// </summary>
-        private const int ConfigFormatVersion = 3;
+        private const int ConfigFormatVersion = 4;
 
         /// <summary>레이아웃 버전을 기록하는 주석 줄의 앞부분.</summary>
         private const string ConfigFormatMarkerPrefix = "config-format:";
@@ -52,6 +52,7 @@ namespace muse_dash_test
             "오토플레이", "피버충전금지", "시네마", "강제퍼펙트",
             GhostNotesKey,
             "모바일터치조작",
+            "히든해금표시",
         };
 
         /// <summary>
@@ -260,6 +261,18 @@ namespace muse_dash_test
                 sb.AppendLine($"#  값 형식        : {onOff}");
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"모바일터치조작={enableMobileTouch.ToString().ToLower()}");
+                sb.AppendLine();
+                sb.AppendLine();
+
+                sb.AppendLine(Rule);
+                sb.AppendLine("#  [7] 곡 선택창");
+                sb.AppendLine(Rule);
+                sb.AppendLine("#  히든해금표시 : 히든이 있는 곡을 고르면, 위쪽 '기본 패키지 / 음악 팩' 탭 아래에");
+                sb.AppendLine("#                 해금 조건을 한 줄로 보여줍니다. 예) 히든 해금: Master 버튼 여러 번 연타");
+                sb.AppendLine("#                 (게임 데이터에 적힌 방식만 보여줍니다. 누를 횟수나 '특수 조건'의 내용은 나오지 않습니다)");
+                sb.AppendLine($"#  값 형식      : {onOff}");
+                sb.AppendLine(ThinRule);
+                sb.AppendLine($"히든해금표시={showHiddenGuide.ToString().ToLower()}");
 
                 File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 ModLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");

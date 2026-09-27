@@ -61,6 +61,7 @@
   * 곡 선택창에서 히든이 있는 곡을 고르면 위쪽 탭 줄("기본 패키지 Q / 음악 팩 E") 바로 아래에 해금 조건을 한 줄로 띄웁니다. 예: `히든 해금: Master 버튼 여러 번 연타`
   * 게임에 들어 있는 해금 방식 데이터(`hideMusic`, 6.7.0 기준 119곡)만 씁니다. 정확한 횟수나 "특수 조건"의 내용은 데이터에 없어서 적지 않습니다. 공식 힌트 문구(수수께끼형)는 쓰지 않습니다.
   * 탭 줄을 찾지 못하면(게임 업데이트 등) 아티스트 이름 아래로 대신 표시합니다. 두 자리 모두 인게임에서 확인했습니다(6.7.0).
+  * 끄고 켜기: `save custom key/config.txt`의 `히든해금표시=true/false`. 저장하면 약 1초 안에, 곡을 다시 고르지 않아도 반영됩니다. (`MelonPreferences.cfg`의 `EnableHiddenGuide`도 켜져 있어야 합니다)
 * **UMPC Hardware Auto-Detection & Lag Optimization (UMPC 자동 감지 및 로그 레벨 렉 최적화) [v0.10.0]** ✅
   * ASUS ROG Ally, Valve Steam Deck, Lenovo Legion Go, AYANEO, GPD 등 핸드헬드 기기 및 배터리/내장 APU 환경을 시작 시 자동 감지합니다 (`DeviceDetector`).
   * UMPC 환경에서는 콘솔 출력 및 파일 I/O 부하로 인한 순간적인 프레임 드랍(스터터링)을 방지하기 위해 기본 로그 레벨을 `Error`로 대폭 낮춥니다. 모드의 모든 로그는 `ModLogger`를 단일 창구로 지나가며, 레벨에 미달하는 출력은 호출부에서 곧바로 차단됩니다.
@@ -275,7 +276,7 @@
 | 설정 키 (Entry) | 기본값 | 기능 설명 |
 |---|---|---|
 | `EnableCustomChart` | `true` | 커스텀 차트 로더, 인메모리 BMS 주입, 실험 차트 HitPoints 프리팹 설치 활성화 |
-| `EnableHiddenGuide` | `true` | 곡 선택창에 히든 해금 조건(예: Master 버튼 여러 번 연타) 표시 |
+| `EnableHiddenGuide` | `true` | 곡 선택창에 히든 해금 조건(예: Master 버튼 여러 번 연타) 표시. 게임 중에 끄고 켤 때는 `config.txt`의 `히든해금표시`를 쓰세요(둘 다 켜져 있어야 표시) |
 | `EnableInputOverlay` | `true` | 인게임 실시간 키보드 입력 오버레이 HUD 표시 |
 | `EnableJudgmentBar` | `true` | 화면 하단 판정 타임라인 시각화 그래프 UI 표시 |
 | `EnableDiscordRPC` | `true` | Discord Rich Presence 실시간 상태 연동 |

@@ -54,6 +54,10 @@ namespace muse_dash_test
         // 모바일 터치 및 마우스-터치 브릿지 설정 필드 (세부 좌우/반전 설정은 인게임 PnlInputMobile UI에서 직접 제어)
         public static bool enableMobileTouch = false;
 
+        // 곡 선택창 히든 해금 조건 표시(HiddenUnlockGuide). MelonPreferences의 EnableHiddenGuide는 기능 전체의
+        // 스위치이고, 이쪽은 게임 중 저장하면 바로 반영되는 사용자용 스위치입니다. 둘 다 켜져 있어야 보입니다.
+        public static bool showHiddenGuide = true;
+
         private static string airColorName = "파랑";
         private static float airAlpha = 85f;
 
@@ -313,10 +317,22 @@ namespace muse_dash_test
                         case "모바일터치":
                             enableMobileTouch = ParseBool(val, key, enableMobileTouch);
                             break;
+                        case "히든해금표시":
+                        {
+                            bool previous = showHiddenGuide;
+                            showHiddenGuide = ParseBool(val, key, showHiddenGuide);
+                            if (previous != showHiddenGuide)
+                            {
+                                // 곡을 다시 고르지 않아도 선택창에 떠 있는 문구를 바로 켜고 끕니다(파일 머리말의 "약 1초 안에 반영").
+                                // 실패해도 설정 파싱을 끊지 않도록 가이드와 같은 FeatureGuard 이름으로 격리합니다.
+                                FeatureGuard.Run("UI.HiddenGuide", HiddenUnlockGuide.OnToggleChanged);
+                            }
+                            break;
+                        }
                     }
                 }
 
-                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 모바일터치={enableMobileTouch})");
+                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide})");
                 UpdateTextures();
             }
             catch (Exception ex)

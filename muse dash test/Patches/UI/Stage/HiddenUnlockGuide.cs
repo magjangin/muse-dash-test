@@ -40,14 +40,41 @@ namespace muse_dash_test
         // 만든 문구 오브젝트. 선택창 패널이 파괴되면 Unity 쪽 == null이 참이 되어 다시 만듭니다.
         private static Text guideText;
 
+        // 마지막으로 갱신한 선택창과 곡. config.txt 토글이 바뀌었을 때 곡을 다시 고르지 않아도 바로 반영하려고 둡니다.
+        private static PnlStage lastPnlStage;
+        private static string lastUid;
+
+        /// <summary>
+        /// 켜짐 조건: MelonPreferences의 <c>EnableHiddenGuide</c>(기능 전체 스위치)와 config.txt의
+        /// <c>히든해금표시</c>(게임 중 바로 반영되는 사용자 스위치)가 둘 다 켜져 있어야 합니다.
+        /// 판정바의 <c>EnableJudgmentBar</c> / <c>판정바표시</c>와 같은 짝입니다.
+        /// </summary>
+        private static bool IsEnabled => ModConfig.EnableHiddenGuide && InputOverlay.showHiddenGuide;
+
         /// <summary>선택 곡이 바뀔 때마다 부릅니다. 히든이 없거나 기능이 꺼져 있으면 문구를 숨깁니다.</summary>
         public static void Refresh(PnlStage pnlStage, MusicInfo musicInfo)
         {
+            lastPnlStage = pnlStage;
+            lastUid = musicInfo != null ? musicInfo.uid : null;
+            RefreshCurrent();
+        }
+
+        /// <summary>config.txt의 <c>히든해금표시</c>가 바뀌면 부릅니다. 선택창을 아직 연 적이 없으면 할 일이 없습니다.</summary>
+        public static void OnToggleChanged()
+        {
+            // Unity 객체의 == null은 파괴된 경우도 참입니다(선택창이 사라졌으면 다음 갱신 때 다시 잡힙니다).
+            if (lastPnlStage == null) return;
+            RefreshCurrent();
+        }
+
+        private static void RefreshCurrent()
+        {
+            PnlStage pnlStage = lastPnlStage;
             // 아티스트 이름은 글꼴·크기의 기준이자, 탭 줄을 못 찾았을 때의 대체 자리입니다.
             Text artist = pnlStage != null ? pnlStage.artistNameTitle : null;
             if (artist == null) return;
 
-            string text = ModConfig.EnableHiddenGuide && musicInfo != null ? FindGuide(musicInfo.uid) : null;
+            string text = IsEnabled ? FindGuide(lastUid) : null;
 
             if (text == null)
             {
