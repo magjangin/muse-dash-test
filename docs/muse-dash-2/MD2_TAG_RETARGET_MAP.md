@@ -15,10 +15,10 @@
     │   "실험 모드" 카테고리를 게임 태그 목록에 끼워 넣는다
     ▼
 [임무 B] 가상 곡/앨범을 DB에 심기    ← 순정 곡/앨범을 얇게 복제(MemberwiseClone)
-    │   1999-x 곡, 1998-0 앨범을 만들어 글로벌 DB에 주입
+    │   1999-1… 곡, 1999-0 앨범을 만들어 글로벌 DB에 주입
     ▼
 [임무 C] 조회 시 안 터지게 우회      ← DBConfigAlbums 조회 메서드 Prefix 후크
-    │   게임이 1999-/1998- UID를 찾을 때 NullReference로 죽지 않게 우리 데이터 반환
+    │   게임이 1999- UID를 찾을 때 NullReference로 죽지 않게 우리 데이터 반환
     ▼
 [임무 D] 태그 아이콘 이미지 덮어쓰기  ← AlbumTagToggle 후크
         탭에 우리 tag_icon.png를 강제로 표시
@@ -139,10 +139,10 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | B5 | `MusicInfo` | `MemberwiseClone()` → `TryCast` | 방식 | 순정 곡 얇은 복제 | 🟢 | |
 | B6 | `MusicInfo` | `uid`, `name`, `author`, `levelDesigner`, `difficulty1~5` | 필드(래퍼) | 가상 곡 메타데이터 | 🟡 | |
 | B7 | `MusicInfo` | `callBackDifficulty1~5` | 리플렉션 | 난이도 콜백값 | 🟡 | |
-| B8 | `MusicInfo` | `albumUidName`, `albumIndex`, `albumJsonIndex`, `albumJsonName`, `m_MusicExInfo` | 리플렉션 | 곡↔앨범 연결 마스크 | 🟡 | |
+| B8 | `MusicInfo` | `AddMaskValue(string, Object)`, `m_MusicExInfo`(→ `m_AlbumUidName`, `m_AlbumIndex`, `m_AlbumJsonName`) | 호출/리플렉션 | 곡↔앨범 연결. ⚠️ `MusicInfo.albumUidName`·`albumIndex`·`albumJsonIndex`·`albumJsonName`은 6.7.0에서 **읽기 전용 계산 프로퍼티**라 코드의 `SetValue`는 조용히 실패합니다. 실제로 값을 만드는 것은 마스크 + `MusicExInfo`의 `m_` 필드 + 아래 C6·C7 getter 후크입니다 | 🟡 | |
 | B9 | `dbMusicTag` | `.m_AllMusicInfo` (Dictionary<string,MusicInfo>) | 필드 | **가상 곡을 실제로 심는 곳** | 🟡 | |
 | B10 | `dbMusicTag` | `GetMusicInfoFromAll(string)` | 호출 | 주입 후 검증 + 원본 곡 탐색 | 🟡 | |
-| B11 | (상품 메타) | `needPurchase`, `free`, `pay_ids`, `dlc` | 리플렉션 | **복제본에서만** DLC 식별자 제거 | 🟡 | |
+| B11 | (상품 메타) | `needPurchase`, `free`, `pay_ids`, `dlc` | 리플렉션 | **복제본에서만** DLC 식별자 제거. 6.7.0에서 실제로 있는 곳은 `AlbumsInfo`의 `needPurchase`·`free`·`pay_ids`뿐(곡 쪽엔 없음, `dlc`는 어디에도 없음) | 🟡 | |
 
 > **B11 경계 검증 필수**([가이드 Phase 2.1](MUSE_DASH_2_SPECULATIVE_GUIDE.md)): 이 정리 함수는 **새로 만든 커스텀 객체에만** 호출돼야 함. 원본/구매상태/DLC 소유권을 건드리는 게 아님. MD2 이식 시 호출 경계 반드시 재확인.
 
@@ -155,11 +155,18 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | # | MD1 게임 타입 | MD1 멤버 | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---------------|----------|------|----------------|------|--------------------------|
 | C1 | `DBConfigAlbums` | `GetAlbumInfoByMusicInfo(MusicInfo)` | 후크(Prefix) | 1999- 곡 → 커스텀 앨범 반환 | 🟡 | |
-| C2 | `DBConfigAlbums` | `GetAlbumsInfoByUid(string)` | 후크(Prefix) | 1998-0 → 커스텀 앨범 반환 | 🟡 | |
-| C3 | `DBConfigAlbums` | `GetAlbumIndexByUid(string)` | 후크(Prefix) | 1998-0 → TagUid 인덱스 반환 | 🟡 | |
+| C2 | `DBConfigAlbums` | `GetAlbumsInfoByUid(string)` | 후크(Prefix) | 1999-0 → 커스텀 앨범 반환 | 🟡 | |
+| C3 | `DBConfigAlbums` | `GetAlbumIndexByUid(string)` | 후크(Prefix) | 1999-0 → TagUid 인덱스 반환 | 🟡 | |
 | C4 | `MusicTagManager` | `RefreshStageDisplayMusics(int)` | 후크(Prefix) | 커스텀 tagIndex일 때 원본 실행 차단(NRE 방지) | 🟡 | |
+| C5 | `MusicInfo` | `GetLocal(int language)` | 후크(Prefix) | 가상 곡의 현지화 곡명·아티스트(`LocalALBUMInfo`) 반환 | 🟡 | |
+| C6 | `MusicInfo` | `albumUidName` getter | 후크(Prefix) | 가상 곡의 앨범 UID를 `1999-0`으로 답함(숙주 값 `music_package_0` 차단) | 🟡 | |
+| C7 | `MusicInfo` | `albumIndex` getter | 후크(Prefix) | 가상 곡의 앨범 인덱스를 태그 인덱스로 답함 | 🟡 | |
+| C8 | `DBConfigLocalALBUM` | `GetLocalAlbumInfoByIndex(int index)` | 후크(Prefix) | **행 번호**로 들어온 곡명 조회 중 "선택 곡 자신을 그리는 구간"만 가로챔 | 🔴 | |
+| C9 | `DBConfigLocalAlbums` | `GetLocalTitleByIndex(int index)` | 후크(Prefix) | 행 번호로 들어온 앨범(팩) 이름 조회를 가로챔 | 🟡 | |
 
 > **임무 C의 패턴은 가이드의 "② 조회/반환(Getter) 계열" 그대로**입니다. MD2에서도 `Get...By...`, `Find...` 키워드로 ILSpy 검색하면 대응물이 나옵니다.
+>
+> **C8이 🔴인 이유**: 현지화 DB는 곡을 UID가 아니라 행 번호로 묻고, 가상 곡은 숙주의 행 번호(실측 `musicIndex=4`)를 그대로 물려받습니다. 같은 번호로 **다른 곡**(곡 목록 렌더링)을 묻는 조회까지 가로채면 목록의 엉뚱한 곡들이 커스텀 곡 이름으로 보입니다(1편 실측). 1편은 `musicIndex` 대조 + "지금 선택 곡 한 곡을 그리는 중" 구간 표시([SelectedSongLocalizationScope.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/SelectedSongLocalizationScope.cs))로 풀었습니다. IL2CPP는 호출자가 스택에 남지 않아 조회만 보고는 누구를 위한 질문인지 알 수 없기 때문입니다. 2편에서도 `...ByIndex` 계열이 보이면 이 문제부터 의심하십시오.
 
 ---
 
@@ -213,10 +220,10 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
-| H1.1 | `ChangeHealthValue` | `OnGameStart()` | 후크(Postfix) | 배틀 시작 시 체력 텍스트 스타일러 강제 시동 | 🟡 | |
-| H1.2 | `ChangeHealthValue` | `OnHpRateChange(float)` | 후크(Postfix) | 체력 비율 변경 시 체력바 텍스트 및 서식 갱신 | 🟡 | |
-| H1.3 | `ChangeHealthValue` | `OnHpDeduct(int)` | 후크(Postfix) | 피해 입을 시 스타일 갱신 및 유지 | 🟡 | |
-| H1.4 | `ChangeHealthValue` | `OnHpAdd(int)` | 후크(Postfix) | 회복 시 스타일 갱신 및 유지 | 🟡 | |
+| H1.1 | `ChangeHealthValue` | `OnGameStart(Object, Object, Object[])` | 후크(Postfix) | 배틀 시작 시 체력 텍스트 스타일러 강제 시동 | 🟡 | |
+| H1.2 | `ChangeHealthValue` | `OnHpRateChange(Object, Object, Object[])` | 후크(Postfix) | 체력 비율 변경 시 체력바 텍스트 및 서식 갱신 | 🟡 | |
+| H1.3 | `ChangeHealthValue` | `OnHpDeduct(Object, Object, Object[])` | 후크(Postfix) | 피해 입을 시 스타일 갱신 및 유지 | 🟡 | |
+| H1.4 | `ChangeHealthValue` | `OnHpAdd(Object, Object, Object[])` | 후크(Postfix) | 회복 시 스타일 갱신 및 유지 | 🟡 | |
 | H1.5 | `SldHp` / `TxtHp` | (Unity 계층 구조) | UI 경로 | 체력바 프리팹 내 텍스트 컴포넌트 강제 스타일링 | 🔴 | |
 
 ---
@@ -237,8 +244,9 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
-| SK1 | `SkeletonDataAsset` / `AtlasAsset` | `GetSkeletonData()`, `materials` | 후크(Prefix/Postfix) | Spine 스켈레톤 초기화 시 커스텀 텍스처/아틀라스 주입 | 🟡 | |
-| SK2 | `SpineActionController` | `PlayByKey(string, ...)` | 후크(Prefix) | 연타/홀드 도중 투명 노트가 원래 알파로 복원되는 것을 억제 | 🟡 | |
+| SK1 | `SpineActionController` | `Init(int idx, int curScene)`, `OnControllerStart()` | 후크(Postfix) | GameObject 이름으로 대상을 골라 `skeletonAnimation.skeletonDataAsset`을 런타임 에셋(`SpineAtlasAsset`/`SkeletonDataAsset.CreateRuntimeInstance`)으로 바꾸고 `Initialize(true)` | 🟡 | |
+| SK1b | `SpineActionController` | `Awake()` | 후크(Postfix) | 이름에 `battle`이 든 오브젝트 이름을 로그로 찍는 탐침(대상 이름 찾기용) | 🟢 | |
+| SK2 | `SpineActionController` | `PlayByKey(string actionKey, bool isOverride)` | 후크(Postfix) | 고스트 노트의 `in` 애니메이션(`in_nor_44`) 컬러 타임라인 알파 키를 1로 덮어씀(원본 기억 후 복원) | 🟡 | |
 
 ---
 
@@ -257,6 +265,47 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
-| M1.1 | `GameTouchPlay` | `TouchResult(int, ref byte)` | 후크(Prefix) | 판정 코드 Perfect 강제 조작 (All-Perfect Parameter Mod) | 🟡 | |
+| M1.1 | `GameTouchPlay` | `TouchResult(int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill)` — 모드는 `ref byte resultCode`만 받음 | 후크(Prefix) | 판정 코드 Perfect 강제 조작 (All-Perfect Parameter Mod). Miss/Cool/Great만 승격. 판정바(`JudgmentBar`)도 같은 메서드에 따로 걸림 | 🟡 | |
 | M1.2 | `DBSkill` | `SetAutoPlay(ref bool)` | 후크(Prefix) | 오토플레이 설정 인자 강제 덮어쓰기 | 🟡 | |
 | M1.3 | `InputOverlay` / `JudgmentBar` | `OnGUI()` | 렌더링 | 유니티 표준 GUI로 화면 하단 키보드 오버레이 및 판정바 렌더링 | 🟢 | |
+
+---
+
+## 🗂️ 1편 훅 전체 목록 (게임 6.7.0 실측, 2026-09-28)
+
+위 표들은 기능별로 골라 적은 것이라 빠진 훅이 많습니다. 아래는 **현재 모드 DLL이 실제로 거는 대상 전부**입니다. 모드 DLL을 6.7.0 `Il2CppAssemblies`에 붙여 Harmony와 같은 규칙(그 클래스에 직접 선언된 멤버만 찾기)으로 해석한 결과이며, 패치 클래스 119개·대상 161건(같은 대상에 Prefix/Postfix가 둘 다 있으면 2건)이 전부 해석되고 파라미터 연결도 맞았습니다. MD2 작업 때는 이 목록이 "옮길 것 전체"입니다.
+
+위험 신호는 위와 같습니다. 🔴 UI 계층·로그로만 확인 가능, 🟡 데이터·로직 계층, 🟢 Unity 표준 API라 거의 그대로.
+
+| 영역 | MD1 대상 (타입.메서드) | 모드 파일 | 위험 | **MD2 이름** |
+|---|---|---|---|---|
+| 차트 주입 | `DBStageInfo.SetRuntimeMusicData(List)` Postfix | `Patches/Database/Stage/DBStageInfo*.cs` | 🟡 | |
+| 오프셋/딜레이 | `StageBattleComponent.FixedOffset()`, `FixedMusicOffset(AudioSource)`, `DBStageInfo.delay` getter (모두 Postfix) | `Patches/Diagnostics/OffsetHookPatches.cs` | 🟡 | |
+| 배틀 수명주기 | `StageBattleComponent.Load/LoadMusicData/InitData/Pause/Resume/End/Exit/Release/GameRestart` | `Patches/Battle/UI/StageBattleComponentPatch.cs` | 🟡 | |
+| 배틀 수명주기 | `GameMusicScene.LoadScene/InitSceneEvents/InitTimer/PreLoadEnemy/Run` | `Patches/Scene/GameMusicScene*.cs` | 🟡 | |
+| 배틀 UI | `PnlBattle.GameStart()`, `PnlBattle.MusicProgressInit()` | `PnlBattleGameStartPatch.cs`, `ProgressBarPatch.cs` | 🔴 | |
+| 씬 전환 노트 | `SceneChangeController.ChangeScene/ChangeNote/SceneAnimationReset(int)` — 커스텀 곡에서 `ChangeNote` 원본 차단 | `Patches/Scene/SceneFlowPatch.cs` | 🟡 | |
+| 보스 | `Boss.Play(string, bool)`(`swap:` 키 처리, 원본 차단), `Boss.InitBossObject(string, int, bool)`, `Boss.SceneBossChange(int)` | `Patches/Battle/Mechanics/BossPatch.cs` | 🟡 | |
+| 판정 | `GameTouchPlay.TouchResult(...)` ×2(강제 퍼펙트, 판정바) | `ForcePerfectPatch.cs`, `JudgmentBar.cs` | 🟡 | |
+| 점수·정확도 | `TaskStageTarget.AddScore/GetAccuracy/GetTrueAccuracy/GetTrueAccuracyNew/IsFullCombo` | `Patches/Battle/UI/APModPatch.cs` | 🟡 | |
+| 결과 화면 | `PnlVictory2dManager.OnShowVictory(Object, Object, Object[])`, `PnlVictory.OnVictory`(런타임 대상, 진단용) | `APModPatch.VictoryBanner.cs`, `PnlVictoryLoggingPatch.cs` | 🔴 | |
+| 피버·오토 | `AbstractFeverManager.AddFever(int)`, `DBSkill.SetAutoPlay(bool)` | `ChangeFeverValuePatch.cs`, `AutoPlayPatch.cs` | 🟡 | |
+| 체력바 | `ChangeHealthValue.OnGameStart/OnHpRateChange/OnHpDeduct/OnHpAdd` | `Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs` | 🔴 | |
+| 오디오 | `AudioSource.PlayOneShot(AudioClip)`, `PlayOneShot(AudioClip, float)`(AP일 때 FC 효과음 뮤트), `AudioSource.clip` setter(메뉴 미리듣기 보호) + 참조 `AudioManager.bgm` | `AllPerfectSound.cs`, `HwaMenuBgmController.cs`, `Core/GameBgmSource.cs` | 🟢/🟡 | |
+| 입력 | `StandloneController.GetButton/GetButtonDown/GetButtonUp(MDButtonType)`, `InputManager.GetButton*`, `InputManager.controllerType` getter, `HideCursor.Update` | `Patches/Battle/Mechanics/MouseTouchBridgePatch.cs` | 🟡 | |
+| 모바일 설정 | `PnlInputMobile.Awake/SetAutoFever/SetTouchReverse/SetLeftRight`, `PnlPlaySetting.OnAwake` | `Patches/UI/Setting/PnlInputMobilePatch.cs` | 🔴 | |
+| 키 설정 | `PnlInputKeyboard.OnClickBtnCustomComplete(string)`, `OnCancelCustomize()` | `Patches/UI/Custom/InputOverlay.Patches.cs` | 🔴 | |
+| 곡 선택 화면 | `PnlStage.OnEnable/ChangeMusic/ChangeFinalMusic/RefreshBg/RefreshDiffUI/RefreshTagTitle/SetAchievementPercent/SetLikeAndHideTglState/IsContainOffPlan/OnAddCollection/OnRemoveCollection/OnHideMusic/OnRemoveHideMusic` | `Patches/UI/Stage/PnlStagePatch.cs`, `HiddenUnlockGuide.cs` | 🔴 | |
+| 곡 목록 셀 | `MusicButtonCell.InitMusicCell/OnButtonClicked`, `MusicStageCell.SetCoverLogic`, `MusicButtonAreaTitle.RefreshTxt(string, bool)`(실험 모드 판정), `SetSelectedMusicNameTxt.Awake/OnEnable` | `Patches/UI/Music/*.cs`, `Patches/UI/Pnl/SetSelectedMusicNameTxtPatch.cs` | 🔴 | |
+| 준비·기록 화면 | `PnlPreparation.OnEnable/RefreshUi/GameStart/OnBattleStart/OnDownloadBestReport`, `PnlReportCard.RefreshBestRecord`(가상 곡이면 원본 차단), `PnlRecord.RefreshRecord` | `Patches/UI/Stage/*.cs` | 🔴 | |
+| 랭킹 | `PnlRank.Refresh/RefreshGeneral/UIRefresh/NsRefreshFail`, `RankCell.SetValue` | `PnlRankHookPatch.cs`, `RankCellHookPatch.cs`, `OfflineNetworkSandboxPatch.cs` | 🔴 | |
+| 태그·앨범 | 위 임무 A~D 표 + `MusicTagManager.InitDatas()` | `Patches/UI/Custom/Tags/*.cs` | 🟡/🔴 | |
+| 세이브 | `DataManager.Save()` Prefix | `Patches/Database/Save/SaveDataManagerPatch.cs` | 🟡 | |
+| 업데이트 알림 차단 | `VersionHelper.CheckNeedUpdate/CheckVersion/CheckUpdateStateAndShowConfirm/ShowUpdateConfirmPopup/ShowUpdateTip`, `WelcomeSelect.Start/OnEnable/AdjustWelcomeUI/OnGetRecommendVersion`, `RecommendVersionController.Awake/Init/OnEnable`, `OptionSelect.OnGetRecommendVersion` | `Patches/UI/Welcome/DisableUpdateNoticePatch.cs` | 🔴 | |
+| 오프라인 샌드박스 | `SteamApps.BIsDlcInstalled(AppId_t)`, `SteamManager.DLCVerify()`, `StandardNetworkRequest.SendRequest()`, `PnlRank.RefreshGeneral(string)` | `Patches/Sandbox/*.cs` | 🟡 | |
+| 디스코드 | `DiscordManager.InitDiscord/SetUpdateActivity/Destroy`(진단) + `SetUpdateActivity` 직접 호출 | `DiscordManagerDebugPatch.cs`, `Integration/DiscordPresenceManager.cs` | 🟡 | |
+| Spine | `SpineActionController.Awake/Init/OnControllerStart/PlayByKey` | `Spine/*.cs`, `GhostNoteAlphaHold.cs` | 🟡 | |
+| 메뉴 | `PnlMenu.OnEnable` ×2(메뉴 BGM 정지, 진단) | `Patches/UI/Menu/*.cs` | 🔴 | |
+| 진단 전용 | `DBConfigDlcUIExtension.Deserialize(string)`(콜라보 종료일 덤프) | `Patches/Diagnostics/CollabEndTimeDumpPatch.cs` | 🟢 | |
+
+> **덤프에 안 나오는 의존성**(표의 🔴가 많은 이유): 곡 선택·준비 화면 텍스트는 멤버명이 아니라 **GameObject 이름**(`TxtArtist`, `ImgArtistMask`, `TxtStageDesigner` 등)으로 찾고, 배틀 BGM 폴백·체력바 탐지도 이름(`"BGM"`, `"TxtHealthValue"`, `"SldHp"` 등)에 기댑니다. 이 이름들은 MD2에서 로그로만 채울 수 있습니다.
