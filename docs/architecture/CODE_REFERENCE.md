@@ -195,7 +195,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 ### 📂 [Custom/Tags/CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)
 게임 데이터베이스에 **"실험용 가상 앨범(UID: 1998-0)"**을 런타임에 등록하는 매니저입니다.
 * **`RegisterAll()`**: 가상 앨범 태그와 커스텀 곡들의 가상 레코드를 데이터베이스 정렬 맵(`dbMusicTag`)에 등록합니다.
-* **`CleanPurchaseProperties()`**: 복제로 만든 가상 객체가 원본의 DLC 구매 정보(`needPurchase`, `pay_ids`, `dlc`)를 그대로 물려받지 않도록 해당 필드를 비웁니다. 단, `MemberwiseClone()`이 참조를 공유할 수 있으므로 참조 분리를 확인한 뒤 적용해야 합니다.
+* **`CleanPurchaseProperties()`** (`Support/CustomTagRegistrySupport.cs`): 복제로 만든 가상 객체가 원본의 DLC 구매 정보를 그대로 물려받지 않도록 `needPurchase`·`free`·`pay_ids`·`dlc`를 이름으로 찾아 비웁니다. 없는 멤버는 조용히 건너뜁니다. 게임 6.7.0에서 실제로 걸리는 것은 앨범(`AlbumsInfo`)의 `needPurchase`·`free`·`pay_ids`뿐입니다. 곡(`MusicInfo`/`MusicExInfo`)에는 이 멤버들이 없고, `dlc`는 세 타입 어디에도 없습니다(2026-09-28 덤프 대조). 단, `MemberwiseClone()`이 참조를 공유할 수 있으므로 참조 분리를 확인한 뒤 적용해야 합니다.
 
 ### 📂 [Custom/Tags/CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)
 * `GetAlbumInfoByMusicInfo` 등을 후킹하여, 가상 곡의 앨범 정보를 요청하면 미리 만들어 둔 커스텀 앨범 메타데이터(`CustomAlbumInfo`)를 반환합니다. 이를 통해 가상 앨범에서도 UI 스크롤이 정상 동작합니다.

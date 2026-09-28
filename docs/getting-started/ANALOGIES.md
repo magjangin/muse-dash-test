@@ -54,9 +54,9 @@
 ### 2.3 구매 정보 정리 ➡️ "복사된 가격표 떼기" 🏷️
 > **비유**: 옆 가게 주방을 통째로 복사하다 보면, 원본에 붙어 있던 "유료(DLC 구매 필요)" 가격표까지 같이 복사됩니다. 떼지 않으면 유저에게 구매 팝업이 뜨므로, 복제 직후 그 가격표를 떼어 무료로 쓸 수 있게 만듭니다.
 
-**실제 의미**: `CleanPurchaseProperties`는 복제본에 딸려 온 `needPurchase`, `pay_ids`, `dlc` 같은 구매 관련 속성만 비웁니다. 원본이나 정식 상점 기록에는 영향을 주지 않습니다.
+**실제 의미**: `CleanPurchaseProperties`는 복제본에 딸려 온 `needPurchase`, `pay_ids` 같은 구매 관련 속성만 비웁니다(게임 6.7.0에서 이런 속성은 앨범에만 있습니다). 원본이나 정식 상점 기록에는 영향을 주지 않습니다.
 
-→ `CustomTagRegistry.CleanPurchaseProperties`
+→ `CustomTagRegistrySupport.CleanPurchaseProperties`
 
 ---
 

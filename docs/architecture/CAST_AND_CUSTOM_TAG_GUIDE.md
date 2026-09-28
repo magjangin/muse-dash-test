@@ -50,7 +50,8 @@ IL2CPP Interop 객체에 직접 바인딩하여 다루면 게임 업데이트 �
 ### 2.3 상품 식별자 정리 (CleanPurchase)
 원본 곡을 복제하면 원본의 DLC 구매 관련 속성까지 함께 복사되어, 유저에게 구매 팝업이 뜰 수 있습니다. 복제 직후 이 속성들을 비워 가상 곡을 무료로 사용할 수 있게 만듭니다.
 
-* **독립성 유지**: `CleanPurchaseProperties`는 복제본에 상속된 `dlc`, `needPurchase`, `pay_ids` 등의 속성만 정리하므로, 기존 정식 상점이나 원본 구매 기록에는 영향을 주지 않습니다.
+* **독립성 유지**: `CleanPurchaseProperties`는 복제본에 상속된 `needPurchase`, `free`, `pay_ids`, `dlc` 속성만 정리하므로, 기존 정식 상점이나 원본 구매 기록에는 영향을 주지 않습니다.
+* **실제로 걸리는 범위 (게임 6.7.0)**: 이름으로 찾다가 없으면 조용히 건너뜁니다. 6.7.0에서 이 멤버들을 가진 것은 앨범(`AlbumsInfo`)뿐이라 `needPurchase`·`free`·`pay_ids`만 실제로 바뀝니다. 곡(`MusicInfo`/`MusicExInfo`)에는 해당 멤버가 없고, `dlc`는 어디에도 없습니다(2026-09-28 덤프 대조).
 
 ---
 
