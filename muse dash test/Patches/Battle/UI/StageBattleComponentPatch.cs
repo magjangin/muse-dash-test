@@ -198,7 +198,10 @@ namespace muse_dash_test
                 HwaBattleMediaController.StartBattleMediaInjection();
 
                 // APMod (All Perfect Mod) 세션 상태 리셋 (ActiveTarget, FontCache 초기화)
+                // 이번 배틀의 ActiveTarget은 AddScore/GetAccuracy/IsFullCombo 훅이 다시 채웁니다.
                 Patches.VictoryDataCache.ResetSession();
+                // 클립 포인터는 에셋이 해제된 뒤 재사용될 수 있으므로 배틀마다 FC 효과음 판정 캐시를 버립니다.
+                Patches.AllPerfectSound.ResetClipCache();
             }
             catch (Exception ex)
             {

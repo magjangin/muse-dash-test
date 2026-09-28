@@ -5,6 +5,8 @@ using muse_dash_test;
 // SceneChangeController 후킹/로깅.
 // 씬 전환 실행부(ChangeScene/ChangeNote/SceneAnimationReset)를 가로채 호출 타이밍·순번·curScene 전후를
 // 기록한다. "투 톱 연타"(같은 tick에 여러 씬 토글)가 하드컷인지 ChangeNote로 고스트를 만드는지 실측용.
+// 배틀 도중(공식곡 포함) 씬이 바뀔 때마다 도는 자리라 Verbose에만 남긴다. Info로 두면 데스크톱에서
+// 연주 중에 콘솔·파일 쓰기가 끼어든다. 실측할 때는 LogLevel=Verbose로 켜면 된다.
 internal static class SceneFlowLog
 {
     private static int _seq;
@@ -35,7 +37,7 @@ public class SceneChangeController_ChangeScene_Patch
     {
         try
         {
-            ModLogger.Msg($"[SceneFlow.ChangeScene] PRE  {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
+            ModLogger.Verbose($"[SceneFlow.ChangeScene] PRE  {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
         }
         catch (Exception ex) { ModLogger.Error($"[SceneFlow.ChangeScene] Prefix 예외: {ex}"); }
     }
@@ -44,7 +46,7 @@ public class SceneChangeController_ChangeScene_Patch
     {
         try
         {
-            ModLogger.Msg($"[SceneFlow.ChangeScene] POST {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
+            ModLogger.Verbose($"[SceneFlow.ChangeScene] POST {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
         }
         catch (Exception ex) { ModLogger.Error($"[SceneFlow.ChangeScene] Postfix 예외: {ex}"); }
     }
@@ -62,7 +64,7 @@ public class SceneChangeController_ChangeNote_Patch
 
         try
         {
-            ModLogger.Msg($"[SceneFlow.ChangeNote]  PRE(SKIP) {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
+            ModLogger.Verbose($"[SceneFlow.ChangeNote]  PRE(SKIP) {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
         }
         catch (Exception ex) { ModLogger.Error($"[SceneFlow.ChangeNote] Prefix 예외: {ex}"); }
         return false; // 커스텀곡일때만 원본 실행 차단
@@ -72,7 +74,7 @@ public class SceneChangeController_ChangeNote_Patch
     {
         try
         {
-            ModLogger.Msg($"[SceneFlow.ChangeNote]  POST {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
+            ModLogger.Verbose($"[SceneFlow.ChangeNote]  POST {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
         }
         catch (Exception ex) { ModLogger.Error($"[SceneFlow.ChangeNote] Postfix 예외: {ex}"); }
     }
@@ -85,7 +87,7 @@ public class SceneChangeController_SceneAnimationReset_Patch
     {
         try
         {
-            ModLogger.Msg($"[SceneFlow.AnimReset]   PRE  {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
+            ModLogger.Verbose($"[SceneFlow.AnimReset]   PRE  {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
         }
         catch (Exception ex) { ModLogger.Error($"[SceneFlow.SceneAnimationReset] Prefix 예외: {ex}"); }
     }

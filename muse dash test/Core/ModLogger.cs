@@ -10,9 +10,9 @@ namespace muse_dash_test
     {
         /// <summary>모든 로그를 끕니다.</summary>
         Silent = 0,
-        /// <summary>치명적인 오류 및 예외 로그만 출력합니다.</summary>
+        /// <summary>치명적인 오류 및 예외 로그만 출력합니다. (UMPC 기본값: 프레임 렉 최소화, <see cref="ModConfig"/> 참고)</summary>
         Error = 1,
-        /// <summary>경고 및 오류 로그만 출력합니다. (UMPC 기본값: 프레임 렉 최소화)</summary>
+        /// <summary>경고 및 오류 로그만 출력합니다.</summary>
         Warning = 2,
         /// <summary>일반 안내 메시지 및 중요 상태 변경 로그를 출력합니다. (일반 PC 기본값)</summary>
         Info = 3,
@@ -58,6 +58,18 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// <c>$"..."</c>로 부르면 컴파일러가 이 오버로드를 고릅니다. Info가 꺼져 있으면 문자열을 만들지 않습니다.
+        /// (자세한 배경은 <see cref="ModLogMessageHandler{TLevel}"/> 참고)
+        /// </summary>
+        public static void Msg(ref ModLogMessageHandler<InfoLogLevel> msg)
+        {
+            if (msg.IsEnabled)
+            {
+                MelonLogger.Msg(msg.ToStringAndClear());
+            }
+        }
+
+        /// <summary>
         /// 태그가 포함된 일반 정보 로그를 출력합니다. (LogLevel이 Info 이상일 때만 출력)
         /// </summary>
         public static void Msg(string tag, string msg)
@@ -76,6 +88,15 @@ namespace muse_dash_test
             if (CurrentLogLevel >= ModLogLevel.Warning)
             {
                 MelonLogger.Warning(msg);
+            }
+        }
+
+        /// <summary><c>$"..."</c> 전용 오버로드입니다. Warning이 꺼져 있으면(UMPC 기본값 Error 등) 문자열을 만들지 않습니다.</summary>
+        public static void Warning(ref ModLogMessageHandler<WarningLogLevel> msg)
+        {
+            if (msg.IsEnabled)
+            {
+                MelonLogger.Warning(msg.ToStringAndClear());
             }
         }
 
@@ -108,13 +129,23 @@ namespace muse_dash_test
         /// 여기(Verbose)에 둡니다. 곡·작업당 한 줄인 <b>요약</b>은 <see cref="Msg(string)"/>,
         /// 사용자가 고쳐야 할 <b>문제</b>는 <see cref="Warning(string)"/>입니다.
         /// 곡 폴더 하나가 시작 로그에 30줄씩 쏟아내 정작 봐야 할 줄이 묻힌 적이 있습니다.
-        /// 열거를 만드는 계산이 무겁다면 <see cref="IsLevelEnabled"/>로 루프째 건너뛰세요.</para>
+        /// 열거를 만드는 계산이 무겁다면 <see cref="IsLevelEnabled"/>로 루프째 건너뛰세요.
+        /// (한 줄짜리 <c>$"..."</c>는 아래 핸들러 오버로드가 알아서 건너뛰므로 따로 감쌀 필요가 없습니다.)</para>
         /// </summary>
         public static void Verbose(string msg)
         {
             if (CurrentLogLevel >= ModLogLevel.Verbose)
             {
                 MelonLogger.Msg(msg);
+            }
+        }
+
+        /// <summary><c>$"..."</c> 전용 오버로드입니다. Verbose가 꺼져 있으면(기본값) 문자열도, 구멍 안의 식도 실행하지 않습니다.</summary>
+        public static void Verbose(ref ModLogMessageHandler<VerboseLogLevel> msg)
+        {
+            if (msg.IsEnabled)
+            {
+                MelonLogger.Msg(msg.ToStringAndClear());
             }
         }
 
