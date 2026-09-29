@@ -63,8 +63,35 @@ Il2Cpp.DiscordManager.SetUpdateActivity(bool isPlaying, string levelInfo)
   - 곡 탐색 및 선택 이벤트 시 `DiscordManager.instance.SetUpdateActivity` 즉시 유도 호출
 - **[HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs)**:
   - 곡 선택 패널 이탈(`StopCustomMenuBgm`) 시 원본 `DiscordManager.SetUpdateActivity(false, "In Menu")` 직접 호출로 빠른 갱신 보장
+- **[PnlBattleGameStartPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/PnlBattleGameStartPatch.cs)**:
+  - 배틀 시작(`PnlBattle.GameStart` Postfix) 시 `DiscordPresenceManager.UpdateForPlaying` 호출
+- **[CustomRecordStore.cs](../../muse%20dash%20test/Core/CustomRecordStore.cs)**:
+  - 커스텀 곡 결과 저장 시 `DiscordPresenceManager.SetResults`로 `CLEAR!`/`FULL COMBO!`/`ALL PERFECT!`와 정확도를 표시
 
 ---
 
-*최종 작성일: 2026-07-25*  
+## 5. 설정 스위치와 개인정보 (2026-09-29 코드 대조)
+
+### `EnableDiscordRPC=false`로 꺼도 완전히 조용해지지 않습니다
+
+`EnableDiscordRPC`(MelonPreferences)가 막는 것은 **`DiscordPresenceManager`를 거치는 전송**뿐입니다(`SendPresence`와 `Initialize`의 첫 줄 검사). 아래 세 곳은 이 스위치를 보지 않습니다.
+
+| 경로 | 하는 일 |
+| :--- | :--- |
+| `CustomPlaySession.RememberMusicSelection` | 곡을 선택할 때마다 게임의 `DiscordManager.SetUpdateActivity(true, "곡명 - 아티스트")`를 **직접** 호출 (공식 곡 포함) |
+| `DiscordManagerDebugPatch.SetUpdateActivity_Prefix` | 게임이 보내는 상태를 가로채 홈 메뉴면 `In Menu`로, 커스텀 곡이면 `곡명 - 아티스트 (곡 선택 중/플레이 중)`로 바꿈 |
+| `HwaMenuBgmController.StopCustomMenuBgm` | 곡 선택 패널을 벗어날 때 `SetUpdateActivity(false, "In Menu")` 직접 호출 |
+
+그래서 **Discord에 곡 정보를 내보내고 싶지 않다면 이 스위치만으로는 부족합니다.** 코드에 게이트를 추가하기 전까지는 게임 자체의 Discord 연동을 끄거나(Discord에서 게임 활동 표시 끄기) 모드를 빼야 확실합니다. 이 게이트 누락은 알려진 한계이며 코드는 아직 고치지 않았습니다.
+
+### 무엇이 남에게 보이는가
+
+* 곡 선택 중과 플레이 중에 **곡 제목과 아티스트**가 Discord 프로필에 뜹니다. 커스텀 곡은 곡 폴더의 `info.txt`에 적은 제목·아티스트가 그대로 나가므로, 남에게 보이면 곤란한 이름은 쓰지 마세요.
+* 커스텀 곡 결과는 정확도와 `ALL PERFECT!`/`FULL COMBO!`/`CLEAR!` 여부까지 표시합니다.
+* 공식 곡도 `공식 차트`/`공식 플레이`로 표시됩니다. 커스텀 곡만 대상으로 하는 기능이 아닙니다.
+* `DiscordPresenceManager.Update()`는 비어 있습니다. 주기적으로 무언가를 보내는 폴링은 없고, 위의 이벤트마다 한 번씩 보냅니다(같은 내용은 다시 보내지 않습니다).
+
+---
+
+*최종 작성일: 2026-07-25 · 2026-09-29 코드 대조 후 5장 추가*  
 *작성자: 화영왕 (Hwa-young-wang) & Antigravity AI*

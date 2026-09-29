@@ -6,7 +6,8 @@
 > 최신 구조는 [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)와 [CAST_AND_CUSTOM_TAG_GUIDE.md](../architecture/CAST_AND_CUSTOM_TAG_GUIDE.md)를 참고하세요.
 
 **개요**
-- 목적: 런타임에 커스텀 곡 UID(예: `1999-0`)를 데이터베이스에 등록하고 UI에 선택되도록 처리하는 절차를 정리합니다.
+- 목적: 런타임에 커스텀 곡 UID를 데이터베이스에 등록하고 UI에 선택되도록 처리하는 절차를 정리합니다.
+- **UID 표기에 대해**: 아래 본문에는 곡 예시로 `1999-0`이 자주 나옵니다. 현행 규칙에서 `1999-0`은 **가상 앨범**의 UID이고, 가상 곡은 `1999-1`부터 시작합니다(`CustomContentIds.CreateVirtualSongUid`). 초기 메모라서 그대로 두었으니 곡 UID로 읽을 때는 `1999-1`로 바꿔 생각하세요.
 
 **전제조건**
 - `CustomTagPatch.cs` 같은 파일로 앨범/태그를 먼저 주입해야 합니다. (참조: [muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.cs))
@@ -81,11 +82,11 @@ if(stage != null) {
 - UID 변조 패치는 진단용으로만 짧게 사용하고, 정식 구현에서는 제거하는 편이 안전합니다. UID만 바뀌고 `MusicInfo`가 그대로인 상태는 UI 불일치와 준비 화면 오표시를 만들기 쉽습니다.
 - 외부 커버/음원/프리팹까지 완전히 새로 로딩해야 하는 단계에서만 네이티브 훅 필요성을 다시 판단합니다. 먼저 Addressables/AssetBundle/UnityWebRequest 같은 C# 경로와 기존 에셋 키 재사용 가능성을 확인하세요.
 
-**다음 단계 제안**
-- 원하시면 제가 `CustomUidRegistrar.cs`의 구현 스켈레톤(실제 리플렉션 코드 포함)과, `Patches/UI/`에 적용할 Harmony 패치를 작성해 드리겠습니다.
+**다음 단계**
+- 이 절은 초기 메모에서 "구현해 드리겠다"고 적었던 자리입니다. 실제 구현은 별도 `CustomUidRegistrar.cs` 없이 `CustomTagRegistry`(+`Support/CustomTagRegistrySupport.cs`)에 들어갔습니다([CAST_AND_CUSTOM_TAG_GUIDE.md](../architecture/CAST_AND_CUSTOM_TAG_GUIDE.md) 참고).
 
 **UID 관련 후보 메서드 (코드베이스에서 발견된 항목)**
-- `Il2CppAssets.Scripts.Database.MusicInfo` 접근자: `get_uid()` / `set_uid()` — `MusicInfo`의 uid를 읽고 쓸 수 있습니다. (참조: reflect_output.txt)
+- `Il2CppAssets.Scripts.Database.MusicInfo` 접근자: `get_uid()` / `set_uid()` — `MusicInfo`의 uid를 읽고 쓸 수 있습니다. (이 접근자는 초기 조사 때 리플렉션 덤프에서 확인했습니다. 그 덤프 파일은 저장소에 남아 있지 않습니다.)
 - `GlobalDataBase.dbMusicTag.AddCustomAlbumTagsSort(int)` — 커스텀 태그 UID를 태그 정렬 목록에 등록합니다. (파일: muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
 - `GlobalDataBase.dbMusicTag.AddAlbumTagData(int, AlbumTagInfo)` — 앨범/태그 데이터를 글로벌 DB에 최종 등록합니다. (파일: muse dash test/Patches/UI/Custom/Tags/CustomTagPatch.cs)
 - `CustomPlaySession.Current.LastKnownMusicUid` — 현재 곡 UID를 해석하는 유일한 창구입니다(세션 선택 → `PnlStage` → 마지막 클릭 순). `PnlStage`를 직접 뒤지는 단계는 `PnlStagePatchHelper.FindSelectedMusicUidOnStage()`가 맡습니다. (파일: muse dash test/Core/CustomPlaySession.cs, muse dash test/Patches/UI/Pnl/PnlStagePatchHelper.TextDebug.cs)

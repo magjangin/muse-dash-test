@@ -17,7 +17,7 @@ graph TD
     C -->|원본 얇은 복제 및 MusicInfoWrapper 강타입 속성 주입| E[GlobalDataBase.dbMusicTag]
     B -->|2. 가상 앨범 동적 생성| D[ConfigManager 복제 및 AlbumsInfoWrapper 주입]
     D -->|안전 폴백 생성 및 데이터 결합| F[GlobalDataBase.dbMusicTag]
-    G[PnlMusicOverride.SetChildTextsBatch] -->|3. 초고속 UI 텍스트 변조| H[Transform 1차 매칭 검사]
+    G[PnlMusicOverride / PnlStagePatch 등 UI 패치] -->|3. 선택된 곡의 UI 텍스트 변조| H[대상 Transform 탐색]
     H -->|일치하는 오브젝트만 핀포인트 획득| I[ModReflection 캐시 바인딩]
 ```
 
@@ -42,8 +42,8 @@ IL2CPP Interop 객체에 직접 바인딩하여 다루면 게임 업데이트 �
 ### 2.2 얇은 복제 (Thin Clone)
 커스텀 곡 객체를 `new`로 처음부터 만들면 내부 구조의 사소한 불일치로 크래시가 날 수 있습니다. 대신 이미 정상 동작하는 원본 곡 객체를 `MemberwiseClone()`으로 복사한 뒤, 식별자와 제목 등 메타데이터만 덮어쓰는 방식이 안전합니다.
 
-* **`InjectVirtualSong`**: 원본 곡을 얕게 복사해 내부 구조를 보존한 뒤, `MusicInfoWrapper`로 식별자(`1999-0`)와 제목을 덮어씁니다.
-* **폴백 가드 (Fallback)**: 복제가 실패하면 임시 객체(`new AlbumsInfo()`)를 세우는 폴백을 작동시켜 크래시를 방지합니다.
+* **`InjectVirtualSong`**: 원본 곡을 얕게 복사해 내부 구조를 보존한 뒤, `MusicInfoWrapper`로 곡 식별자(`1999-1`, `1999-2`, …)와 제목을 덮어씁니다. 앨범 자체의 UID는 `1999-0`이라 곡 번호는 1부터 시작합니다(`CustomContentIds.CreateVirtualSongUid`).
+* **폴백 가드 (Fallback)**: 곡은 원본을 찾지 못하면 기본 곡(`0-0`)을 복제 원본으로 씁니다. 앨범 복제가 실패하면 임시 객체(`new AlbumsInfo()`)를 세우는 폴백을 작동시켜 크래시를 방지합니다.
 
 ---
 
@@ -64,13 +64,14 @@ IL2CPP Interop 객체에 직접 바인딩하여 다루면 게임 업데이트 �
    ```csharp
    var info = new AlbumTagInfo
    {
-       name = "Experiment Mod",
+       name = defaultName,          // 영어 이름 "Experiment Mod" (다국어 표는 CreateTagLanguages에 있음)
        tagUid = "tag-muse-dash-test",
        iconName = "IconCustomAlbums" // 커스텀 앨범 전용 기본 아이콘
    };
    ```
+   탭 이름은 언어별로 따로 정해 둡니다(한국어 `실험 모드`, 영어 `Experiment Mod`, 일본어 `実験モード`, 중국어 간체/번체 `实验模式`/`實驗模式`).
 2. **UI 아이콘 강제 변조 (`AlbumTagToggle_Init_Patch`)**:
-   인게임 태그 탭 목록이 그려질 때, 모드는 탭 버튼이 가상 태그 UID(`tag-muse-dash-test`)를 참조하고 있는지 확인합니다. 일치하는 경우, DLL에 내장된 커스텀 이미지(`tag_icon.png`)를 런타임에 텍스처(`Texture2D`)로 디코딩하여 탭의 아이콘 이미지 필드에 덮어씁니다.
+   인게임 태그 탭 목록이 그려질 때, 모드는 탭 버튼이 가상 태그 UID(`tag-muse-dash-test`)를 참조하고 있는지 확인합니다. 일치하는 경우, `게임 폴더/hwa tag image/tag_icon.png`를 런타임에 텍스처(`Texture2D`)로 디코딩하여 탭의 아이콘 이미지 필드에 덮어씁니다. 그 파일이 없으면 DLL에 내장된 이미지를 그 자리에 먼저 꺼내 놓습니다(`EmbeddedResource.EnsureExtracted`). 그래서 이 파일을 다른 그림으로 바꿔 두면 그 그림이 쓰입니다.
 
 ---
 
@@ -80,7 +81,7 @@ IL2CPP Interop 객체에 직접 바인딩하여 다루면 게임 업데이트 �
 
 게임 업데이트로 후킹 대상 메서드(`InitAlbumTagInfo`)의 시그니처나 위치가 바뀌면 패치가 실패해 모드가 멈출 수 있습니다. 이를 막기 위해 모드 로드 시점에 후킹 대상의 유효성을 자가 진단합니다.
 
-* **감지 및 자동 덤프**: `InitAlbumTagInfo` 메서드를 찾지 못하면, `MusicTagManager` 클래스에서 `Init`으로 시작하는 모든 메서드 정보를 `hwa/tag_manager_dump.txt` 파일로 출력합니다.
+* **감지 및 자동 덤프**: `InitAlbumTagInfo` 메서드를 찾지 못하면, `MusicTagManager` 클래스의 `Init`으로 시작하는 모든 메서드 정보를 `hwa/tag_manager_dump.txt` 파일로 출력합니다(`PatchHealthCheck.DumpInitMethods`).
 * **복구 힌트**: 모더는 이 덤프 파일에서 바뀐 메서드 이름을 찾아 코드를 즉시 업데이트할 수 있습니다.
 
 ---
@@ -88,21 +89,21 @@ IL2CPP Interop 객체에 직접 바인딩하여 다루면 게임 업데이트 �
 ## 🛠️ 5. 확장 및 변형 개발자 가이드 (Developer Extension)
 
 ### 5.1 새로운 가상 곡을 추가하고 싶을 때
-[CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs) 파일 내의 `RegisterAll` 메서드 중간 지점(가상 곡 주입부)에 다음과 같이 신규 가상 곡 호출을 한 줄 적어넣으시면 즉시 적용됩니다.
+**코드를 고칠 필요가 없습니다.** 가상 곡은 `hwa` 폴더의 곡 폴더 목록에서 만들어집니다. [CustomTagRegistrySupport.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/Support/CustomTagRegistrySupport.cs)의 `BuildAndInjectVirtualSongs`가 `HwaResourceManager.GetVirtualUids()`가 돌려주는 UID(`1999-1`, `1999-2`, … — 폴더 정렬 순서대로)마다 곡을 하나씩 주입합니다. 곡 폴더를 추가하고 게임을 다시 켜면 "실험 모드" 태그 탭에 나타납니다. 폴더 구성과 `info.txt` 작성법은 [CUSTOM_CHART_GUIDE.md](../guides/CUSTOM_CHART_GUIDE.md)를 보세요.
+
+제목, 아티스트, 레벨 디자이너, 난이도는 곡 폴더의 `info.txt`에서 읽고, 없으면 `화영왕 <번호>`와 기본 난이도로 채웁니다.
+
+코드를 직접 다루고 싶다면 가상 곡 하나를 만드는 함수는 아래 시그니처입니다. **호출하는 곳은 `BuildAndInjectVirtualSongs` 안의 반복문 하나뿐이니 UID를 하드코딩한 호출을 새로 늘리지는 마세요.** 그렇게 하면 폴더 순서 기반 UID와 겹칩니다.
 
 ```csharp
-// "1999-3" 가상 곡 신규 추가 예시
-InjectVirtualSong(
-    originalInfo, 
-    "1999-3",             // 가상 곡 고유 UID
-    "새로운 실험곡 3",       // 표시될 곡 제목
-    "작곡가 이름",          // 아티스트 명
-    "레벨 디자이너",         // 디자이너 명
-    3, 6,                 // 난이도 (이지, 하드 등)
-    musicList             // 등록 리스트 컨텍스트
-);
+internal static void InjectVirtualSong(
+    MusicInfo originalInfo,   // 복제 원본 (info.txt의 원본 곡, 못 찾으면 0-0)
+    string uid,               // "1999-N"
+    string name, string author, string levelDesigner,
+    int diff1, int diff2, int diff3, int diff4, int diff5,
+    List<string> musicList);  // 등록된 UID가 여기에 쌓입니다
 ```
 
-> **커버 · 음원 · 노트 JSON은 지정하지 않습니다.** 가상 곡은 `originalInfo`의 얇은 복제본이므로 `cover` / `music` / `noteJson` 에셋 키를 복제 원본에서 그대로 물려받아 기존 에셋을 재사용합니다. 새 에셋을 실제로 로딩하는 경로는 아직 구현돼 있지 않으므로, 임의의 리소스명을 넘겨도 반영되지 않습니다. 외부 에셋 로딩이 필요해지는 시점의 판단 기준은 [UID_INJECTION.md](../experiments/UID_INJECTION.md)를 참고하세요.
+> **커버 · 음원 · 노트 JSON은 지정하지 않습니다.** 가상 곡은 `originalInfo`의 얇은 복제본이므로 `cover` / `music` / `noteJson` 에셋 키를 복제 원본에서 그대로 물려받아 기존 에셋을 재사용합니다. 실제 음원·차트·커버는 곡을 시작하는 시점에 각각 따로 갈아 끼웁니다(BMS는 `DBStageInfo.SetRuntimeMusicData` Postfix, 음원은 BGM 핫스왑, 커버는 UI 패치). 자세한 내용은 [UID_INJECTION.md](../experiments/UID_INJECTION.md)를 참고하세요.
 
-이후 `build.bat`를 통해 빌드하면 게임의 "실험 모드" 태그 탭 아래에 새 곡이 동적으로 주입됩니다!
+이후 `build.bat`로 빌드했다면 게임 폴더의 `Mods`에 DLL이 실제로 복사됐는지 확인하세요([CHECKLIST.md](../guides/CHECKLIST.md)). 곡 폴더만 추가했다면 빌드는 필요 없습니다.

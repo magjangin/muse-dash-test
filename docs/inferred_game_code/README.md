@@ -1,24 +1,28 @@
 # Muse Dash IL2CPP Inferred Game Code Method Body Reconstruction
 
-이 디렉터리는 *Muse Dash* (IL2CPP / Mono 하이브리드 어셈블리)의 주요 원본 게임 클래스 및 메서드 바디(Method Body)를 모드 패치([muse dash test/Patches](../../muse%20dash%20test/Patches)), 리플렉션 훅, BMS 타이밍 연산식, 하모니 패치(Prefix/Postfix/Transpiler) 및 IL2CPP Interop 스텁 분석을 통해 **역추적 및 재구성(Reconstruction)한 C# pseudo-code 및 실행 흐름 문서**입니다.
+이 디렉터리는 *Muse Dash*(IL2CPP) 게임 클래스가 **어떤 역할을 하는지**를 모드 패치([muse dash test/Patches](../../muse%20dash%20test/Patches))와 로그에서 거꾸로 짐작해 적은 문서 모음입니다.
 
-## 📌 왜 메서드 바디 재구성이 필요한가?
-`Decompiled/` 폴더 내 IL2CPP Interop C# 파일은 Cpp2IL / MelonLoader Interop 생성기로 만들어진 더미 스텁 어셈블리입니다. 따라서 주요 실행 메서드는 내부 바디가 비어 있거나 `throw new NullReferenceException()`으로 처리되어 있습니다.
+> [!WARNING]
+> **`CollabExpiration_Reconstruction.md`를 뺀 나머지 5개 문서의 메서드 본문은 실측이 아니라 추측입니다.**
+> 게임 본문은 IL2CPP라 볼 수 없고(`SignatureDumper`로 뜬 `Decompiled/`에는 시그니처만 있습니다), 이 문서들의 `[추측된 메서드 바디]` 코드는 클래스 이름과 패치 위치에서 지어낸 의사코드입니다. 점수(300/150), 체력 차감량(20/40), 저장 파일 경로, 호출하는 다른 클래스 이름 같은 **구체적인 값은 근거가 없습니다.** 이 값을 코드나 다른 문서의 근거로 쓰지 마세요.
+> 실제 값은 이 저장소의 코드(`muse dash test/`), 실측 로그, [MD2_TAG_RETARGET_MAP.md](../muse-dash-2/MD2_TAG_RETARGET_MAP.md)의 6.7.0 대조표, 그리고 [CHECKLIST.md](../guides/CHECKLIST.md)를 기준으로 하세요.
+> 이 문서들과 실제 확인된 사실이 어긋난 곳은 각 문서 안에 "정정" 표시로 고쳐 두었습니다.
 
-본 디렉터리의 문서들은 모드가 게임 내부의 어디를 조작하고, 원본 게임 로직이 어떻게 반환값을 계산하고 상태를 갱신하는지 완벽히 파악할 수 있도록 **원본 Il2Cpp 메서드 바디 및 내부 헬퍼 로직을 복원**하여 기술합니다.
+## 📌 왜 이런 문서가 있는가
+`Decompiled/` 폴더 내 IL2CPP Interop C# 파일은 MelonLoader Interop 생성기로 만들어진 더미 스텁이라 주요 실행 메서드의 바디가 비어 있거나 `throw new NullReferenceException()`으로 처리되어 있습니다. 그래서 초기에는 모드가 게임 내부의 어디를 건드리는지 파악하려고 **"이 메서드는 대략 이런 일을 할 것이다"를 의사코드로 적어 두었습니다.** 지금 기준으로는 "게임이 실제로 이렇게 동작한다"는 근거가 아니라 **읽기 순서를 잡기 위한 스케치**로만 쓰세요.
 
 ---
 
 ## 🗂 문서 목록 및 매핑 표
 
-| 문서 파일 | 대상 원본 클래스 | 핵심 역추적 메서드 바디 |
-| :--- | :--- | :--- |
-| [StageBattleComponent_Reconstruction.md](./StageBattleComponent_Reconstruction.md) | `Il2CppFormulaBase.StageBattleComponent` | `LoadMusicData()`, `InitData()`, `Load()`, `Pause()`, `Resume()`, `End()`, `Exit()`, `Release()`, `GameRestart()` |
-| [GameMusicScene_Reconstruction.md](./GameMusicScene_Reconstruction.md) | `Il2CppGameCore.Host.GameMusicScene` | `Init()`, `PreLoadEnemy()`, `Run()`, `OnPause()`, `OnUnPause()`, `Exit()`, `Update()` |
-| [DBStageInfo_Reconstruction.md](./DBStageInfo_Reconstruction.md) | `Il2CppAssets.Scripts.Database.DBStageInfo` | `SetRuntimeMusicData()`, `GetMusicData()`, `GetMusicInfoFromConfig()`, `MusicTagMetaData` 파싱/바인딩 |
-| [NoteController_Reconstruction.md](./NoteController_Reconstruction.md) | `Il2CppGameLogic.NoteController` / `TaskStageTarget` | `OnHit()`, `OnMiss()`, `ChangeHealthValue()`, `CalculateJudge()`, `TickToTime()` |
-| [SaveDataManager_Reconstruction.md](./SaveDataManager_Reconstruction.md) | `Il2CppPeroPeroGames.GlobalSave.SaveDataManager` | `Init()`, `Save()`, `Load()`, `UnlockStage()`, `VerifySkillAndItem()` |
-| [CollabExpiration_Reconstruction.md](./CollabExpiration_Reconstruction.md) | `DBConfigDlcUIExtension`, `TimeLimitedItemManager`, `PeroServerTime` | `Deserialize()`, `IsItemInTime()`, `GetServerTime()`/`ResetToLocal()` — 콜라보 종료일 실측 결과 포함 |
+| 문서 파일 | 성격 | 대상 원본 클래스 | 문서에 실제로 들어 있는 메서드 |
+| :--- | :--- | :--- | :--- |
+| [StageBattleComponent_Reconstruction.md](./StageBattleComponent_Reconstruction.md) | ⚠️ 추측 | `Il2CppFormulaBase.StageBattleComponent` | `LoadMusicData()`, `InitData()`, `Load()`, `Pause()`, `Resume()`, `Exit()` (`End`/`Release`/`GameRestart`는 이름만 언급) |
+| [GameMusicScene_Reconstruction.md](./GameMusicScene_Reconstruction.md) | ⚠️ 추측 | `Il2CppGameLogic.GameMusicScene` | `Init()`, `PreLoadEnemy()`, `Run()`, `OnPause()`, `OnUnPause()` |
+| [DBStageInfo_Reconstruction.md](./DBStageInfo_Reconstruction.md) | ⚠️ 추측 | `Il2CppAssets.Scripts.Database.DBStageInfo` | `SetRuntimeMusicData()`, `GetMusicInfoFromConfig()`, `GetStageInfoByUidAndDiff()` |
+| [NoteController_Reconstruction.md](./NoteController_Reconstruction.md) | ⚠️ 추측 | `Il2CppGameLogic.NoteController` | `OnHit()`, `OnMiss()`, `ChangeHealthValue.OnHpDeduct()` |
+| [SaveDataManager_Reconstruction.md](./SaveDataManager_Reconstruction.md) | ⚠️ 추측 (모드의 정화 로직 설명은 실제 코드 기준) | `Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager` (모드가 후킹하는 대상) | `Save()`, `Load()`, 모드의 `CleanIDataList()`/`CleanStringList()` |
+| [CollabExpiration_Reconstruction.md](./CollabExpiration_Reconstruction.md) | ✅ **실측** | `DBConfigDlcUIExtension`, `TimeLimitedItemManager`, `PeroServerTime` | `Deserialize()`, `IsItemInTime()`, `GetServerTime()`/`ResetToLocal()` — 콜라보 종료일 실측 결과 포함 |
 
 ---
 

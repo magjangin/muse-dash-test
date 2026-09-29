@@ -2,10 +2,13 @@
 
 보스 실험은 “보스 액션 트리거”와 “실제 보스 프리팹”을 반드시 나눠서 봐야 합니다. 둘이 같은 것처럼 보이지만 역할이 다릅니다.
 
+> [!NOTE]
+> 아래 `ExperimentNotes` 예시는 **BMS가 없는 곡**에서만 쓰입니다. BMS 차트로 만들 때는 WAV 파일명 앞의 6자리 UID(뒤 4자리 `0101`=등장, `0102`=퇴장 등, 예: `010101_보스 등장_dt0.wav`)로 같은 트리거를 표현합니다([BMS_PARSING.md](../guides/BMS_PARSING.md)).
+
 | 구분 | 수정 위치 | 의미 |
 | --- | --- | --- |
 | 보스 액션 트리거 | `DBStageInfoPatch.cs` (`Patches/Database/Stage/`)의 `ExperimentNotes` | `in`, `boss_far_atk_1_start`, `boss_far_atk_2_start`, `out` 같은 보스 동작 실행 |
-| 실제 보스 프리팹 | `BossPatch.cs` (`Patches/Battle/Mechanics/`)의 `BossRewriteRules` | 화면에 보이는 보스 오브젝트 변경 |
+| 실제 보스 프리팹 | BMS 차트의 첫 `in` 노트(우선) → 없으면 `BossPatch.cs` (`Patches/Battle/Mechanics/`)의 `BossRewriteRules` | 화면에 보이는 보스 오브젝트 변경 |
 
 ## 핵심 개념
 
@@ -71,10 +74,13 @@ new ExperimentNoteSpec { Label = "보스 등장 dt 테스트", Uid = "050101", N
 씬 전환 노트는 `0004xx` 계열입니다. 이 노트는 `ibms_id`가 `sceneInfo` 딕셔너리 키와 맞아야 실제 전환이 일어납니다.
 
 ```csharp
-new ExperimentNoteSpec { Label = "씬 변환 노트", Uid = "000401", NoteType = 9, Pathway = 0, StartTick = 20.0, PrefabName = "000401", BossAction = "0", Scene = "0", KeyAudio = "0", IbmsId = "1O" },
+new ExperimentNoteSpec { Label = "씬 변환 노트", Uid = "000401", NoteType = 9, Pathway = 0, StartTick = 20.0, PrefabName = "000401", KeyAudio = "0", IbmsId = "1O" },
 ```
 
-`000401`은 `IbmsId = "1O"`이고, 로그상 `sceneInfo[1O]=1`로 매핑됩니다. 씬 전환 시 `Boss.SceneBossChange`도 같이 호출되므로, 보스를 유지하려면 `Boss.SceneBossChange` 강제 변경은 끄는 편이 안전합니다.
+> [!WARNING]
+> 예전 예제는 `BossAction = "0", Scene = "0"`을 함께 넣었지만 **`Scene`을 `"0"`으로 직접 지정하면 실존하지 않는 `scene_00`이 등록되어 보라색(마젠타) 화면이 뜹니다.** `Scene`은 비워 두면 복제 원본 노트의 실제 씬을 이어받습니다([NOTE_EXPERIMENTS.md의 씬 전환 노트 절](NOTE_EXPERIMENTS.md#씬-전환-노트) 참고).
+
+`000401`은 `IbmsId = "1O"`이고, 로그상 `sceneInfo[1O]=1`로 매핑됩니다. 씬 전환 시 `Boss.SceneBossChange`도 같이 호출되지만, 현재 `Boss_SceneBossChange_Patch`는 **호출을 Verbose 로그로만 남기는 관찰용**이고 인덱스를 바꾸지 않으므로 보스가 유지됩니다.
 
 관찰된 `IbmsId` 매핑:
 
@@ -157,9 +163,9 @@ UID의 앞 두 자리 `zz`는 씬 계열입니다. 보스 토큰은 뒤 4자리(
 그래서 “보스가 안 나온다”는 문제는 보통 두 종류로 나뉩니다.
 
 - 보스 액션 트리거가 안 들어간 경우: `DBStageInfoPatch.cs` (`Patches/Database/Stage/`)의 `ExperimentNotes`와 `empty_000` 로그를 봅니다.
-- 실제 보스 모델이 원하는 것으로 안 바뀐 경우: `BossPatch.cs` (`Patches/Battle/Mechanics/`)의 `BossRewriteRules`와 `Boss.InitBossObject` 로그를 봅니다.
-- 보스 씬 전환이 의심되는 경우: `Boss.SceneBossChange` 로그(배틀 중 씬마다 찍히므로 `LogLevel = "Verbose"`에서만 출력)와 `SceneBossChangeRules`의 `OrigIdx/NewIdx`를 봅니다.
-- 음악 씬 자체가 다르게 로드되는지 확인하려면 `GameMusicScene.LoadScene` 로그와 `LoadSceneRewriteRules`의 `OrigSceneName/NewSceneName`을 봅니다.
+- 실제 보스 모델이 원하는 것으로 안 바뀐 경우: BMS의 첫 `in` 노트(`BmsBossSwapPlanner`)와 `BossPatch.cs` (`Patches/Battle/Mechanics/`)의 `BossRewriteRules`, 그리고 `Boss.InitBossObject` 로그를 봅니다.
+- 보스 씬 전환이 의심되는 경우: `Boss.SceneBossChange` 로그(배틀 중 씬마다 찍히므로 `LogLevel = "Verbose"`에서만 출력)를 봅니다. 이 패치는 값을 바꾸지 않고 관찰만 합니다.
+- 음악 씬 자체가 다르게 로드되는지 확인하려면 `[GameMusicScene.LoadScene]` 로그를 봅니다. 커스텀 곡은 `info.txt`의 `씬번호`(`scene_NN`)로 씬 이름이 바뀌어 로드됩니다(`GameMusicScenePatch.cs`).
 
 ## 보스 노트 기어 후보 UID
 
@@ -211,21 +217,24 @@ new ExperimentNoteSpec { Label = "보스 기어 노트 070902", Uid = "070902", 
 muse dash test/Patches/Battle/Mechanics/BossPatch.cs
 ```
 
-현재 확인한 정답 프리팹은 아래입니다.
+> [!NOTE]
+> **적용 순서**: 커스텀 차트를 적용 중일 때 `Boss.InitBossObject`는 (1) **BMS 차트의 첫 `in` 노트**에서 보스 이름·씬을 읽어 쓰고, 그런 노트가 없을 때만 (2) 아래 `BossRewriteRules`를 폴백으로 씁니다. 그러니 BMS로 만든 차트는 규칙 배열을 고칠 필요가 없습니다. 공식곡(커스텀 차트 미적용)에서는 아무것도 바꾸지 않습니다.
+
+현재 저장소에 들어 있는 기본 규칙은 아래입니다.
 
 ```csharp
 private static readonly BossRule[] BossRewriteRules = new[]
 {
-    new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0401_boss", NewScene = 4 },
+    new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0701_boss", NewScene = 7 },
 };
 ```
 
-이 규칙은 모든 보스 호출을 `0401_boss`, `scene 4`로 바꿉니다. `OrigName="*"`는 원래 보스 이름을 가리지 않고 모두 매칭한다는 뜻입니다. `OrigScene=null`은 원래 씬을 가리지 않는다는 뜻입니다. `OrigIsLast=null`은 마지막 보스 여부도 가리지 않습니다.
+이 규칙은 모든 보스 호출을 `0701_boss`, `scene 7`로 바꿉니다. `OrigName="*"`는 원래 보스 이름을 가리지 않고 모두 매칭한다는 뜻입니다. `OrigScene=null`은 원래 씬을 가리지 않는다는 뜻입니다. `OrigIsLast=null`은 마지막 보스 여부도 가리지 않습니다. (예전 문서는 이 자리를 `0401_boss`/scene 4로 적었지만, 코드의 기본값은 `0701_boss`/7입니다. 둘 다 존재하는 보스라 다른 값으로 바꿔 시험해 볼 수 있습니다.)
 
 다른 보스를 테스트하려면 `NewName`, `NewScene`만 바꿉니다.
 
 ```csharp
-new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0701_boss", NewScene = 7 },
+new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0401_boss", NewScene = 4 },
 ```
 
 특정 원본 보스만 바꾸고 싶으면 조건을 좁힙니다.
@@ -239,10 +248,13 @@ new BossRule { OrigName = "0501_boss", OrigScene = 5, OrigIsLast = true, NewName
 실제 보스 프리팹 변경이 적용되면 아래처럼 나옵니다.
 
 ```text
-Il2Cpp.Boss.InitBossObject 호출: name=0501_boss, scene=5, isLast=True
-Il2Cpp.Boss.InitBossObject: 변경 적용 -> name=0401_boss, scene=4
+Il2Cpp.Boss.InitBossObject 호출: name=0501_boss, scene=5, isLast=True, instance=...
+Il2Cpp.Boss.InitBossObject: BMS 첫 'in' 노트를 통한 동적 보스 매핑 적용 -> name=0401_boss, scene=4   ← BMS에서 정해진 경우
+Il2Cpp.Boss.InitBossObject: Static 폴백 변경 적용 -> name=0701_boss, scene=7                          ← BossRewriteRules가 쓰인 경우
 Il2Cpp.Boss.InitBossObject 완료: name=0401_boss, scene=4, isLast=True
 ```
+
+공식곡(또는 커스텀 차트가 적용되지 않은 판)에서는 `호출` 줄 다음에 `Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (...)`이 찍히고 값은 그대로입니다.
 
 보스 액션 트리거가 추가되면 노트 로그에도 보입니다.
 
@@ -264,7 +276,7 @@ Il2Cpp.Boss.InitBossObject 완료: name=0401_boss, scene=4, isLast=True
 - 액션 트리거라면 `실험 노트 추가` 로그에 `prefab=empty_000`이 찍히는지
 - 보스 발사체라면 `prefab=070601_road_nor_1` 같은 일반 프리팹과 `dt=0.7`이 찍히는지
 - `dt=0`, `dt=0.7` 또는 직접 지정한 `Dt`가 의도대로 찍히는지
-- `Boss.InitBossObject: 변경 적용` 로그가 찍히는지
+- `Boss.InitBossObject: … 매핑 적용` 또는 `Static 폴백 변경 적용` 로그가 찍히는지 (`변경 건너뜀`이면 커스텀 차트가 적용되지 않은 판입니다)
 - `NewName`, `NewScene` 조합이 실제 존재하는 보스인지
 - `in -> action -> out` 순서가 너무 이상하지 않은지
 - 게임이 해당 구간에서 실제로 보스를 초기화하는 타이밍인지
@@ -333,7 +345,7 @@ new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0
    - ③에서 `self`/`hierarchy`가 `True`, `curBossIsIn`이 `True`면 성공입니다.
    - ③에서도 `self=False`라면 활성화가 막힌 것이고, `curBossIsIn=False`라면 `Play("in")`이 안 먹은 것입니다.
 3. **리디렉션 필터 우회**:
-   `BossPatch.cs`에 등록된 글로벌 리디렉션 룰(`OrigName = "*"`)에 걸려 교체하려는 보스가 강제로 첫 번째 보스로 덮어써지는 일을 임시 플래그(`isDynamicSwapping`)를 통해 우회 차단합니다.
+   `BossPatch.cs`에 등록된 글로벌 리디렉션 룰(`OrigName = "*"`)에 걸려 교체하려는 보스가 강제로 첫 번째 보스로 덮어써지는 일을 `CustomPlaySession.Current.IsDynamicBossSwap` 플래그로 우회 차단합니다(교체 호출이 끝나면 `finally`에서 꺼집니다).
 4. **자동 등장 연출**:
    새로운 보스 프리팹이 조립되는 즉시, 내부적으로 등장 애니메이션(`Play("in")`)을 자동 트리거하여 즉각 부드럽게 화면 안으로 날아 들어오게 만듭니다.
 

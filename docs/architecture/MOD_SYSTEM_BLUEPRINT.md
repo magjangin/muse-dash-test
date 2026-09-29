@@ -10,12 +10,12 @@
 
 ```mermaid
 graph TD
-    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.8.1 로드]
+    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.10.6 로드]
     MainMod --> Diagnostics[PatchHealthCheck: 모드 로드 시 패치 무결성 검사]
     MainMod --> Preload[HwaResourceManager: hwa 폴더 & info.txt 메타 선읽기]
     
     subgraph 1. 데이터베이스 및 앨범 주입
-        Preload --> CustomTag[CustomTagRegistry: 가상 앨범/곡 레코드 주입 및 1998-0 카테고리 탭 생성]
+        Preload --> CustomTag[CustomTagRegistry: 가상 앨범/곡 레코드 주입 및 1999-0 카테고리 탭 생성]
     end
     
     subgraph 2. 차트 로딩 및 노트 분석
@@ -34,7 +34,7 @@ graph TD
     
     subgraph 4. 종료 및 안전한 세이브
         PlayEnd[플레이 종료 / 메인 복귀] --> SavePatch[SaveDataManagerPatch: DataManager.Save Prefix]
-        SavePatch --> PurifyMemory["가상 곡 UIDs (1999-x, 1998-x) 메모리 정밀 청소"]
+        SavePatch --> PurifyMemory["가상 곡 UIDs (1999- 접두사) 메모리 정밀 청소"]
         PurifyMemory --> PhysicsSave[물리 디스크 저장: 순정 상태 세이브 보장]
     end
 ```
@@ -45,6 +45,8 @@ graph TD
 
 모드가 타겟팅하는 원작 게임(`Assembly-CSharp.dll`)의 핵심 클래스와 후킹 목적을 명시합니다.
 
+> ⚠️ **이 표는 전체 목록이 아니라 대표 후킹만 추린 것입니다.** 보스·노트 변형, 레코드 UI, 결과 화면, 진단 훅 등은 빠져 있습니다. 전체 후킹은 [CODE_REFERENCE.md](CODE_REFERENCE.md)와 `Patches/` 폴더, 그리고 시작 시 로그의 `PatchHealthCheck` 결과를 보세요. 메서드 이름은 대부분 `GameBindings`의 상수로 관리됩니다.
+
 | 후킹 대상 클래스 및 메서드 | 패치 타입 | 구현 파일 | 주요 역할 및 유지보수적 목적 |
 | :--- | :---: | :--- | :--- |
 | `DataManager.Save` | **Prefix** | [SaveDataManagerPatch.cs](../../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs) | 물리 저장 직전 세이브 오염 방지용 가상 레코드(UID) 정밀 정화 |
@@ -54,9 +56,11 @@ graph TD
 | `TaskStageTarget.GetTrueAccuracy` | **Postfix** | [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 일반 노트 기반 정확도 계산 공식 오버라이드 |
 | `TaskStageTarget.GetTrueAccuracyNew` | **Postfix** | [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 기어, 하트, 음표를 합산한 종합 오브젝트 정확도 공식 오버라이드 |
 | `PnlVictory2dManager.OnShowVictory` | **Postfix** | [APModPatch.VictoryBanner.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.VictoryBanner.cs) | ALL PERFECT 달성 시 기존 배너 숨김 및 골드 3D 텍스트 배너 주입 |
-| `StageBattleComponent.Dead` | **Postfix** | [ChangeHealthValuePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 인게임 사망 이벤트 및 체력 강제 오버라이드(체력 무한 모드 등) |
-| `PnlStage.RefreshDiffUI` | **Prefix/Postfix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 곡 선택 시 데모용 AudioSource의 오디오 클립을 비동기 핫스왑 |
-| `PnlPreparation.OnEnable` | **Prefix/Postfix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 준비 화면 진입 시 BGM 오디오 클립을 비동기 핫스왑 |
+| `TaskStageTarget.IsFullCombo` | **Postfix** | [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) | 결과 화면에서 쓸 `TaskStageTarget` 인스턴스를 캐싱 (`EnableAPMod` 켜짐 시) |
+| `ChangeHealthValue.OnGameStart/OnHpRateChange/OnHpDeduct/OnHpAdd` | **Postfix** | [ChangeHealthValuePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 체력바 텍스트를 `made in 화영왕` 워터마크로 교체 (`EnableHpTextMod` 켜짐 + 커스텀 차트 적용 중일 때만). 체력 값이나 사망 판정은 건드리지 않습니다 |
+| `PnlStage.RefreshDiffUI(MusicInfo)` | **Prefix/Postfix** | [PnlStagePatch.cs](../../muse%20dash%20test/Patches/UI/Stage/PnlStagePatch.cs) | 곡 선택 시 난이도 UI를 갱신하고, 가상 곡이면 `HwaMenuBgmController.TriggerMenuBgmChange`로 메뉴 BGM을 핫스왑 (같은 메서드에 [HiddenUnlockGuide.cs](../../muse%20dash%20test/Patches/UI/Stage/HiddenUnlockGuide.cs)의 패치도 붙어 있음) |
+| `PnlPreparation.OnEnable` | **Postfix** | [PnlPreparationPatch.cs](../../muse%20dash%20test/Patches/UI/Stage/PnlPreparationPatch.cs) | 준비 화면 진입 시 가상 곡이면 BGM 핫스왑을 트리거하고 커스텀 기록 UI를 적용 |
+| `AudioSource.clip` (setter) | **Prefix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 이름이 `BGM`인 AudioSource에 게임이 클립을 덮어쓰려 할 때, 핫스왑 중인 커스텀 BGM을 지켜 냄 |
 | `PnlPlaySetting.OnAwake` | **Postfix** | [PnlInputMobilePatch.cs](../../muse%20dash%20test/Patches/UI/Setting/PnlInputMobilePatch.cs) | PC 입력 설정 클릭 시 모바일 전용 터치 조작 설정창(`PnlInputMobile`) 강제 복원 |
 | `StandloneController.GetButtonDown/GetButton/GetButtonUp` | **Postfix** | [MouseTouchBridgePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs) | 마우스 클릭/터치를 공중/지상으로 변환 주입 및 상호 배타적 필터링으로 PC 키 충돌 차단 |
 
@@ -104,7 +108,7 @@ $$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Gre
    * 인게임 플레이 중 스코어 UI 컴포넌트(`scoreValue`)에서 획득한 서명 폰트인 `LuckiestGuy-Regular_150_115`를 바인딩하여 복원합니다. HUD 폰트가 누락된 경우 `PnlVictory` 내의 컴포넌트나 기본 `Arial.ttf`로 순차 폴백합니다.
 4. **비주얼 셰이더 및 컴포넌트 속성 세팅**:
    * **텍스트**: `"ALL PERFECT !"` (폰트 크기: `110`)
-   * **색상(Color)**: Vibrant Gold/Yellow 그라데이션 광채 컬러 구현 `RGBA(1.0, 0.85, 0.0, 1.0)`
+   * **색상(Color)**: 단색 골드/노랑 `RGBA(1.0, 0.85, 0.0, 1.0)` (그라데이션은 쓰지 않습니다)
    * **외곽선(Outline)**: 두꺼운 검은색 아웃라인 컴포넌트 추가 (`effectDistance = Vector2(4, -4)`)
    * **그림자(Shadow)**: 부드러운 3D 입체 투영 그림자 컴포넌트 추가 (`effectDistance = Vector2(6, -6)`)
 
@@ -150,8 +154,8 @@ $$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Gre
 모드의 각 기술 파트를 세부적으로 깊게 분석하고자 할 때 필요한 원천 마크다운 파일들의 위치와 참조 맵입니다.
 
 1. **환경 빌드 및 초기 셋업**
-   * [MODDING.md](../getting-started/MODDING.md): MelonLoader 환경 셋업, 의존성 라이브러리 목록 및 `build.bat` 사용법.
-   * [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](../guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md): 골드버그 에뮬레이터 세팅 및 완전 오프라인 모드 보존 환경 설계 가이드.
+   * [MODDING.md](../getting-started/MODDING.md): 프로젝트 구조, 인게임 핵심 개념, 빠른 수정 위치, 빌드(`build.bat`)와 게임 폴더 반영 방법. MelonLoader 자체 설치는 다루지 않습니다.
+   * [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](../guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md): 오프라인 샌드박스(`offline_custom_sandbox.flag`) 동작 원리와 사용법. 시작 시 한 번만 읽습니다.
 2. **곡 데이터베이스 확장 및 앨범 태그**
    * [UID_INJECTION.md](../experiments/UID_INJECTION.md): 가상 앨범 및 가상 곡 UID 동적 인젝션 프로세스 명세.
    * [CAST_AND_CUSTOM_TAG_GUIDE.md](CAST_AND_CUSTOM_TAG_GUIDE.md): IL2CPP 형변환 가이드 및 커스텀 앨범 태그 UI 추가 방법.

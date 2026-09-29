@@ -7,38 +7,41 @@
 실험 중 가장 먼저 확인할 로그는 아래입니다.
 
 ```text
+[PatchInstaller] 패치 클래스 N개를 적용했습니다.
+[PatchHealth] 패치 대상 N개 전부 정상 해석되었습니다.
 모드가 로드되었습니다.
 씬이 로드되었습니다: ...
-DBStageInfo.SetRuntimeMusicData 호출됨: ...
-실험 노트 추가: ...
-실험 차트 적용 완료: ...
-PnlStage.ChangeFinalMusic: 곡 이름=..., 음악 클립=..., 아티스트 이름=...
-PnlPreparation.GameStart: 곡 이름=..., 음악 클립=..., 아티스트 이름=...
-Il2Cpp.Boss.InitBossObject: 변경 적용 -> name=..., scene=...
+DBStageInfo.SetRuntimeMusicData 호출됨: activeUid=...
+[ExperimentChart] 적용 시작: uid=..., reason=...
+[ExperimentChart.Bms] BMS 변환 완료: notes=..., specs=..., matchedPairs=...
+실험 차트 적용 완료: N개 노트 ...
+Il2Cpp.Boss.InitBossObject: ... 적용 -> name=..., scene=...   (보스가 있는 차트일 때)
 ```
 
-이 로그들이 모두 보이면 모드는 정상적으로 로드되고, 차트/보스/UI 후킹도 대부분 작동 중이라고 볼 수 있습니다.
+이 로그들이 모두 보이면 모드는 정상적으로 로드되고, 차트/보스 후킹도 대부분 작동 중이라고 볼 수 있습니다. 위 줄은 모두 기본 로그 수준(Info)에서 나옵니다. **`실험 노트 추가:`와 `PnlPreparation.GameStart: 곡 이름=…` 같은 줄은 `LogLevel = "Verbose"`일 때만** 나오므로(아래 "로그가 너무 많을 때" 참고), 안 보인다고 실패로 단정하지 마세요. UMPC로 감지된 기기에서는 `LogLevel = "Auto"`가 `Error`라 위 줄이 거의 안 보입니다.
 
 ## 로그별 의미
 
-| 로그 | 의미 |
-| --- | --- |
-| `모드가 로드되었습니다.` | MelonLoader가 DLL을 정상 로드했습니다. |
-| `씬이 로드되었습니다` | Unity 씬 전환이 감지됐습니다. |
-| `DBStageInfo.SetRuntimeMusicData 호출됨` | 게임이 런타임 차트 데이터를 만들었습니다. |
-| `실험 노트 추가` | `ExperimentNotes`의 항목이 실제 `MusicData`로 들어갔습니다. |
-| `실험 차트 적용 완료` | 원본 리스트를 실험 리스트로 재구성했습니다. |
-| `PnlStage.ChangeMusic` | 곡 선택이 바뀐 직후입니다. 클립은 아직 이전 값일 수 있습니다. |
-| `PnlStage.ChangeFinalMusic` | 최종 곡 변경 후라 곡 정보가 더 믿을 만합니다. |
-| `PnlPreparation.GameStart` | 준비 화면에서 게임 시작 직후입니다. |
-| `Boss.InitBossObject 호출` | 실제 보스 오브젝트 초기화가 시작됐습니다. |
-| `Boss.InitBossObject: 변경 적용` | `BossRewriteRules`가 매칭되어 보스 이름/씬이 바뀌었습니다. |
+| 로그 | 수준 | 의미 |
+| --- | --- | --- |
+| `[PatchInstaller] … 패치를 걸지 않았습니다` | Warning | 게임 업데이트로 그 패치 본문이 현재 게임에서 컴파일되지 않습니다. 뒤의 예외 메시지가 사라진 멤버 이름입니다. |
+| `모드가 로드되었습니다.` | Info | MelonLoader가 DLL을 정상 로드했습니다. |
+| `씬이 로드되었습니다` | Info | Unity 씬 전환이 감지됐습니다. |
+| `DBStageInfo.SetRuntimeMusicData 호출됨` | Info | 게임이 런타임 차트 데이터를 만들었습니다(공식곡도 찍힙니다). |
+| `[ExperimentChart] 적용 시작` / `적용 건너뜀` | Info | 커스텀 차트를 적용하는 판인지, 순정 판인지 결정된 결과와 사유입니다. |
+| `실험 노트 추가` | **Verbose** | 노트 하나가 실제 `MusicData`로 들어갔습니다(노트마다 한 줄이라 Verbose에만 남깁니다). |
+| `실험 차트 적용 완료` | Info | 원본 리스트를 실험 리스트로 재구성했습니다. |
+| `PnlPreparation.OnEnable: 곡 이름=…` 등 (`LogCompact`) | **Verbose** | 준비 화면에서 읽은 곡 정보입니다. 예전 문서의 `PnlStage.ChangeFinalMusic` 로그는 지금 없습니다. |
+| `Boss.InitBossObject 호출` | Info | 실제 보스 오브젝트 초기화가 시작됐습니다. |
+| `Boss.InitBossObject: … 동적 보스 매핑 적용` | Info | BMS의 첫 `in` 노트로 보스 이름/씬이 정해졌습니다. |
+| `Boss.InitBossObject: Static 폴백 변경 적용` | Info | BMS에 `in` 노트가 없어 `BossRewriteRules`가 매칭됐습니다. |
+| `Boss.InitBossObject: 변경 건너뜀` | Info | 커스텀 차트를 적용하지 않는 판(공식곡 등)이라 손대지 않았습니다. |
 
 ## 노트가 안 보일 때
 
 ### 1. `실험 노트 추가`가 찍히는지 확인
 
-찍히지 않으면 `DBStageInfo.SetRuntimeMusicData`가 아직 호출되지 않았거나, `ExperimentNotes` 배열 문법에 문제가 있을 수 있습니다.
+먼저 `LogLevel = "Verbose"`로 바꿔야 이 줄이 나옵니다. 그래도 찍히지 않으면 `DBStageInfo.SetRuntimeMusicData`가 아직 호출되지 않았거나, 그 곡에 커스텀 차트가 적용되지 않은 판(`[ExperimentChart] 적용 건너뜀`)이거나, `ExperimentNotes` 배열 문법에 문제가 있을 수 있습니다. (`ExperimentNotes`는 그 곡에 BMS가 없을 때만 쓰입니다. BMS가 있는 곡은 `[ExperimentChart.Bms] BMS 변환 완료` 줄을 보세요.)
 
 봐야 할 위치:
 
@@ -134,9 +137,9 @@ new ExperimentNoteSpec
 
 ### 1. 보스 액션 트리거가 들어갔는지
 
-`DBStageInfoPatch.cs` (`Patches/Database/Stage/`)의 `ExperimentNotes`에 `BossAction="in"`이 필요합니다.
+BMS 차트를 쓰는 곡은 등장 노트(WAV UID의 뒤 4자리 `0101`, 예: `010101_…wav`)가 차트에 있어야 하고, BMS가 없는 곡은 `DBStageInfoPatch.cs` (`Patches/Database/Stage/`)의 `ExperimentNotes`에 `BossAction="in"`이 필요합니다.
 
-예:
+`ExperimentNotes` 예:
 
 ```csharp
 new ExperimentNoteSpec
@@ -163,18 +166,19 @@ showTick=15
 
 ### 2. 실제 보스 프리팹이 바뀌었는지
 
-`BossPatch.cs` (`Patches/Battle/Mechanics/`)에서 `BossRewriteRules`가 매칭되어야 합니다.
+보스 이름/씬은 (1) BMS 차트의 첫 `in` 노트에서 정해지고, 그런 노트가 없을 때만 (2) `BossPatch.cs` (`Patches/Battle/Mechanics/`)의 `BossRewriteRules`가 매칭됩니다.
 
 로그:
 
 ```text
-Il2Cpp.Boss.InitBossObject 호출: name=..., scene=..., isLast=...
-Il2Cpp.Boss.InitBossObject: 변경 적용 -> name=0601_boss, scene=6
+Il2Cpp.Boss.InitBossObject 호출: name=..., scene=..., isLast=..., instance=...
+Il2Cpp.Boss.InitBossObject: BMS 첫 'in' 노트를 통한 동적 보스 매핑 적용 -> name=0601_boss, scene=6
+Il2Cpp.Boss.InitBossObject: Static 폴백 변경 적용 -> name=0701_boss, scene=7
 ```
 
-`변경 적용` 로그가 없으면 조건이 안 맞은 것입니다.
+`… 적용` 로그가 없고 `변경 건너뜀`만 있으면 커스텀 차트가 적용되지 않은 판입니다. 둘 다 없으면 규칙 조건이 안 맞은 것입니다.
 
-확인할 점:
+확인할 점 (`BossRewriteRules`를 쓰는 경우):
 
 - `OrigName`이 너무 좁게 잡혀 있지 않은지
 - `OrigScene`이 현재 씬과 다른 값인지
@@ -196,17 +200,12 @@ new BossRule
 
 ## 곡 제목/아티스트가 안 바뀔 때
 
-곡 정보 실험은 `PnlMusicDiagnostics.cs` 및 `PnlStagePatchHelper.cs` 등의 유틸리티를 기반으로 동작하며, 곡 제목/아티스트 오버라이드 상수는 `PnlMusicOverride.cs` (`Patches/UI/Music/`) 상단에서 켭니다.
-
-```csharp
-private const bool EnableSongTitleExperiment = true;
-```
+곡 제목/아티스트/레벨 디자이너 표시는 `hwa` 곡 폴더의 `info.txt`(매니페스트) 값이 우선이고, `PnlMusicOverride.cs` (`Patches/UI/Music/`)가 화면 텍스트에 그 값을 씁니다. 제목을 바꾸려면 코드가 아니라 `info.txt`의 `커스텀곡제목`/`커스텀아티스트`/`레벨디자이너`를 고치세요. 매니페스트 조회가 모두 실패했을 때만 `PnlMusicOverride`의 폴백 상수(`ExperimentTitle = "Custom Chart"` 등)가 표시됩니다. (`EnableSongTitleExperiment`는 항상 `true`인 상수라 끄는 스위치가 아닙니다.)
 
 확인할 점:
 
-- `PnlStage.Start` 로그가 찍히는지
-- `PnlStage.ChangeFinalMusic` 로그가 찍히는지
-- `PnlPreparation.GameStart` 로그가 찍히는지
+- `LogLevel = "Verbose"`에서 `[SongTitleOverride] 화면 텍스트 적용(WRITE)` 로그가 찍히는지
+- `info.txt`가 읽혔는지(`[HwaResourceManager] manifest 파싱 완료` 로그와 알 수 없는 키 경고)
 - 텍스트가 다른 자식 오브젝트명으로 숨어 있는지
 
 곡 선택 화면과 준비 화면은 서로 다른 UI 구조를 쓸 수 있습니다. 한 화면에서는 바뀌고 다른 화면에서는 안 바뀌면 그 화면의 텍스트 오브젝트 후보 이름을 추가해야 할 수 있습니다.
@@ -222,11 +221,13 @@ LevelDesignerNameTextObjectNames
 
 ## 음악 클립 이름이 이상할 때
 
-`PnlStage.ChangeMusic` 직후에는 클립이 이전 곡 또는 메뉴 BGM처럼 보일 수 있습니다. 클립 이름은 아래 로그를 더 신뢰합니다.
+`PnlStage.ChangeMusic` 직후에는 클립이 이전 곡 또는 메뉴 BGM처럼 보일 수 있습니다. 클립 이름은 준비 화면 쪽 로그(`LogLevel = "Verbose"`에서만 출력)를 더 신뢰합니다.
 
-- `PnlStage.ChangeFinalMusic`
-- `PnlPreparation.GameStart`
-- `PnlPreparation.OnBattleStart`
+- `PnlPreparation.GameStart: 곡 이름=…, 음악 클립=…`
+- `PnlPreparation.OnBattleStart: …`
+- `PnlPreparation.OnEnable: …` / `…Delay`(0.25초·1초 뒤 재시도)
+
+(예전 문서가 안내하던 `PnlStage.ChangeFinalMusic` 로그는 지금 코드에 없습니다.)
 
 오디오 클립 탐색은 두 경로를 사용합니다.
 
@@ -238,6 +239,9 @@ LevelDesignerNameTextObjectNames
 ## 정확도 계산 및 All Perfect 배너가 이상할 때
 
 올 퍼펙트(All Perfect) 판정이나 결과 화면의 골드 배너 연출이 동작하지 않는 경우 아래 로그와 설정을 점검하십시오.
+
+> [!WARNING]
+> **`EnableAPMod = false`(MelonPreferences)이면 결과 화면 훅(`PnlVictory2dManager.OnShowVictory`)이 첫 줄에서 통째로 끝납니다.** AP 배너뿐 아니라 **커스텀 곡 기록 저장(`record/*.json`)과 결과 화면 진입 시 미디어 정지도 그 훅 안에 있어서 함께 건너뜁니다**(현재 동작). 또 `AddScore`/`IsFullCombo` 훅의 `TaskStageTarget` 캐싱도 꺼집니다. 커스텀 곡 기록이 저장되지 않는다면 먼저 이 값이 `true`인지 확인하세요. 반대로 정확도 오버라이드(`GetAccuracy`/`GetTrueAccuracy`/`GetTrueAccuracyNew` 패치)는 이 설정과 무관하게 커스텀 차트를 적용하는 판이면 항상 동작합니다.
 
 ### 1. 정확도 디버그 로그 확인
 이 로그는 `GetAccuracy`가 불릴 때마다 찍히므로 **`LogLevel = "Verbose"`일 때만** 나옵니다(아래 “수동 로그 레벨 설정” 절 참고). Verbose로 바꾼 뒤 플레이가 끝날 때 콘솔에 아래와 같은 로그가 남는지 확인합니다.
@@ -286,14 +290,15 @@ LogLevel = "Auto" # "Auto", "Silent", "Error", "Warning", "Info", "Verbose"
 | **`Verbose`** | 상세 진단 | 내부 디버깅용 상세 로그까지 모두 출력 |
 
 ### 3. 디버그 덤프 플래그
-아래 진단 플래그들은 개발용 상세 덤프를 생성하므로 일반 플레이 시에는 비활성화를 권장합니다:
+아래는 코드에서 켜고 끄는 개발용 진단 스위치입니다. 일반 플레이 시에는 기본값 그대로 두세요.
 
-| 위치 | 이유 |
-| --- | --- |
-| `DebugExperimentNotes = true` | 노트 생성 전후 상태를 자세히 출력합니다. |
-| `DumpMusicList` | 원본/실험 노트 내부 필드를 덤프합니다. |
-| `DumpStageBattleComponentProperties` | 전투 컴포넌트의 공개 프로퍼티와 리스트를 깊게 덤프합니다. |
-| `DumpStageInfo` | StageInfo 필드와 프로퍼티를 모두 덤프합니다. |
+| 위치 | 기본값 | 설명 |
+| --- | --- | --- |
+| `DBStageInfo_SetRuntimeMusicData_Patch.DebugExperimentNotes` (`DBStageInfoPatch.cs`) | `false` | `true`로 바꾸고 다시 빌드하면 노트 생성 전후 상태를 Info로 자세히 출력하고 호출 스택까지 남깁니다. |
+| `SpineActionContract.DumpEnabled` (`Spine/Patch_SpineActionContract.cs`) | `false` | `true`로 바꾸고 다시 빌드하면 배틀 캐릭터의 액션·애니메이션 목록을 `spine contract/` 폴더에 txt로 덤프합니다. 꺼져 있으면 폴더도 만들지 않습니다. |
+| `GameMusicScene_InitTimer_Patch` / `GameMusicScene_PreLoadEnemy_Patch`의 `EnableDebugLogs` | `true`(하드코딩) | 씬 변형·풀 빌드 진단 로그(Info)입니다. 로그 수준으로 끌 수 없습니다. |
+
+> `DumpMusicList`는 스위치가 아니라 함수입니다. 공식곡을 로드할 때마다 원본 차트의 미등록 노트를 훑어 `[OfficialSceneContext]` 로그를 Info로 남깁니다(README의 "특수 기믹 곡 스캔" 조사용). 이전 문서가 안내하던 `DumpStageBattleComponentProperties`/`DumpStageInfo`는 코드에서 제거되었습니다. 노트 상세 덤프(`StageBattleMusicDataDump`)는 코드에 남아 있지만 호출하는 곳이 없어 실행되지 않습니다.
 
 ## 빌드가 실패할 때
 
@@ -309,18 +314,27 @@ Access to the path 'C:\Users\...\AppData\Roaming\NuGet\NuGet.Config' is denied.
 
 ### 참조 DLL 오류
 
-`.csproj`는 Muse Dash 설치 폴더의 DLL을 직접 참조합니다.
+`.csproj`는 게임 설치 폴더(`$(GamePath)`)의 DLL을 와일드카드로 직접 참조합니다(`HintPath`는 쓰지 않습니다).
 
 ```text
-..\..\..\..\steam\steamapps\common\Muse Dash\MelonLoader\...
+$(GamePath)\MelonLoader\net6\*.dll
+$(GamePath)\MelonLoader\Il2CppAssemblies\*.dll
+```
+
+`GamePath`의 기본값은 작성자 환경의 `H:\muse dash hwa`입니다. 다른 위치에 게임이 있으면 알려 줘야 합니다.
+
+```text
+dotnet build "muse dash test\muse dash test.csproj" -p:GamePath="D:\Steam\steamapps\common\Muse Dash"
+set GAME_PATH=D:\Steam\steamapps\common\Muse Dash    ← build.bat용 (실행 전에 설정)
 ```
 
 빌드가 참조 DLL을 못 찾으면 아래를 확인합니다.
 
-- Muse Dash 설치 경로가 실제로 `H:\steam\steamapps\common\Muse Dash`인지
-- MelonLoader가 설치되어 있는지
+- `GamePath`(또는 `GAME_PATH`)가 실제 게임 설치 경로인지
+- MelonLoader가 설치되어 있고, 게임을 한 번 실행해 `Il2CppAssemblies`가 생성되었는지
 - `MelonLoader\net6`와 `MelonLoader\Il2CppAssemblies` 폴더가 있는지
-- `.csproj`의 `HintPath`가 현재 설치 경로와 맞는지
+
+빌드가 끝나면 csproj의 `DeployToMods` 타깃이 DLL을 `$(GamePath)\Mods`로 복사합니다. **복사에 실패해도 `[AutoDeploy] Successfully deployed` 메시지는 찍히므로**(`ContinueOnError="WarnAndContinue"`), `Mods` 폴더에 실제로 파일이 있는지 눈으로 확인하세요.
 
 ## 변경 후 기본 확인 순서
 
@@ -329,8 +343,9 @@ Access to the path 'C:\Users\...\AppData\Roaming\NuGet\NuGet.Config' is denied.
 3. 게임 실행 후 `모드가 로드되었습니다.` 로그를 확인합니다.
 4. 곡 선택 화면에서 `PnlStage` 로그를 확인합니다.
 5. 게임 시작 후 `DBStageInfo.SetRuntimeMusicData`와 `실험 차트 적용 완료`를 확인합니다.
-6. 노트 실험이면 `실험 노트 추가` 로그의 UID/type/pathway/prefab을 확인합니다.
-7. 보스 실험이면 `Boss.InitBossObject: 변경 적용` 로그를 확인합니다.
+6. 노트 실험이면 `LogLevel = "Verbose"`로 `실험 노트 추가` 로그의 UID/type/pathway/prefab을 확인합니다.
+7. 보스 실험이면 `Boss.InitBossObject: … 적용` 로그(`동적 보스 매핑 적용` 또는 `Static 폴백 변경 적용`)를 확인합니다.
+8. **폴백 경로도 밟아 봅니다.** 정상(BMS 있는 곡)만 확인하면 폴백은 아무도 안 밟습니다. 곡 폴더를 비우거나 BMS 없는 슬롯을 골라 배틀에 실제로 들어가 봅니다([CHECKLIST.md](CHECKLIST.md)).
 
 ## 모드 탓이 아닌 것으로 보이는 에러
 

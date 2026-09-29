@@ -1,5 +1,9 @@
 # DataManager & Save System Inferred Method Body Reconstruction
 
+> [!WARNING]
+> **추측 문서입니다.** `Save()`/`Load()`의 본문(직렬화 방식, 암호화, 저장 경로)은 실측이 아닌 의사코드입니다([안내](README.md)). 모드의 정화 로직(`CleanIDataList`/`CleanStringList`)만 실제 코드([SaveDataManagerPatch.cs](../../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs))를 옮긴 것입니다.
+> **정정**: 실제 세이브 파일은 `game.sav`가 아니라 `%LOCALAPPDATA%\Steam\MuseDash\<steamID>MuseDashSaves.sav`이고 Steam Cloud로 동기화됩니다([LOGGING_AND_TROUBLESHOOTING.md](../guides/LOGGING_AND_TROUBLESHOOTING.md#세이브-데이터-위치와-진행도-초기화)). `Application.persistentDataPath`(`…\LocalLow\PeroPeroGames\MuseDash`)에는 로그/캐시만 있습니다. 모드가 후킹하는 대상은 `SaveDataManager`가 아니라 **`DataManager.Save`** 입니다. 정화 대상은 `1999-` 접두사 하나입니다(`CustomContentIds.IsVirtualContent`).
+
 `Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager` 및 `Il2CppPeroPeroGames.GlobalSave.SaveDataManager` 클래스는 *Muse Dash*의 플레이어 진행 상황(업적, 곡 최고점수, 최근 플레이 기록 `highest`, `recentPassLevelData`, 난이도별 클리어 `easy_pass`, `hard_pass`, `master_pass`, 언락 아이템)을 디스크 JSON/바이너리로 암호화하여 저장하고 복원하는 영구 저장소 매니저입니다.
 
 ---
@@ -38,7 +42,7 @@ public void Save()
 {
     // [추측된 메서드 바디]
     // 모드 하모니 프리픽스(SaveDataManagerPatch.Prefix)에서 
-    // 커스텀/가상 차트("1999-x", "1998-x") 기록을 사전에 정밀 정화(Cleanse)함.
+    // 커스텀/가상 차트("1999-" 접두사) 기록을 사전에 정밀 정화(Cleanse)함.
 
     if (this.datas == null) return;
 
@@ -48,7 +52,7 @@ public void Save()
     // 2. 세이브 데이터 암호화 (AES 또는 커스텀 XOR 키 처리)
     byte[] encryptedData = SecurityUtils.EncryptSaveData(jsonString);
 
-    // 3. Application.persistentDataPath 내 파일에 동기/비동기 쓰기
+    // 3. 파일에 동기/비동기 쓰기 (정정: 실제 경로는 위 안내 참고. persistentDataPath\game.sav가 아님)
     string savePath = System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "game.sav");
     System.IO.File.WriteAllBytes(savePath, encryptedData);
 }

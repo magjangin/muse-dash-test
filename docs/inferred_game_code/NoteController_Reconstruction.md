@@ -1,6 +1,10 @@
 # NoteController & Hit Judgment Inferred Method Body Reconstruction
 
-`Il2CppGameLogic.NoteController` 및 `Il2CppFormulaBase.TaskStageTarget` 클래스는 *Muse Dash*의 노트 피격 판정(Perfect, Great, Pass, Miss), 피격 시 키 음 오디오 재생, 점수/콤보 갱신 및 플레이어 HP 증감(`ChangeHealthValue`) 연산을 조율하는 판정 엔진입니다.
+> [!WARNING]
+> **추측 문서입니다.** `[추측된 메서드 바디]`의 코드와 점수(300/150)·체력 차감량(20/40) 같은 수치는 실측이 아닌 의사코드입니다. 근거로 쓰지 마세요([안내](README.md)).
+> **정정**: 이 모드의 코드에서 `pathway`는 **0=지상, 1=공중**입니다(`ResolveBmsPathway`, `PnlStagePatch`의 `road`/`air` 프리팹 규칙). 아래 필드 예시의 "0: Air, 1: Ground" 주석은 반대로 적혀 있습니다. 또 정확도는 게임의 `TaskStageTarget`(`Il2CppAssets.Scripts.GameCore.HostComponent`)이 `PerfectResult`/`GreatResult`/`MissResult` 등을 집계하고 모드가 그 결과를 [재계산](../architecture/MOD_SYSTEM_BLUEPRINT.md)합니다.
+
+`Il2CppGameLogic.NoteController` 및 `TaskStageTarget`(`Il2CppAssets.Scripts.GameCore.HostComponent`) 클래스는 *Muse Dash*의 노트 피격 판정(Perfect, Great, Pass, Miss), 피격 시 키 음 오디오 재생, 점수/콤보 갱신 및 플레이어 HP 증감(`ChangeHealthValue`) 연산을 조율하는 판정 엔진입니다.
 
 ---
 
@@ -13,7 +17,7 @@ namespace Il2CppGameLogic
     {
         public MusicData noteData;
         public int noteType; // 1: Small, 2: Saw, 3: Long, 6: Heart, 7: Note, 8: Sandbag
-        public int pathway;  // 0: Air, 1: Ground
+        public int pathway;  // (정정) 0: 지상(road), 1: 공중(air) — 원문의 "0: Air, 1: Ground"는 틀렸습니다
         public float speed;
         public float hitTime;
         private bool m_IsHitted;

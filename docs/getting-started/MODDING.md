@@ -62,22 +62,25 @@ Muse Dash/
   ```csharp
   private static readonly ExperimentNoteSpec[] ExperimentNotes =
   {
-      new ExperimentNoteSpec { Label = "지상 일반 노트", Uid = "051001", NoteType = 1, Pathway = 0, StartTick = 15.0, Speed = 5 },
+      new ExperimentNoteSpec { Label = "보스1 등장", Uid = "050101", NoteType = 0, Pathway = 0, StartTick = 15.0, BossAction = "in" },
+      new ExperimentNoteSpec { Label = "보스1 퇴장", Uid = "050102", NoteType = 0, Pathway = 0, StartTick = 22.0, BossAction = "out" },
+      // new ExperimentNoteSpec { Label = "지상 일반 노트", Uid = "051001", NoteType = 1, Pathway = 0, StartTick = 15.0, Speed = 5 },
   };
   ```
-* **곡 메타데이터 실험**: `Patches/UI/Music/PnlMusicOverride.cs` 상단 상수 수정
+  > ⚠️ **이 배열은 곡 폴더에 BMS가 없을 때만 쓰입니다.** BMS가 있으면 BMS에서 만든 노트가 이 배열을 대신합니다(`UseBmsInjection`). 위 기본값 두 줄은 저장소에 들어 있는 실제 기본값(보스 등장/퇴장 신호)입니다. 테스트한다면 BMS 없는 곡 슬롯을 고르세요. 노트를 어떻게 적는지는 [NOTE_EXPERIMENTS.md](../experiments/NOTE_EXPERIMENTS.md)에 있습니다.
+* **곡 메타데이터**: 곡 제목·아티스트·레벨 디자이너는 곡 폴더의 `info.txt`에서 읽습니다([CUSTOM_CHART_GUIDE.md](../guides/CUSTOM_CHART_GUIDE.md)). `Patches/UI/Music/PnlMusicOverride.cs` 상단 상수는 `info.txt`도 원본 곡 조회도 실패했을 때 쓰는 **폴백 표시 문구**입니다.
   ```csharp
-  private const bool EnableSongTitleExperiment = true;
-  private const string ExperimentTitle = "화영왕";
-  private const string ExperimentArtist = "화영왕";
+  private const bool EnableSongTitleExperiment = true;     // 항상 true. 끄는 용도가 아닙니다
+  private const string ExperimentTitle = "Custom Chart";
+  private const string ExperimentArtist = "Custom Artist";
   private const string ExperimentLevelDesignerLabel = "레벨 디자이너";
-  private const string ExperimentLevelDesignerName = "화영왕";
+  private const string ExperimentLevelDesignerName = "Custom Designer";
   ```
-* **보스 프리팹 규칙**: `Battle/Mechanics/BossPatch.cs` 내의 `BossRewriteRules` 배열 수정
+* **보스 프리팹 규칙**: `Battle/Mechanics/BossPatch.cs` 내의 `BossRewriteRules` 배열 수정. **BMS에 보스 노트(`in`)가 있으면 그 곡의 매핑이 우선**하고, 이 규칙은 BMS가 보스를 정하지 못했을 때의 폴백입니다.
   ```csharp
   private static readonly BossRule[] BossRewriteRules = new[]
   {
-      new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0401_boss", NewScene = 4 },
+      new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0701_boss", NewScene = 7 },
   };
   ```
 
@@ -95,8 +98,8 @@ Muse Dash/
 ### 3.2 🌟 올 퍼펙트 배너 오버레이
 곡이 끝나면 표시되는 기본 `FULL COMBO!` 낱개 글자 이미지 11개(`ImgF`, `ImgU` 등)를 비활성화하고, 그 자리에 직접 만든 `ALL PERFECT!` 배너를 표시하는 연출입니다. (비유 설명 → [ANALOGIES.md](ANALOGIES.md#41-올-퍼펙트-배너--기존-간판을-끄고-새-간판으로-교체-))
 
-1. **판정 감시**: 판정 레코드(`TaskStageTarget.AddScore`)를 가로채 정확도가 100%인지 실시간 계산합니다.
-2. **시그니처 폰트 추출**: 게임 내 만화풍 폰트(`LuckiestGuy-Regular`)를 메모리에서 가로채 복사합니다.
+1. **판정 감시**: 판정 레코드(`TaskStageTarget.AddScore`)를 가로채 `TaskStageTarget`을 캐싱해 두었다가, 결과 화면이 뜨는 순간(`OnShowVictory`) Great 0·Miss 0·풀콤보인지 판정합니다.
+2. **시그니처 폰트 추출**: 게임 내 만화풍 폰트(`LuckiestGuy-Regular`)를 플레이 중 점수 UI에서 가로채 캐싱합니다.
 3. **스타일링 이식**: 골드 옐로우 색상(`Color(1f, 0.85f, 0f)`)에 4px 검은색 테두리(`Outline`)와 6px 그림자(`Shadow`)를 적용해 배너를 표시합니다. 올 퍼펙트 조건에 미달하면 기존 순정 풀콤보 배너를 그대로 보여줍니다.
 
 ---
@@ -108,13 +111,18 @@ VideoPlayer가 투사되는 Quad(`VideoBackgroundQuad`)를 카메라 앞에 고�
 
 ## 🚀 4. 빌드 및 반영
 
-1. **컴파일**: 저장소 루트에서 `build.bat`를 실행합니다.
+1. **준비**: 게임 폴더가 기본 경로(`H:\muse dash hwa`)가 아니라면 환경 변수 `GAME_PATH`로 알려 줍니다. 컴파일할 때 `<게임>\MelonLoader\net6\*.dll`와 `<게임>\MelonLoader\Il2CppAssemblies\*.dll`을 참조하므로 **MelonLoader가 한 번 실행되어 `Il2CppAssemblies`가 만들어진 게임 폴더**가 필요합니다.
+2. **컴파일**: 저장소 루트에서 `build.bat`를 실행합니다.
    ```powershell
    # 개발용 디버그 빌드
    .\build.bat
    
    # 배포용 릴리즈 빌드
    .\build.bat release
+
+   # 게임 폴더가 다를 때
+   $env:GAME_PATH = 'D:\Games\Muse Dash'; .\build.bat
    ```
-2. **배포**: 결과물 DLL을 Muse Dash의 `Mods/` 경로로 복사합니다.
-3. **실행**: 게임의 **"실험 모드"** 태그 탭 ➡️ **"실험 앨범"**에서 주입된 곡들을 선택해 채보 실험과 연출 테스트를 즉각 수행할 수 있습니다.
+   `build.bat`는 끝날 때 `pause`로 멈추므로 자동화에는 `dotnet build`를 쓰세요(`-p:GamePath="..."`로 경로 지정).
+3. **배포**: 빌드하면 DLL(`muse-dash-custom-chart.dll`)이 `<게임>\Mods`로 **자동 복사**됩니다(csproj의 `DeployToMods`, `build.bat`도 한 번 더 복사). 손으로 옮길 필요는 없지만, **복사가 실패해도 "복사 완료" 메시지는 그대로 찍히니** 게임 폴더의 DLL 수정 시각·크기가 방금 빌드와 같은지 직접 확인하세요([CHECKLIST.md](../guides/CHECKLIST.md)). 게임이 켜져 있으면 DLL이 잠겨 있어 복사가 실패합니다.
+4. **실행**: 게임의 **"실험 모드"** 태그 탭 ➡️ **"실험 앨범"**에서 주입된 곡들을 선택해 채보 실험과 연출 테스트를 즉각 수행할 수 있습니다.

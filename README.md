@@ -33,7 +33,7 @@
   * 인게임 HUD 스코어 컴포넌트(`ChangeScoreValue`)로부터 뮤즈 대시 메인 서체인 `LuckiestGuy-Regular` 등의 **프리미엄 시그니처 폰트를 실시간 추출/캐싱**하여 결과창에 완벽히 연동시켰으며, 입체적인 3D 섀도우 및 검은색 아웃라인(`Outline`) 효과까지 그대로 재현해 인게임 정체성을 지켰습니다.
 
 * **ModConfig Feature Toggle System (개별 기능 온/오프 제어 시스템) [v0.9.3]** ✅
-  * `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 카테고리를 통해 12가지 개별 기능(커스텀 차트, 입력 오버레이, 판정바, 디스코드 RPC, 체력바, AP 패치, 오토플레이, 강제 올퍼펙트, 모바일 터치 등)을 자유롭게 활성화/비활성화할 수 있습니다.
+  * `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 카테고리를 통해 13가지 개별 기능(커스텀 차트, 히든 해금 표시, 입력 오버레이, 판정바, 디스코드 RPC, 체력바, AP 패치, AP 효과음, 오토플레이, 강제 올퍼펙트, 배틀 미디어, Spine 스킨, 모바일 터치)을 자유롭게 활성화/비활성화할 수 있고, `EnableVerboseLog`/`LogLevel`로 로그 수준도 정할 수 있습니다.
 
 * ~~**Real-Time FavGirl Swapper (인게임/준비화면 실시간 캐릭터 & 스킨 스왑)**~~ 🗑️ **제거됨**
   * 스킬 캐릭터와 외형 캐릭터를 따로 고르는 이 기능이 **2026년 9월 25일 업데이트로 바닐라(게임 본편)에 정식으로 들어가서, 모드로 할 필요가 없어졌습니다.**
@@ -48,8 +48,8 @@
 * **AutoPlay & Force Perfect (오토 플레이 및 올퍼펙트 파라미터 모드)** ✅
   * 인게임 차트 자동 연주 기능 및 판정 파라미터 조작을 통한 All-Perfect 유도 기능을 선택적으로 활성화할 수 있습니다.
 
-* **Offline Sandbox Toggle (오프라인 샌드박스 동적 토글) [NEW]** ✅
-  * `save custom key/OFFLINE_SANDBOX.txt` 플래그 파일의 설정값(`오프라인_샌드박스=활성화/비활성화`)에 따라 게임을 재시작하지 않고도 실시간으로 오프라인 샌드박스 패치(전체 DLC 잠금 해제 및 검증 우회)를 활성화/비활성화할 수 있습니다.
+* **Offline Sandbox Toggle (오프라인 샌드박스 플래그 토글) [NEW]** ✅
+  * `save custom key/OFFLINE_SANDBOX.txt` 플래그 파일의 설정값(`오프라인_샌드박스=활성화/비활성화`)에 따라 오프라인 샌드박스 패치(전체 DLC 잠금 해제 및 검증 우회, 공식 서버 요청 차단)를 켜고 끕니다. 기본값은 **비활성화**입니다. 이 파일은 시작할 때 한 번만 읽으므로 바꾼 뒤에는 게임을 다시 시작해야 합니다. 사용 전에 [계정 관련 주의](#-계정온라인-사용-시-주의)와 [샌드박스 가이드](docs/guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md)를 읽으세요.
 
 * **Menu & Prep BGM Hot-Swapping (곡 선택/준비 화면 BGM 실시간 핫스왑) [NEW]** ✅
   * 가상/커스텀 곡(`1999-*`)을 선택하거나 플레이 준비 화면(`PnlPreparation`)에 진입할 때, 현재 씬에서 재생 중인 BGM/데모용 `AudioSource`를 실시간으로 탐색하여 로컬 디렉터리의 OGG 파일(`music.ogg`)로 오디오 클립을 비동기 핫스왑(Hot-swap) 적용합니다.
@@ -75,7 +75,7 @@
 
 | 기능 | 상태 |
 |---|---|
-| 커스텀 태그(UID 1998) 동적 주입 | ✅ 완료 |
+| 커스텀 태그(태그 인덱스 `1999`, 앨범 `1999-0`) 동적 주입 | ✅ 완료 |
 | 커스텀 태그에 곡 바인딩 | ✅ 완료 |
 | `m_MaxAlbumUid` 성능 최적화 패치 | ✅ 완료 |
 | **`MusicInfo.GetLocal` & `DBConfigLocalALBUM` 로컬라이제이션 훅 (`LocalALBUMInfo` 반환)** | ✅ 완료 (v0.9.3) |
@@ -92,7 +92,7 @@
 | ~~`P`/`O` 핫키 기반 실시간 캐릭터/스킨 핫스왑 (`RealTimeSwapper`)~~ | 🗑️ 제거 (2026-09-25 바닐라 정식 도입) |
 | **Spine 커스텀 스킨 런타임 텍스처/아틀라스 주입 (`Spine/`)** | ✅ 완료 |
 | **오토 플레이(`AutoPlay`) 및 강제 올퍼펙트(`ForcePerfect`) 조작 패치** | ✅ 완료 |
-| **오프라인 샌드박스 플래그 제어 및 실시간 토글** | ✅ 완료 |
+| **오프라인 샌드박스 플래그 파일 제어** (시작 시 1회 읽음) | ✅ 완료 |
 | **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (`music.ogg`)** | ✅ 완료 |
 | **로컬 `cover.png` 기반 커스텀 곡 셀/디스크 앨범 아트 주입** | ✅ 완료 |
 | **가상 곡 플레이 기록(정확도·스코어·최대 콤보·풀콤보) 로컬 JSON 저장 및 결과/기록 카드 표시** | ✅ 완료 |
@@ -109,7 +109,7 @@
 * **완료**: 곡 제목·아티스트·레벨 디자이너 UI 실시간 변조
 * **완료**: UID 단독 변조가 UI/`MusicInfo` 불일치를 만든다는 점 확인 및 정식 등록 방향 문서화
 * **완료**: `1999-0` 같은 커스텀 UID가 `GetMusicInfoFromAll` 조회에서 주입한 `MusicInfo`로 돌아오도록 게임 DB 저장소에 등록
-* **완료**: 오프라인 샌드박스 한글 플래그 제어 및 동적 온/오프
+* **완료**: 오프라인 샌드박스 한글 플래그 파일 제어 (시작 시 적용, 바꾸면 재시작 필요)
 * **완료**: `MusicButtonCell` 곡 셀 데이터 가로채기 성공 ➡️ 곡 셀 커버 주입 및 커스텀 앨범 정렬/순서 변경 구현
 * **완료**: 커스텀 곡 선택 시 외부 BMS 파일로부터 노트를 실시간으로 읽어와 실제 플레이 가능한 커스텀 차트 로더 구현 (실시간 감시 및 핫 리로드 지원)
 * **완료**: 곡 선택/준비 화면의 가상 곡 커스텀 BGM(.ogg) 실시간 핫스왑 로딩 구현
@@ -149,7 +149,7 @@
 │   ├── Core/                 # 하드웨어 감지, 로그 레벨 제어, 예외 격리, 터치 판독, 세션/기록 저장소, ModConfig 통합 설정
 │   │   ├── DeviceDetector.cs # UMPC/핸드헬드 하드웨어 자동 판별
 │   │   ├── ModLogger.cs      # 모드 로그의 단일 창구 & 레벨 동적 제어
-│   │   ├── ModConfig.cs      # MelonPreferences 기반 12개 개별 기능 및 LogLevel 제어
+│   │   ├── ModConfig.cs      # MelonPreferences 기반 13개 개별 기능 및 LogLevel 제어
 │   │   └── ...
 │   ├── Integration/          # Discord RPC 연동
 │   │   └── DiscordPresenceManager.cs
@@ -261,7 +261,10 @@
 │   │   └── MD2_TAG_RETARGET_MAP.md     # 태그 리타게팅 맵 분석
 │   └── inferred_game_code/   # 디컴파일·실측 기반 게임 원본 코드 역추론
 │
-├── muse dash test.LogicTests/ # 게임 없이 BMS 파싱 로직만 검증하는 테스트 프로젝트
+├── muse dash test.LogicTests/ # 게임 없이 순수 로직(BMS 파서 등)만 검증하는 테스트 프로젝트
+│
+├── SignatureDumper/          # 게임의 Il2Cpp 어셈블리를 시그니처 스텁 .cs로 덤프하는 도구 (결과는 gitignore된 Decompiled/)
+├── scripts/                  # 게임 어셈블리 탐색용 일회성 PowerShell 스크립트, 진행도 초기화(reset_progress.bat)
 │
 ├── build.bat                 # MSBuild 자동 추적 및 모드 파일(DLL) 빌드/배포 스크립트
 ├── run-logic-tests.bat       # BMS 로직 테스트 실행 스크립트
@@ -280,15 +283,25 @@
 | `EnableHiddenGuide` | `true` | 곡 선택창에 히든 해금 조건(예: Master 버튼 여러 번 연타) 표시. 게임 중에 끄고 켤 때는 `config.txt`의 `히든해금표시`를 쓰세요(둘 다 켜져 있어야 표시) |
 | `EnableInputOverlay` | `true` | 인게임 실시간 키보드 입력 오버레이 HUD 표시 |
 | `EnableJudgmentBar` | `true` | 화면 하단 판정 타임라인 시각화 그래프 UI 표시 |
-| `EnableDiscordRPC` | `true` | Discord Rich Presence 실시간 상태 연동 |
+| `EnableDiscordRPC` | `true` | Discord Rich Presence 실시간 상태 연동. 끄더라도 곡 선택 시 게임 내장 Discord 호출과 상태 가로채기는 남습니다([상세](docs/guides/DISCORD_RICH_PRESENCE.md)) |
 | `EnableHpTextMod` | `true` | 배틀 체력바 텍스트 워터마크 표시 |
-| `EnableAPMod` | `true` | 올 퍼펙트 배너 및 정확도/판정 계산 오버라이드 |
+| `EnableAPMod` | `true` | 올 퍼펙트 배너 및 결과 화면 처리. **끄면 결과 화면 훅이 빠져 커스텀 곡 기록 저장도 함께 멈춥니다.** 정확도 계산 오버라이드는 이 값과 무관하게 동작합니다 |
 | `EnableAllPerfectSound` | `true` | 올 퍼펙트 달성 시 시그니처 효과음 재생 |
 | `EnableAutoPlay` | `true` | 오토 플레이 패치 활성화 |
 | `EnableForcePerfect` | `true` | All-Perfect 파라미터 모드 (강제 퍼펙트 판정) 활성화 |
 | `EnableBattleMedia` | `true` | 배틀 커스텀 BGA 비디오/미디어 재생기 활성화 |
 | `EnableSpineSkin` | `true` | Spine 커스텀 스킨 텍스처/아틀라스 런타임 주입 활성화 |
-| `EnableMobileTouch` | `true` | 모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화 |
+| `EnableMobileTouch` | `true` | 모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화. 실제로 동작하려면 `config.txt`의 `모바일터치조작=true`도 필요합니다(기본 `false`, 둘 다 켜져 있어야 함) |
+| `EnableVerboseLog` | `false` | 진단 로그 상세 출력(`LogLevel`이 `Auto`일 때 Verbose로 올림). UMPC로 감지되면 `Auto`는 이 값과 무관하게 `Error`가 됩니다 |
+| `LogLevel` | `Auto` | `Auto`, `Silent`, `Error`, `Warning`, `Info`, `Verbose` 중 하나. 자세한 동작은 [LOGGING_AND_TROUBLESHOOTING.md](docs/guides/LOGGING_AND_TROUBLESHOOTING.md) |
+
+> 위 표의 `Enable*` 항목은 **MelonPreferences(기능 전체 스위치)** 이고, 게임 중 메모장으로 고쳐 저장하면 약 1초 안에 반영되는 **`save custom key/config.txt`**(키 오버레이·판정바·오토플레이·강제퍼펙트·피버충전금지·시네마·고스트 노트·모바일 터치·히든 해금 표시)는 별개입니다. 같은 기능에 스위치가 둘 있을 때는 **둘 다 켜져 있어야** 동작합니다(예: 판정바 = `EnableJudgmentBar` + `판정바표시`).
+
+## ⚠️ 계정(온라인) 사용 시 주의
+
+* **오토플레이(`오토플레이=true`), 강제 퍼펙트(`강제퍼펙트=true`), 피버 충전 금지(`피버충전금지=true`)는 커스텀 곡뿐 아니라 공식곡에도 적용됩니다.** 이 모드는 조작된 판정이 점수 업로드로 가는 길을 따로 막지 않고, 실제로 업로드되는지도 확인하지 않았습니다. 온라인 랭킹·계정에 영향을 줄 수 있으니, 이 기능을 쓰는 동안에는 인터넷을 끊거나 오프라인 상태로 플레이하세요.
+* **오프라인 샌드박스(`OFFLINE_SANDBOX.txt`)를 켜면** 모든 DLC를 보유한 것처럼 응답하고 DLC 검증을 우회합니다. 서버의 구매 이력과 대조될 경우 계정·랭킹 제재를 받을 수 있다고 [샌드박스 가이드](docs/guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md)도 경고합니다. 기본값은 꺼짐입니다.
+* 커스텀 곡(`1999-*`)의 기록은 게임 세이브가 아니라 `record/` 폴더에 따로 저장되고, 세이브 직전에 가상 곡 항목을 걸러냅니다. 그렇더라도 세이브 파일은 백업해 두는 것을 권장합니다.
 
 > **제거된 설정 (FavGirl)** — 실시간 캐릭터/스킨 스왑은 2026년 9월 25일 업데이트로 바닐라에 정식 도입되어 모드에서 뺐습니다.
 > 이전 버전이 만든 아래 항목은 이제 아무 코드도 읽지 않으므로, 남아 있어도 무해하고 지워도 됩니다.
@@ -301,22 +314,33 @@
 
 ## 🚀 Quick Start (빌드 및 적용)
 
-프로젝트 루트에 위치한 `build.bat`을 실행하면 시스템 내의 MSBuild를 자동으로 찾아 빌드를 수행한 뒤, 게임 경로의 `Mods` 폴더에 배포 및 유효성 검증까지 한 번에 완료해 줍니다.
+### 준비물
+
+* **MelonLoader가 설치된 Muse Dash**: 모드 프로젝트는 게임 폴더의 `MelonLoader\net6\*.dll`과 `MelonLoader\Il2CppAssemblies\*.dll`을 직접 참조합니다. 게임을 MelonLoader로 한 번 실행해 `Il2CppAssemblies`가 만들어져 있어야 합니다(문서·주석은 MelonLoader 0.7.3 기준).
+* **.NET SDK**: 모드는 `net6.0` 대상에 C# 11(`LangVersion 11`)을 쓰므로 .NET 7 SDK 이상이 필요하고, 로직 테스트는 `net8.0`이라 **.NET 8 SDK 이상을 권장**합니다. `build.bat`은 추가로 Visual Studio의 MSBuild를 찾습니다(없으면 `dotnet build`를 쓰세요).
+* **게임 경로 지정**: 기본값은 작성자 환경의 `H:\muse dash hwa`입니다. 다른 위치라면 아래 둘 중 하나로 알려 주세요.
+  * `dotnet build`: `-p:GamePath="D:\Steam\steamapps\common\Muse Dash"`
+  * `build.bat`: 실행 전에 환경변수 `GAME_PATH`를 설정 (`set GAME_PATH=D:\Steam\steamapps\common\Muse Dash`)
+
+### 빌드
+
+프로젝트 루트에 위치한 `build.bat`을 실행하면 시스템 내의 MSBuild를 자동으로 찾아 빌드를 수행한 뒤, 게임 경로의 `Mods` 폴더에 배포 및 유효성 검증까지 한 번에 완료해 줍니다. (`build.bat`에 `release`를 붙이면 Release 빌드, 끝에 `pause`가 있어 자동화에서는 멈춥니다.)
 
 ```powershell
-# 수동 빌드 시
-dotnet build "muse dash test\muse dash test.csproj" --configuration Debug
+# 수동 빌드 시 (게임 경로가 기본값이 아니면 -p:GamePath 추가)
+dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:GamePath="D:\Steam\steamapps\common\Muse Dash"
 ```
 
 * **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse-dash-custom-chart.dll` (또는 Release 빌드 시 `bin/Release/net6.0/muse-dash-custom-chart.dll`)
-* **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉터리
+* **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉터리. **`dotnet build`도 빌드가 끝나면 이 폴더로 자동 복사합니다**(csproj의 `DeployToMods`). 복사가 실패해도 `[AutoDeploy] Successfully deployed` 메시지는 그대로 찍히므로, 폴더에 실제 파일이 있는지 눈으로 확인하세요([CHECKLIST.md](docs/guides/CHECKLIST.md)).
+* `Mods/`에는 이 모드의 DLL이 **하나만** 있어야 합니다. MelonLoader는 폴더 안의 `.dll`을 전부 로드합니다.
 
 ---
 
 ## 🧪 로직 테스트
 
 모드 본체는 IL2CPP 어셈블리(`Il2CppAssemblies`)를 참조하므로 게임 밖에서 로드할 수 없습니다.
-대신 `Bms/` 폴더의 순수 파싱 로직만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다.
+대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `PlayRecordMerge`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 101개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행합니다. 기록 파일 저장/파싱과 `config.txt` 파싱은 게임 의존 클래스 안에 있어 아직 테스트 대상이 아닙니다.)
 
 ```powershell
 .\run-logic-tests.bat

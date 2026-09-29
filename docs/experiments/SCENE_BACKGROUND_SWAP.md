@@ -60,12 +60,16 @@ uid = "071304"
 `muse dash test/Patches/Scene/SceneFlowPatch.cs`
 
 ```csharp
-[HarmonyPatch(typeof(SceneChangeController), "ChangeNote", new[] { typeof(int) })]
+[HarmonyPatch(typeof(Il2Cpp.SceneChangeController), "ChangeNote", new Type[] { typeof(int) })]
 public class SceneChangeController_ChangeNote_Patch
 {
-    // false 반환 → 원본 ChangeNote 미실행 = 노트 세트 교체 차단
-    public static bool Prefix(SceneChangeController __instance, ref int sceneInfo)
+    public static bool Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
+        // 순정곡이면 원본 ChangeNote를 그대로 실행합니다(공식곡의 씬 전환 연출을 건드리지 않음).
+        if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+            return true;
+
+        // 커스텀 차트를 적용 중일 때만 false 반환 → 원본 ChangeNote 미실행 = 노트 세트 교체 차단
         return false;
     }
 }
@@ -73,7 +77,8 @@ public class SceneChangeController_ChangeNote_Patch
 
 `Prefix`가 `false`를 반환하면 Harmony가 원본 메서드를 실행하지 않습니다. 반면 `ChangeScene`은
 손대지 않으므로 **배경 전환은 정상적으로 통과**합니다. 이 하나로 "씬이 바뀌어도 노트 프리팹 세트는
-그대로"가 성립합니다.
+그대로"가 성립합니다. **차단은 커스텀 차트를 적용 중일 때뿐이고 공식곡은 원본 동작 그대로입니다**
+(`SceneFlowPatch.cs`의 나머지 `ChangeScene`/`SceneAnimationReset` 패치는 Verbose 로그만 남기는 관찰용입니다).
 
 ---
 
@@ -124,8 +129,16 @@ SceneZzTransformTracker.RestoreRuntimeObjects(__instance);      // 이미 생성
 ```
 
 - `RestoreIdentities` — `objId`를 키로 `musicList`의 각 노트를 원본 uid/scene/prefab으로 되돌린다.
-- `RestoreRuntimeObjects` — 풀에 이미 들어간 런타임 객체 그래프를 리플렉션으로 2단계까지 파고들어,
-  변형된 uid 문자열·noteUid 스칼라까지 원본값으로 치환한다.
+- `RestoreRuntimeObjects` — 풀에 이미 들어간 런타임 객체(`scene.objCtrls` / `preloads` / `preloads1`,
+  `Il2CppReferenceArray` 또는 `List`)를 **타입 캐스트로 직접** 훑어, `BaseEnemyObjectController.m_MusicData`와
+  `BaseSpineObjectController.m_Sac.m_MusicData`의 변형된 uid·prefab·noteUid를 원본값으로 되돌린다.
+
+> [!WARNING]
+> **리플렉션으로 런타임 객체 그래프를 깊게 파고드는 방식은 쓰지 마세요.** 이 문서의 예전 판은 "리플렉션으로
+> 2단계까지 파고든다"고 적었지만, 그 방식은 노트 500개 이상인 곡에서 193번째 전후로 프로세스가 로그 없이 사라졌습니다
+> (2026-08-20, [CHECKLIST.md](../guides/CHECKLIST.md)). 지금 구현은 위처럼 알려진 타입으로 직접 캐스팅하고, 객체 중복 방문은
+> 네이티브 포인터(`Il2CppObjectBase.Pointer`)로 막습니다. 자세한 이유는 `SceneZzTransformTracker.Restore.cs`의
+> `RestoreRuntimeObjects` 주석을 보세요.
 
 이 두 단계 덕분에 **배경은 변형된 zz로 등록되어 바뀌지만, 노트의 실제 데이터는 BMS 원본**으로
 돌아옵니다.
@@ -136,7 +149,7 @@ SceneZzTransformTracker.RestoreRuntimeObjects(__instance);      // 이미 생성
 
 | 순서 | 시점 / 후킹 | 파일 | 하는 일 |
 | --- | --- | --- | --- |
-| 1 | 주입 직후 | `DBStageInfoExperimentChart.cs:64` | `RegisterBmsOriginalIdentities` — 원본 정체를 `objId`로 박제 |
+| 1 | 주입 직후 | `DBStageInfoExperimentChart.cs` (`ApplyExperimentChart`) | `RegisterBmsOriginalIdentities` — 원본 정체를 `objId`로 박제 |
 | 2 | `InitTimer` Prefix | `GameMusicSceneInitPatch.cs` | `TransformSceneSegments` — zz를 배경용으로 변형(+ BMS 원본 zz 우선) |
 | 3 | (게임) `PreLoadEnemy` | — | 변형된 zz로 노트 풀/배경 빌드 |
 | 4 | `PreLoadEnemy` Postfix | `GameMusicScenePreLoadEnemyPatch.cs` | `RestoreIdentities` + `RestoreRuntimeObjects` — 노트 데이터 원복 |
@@ -185,4 +198,4 @@ SceneZzTransformTracker.RestoreRuntimeObjects(__instance);      // 이미 생성
 - 씬 코드(zz)에 따라 노트를 인스턴스화할 때, 노트 생성자가 참조하는 프리팹 매핑(UID -> Prefab 이름) 지점을 하모니 패치로 우회합니다.
 - `musicList`의 노트 UID가 원본 BMS 그대로 유지된 상태에서, 게임이 프리팹을 찾으려 할 때만 후킹하여 임시 렌더링용 zz가 포함된 프리팹 이름을 반환하도록 구현합니다.
 
-이러한 분리가 적용된다면 데이터 원본의 순수성이 유지되므로 더 이상 `RestoreIdentities`나 리플렉션을 사용한 복잡한 `RestoreRuntimeObjects` 재귀 탐색 로직이 필요하지 않게 되며, 모드의 견고함과 안정성이 크게 향상될 것입니다.
+이러한 분리가 적용된다면 데이터 원본의 순수성이 유지되므로 더 이상 `RestoreIdentities`와 `RestoreRuntimeObjects`(런타임 객체를 훑어 되돌리는 로직)가 필요하지 않게 되며, 모드의 견고함과 안정성이 크게 향상될 것입니다. (아직 구현되지 않은 방향 제안입니다.)

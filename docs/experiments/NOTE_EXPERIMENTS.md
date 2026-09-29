@@ -2,6 +2,11 @@
 
 노트 실험은 `muse dash test/Patches/Database/Stage/DBStageInfoPatch.cs`의 `ExperimentNotes` 배열만 수정하면 됩니다. 현재 방식은 원본 차트에서 첫 플레이 노트를 복사한 뒤, 원하는 값으로 바꿔서 새 차트처럼 주입하는 방식입니다.
 
+> [!IMPORTANT]
+> **`ExperimentNotes`는 그 곡에 BMS 차트가 없을 때만 쓰입니다.** 곡 폴더에 BMS가 있고 노트로 변환되면 BMS가 배열을 대체합니다(`ApplyExperimentChart`). 반대로 BMS가 없는 곡 슬롯(`hwa/`가 비어 있을 때 만들어지는 테스트 슬롯 포함)에는 이 배열이 그대로 들어가므로, **저장소 기본 배열의 보스 등장(15틱)·퇴장(22틱) 노트가 그 곡에 나옵니다.** 실험을 마친 뒤에는 배열을 원래대로 돌려 두세요.
+>
+> 노트 필드를 직접 고치는 코드를 쓸 때는 [CHECKLIST.md](../guides/CHECKLIST.md)의 "IL2CPP 값 타입 필드에 `a.b.c = x`로 바로 쓰지 않았는가?"를 먼저 읽으세요. `note.noteData.id = x`처럼 쓰면 임시 박스에만 쓰이고 조용히 버려집니다(지역 변수로 받아 고친 뒤 setter로 되돌려 써야 합니다).
+
 이 문서는 “어떤 값을 넣어야 어떤 노트가 되는가”를 빠르게 보기 위한 타입 사전 역할도 합니다. 실제 게임 안에서는 일반 노트, 공중 노트, 롱노트, 샌드백, 보스 트리거가 모두 같은 `MusicData` 리스트 안에 들어갑니다.
 
 ## MusicData 구조
@@ -450,7 +455,7 @@ BMS UID는 `zzxxyy` 구조로 봅니다. 여기서 앞 두 자리 `zz`는 단순
 
 ### 보스 동반 주의
 
-씬 전환 시 `Boss.SceneBossChange`도 같이 호출됩니다. 보스가 씬 전환 후 사라진다면 `Boss.SceneBossChange`의 인덱스를 강제로 바꾸고 있지 않은지 먼저 확인하세요. 현재는 안정성을 위해 `EnableSceneBossChangeRewrite = false`가 맞습니다.
+씬 전환 시 `Boss.SceneBossChange`도 같이 호출됩니다. 현재 `Boss_SceneBossChange_Patch`는 호출을 Verbose 로그로만 남기는 관찰용이고 인덱스를 바꾸지 않습니다(예전에 있던 인덱스 재작성 기믹은 제거되었습니다). 보스가 씬 전환 후 사라진다면 `LogLevel = "Verbose"`로 `[SceneFlow.*]`, `Boss.SceneBossChange` 로그를 보고 원인을 좁히세요.
 
 ## 로그 확인
 

@@ -2,6 +2,8 @@
 
 기준 커밋: `495597d321ddb3999a78990acf1f3d9f95612dfc`. 보고서 작성 전 Git 추적 파일 197개.
 
+> 이 표는 위 기준 커밋 시점의 **스냅샷**이다. 줄 수와 파일 목록은 이후 바뀌었고, 세 파일(`FavSave.cs`, `RealTimeSwapper.cs`, `FavManager.cs`)은 삭제되어 링크를 걸지 않았다. 현재 파일 목록은 `git ls-files`로 본다.
+
 전체 텍스트 파일을 읽어 실행 진입점·반복·I/O·객체 검색·리플렉션 패턴을 검색했다. 표는 전수 검색 범위를 나타내며, 모든 파일을 같은 깊이로 수동 정독했다는 뜻은 아니다. 주요 실행 경로의 상세 판단은 [성능 검토](PERFORMANCE_REVIEW_2026-09-20.md)에 있다. PNG는 크기와 사용 경로를 확인했다.
 
 | 파일 | 줄 수 / 크기 | 검토 분류 |
@@ -73,7 +75,7 @@
 | [muse dash test/Core/CustomRecordStore.cs](../../muse%20dash%20test/Core/CustomRecordStore.cs) | 419 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Core/DeviceDetector.cs](../../muse%20dash%20test/Core/DeviceDetector.cs) | 169 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Core/EmbeddedResource.cs](../../muse%20dash%20test/Core/EmbeddedResource.cs) | 77 | 모드 소스: 성능 패턴 전수 검색 |
-| [muse dash test/Core/FavSave.cs](../../muse%20dash%20test/Core/FavSave.cs) | 100 | 모드 소스: 성능 패턴 전수 검색 |
+| `muse dash test/Core/FavSave.cs` (이후 삭제됨) | 100 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Core/FeatureGuard.cs](../../muse%20dash%20test/Core/FeatureGuard.cs) | 123 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Core/GameBindings.cs](../../muse%20dash%20test/Core/GameBindings.cs) | 86 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Core/HealthBarFinder.cs](../../muse%20dash%20test/Core/HealthBarFinder.cs) | 51 | 모드 소스: 성능 패턴 전수 검색 |
@@ -84,7 +86,7 @@
 | [muse dash test/Core/TouchInput.cs](../../muse%20dash%20test/Core/TouchInput.cs) | 199 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Core/UnlockAllMasterGuard.cs](../../muse%20dash%20test/Core/UnlockAllMasterGuard.cs) | 28 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Integration/DiscordPresenceManager.cs](../../muse%20dash%20test/Integration/DiscordPresenceManager.cs) | 177 | 모드 소스: 성능 패턴 전수 검색 |
-| [muse dash test/Integration/RealTimeSwapper.cs](../../muse%20dash%20test/Integration/RealTimeSwapper.cs) | 359 | 모드 소스: 성능 패턴 전수 검색 |
+| `muse dash test/Integration/RealTimeSwapper.cs` (이후 삭제됨) | 359 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/MainMod.cs](../../muse%20dash%20test/MainMod.cs) | 260 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Patches/Battle/Mechanics/AutoPlayPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs) | 43 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Patches/Battle/Mechanics/BossPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/BossPatch.cs) | 437 | 모드 소스: 성능 패턴 전수 검색 |
@@ -120,7 +122,7 @@
 | [muse dash test/Patches/Diagnostics/HwaChartDiagnostics.cs](../../muse%20dash%20test/Patches/Diagnostics/HwaChartDiagnostics.cs) | 112 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Patches/Diagnostics/OffsetHookPatches.cs](../../muse%20dash%20test/Patches/Diagnostics/OffsetHookPatches.cs) | 142 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Patches/Diagnostics/PatchHealthCheck.cs](../../muse%20dash%20test/Patches/Diagnostics/PatchHealthCheck.cs) | 324 | 모드 소스: 성능 패턴 전수 검색 |
-| [muse dash test/Patches/Fav/FavManager.cs](../../muse%20dash%20test/Patches/Fav/FavManager.cs) | 294 | 모드 소스: 성능 패턴 전수 검색 |
+| `muse dash test/Patches/Fav/FavManager.cs` (이후 삭제됨) | 294 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Patches/Hwa/HwaManifest.cs](../../muse%20dash%20test/Patches/Hwa/HwaManifest.cs) | 29 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Patches/Hwa/HwaManifestLoader.cs](../../muse%20dash%20test/Patches/Hwa/HwaManifestLoader.cs) | 346 | 모드 소스: 성능 패턴 전수 검색 |
 | [muse dash test/Patches/Hwa/HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 429 | 모드 소스: 성능 패턴 전수 검색 |

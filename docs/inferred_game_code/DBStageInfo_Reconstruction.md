@@ -1,5 +1,8 @@
 # DBStageInfo Inferred Method Body Reconstruction
 
+> [!WARNING]
+> **추측 문서입니다.** `[추측된 메서드 바디]`는 실측이 아닌 의사코드이고, `AssetBundleManager.LoadChartText`, `BMSParser.ParseToMusicDataList`, `m_AllStageInfo` 같은 이름은 지어낸 것일 수 있습니다([안내](README.md)). 확인된 사실은 `SetRuntimeMusicData`가 게임이 순정 노트 리스트(`musicList`)를 다 만든 **뒤**에 불리며, 모드가 그 리스트를 제자리에서 비우고 다시 채운다는 것입니다([DBStageInfoPatch.cs](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoPatch.cs), [MD2 가이드 Phase 3](../muse-dash-2/MUSE_DASH_2_SPECULATIVE_GUIDE.md)). 이 클래스에는 `sceneDialogEvents`/`sceneDialogDictionary`/`delay` 같은 멤버도 있습니다([DIALOG_INJECTION.md](../experiments/DIALOG_INJECTION.md)).
+
 `Il2CppAssets.Scripts.Database.DBStageInfo` 클래스는 *Muse Dash*의 전체 채보(Chart), 곡 앨범 정보(`MusicTagMetaData`), 난이도별 데이터 및 실행 시점 `musicList` 파싱 데이터베이스를 관리하는 핵심 싱글톤 데이터 레이어입니다.
 
 ---

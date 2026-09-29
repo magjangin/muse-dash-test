@@ -1,6 +1,6 @@
 # 📱 모바일 터치 시스템 복원 및 입력 브릿지 가이드 (Mobile Touch & Input Guide)
 
-Muse Dash PC(스팀) 빌드 내부에 잠들어 있던 **모바일 터치 조작 설정 UI([`PnlInputMobile`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2Cpp/PnlInputMobile.cs)) 복원**과 **인게임 배틀 마우스/터치 브릿지([`MouseTouchBridgePatch`](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs))**에 대한 기술 명세 및 동작 원리 문서입니다.
+Muse Dash PC(스팀) 빌드 내부에 잠들어 있던 **모바일 터치 조작 설정 UI(`PnlInputMobile`) 복원**과 **인게임 배틀 마우스/터치 브릿지([`MouseTouchBridgePatch`](../../muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs))**에 대한 기술 명세 및 동작 원리 문서입니다.
 
 ---
 
@@ -33,7 +33,7 @@ flowchart TD
 
 ---
 
-## 2. 모바일 설정 UI 복원 ([`PnlInputMobilePatch.cs`](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/UI/Setting/PnlInputMobilePatch.cs))
+## 2. 모바일 설정 UI 복원 ([`PnlInputMobilePatch.cs`](../../muse%20dash%20test/Patches/UI/Setting/PnlInputMobilePatch.cs))
 
 ### 2.1 패널 구조 및 역할
 * **`PnlPlaySetting`:** 인게임 전체 설정 관리 패널. PC 환경에서는 기본적으로 PC용 키 설정(`m_PnlInputSettingStandlone`)을 띄우도록 되어 있음.
@@ -44,6 +44,7 @@ flowchart TD
   * **수동 / 자동 FEVER:** 피버 발동 모드 설정
 
 ### 2.2 패치 구현
+아래는 핵심만 줄인 요약입니다(실제 코드는 예외 처리와 로그가 더 있습니다). **버튼 리스너 안에서 두 스위치를 매번 확인합니다.** 모바일 터치 모드가 꺼져 있으면 PC 키 설정 패널을 그대로 둡니다.
 ```csharp
 [HarmonyPatch(typeof(PnlPlaySetting), nameof(PnlPlaySetting.OnAwake))]
 public static class PnlPlaySetting_MobileInputPatch
@@ -54,6 +55,9 @@ public static class PnlPlaySetting_MobileInputPatch
         {
             __instance.m_BtnInputSetting.onClick.AddListener((UnityAction)(() =>
             {
+                // MelonPreferences(EnableMobileTouch)와 config.txt(모바일터치조작)가 둘 다 켜져 있어야 합니다.
+                if (!ModConfig.EnableMobileTouch || !InputOverlay.enableMobileTouch) return;
+
                 // PC용 키설정 패널 숨김 및 모바일 터치 패널 활성화
                 if (__instance.m_PnlInputSettingStandlone != null)
                     __instance.m_PnlInputSettingStandlone.SetActive(false);
@@ -68,7 +72,7 @@ public static class PnlPlaySetting_MobileInputPatch
 
 ---
 
-## 3. 배틀 엔진 마우스/터치 브릿지 ([`MouseTouchBridgePatch.cs`](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs))
+## 3. 배틀 엔진 마우스/터치 브릿지 ([`MouseTouchBridgePatch.cs`](../../muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs))
 
 ### 3.1 터치 입력 백엔드: 어느 계층에서 읽는가
 
@@ -86,9 +90,9 @@ public static class PnlPlaySetting_MobileInputPatch
 
 `Input.touchSupported`가 `True`라고 해서 터치가 들어온다는 뜻이 아닙니다. 이 값은 OS 능력 조회 결과를 반영할 뿐이고, 실제로는 접점이 하나도 전달되지 않습니다. 게임에 도착하는 것은 Windows가 승격시킨 마우스 이벤트뿐이며, **승격은 손가락 1개만 지원**하므로 공중/지상 동시 입력이 원천적으로 불가능해집니다.
 
-한편 게임의 [`IControlable`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets/Scripts/GameCore/Controller/IControlable.cs)에는 `GetTouchs(List<TouchControl>)`가 존재하고 `Unity.InputSystem.dll` 풀 패키지가 탑재되어 있습니다. **게임 자체가 이미 Input System 기반이며, 죽어 있던 것은 레거시 경로 하나뿐이었습니다.**
+한편 게임의 `IControlable`(`Il2CppAssets.Scripts.GameCore.Controller`, `SignatureDumper`로 뜬 `Decompiled/`에서 볼 수 있습니다. 이 폴더는 `.gitignore` 대상이라 저장소에는 없습니다)에는 `GetTouchs(List<TouchControl>)`가 존재하고 `Unity.InputSystem.dll` 풀 패키지가 탑재되어 있습니다. **게임 자체가 이미 Input System 기반이며, 죽어 있던 것은 레거시 경로 하나뿐이었습니다.**
 
-따라서 접점 판독은 [`TouchInput`](file:///h:/source/repos/muse%20dash%20test/muse%20dash%20test/Core/TouchInput.cs)이 전담합니다.
+따라서 접점 판독은 [`TouchInput`](../../muse%20dash%20test/Core/TouchInput.cs)이 전담합니다.
 
 ```csharp
 var screen = Touchscreen.current;          // 새 Input System
@@ -114,7 +118,7 @@ Vector2 pos = t.position.ReadValue();
 손가락이 화면에 없을 때는 실제 마우스가 평소대로 동작합니다.
 
 ### 3.2 PC 입력 파이프라인 분석
-배틀 입력은 **[`StandloneController`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets/Scripts/GameCore/Controller/StandloneController.cs)**와 **[`InputManager`](file:///h:/source/repos/muse%20dash%20test/Decompiled/Assembly-CSharp/Il2CppAssets/Scripts/PeroTools/Managers/InputManager.cs)**의 3대 메서드를 통해 폴링됩니다:
+배틀 입력은 **`StandloneController`**(`Il2CppAssets.Scripts.GameCore.Controller`)와 **`InputManager`**(`Il2CppAssets.Scripts.PeroTools.Managers`)의 3대 메서드를 통해 폴링됩니다:
 1. `GetButtonDown(MDButtonType buttonName)`: 타격 시작 프레임
 2. `GetButton(MDButtonType buttonName)`: 홀드(롱노트 및 점프 체공 유지) 프레임
 3. `GetButtonUp(MDButtonType buttonName)`: 키 릴리즈 프레임
@@ -189,11 +193,13 @@ private static bool CalculateIsAir(Vector2 screenPos)
 ```
 
 ### 5.2 `UserData/MelonPreferences.cfg`
-MelonLoader의 통합 기능 토글 설정에도 모바일 터치 기능 On/Off 항목이 등록되어 있습니다. (기본값: `false`)
+MelonLoader의 통합 기능 토글 설정에도 모바일 터치 기능 On/Off 항목이 등록되어 있습니다. (기본값: **`true`**)
 ```toml
 [muse-dash-custom-chart-features]
-EnableMobileTouch = false
+EnableMobileTouch = true
 ```
+
+**두 스위치가 모두 켜져 있어야 동작합니다.** `EnableMobileTouch`(기능 전체 스위치, 기본 `true`)와 `config.txt`의 `모바일터치조작`(게임 중 바로 반영되는 사용자 스위치, 기본 `false`)입니다. 그래서 기본 설정 그대로는 꺼져 있고, `모바일터치조작=true`로 바꿔야 켜집니다.
 
 ---
 

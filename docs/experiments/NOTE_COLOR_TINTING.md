@@ -1,7 +1,7 @@
 # 🎨 Muse Dash 노트 색조(Tint) 변조 가능성 및 실측 명세서
 
 > [!NOTE]
-> 런타임 진단 패치([`NoteColorDiagnosticsPatch.cs`](../../muse%20dash%20test/Patches/Diagnostics/NoteColorDiagnosticsPatch.cs))를 통해 *Muse Dash* 인게임 배틀 씬의 모든 노트 Spine 스켈레톤, 슬롯 RGBA 및 애니메이션 타임라인을 100% 실측 분석한 색조 변조 기술 명세서입니다.
+> 런타임 진단 패치(`NoteColorDiagnosticsPatch`)를 통해 *Muse Dash* 인게임 배틀 씬의 모든 노트 Spine 스켈레톤, 슬롯 RGBA 및 애니메이션 타임라인을 실측 분석한 색조 변조 기술 명세서입니다. 그 진단 패치와 뒤이어 만든 시험용 `GearNoteColorPatch`는 **둘 다 저장소에서 제거됐습니다**(2026-08-12, `352c07b`·`cc36c14`). 아래 수치는 그때 측정한 결과이고, 문서 끝의 C# 코드도 현재 빌드에 들어 있지 않은 참고용입니다.
 
 ---
 
@@ -56,7 +56,7 @@ $$\text{FinalColor}_{RGB} = \text{TexturePixel}_{RGB} \times \text{SlotColor}_{R
 * **결과**: **노랑 ↔ 주황 ↔ 빨강 ↔ 연두 ↔ 초록** 범위 내에서 완벽한 색조 변화 지원. (B 채널이 낮아 남색/보라 적용 시 어둡게 죽음).
 
 ### 3. 고스트 노트 (`Type 4`, `xx=17`)
-* **실측 구조**: `in_nor_38` 애니메이션 내 **8개의 `ColorTimeline` 존재** (투명도 페이드 내장).
+* **실측 구조**: `in_nor_44` 애니메이션 내 **8개의 `ColorTimeline` 존재** (투명도 페이드 내장). ([GHOST_NOTE_ALPHA_HOLD.md](./GHOST_NOTE_ALPHA_HOLD.md)의 실측과 같은 애니메이션입니다. 이 문서 초기에는 `in_nor_38`로 적혀 있었으나 잘못된 이름이었습니다.)
 * **원리**: R(100%), B(73%), G(24%).
 * **결과**: **빨강 ↔ 자홍 ↔ 보라 ↔ 남색** 지원. G 채널 상한이 24%라 초록/노란 유령은 틴트로 불가능 (몸통이 칙칙한 검은보라색으로 죽음).
 * **특이사항**: 애니메이션 `ColorTimeline` 알파 키 덮어쓰기 로직([`GHOST_NOTE_ALPHA_HOLD.md`](./GHOST_NOTE_ALPHA_HOLD.md))과 병행 필요.
@@ -79,7 +79,14 @@ $$\text{FinalColor}_{RGB} = \text{TexturePixel}_{RGB} \times \text{SlotColor}_{R
 
 ## 💻 4계층 전신 틴트 덮어쓰기 C# 레퍼런스 소스 코드
 
-이 코드는 실측 검증을 통해 완성된 **4계층 전신 틴트 덮어쓰기(Spine Slot + SlotData + Attachments + Unity Renderers) 및 `zz03yy` (단, `zz != 00`) 핀포인트 조건 필터링 핵심 참조 로직**입니다. 나중에 다시 틴트 기능을 구현하거나 수정할 때 그대로 활용할 수 있습니다.
+이 코드는 시험 패치에서 검증했던 **4계층 전신 틴트 덮어쓰기(Spine Slot + SlotData + Attachments + Unity Renderers) 및 `zz03yy` (단, `zz != 00`) 핀포인트 조건 필터링 참조 로직**입니다. 시험 패치는 삭제됐으므로 **현재 저장소에는 이 코드가 없고, 지금 빌드에서 다시 컴파일해 확인한 코드도 아닙니다.** 출발점으로만 쓰세요.
+
+> [!WARNING]
+> 그대로 되살리기 전에 아래를 먼저 확인하세요.
+> * **공유 데이터를 고칩니다.** `slot.data`(SlotData)와 어태치먼트(`RegionAttachment`/`MeshAttachment`)의 색은 같은 스켈레톤을 쓰는 **모든 노트와 이후 곡까지** 영향을 줍니다. 고스트 알파 고정이 그랬듯([GHOST_NOTE_ALPHA_HOLD.md](./GHOST_NOTE_ALPHA_HOLD.md) §4), 끈 곡에서는 **원래 색을 기억해 뒀다가 되돌려야** 합니다. 아래 코드는 되돌리지 않습니다.
+> * `MeshRenderer.material`을 읽으면 Unity가 머티리얼 사본을 만듭니다. 노트마다 호출하면 사본이 계속 쌓이므로 `sharedMaterial`이나 `MaterialPropertyBlock`을 검토하세요.
+> * `PlayByKey`는 노트마다 호출되는 핫 경로입니다. 컴포넌트 검색(`GetComponentsInChildren`)은 캐시하거나 스켈레톤 단위로 1회만 하세요.
+> * 이 모드의 규칙대로 `FeatureGuard`와 `ModLogger`를 거치게 고치고, IL2CPP 값 타입은 되쓰기(write-back) 계약을 지켜야 합니다([CHECKLIST.md](../guides/CHECKLIST.md)).
 
 ```csharp
 using System;

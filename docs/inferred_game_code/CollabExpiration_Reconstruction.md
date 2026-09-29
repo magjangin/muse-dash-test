@@ -22,7 +22,7 @@
 
 - `GetServerTime(Action<DateTime> callback, Action<long,string> failCallback, bool force)` / `RequireTime(...)` — 실제로 서버에 네트워크 요청을 보내 서버 시각(UTC)을 받아온다. PC 로컬 시계 조작으로 카운트다운을 속이지 못하게 하려는 설계로 보인다.
 - `serverUtcTime` / `nowLocalServerTime` — 한 번 받아온 서버 시각 + 그 이후 경과 시간(`Stopwatch`)으로 "지금"을 근사 계산.
-- **`ResetToLocal()`** — 서버 시각 확보 실패 시 로컬 PC 시계로 폴백하는 지점. **오프라인(Goldberg 에뮬레이터 등)에서는 서버 요청이 애초에 안 되므로 이 경로를 탈 가능성이 높고, 그 경우 만료 판정 기준이 PC 시스템 시계로 바뀔 수 있다.** (실제로 오프라인 상태에서 `ResetToLocal`이 호출되는지는 아직 실측 전 — 확인 필요 시 여기에 후킹을 다시 추가할 것.)
+- **`ResetToLocal()`** — 서버 시각 확보 실패 시 로컬 PC 시계로 폴백하는 지점. **서버 요청이 애초에 안 되는 오프라인 환경에서는 이 경로를 탈 가능성이 높고, 그 경우 만료 판정 기준이 PC 시스템 시계로 바뀔 수 있다.** (실제로 오프라인 상태에서 `ResetToLocal`이 호출되는지는 아직 실측 전 — 확인 필요 시 여기에 후킹을 다시 추가할 것.)
 
 > ⚠️ 주의: `PeroServerTime.serverUtcTime`/`nowLocalServerTime` getter의 실제 반환 타입은 `Il2CppSystem.DateTime`이며(`System.DateTime`이 아님), Harmony로 `ref System.DateTime __result`로 후킹하면 **네이티브 크래시**가 발생함을 확인했다(예외 로그 없이 뚝 끊김). 이 두 getter를 후킹할 땐 반드시 `ref Il2CppSystem.DateTime __result`로 타입을 맞출 것.
 
@@ -41,6 +41,8 @@
 ---
 
 ## 5. 실측 결과: 콜라보 종료일 전체 목록 (측정일 2026-08-03)
+
+> 이 표는 **2026-08-03 시점의 스냅샷**입니다. "상태" 칸은 그날 기준이라 지금과 다릅니다(예: `neon_abyss`의 종료일 2026-08-17은 이미 지났습니다). 최신 값이 필요하면 `CollabEndTimeDumpPatch`의 로그를 다시 보세요(게임 시작 때 Info 레벨로 전체를 덤프합니다).
 
 `DlcUIExtensionInfo`에 실제로 항목이 있던 11개 (jsonIndex 오름차순):
 
@@ -81,7 +83,7 @@ DBConfigDlcUIExtension.Deserialize(json)
 
 ## 7. 조사 범위에서 제외된 것
 
-같은 조사 세션에서 "고스트(Hide=4) 노트가 페이드 아웃되는 로직"도 함께 찾아봤으나, 다음 이유로 **구현을 포기**했다(문서화하지 않음, 관련 코드도 전부 롤백/삭제됨):
+같은 조사 세션에서 "고스트(Hide=4) 노트가 페이드 아웃되는 로직"도 함께 찾아봤으나, 다음 이유로 **이 방향은 포기**했다(당시 코드는 롤백/삭제됨. 이후 다른 방법으로 해결했고 그 내용은 [GHOST_NOTE_ALPHA_HOLD.md](../experiments/GHOST_NOTE_ALPHA_HOLD.md)에 있다):
 - `BaseEnemyObjectController.OnUpdate()`, `SpineActionController.SetAlpha(float)` 모두 실제로는 호출되지 않는 죽은 경로였음.
 - 알파 페이드가 Spine 애니메이션 클립 자체에 커브로 베이크되어 있는 것으로 추정되어, C# 메서드 후킹만으로는 개입 지점을 찾지 못함.
 - `skeleton.A` 강제 고정(Update/LateUpdate 양쪽 시도)도 효과 없었음.
@@ -90,4 +92,4 @@ DBConfigDlcUIExtension.Deserialize(json)
 
 ## 8. 참고: 관련 진단 패치
 
-- [CollabEndTimeDumpPatch.cs](../../muse%20dash%20test/Patches/Diagnostics/CollabEndTimeDumpPatch.cs) — `DBConfigDlcUIExtension.Deserialize` Postfix에서 위 5번 표를 그대로 로그로 덤프함(이름 매칭 포함, `AlbumJsonIndexDefine` 전체 역조회 포함). 현재 프로젝트에 남아있는 유일한 진단 패치.
+- [CollabEndTimeDumpPatch.cs](../../muse%20dash%20test/Patches/Diagnostics/CollabEndTimeDumpPatch.cs) — `DBConfigDlcUIExtension.Deserialize` Postfix에서 위 5번 표를 그대로 로그로 덤프함(이름 매칭 포함, `AlbumJsonIndexDefine` 전체 역조회 포함). 게임을 켤 때마다 Info 레벨로 약 50줄을 남기는 진단 전용 패치다.

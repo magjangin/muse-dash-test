@@ -22,7 +22,7 @@ graph TD
     MainMod --> HookBattle[인게임 배틀 제어]
     HookBattle --> AutoPlay[AutoPlayPatch 오토플레이 모니터링]
     HookBattle --> FeverCtrl[ChangeFeverValuePatch 피버 선택적 차단]
-    HookBattle --> VideoPlay[PnlBattleGameStartPatch 배경 영상 재생]
+    HookBattle --> VideoPlay[HwaBattleMediaController 커스텀 BGM/배경 영상 재생]
     HookBattle --> APMod[APModPatch 올 퍼펙트 판단 & 골드 배너 동적 주입]
     HookBattle --> TouchBridge[MouseTouchBridgePatch 마우스/터치 배틀 입력 브릿지]
 ```
@@ -33,9 +33,10 @@ graph TD
 
 ### 📂 [MainMod.cs](../../muse%20dash%20test/MainMod.cs)
 MelonLoader 모드 진입점 클래스입니다.
-* **`OnInitializeMelon()`**: 모드 초기화 시점에 커스텀 차트 정보가 담긴 `info.txt`(manifest)를 선읽기(Preload)하고 `hwa` 폴더 구조를 자동 정비합니다.
-* **`OnUpdate()`**: 지연 감지 프레임 루프를 가동하여 배틀 중 체력바 텍스트를 오버라이딩하는 `HywStageManager` 트리거를 0.1초 주기로 갱신합니다.
-* **`OnSceneWasLoaded()`**: 유니티 씬 로드 로그를 남겨 디버깅 흐름을 안내합니다.
+* **`OnInitializeMelon()`**: 첫 줄에서 `PatchInstaller`로 패치를 겁니다(깨진 패치를 걸지 않기 위해 MelonLoader의 자동 `PatchAll`이 아닙니다). 이어서 커스텀 차트 정보가 담긴 `info.txt`(manifest)를 선읽기(Preload)하고 `hwa` 폴더 구조를 자동 정비합니다.
+* **`OnUpdate()`**: 매 프레임 `FeatureGuard`로 격리한 여섯 가지 작업을 돌립니다 — `config.txt` 핫리로드 확인(`InputOverlay.LoadConfigIfNeeded`), 배틀 동기화(`HwaSyncManager`), 배틀 스테이지 감지와 체력바 워터마크 재적용(`HywStageManager`, 0.1초 주기), 실험 스테이지 갱신, 히트포인트 설치, Discord Presence 갱신.
+* **`OnGUI()`**: 배틀 중 `Repaint` 이벤트에서만 입력 오버레이와 판정바를 그립니다.
+* **`OnSceneWasLoaded()`**: 씬 로드 로그를 남기고, `FeatureGuard.RearmAll()`로 자동 비활성화된 기능에 재시도 기회를 주며, 입력 오버레이·히트포인트·Spine 계약 구간·결과 화면 캐시·오프셋 UID 캐시를 초기화합니다.
 
 ### 📂 [Bms/BmsParser.cs](../../muse%20dash%20test/Bms/BmsParser.cs)
 인게임 차트에 쓰이는 BMS(Be-Music Source) 형태의 노트를 해석하고 분석하기 위한 파서 모듈입니다. BMS 데이터 포맷 규격을 디코딩하여 곡 분석 작업을 보조합니다.
@@ -73,7 +74,7 @@ MelonLoader 모드 진입점 클래스입니다.
 ### 📂 [Battle/UI/APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs) [NEW]
 올 퍼펙트(All Perfect) 여부를 판정하고 결과창의 풀콤보 배너를 교체하는 패치입니다.
 
-> 500줄 규칙에 따라 세 파일로 나뉘어 있습니다. 캐시와 `TaskStageTarget` 훅은 [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs), 정확도 공식은 [APModPatch.Accuracy.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.Accuracy.cs), 결과 화면 배너 연출과 기록 저장은 [APModPatch.VictoryBanner.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.VictoryBanner.cs)에 있습니다.
+> 소스 파일 600줄 규칙([AGENTS.md](../../AGENTS.md))에 따라 세 파일로 나뉘어 있습니다. 캐시와 `TaskStageTarget` 훅은 [APModPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.cs), 정확도 공식은 [APModPatch.Accuracy.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.Accuracy.cs), 결과 화면 배너 연출과 기록 저장은 [APModPatch.VictoryBanner.cs](../../muse%20dash%20test/Patches/Battle/UI/APModPatch.VictoryBanner.cs)에 있습니다.
 * **`VictoryDataCache`**: 인게임 상태(`TaskStageTarget`)와 스코어 폰트(`Font`)를 결과 화면(Victory)에서 다시 쓸 수 있도록 보관하는 정적 캐시입니다.
 * **`TaskStageTarget_AddScore_Patch` (Prefix)**:
   * 노트 처리로 인해 스코어가 업데이트되는 런타임 이벤트(`TaskStageTarget.AddScore`)를 후킹합니다.
@@ -87,10 +88,11 @@ MelonLoader 모드 진입점 클래스입니다.
 * **`PnlVictory2dManager_OnShowVictory_Patch` (Postfix)**:
   * 곡 플레이 종료 직후 화면에 풀콤보 텍스트 배너가 활성화되는 순간(`OnShowVictory`)에 개입합니다.
   * 캐싱해 둔 `TaskStageTarget` 객체 참조를 통해 **Great 0, Miss 0, Full Combo (정확도 100%)** 조건이 완벽히 만족되는지(`isAllPerfect`) 판정합니다.
-  * **올 퍼펙트 달성 시**: 기본 출력되는 `"F-U-L-L C-O-M-B-O"` 알파벳 이미지들을 모두 비활성화하고, 새 `"CustomAPText"` GameObject를 추가해 그라데이션 색상과 외곽선이 적용된 **"ALL PERFECT !"** 텍스트를 대신 표시합니다.
+  * **올 퍼펙트 달성 시**: 기본 출력되는 `"F-U-L-L C-O-M-B-O"` 알파벳 이미지들을 모두 비활성화하고, 새 `"CustomAPText"` GameObject를 추가해 골드 단색(`RGBA(1, 0.85, 0, 1)`)과 검은 외곽선·그림자가 적용된 **"ALL PERFECT !"** 텍스트를 대신 표시합니다.
+* **`EnableAPMod` 스위치**: `AddScore`·`IsFullCombo`·`OnShowVictory` 훅은 `ModConfig.EnableAPMod`가 꺼져 있으면 아무것도 하지 않습니다. 정확도 오버라이드 훅(`GetAccuracy`/`GetTrueAccuracy`/`GetTrueAccuracyNew`)은 이 스위치의 영향을 받지 않습니다. 결과 화면 훅(`OnShowVictory`)이 꺼지면 **커스텀 곡 기록 저장(`CustomRecordStore.SaveResult`)도 함께 건너뜁니다.** 기록을 남기려면 켜 두어야 합니다.
 
 ### 📂 [Battle/Mechanics/AutoPlayPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs)
-* **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹해, 전달된 인자를 설정값(`InputOverlay.forceAutoPlay`)으로 덮어씁니다. 모드 로드 직후에는 항상 오토가 꺼진 상태로 시작하며(첫 설정 로드에서는 `config.txt`의 `오토플레이=true`를 무시), 게임 도중 `config.txt`를 저장하면 그때부터 파일 값이 그대로 적용됩니다.
+* **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹해, 전달된 인자를 설정값(`InputOverlay.forceAutoPlay`)으로 덮어씁니다. `ModConfig.EnableAutoPlay`가 꺼져 있으면 개입하지 않습니다. 모드 로드 직후에는 항상 오토가 꺼진 상태로 시작하며(첫 설정 로드에서는 `config.txt`의 `오토플레이=true`를 무시), 게임 도중 `config.txt`를 저장하면 그때부터 파일 값이 그대로 적용됩니다.
 
 ### 📂 [Battle/Mechanics/ForcePerfectPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.cs)
 `config.txt`의 `강제퍼펙트=true`일 때 **친 노트의 판정을** Perfect로 승격시키는 패치입니다. 오토플레이(입력 대행)와는 무관하며, 노트 입력과 타이밍은 그대로 사람이 칩니다.
@@ -116,12 +118,8 @@ MelonLoader 모드 진입점 클래스입니다.
 > [!TIP]
 > Spine 애니메이션 타임라인(`in_nor_44`) 알파 키 재작성 구조, 스켈레톤+애니메이션 복합 캐시 키, 타임라인 실측 페이드 데이터 및 실패했던 4가지 막다른 길에 관한 정밀 기술 명세는 **[👻 GHOST_NOTE_ALPHA_HOLD.md](../experiments/GHOST_NOTE_ALPHA_HOLD.md)** 전용 문서를 참고하세요.
 
-### 📂 [Diagnostics/NoteColorDiagnosticsPatch.cs](../../muse%20dash%20test/Patches/Diagnostics/NoteColorDiagnosticsPatch.cs)
-인게임 배틀 씬에서 스폰되는 모든 노트의 Spine 스켈레톤, 슬롯 RGBA 색상, 어태치먼트 및 애니메이션 타임라인을 100% 실측 분석하는 진단용 패치입니다.
-
-> [!TIP]
-> 톱니바퀴, 샌드백, 음표, 고스트 노트 등 **모든 노트 종류별 틴트 변조 가능성 및 실측 분석 명세서**는 **[🎨 NOTE_COLOR_TINTING.md](../experiments/NOTE_COLOR_TINTING.md)** 문서를 참조하세요.
-
+### 노트 색 진단 (`NoteColorDiagnosticsPatch`) — 삭제됨
+스폰되는 노트의 Spine 슬롯 RGBA와 애니메이션 타임라인을 덤프하던 진단 패치였으나 2026-08-12(`352c07b`)에 제거됐습니다. 실측 결과와 색조 변조 방법은 **[🎨 NOTE_COLOR_TINTING.md](../experiments/NOTE_COLOR_TINTING.md)**에 남아 있습니다. 그 문서의 C# 예시는 저장소에 없는 참고용 코드입니다.
 
 ### 📂 [Mechanics/ChangeFeverValuePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ChangeFeverValuePatch.cs)
 피버 메커니즘을 정밀 통제하는 핵심 패치입니다.
@@ -147,7 +145,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 * **`Boss_Play_Patch`**: 인게임 도중 `swap:[보스명]:[씬번호]` 키워드가 삽입된 보스 액션을 만나면, 현재 보스 오브젝트와 상위 부모 트랜스폼을 감지해 실시간 보스 캐릭터 스왑을 연출합니다.
 
 ### 📂 [UI/PnlBattleGameStartPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/PnlBattleGameStartPatch.cs)
-배틀 진입 시점에 3D Quad 메쉬 및 VideoPlayer 컴포넌트를 이식해 배경에 커스텀 MP4 영상을 강제 재생시키는 비디오 플레이어 삽입 모듈입니다.
+`PnlBattle.GameStart` Postfix입니다. 호출 로그를 남기고 Discord Presence를 "플레이 중"으로 갱신합니다. **영상 재생은 이 파일이 아니라 아래 `HwaBattleMediaController`가 합니다.**
 
 ### 📂 [UI/StageBattleComponentPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs)
 * **`StageBattleComponent.Pause` & `Resume`**: 인게임 정지/재개 이벤트 후킹 시, 부착된 비디오 플레이어도 동반 일시정지 및 플레이 복귀가 가능하게 제어해 비디오 싱크를 정확히 보정합니다.
@@ -156,7 +154,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 * **`PnlBattle.MusicProgressInit` 후킹**: 진행바(`sldProgress`) 슬라이더의 존재 여부를 감지해 로그로 남기는 관찰 전용 모듈입니다. (현재는 진행바를 숨기거나 바꾸는 제어 동작은 하지 않습니다.)
 
 ### 📂 [Battle/UI/HwaBattleMediaController.cs](../../muse%20dash%20test/Patches/Battle/UI/HwaBattleMediaController.cs) & [Lifecycle.cs](../../muse%20dash%20test/Patches/Battle/UI/HwaBattleMediaController.Lifecycle.cs) [NEW]
-커스텀 BGM(오디오) 및 BGA(비디오)의 플레이어 재생 상태를 유기적으로 동기화 및 관리하는 오디오/비디오 컨트롤러입니다. 결과 화면(Victory) 전환 시 미디어를 강제 정지시킵니다.
+커스텀 BGM(오디오) 및 BGA(비디오)의 플레이어 재생 상태를 유기적으로 동기화 및 관리하는 오디오/비디오 컨트롤러입니다. 배틀 진입 시 카메라 아래에 `VideoBackgroundQuad`(3D Quad)를 만들고 `VideoPlayer`를 붙여 커스텀 MP4를 배경으로 재생하며, 결과 화면(Victory) 전환 시 미디어를 강제 정지시킵니다.
 
 ### 📂 [Hwa/HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) [NEW]
 * 곡 선택 및 플레이 준비 화면에서 가상/커스텀 곡을 선택할 때 배경음악(BGM) 및 데모 음원을 로컬 디렉터리의 OGG 파일(`music.ogg`)로 오디오 클립을 비동기 핫스왑(Hot-swap) 적용 및 관리하는 오디오 제어기입니다.
@@ -174,7 +172,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 ## 4. 데이터베이스 & 차트 실험 패치 (`Patches/Database/`)
 
 ### 📂 [Stage/DBStageInfoPatch.cs](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoPatch.cs)
-차트 개조의 핵심 패치입니다. 곡의 원본 데이터를 복제한 뒤 `ExperimentNoteSpec` 배열에 정의한 사양으로 차트를 다시 빌드하여 덮어씁니다.
+차트 개조의 핵심 패치입니다. 곡의 원본 데이터를 복제한 뒤, 곡 폴더에 BMS가 있으면 BMS에서 만든 `ExperimentNoteSpec`으로, 없으면 코드에 정의한 `ExperimentNotes` 배열로 차트를 다시 빌드하여 덮어씁니다.
 * **`ApplyExperimentChart()`**: 메모리 오염이나 리스트 뷰 불일치를 피하기 위해 `m_MusicTickData` 참조를 그대로 두고 내부 슬롯 데이터만 제자리에서 수정(In-place)합니다.
 
 ### 📂 [Stage/DBStageInfoExperimentChart.cs](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoExperimentChart.cs) (partial 분할)
@@ -186,14 +184,14 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 * `.Diagnostics.cs` — 노트 덤프 및 디버그 로그
 
 ### 📂 [Save/SaveDataManagerPatch.cs](../../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs) [NEW]
-가상 곡/앨범(`1999-`, `1998-`) 플레이 데이터가 실제 게임 로컬 및 클라우드 세이브 파일에 기록되지 않도록, `DataManager.Save()` 시점에 컬렉션 데이터의 가상 키들을 안전하게 걸러내는 정밀 정화 모듈입니다.
+가상 곡/앨범(`1999-` 접두사) 플레이 데이터가 실제 게임 로컬 및 클라우드 세이브 파일에 기록되지 않도록, `DataManager.Save()` 시점에 컬렉션 데이터의 가상 키들을 안전하게 걸러내는 정밀 정화 모듈입니다.
 
 ---
 
 ## 5. UI 고도화 & 커스텀 가상 앨범 패치 (`Patches/UI/`)
 
 ### 📂 [Custom/Tags/CustomTagRegistry.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagRegistry.cs)
-게임 데이터베이스에 **"실험용 가상 앨범(UID: 1998-0)"**을 런타임에 등록하는 매니저입니다.
+게임 데이터베이스에 **"실험용 가상 앨범(UID: 1999-0)"**을 런타임에 등록하는 매니저입니다.
 * **`RegisterAll()`**: 가상 앨범 태그와 커스텀 곡들의 가상 레코드를 데이터베이스 정렬 맵(`dbMusicTag`)에 등록합니다.
 * **`CleanPurchaseProperties()`** (`Support/CustomTagRegistrySupport.cs`): 복제로 만든 가상 객체가 원본의 DLC 구매 정보를 그대로 물려받지 않도록 `needPurchase`·`free`·`pay_ids`·`dlc`를 이름으로 찾아 비웁니다. 없는 멤버는 조용히 건너뜁니다. 게임 6.7.0에서 실제로 걸리는 것은 앨범(`AlbumsInfo`)의 `needPurchase`·`free`·`pay_ids`뿐입니다. 곡(`MusicInfo`/`MusicExInfo`)에는 이 멤버들이 없고, `dlc`는 세 타입 어디에도 없습니다(2026-09-28 덤프 대조). 단, `MemberwiseClone()`이 참조를 공유할 수 있으므로 참조 분리를 확인한 뒤 적용해야 합니다.
 
@@ -210,7 +208,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 * **`AlbumTagToggle_Init_Patch` (Postfix)**:
   * 인게임의 태그 탭 셀이 초기화되는 `AlbumTagToggle.Init` 시점을 Harmony Postfix로 안정적으로 가로챕니다.
   * 해당 컴포넌트의 `tagInfo` 속성이 우리의 가상 태그 UID(`tag-muse-dash-test`)를 가리키는지 타입 안전(Type-Safe)하게 스캔 및 감지합니다.
-  * 감지 완료 시, 모드 어셈블리 내부에 패킹된 **내장 리소스(`muse_dash_test.Resources.tag_icon.png`)**를 바이너리 스트림으로 직접 추출하고, `UnityEngine.ImageConversion.LoadImage`를 통해 `Texture2D`로 복원하여 캐싱합니다.
+  * 감지 완료 시, `게임 폴더/hwa tag image/tag_icon.png`를 읽어 `UnityEngine.ImageConversion.LoadImage`로 `Texture2D`를 만들고 캐싱합니다. 그 파일이 없으면 DLL에 내장된 리소스(`muse_dash_test.Resources.tag_icon.png`)를 그 자리에 먼저 꺼내 놓습니다.
   * 이후 해당 `AlbumTagToggle` 내부의 하위 아이콘 컴포넌트 속성인 `m_IconImg`(RawImage)에 커스텀 텍스처를 직접 오버라이딩하여 교체 적용을 마칩니다.
 
 ### 📂 [Custom/HpMod/HywStageManager.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/HywStageManager.cs) & [HywTextStyler.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/HywTextStyler.cs)
@@ -227,7 +225,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 ### 📂 [UI/Setting/PnlInputMobilePatch.cs](../../muse%20dash%20test/Patches/UI/Setting/PnlInputMobilePatch.cs) [NEW]
 PC 스팀 빌드 내부에서 비활성화되어 있던 모바일 전용 터치 조작 설정창(`PnlInputMobile`)을 복원하고 설정 이벤트를 연동하는 패치입니다.
 * **`PnlPlaySetting_MobileInputPatch` (Postfix)**:
-  * 게임 옵션창(`PnlPlaySetting`)의 '입력 설정' 버튼 클릭 시, 기본 PC 키설정 패널(`m_PnlInputSettingStandlone`)을 숨기고 모바일 전용 설정 패널(`m_PnlInputSettingMobile`)을 강제 활성화합니다.
+  * 게임 옵션창(`PnlPlaySetting`)의 '입력 설정' 버튼 클릭 시, 기본 PC 키설정 패널(`m_PnlInputSettingStandlone`)을 숨기고 모바일 전용 설정 패널(`m_PnlInputSettingMobile`)을 강제 활성화합니다. `ModConfig.EnableMobileTouch`와 `config.txt`의 `모바일터치조작`이 **둘 다** 켜져 있을 때만 그렇게 하고, 아니면 PC 패널을 그대로 둡니다.
 * **`PnlInputMobile_LifecyclePatch` (Postfix)**:
   * `SetLeftRight`(좌우/상하 모드), `SetTouchReverse`(되돌리기 반전), `SetAutoFever`(수동/자동 피버) 메서드를 후킹하여 플레이어가 UI에서 변경한 모바일 설정값을 실시간으로 감지하고 로깅합니다.
 
@@ -299,7 +297,8 @@ BMS 파일 내용의 SHA-256 앞 16자리로 "지금 그 슬롯의 채보"를 �
 
 ## 8. 문서와 소스 코드의 동기화 상태
 
-* 초기 문서는 `DBStageInfoPatch.cs`, `BossPatch.cs` 등 일부 파일만 다뤘으나, 이후 추가된 20개 이상의 C# 파일이 문서에 빠져 있었습니다.
-* 현재 문서는 체력바 UI 모듈(`HywHpTextMod`), 비디오 재생부(`PnlBattleGameStartPatch`), 가상 앨범 시스템(`CustomTagRegistry`), 오토플레이/피버 제어까지 모든 소스 파일의 역할을 반영합니다.
-* 올 퍼펙트 배너 주입 및 폰트 캐싱 모듈(`APModPatch.cs`), 파일 분할(Search/Diagnostics), 서브폴더 재구성(Wrappers/HpMod/Reflection/Save 등), 세이브 데이터 정화 모듈(`SaveDataManagerPatch`)도 포함되어 있습니다.
-* 새로운 기록 저장 및 UI 연동 모듈(`CustomRecordStore`, `CustomRecordUiPatchHelper`, `PnlReportCardPatch`)과 각 패널 훅도 상세히 기재되어 있습니다.
+이 문서는 파일이 늘어날 때마다 손으로 갱신하므로 **전체 목록이 아닙니다.** 새 파일이 생기면 여기에 절을 더하고, 파일이 사라지면 절을 지우세요(위 노트 색 진단처럼 "삭제됨"으로 남기는 것도 방법입니다).
+
+* 현재 문서는 체력바 UI 모듈(`HywHpTextMod`), 배경 영상/BGM(`HwaBattleMediaController`), 가상 앨범 시스템(`CustomTagRegistry`), 오토플레이/피버 제어, 올 퍼펙트 배너·폰트 캐싱(`APModPatch`), 세이브 데이터 정화(`SaveDataManagerPatch`)를 반영합니다.
+* 커스텀 기록 저장 및 UI 연동 모듈(`CustomRecordStore`, `CustomRecordUiPatchHelper`, `PnlReportCardPatch`)과 각 패널 훅도 기재되어 있습니다.
+* **전용 절이 아직 없는 곳**: `Patches/Scene/*`(씬 전환·배경 교체 — [SCENE_BACKGROUND_SWAP.md](../experiments/SCENE_BACKGROUND_SWAP.md) 참고), `Patches/Sandbox/*`([OFFLINE_CUSTOM_SANDBOX_GUIDE.md](../guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md)), `Integration/DiscordPresenceManager.cs`([DISCORD_RICH_PRESENCE.md](../guides/DISCORD_RICH_PRESENCE.md)), `Patches/Hwa/HwaResourceManager*`·`HwaSyncManager`, `Patches/Diagnostics/PatchInstaller.cs`·`OffsetHookPatches.cs`, `Core/ModConfig.cs`·`CustomPlaySession.cs`·`PlayRecordMerge.cs`·`UnlockAllMasterGuard.cs` 등.

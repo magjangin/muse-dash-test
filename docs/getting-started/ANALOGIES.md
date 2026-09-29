@@ -47,9 +47,9 @@
 ### 2.2 얇은 복제 ➡️ "잘 되는 것을 복사한 뒤 이름표만 교체" 🍳
 > **비유**: 새 요리(커스텀 곡)를 내려고 주방을 맨땅부터 새로 짓다간(`new`로 빈 오브젝트 생성) 사소한 규격 오류로 통째로 무너질(크래시) 수 있습니다. 이미 잘 돌아가는 옆 가게 주방(원본 곡 객체)을 통째로 복사(`MemberwiseClone()`)한 뒤, 메뉴판 글씨(제목·난이도)만 바꿔 다는 편이 안전합니다.
 
-**실제 의미**: `InjectVirtualSong`은 원본 곡을 얕게 복사해 내부 구조를 보존한 뒤, 래퍼로 식별자(`1999-0`)와 제목 등 메타데이터만 덮어씁니다. 복제가 실패하면 임시 객체(`new AlbumsInfo()`)를 세우는 폴백으로 크래시를 막습니다.
+**실제 의미**: `InjectVirtualSong`은 원본 곡을 얕게 복사해 내부 구조를 보존한 뒤, 래퍼로 곡 식별자(`1999-1`, `1999-2`, …)와 제목 등 메타데이터만 덮어씁니다. 곡을 못 찾으면 기본 곡(`0-0`)을 복제 원본으로 쓰고, 가상 앨범(`1999-0`) 복제가 실패하면 임시 객체(`new AlbumsInfo()`)를 세우는 폴백으로 크래시를 막습니다.
 
-→ `CustomTagRegistry.InjectVirtualSong`
+→ `CustomTagRegistrySupport.InjectVirtualSong`
 
 ### 2.3 구매 정보 정리 ➡️ "복사된 가격표 떼기" 🏷️
 > **비유**: 옆 가게 주방을 통째로 복사하다 보면, 원본에 붙어 있던 "유료(DLC 구매 필요)" 가격표까지 같이 복사됩니다. 떼지 않으면 유저에게 구매 팝업이 뜨므로, 복제 직후 그 가격표를 떼어 무료로 쓸 수 있게 만듭니다.
@@ -76,7 +76,7 @@
 ### 4.1 올 퍼펙트 배너 ➡️ "기존 간판을 끄고 새 간판으로 교체" 💡
 > **비유**: 곡이 끝나면 원래 뜨는 `FULL COMBO!` 낱개 글자판 11개를 모두 끄고, 그 자리에 미리 만들어 둔 `ALL PERFECT!` 간판을 대신 걸어 둡니다.
 
-**실제 의미**: 판정 레코드(`TaskStageTarget.AddScore`)를 가로채 정확도 100% 여부를 계산하고, 조건이 맞으면 기본 `FULL COMBO` 이미지들을 비활성화한 뒤 게임 폰트(`LuckiestGuy-Regular`)를 복사해 그라데이션 색상·외곽선·그림자를 적용한 `ALL PERFECT !` 배너를 표시합니다. 조건 미달이면 순정 배너를 그대로 둡니다.
+**실제 의미**: 플레이 중에는 판정 레코드(`TaskStageTarget.AddScore`)를 가로채 `TaskStageTarget`과 게임 폰트(`LuckiestGuy-Regular`)를 캐싱해 둡니다. 결과 화면이 뜨는 순간(`OnShowVictory`) Great 0·Miss 0·풀콤보인지 판정하고, 조건이 맞으면 기본 `FULL COMBO` 이미지들을 비활성화한 뒤 골드 단색에 외곽선·그림자를 적용한 `ALL PERFECT !` 배너를 표시합니다. 조건 미달이면 순정 배너를 그대로 둡니다.
 
 → `APModPatch.cs` ([CODE_REFERENCE](../architecture/CODE_REFERENCE.md))
 
@@ -85,7 +85,7 @@
 
 **실제 의미**: VideoPlayer가 투사되는 Quad를 카메라 앞에 배치하고, 노트보다 뒤로 가도록 소팅 오더를 낮게 잡아 배경 영상으로 깔립니다.
 
-→ `PnlBattleGameStartPatch.cs` ([CODE_REFERENCE](../architecture/CODE_REFERENCE.md))
+→ `HwaBattleMediaController.cs` ([CODE_REFERENCE](../architecture/CODE_REFERENCE.md))
 
 ---
 
@@ -101,4 +101,4 @@
 | 복사된 가격표 떼기 | `CleanPurchaseProperties` |
 | 점검 센서 | `PatchHealthCheck` |
 | 간판 교체 | `APModPatch` 올 퍼펙트 배너 |
-| 렌즈 앞 스크린 | `PnlBattleGameStartPatch` 커스텀 BGA |
+| 렌즈 앞 스크린 | `HwaBattleMediaController` 커스텀 BGA |

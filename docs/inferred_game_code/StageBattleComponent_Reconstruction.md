@@ -1,5 +1,9 @@
 # StageBattleComponent Inferred Method Body Reconstruction
 
+> [!WARNING]
+> **추측 문서입니다.** `[추측된 메서드 바디]`는 실측이 아닌 의사코드이고, 아래 `AudioMaster`, `ObjectPoolManager`, `SceneFlowController` 같은 호출 대상은 지어낸 이름일 수 있습니다([안내](README.md)).
+> **정정**: `showTick`은 이 모드의 코드와 [노트 실험 문서](../experiments/NOTE_EXPERIMENTS.md) 기준으로 **`showTick = tick - dt`** 입니다(`dt`는 화면 표시 선행 시간, 초 단위). 아래 `LoadMusicData()`의 `dt * (BPM / 240.0)` 식은 근거가 없습니다. 이 클래스에서 실제로 확인된 것은 모드가 훅을 거는 지점(`Load`/`InitData`/`Pause`/`Resume`/`End`/`Exit`/`Release`/`GameRestart`)뿐이며, 각 훅에서 하는 일은 [StageBattleComponentPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs)가 정답입니다.
+
 `Il2CppFormulaBase.StageBattleComponent` 클래스는 Muse Dash 인게임 배틀 세션의 상태 제어, 차트 데이터(`MusicData`) 로드 및 라이프사이클 이벤트(시작, 일시정지, 종료, 재시작, 리소스 해제)를 관장하는 핵심 인게임 관리자입니다.
 
 ---
@@ -48,8 +52,9 @@ public void LoadMusicData()
             MusicData note = this.m_MusicDataList[i];
             if (note != null && note.noteData != null)
             {
-                // showTick = tick - dt * (BPM / 240.0)
-                note.showTick = note.tick - (float)(note.dt * (note.bpm / 240.0));
+                // (정정) 실제 규칙은 showTick = tick - dt 입니다. 아래 원문 식은 근거 없는 추측이었습니다.
+                // note.showTick = note.tick - (float)(note.dt * (note.bpm / 240.0));
+                note.showTick = note.tick - note.dt;
                 
                 // 보스 이벤트 / 씬 전환 프리팹 예약
                 if (note.noteData.type == NoteType.SceneToggle && note.noteData.sceneChangeNames != null)

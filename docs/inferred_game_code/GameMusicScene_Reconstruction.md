@@ -1,5 +1,8 @@
 # GameMusicScene Inferred Method Body Reconstruction
 
+> [!WARNING]
+> **추측 문서입니다.** `[추측된 메서드 바디]`는 실측이 아닌 의사코드이고, `EnemyPoolManager`, `AssetBundleManager.LoadScenePrefab` 같은 호출 대상은 지어낸 이름일 수 있습니다([안내](README.md)). 모드가 실제로 훅을 거는 메서드는 `LoadScene`, `InitSceneEvents`, `InitTimer(Decimal)`, `PreLoadEnemy`, `Run`이며(아래 `Init()`/`OnPause()`/`OnUnPause()`는 훅 대상이 아닙니다), 씬 구조와 노트 풀 복구 흐름은 [SCENE_BACKGROUND_SWAP.md](../experiments/SCENE_BACKGROUND_SWAP.md)가 실측 기준입니다.
+
 `Il2CppGameLogic.GameMusicScene` 클래스는 *Muse Dash*의 인게임 3D/2D 배경 씬, 보스 스테이지 씬 스위칭, Spine 애니메이션 컨트롤러 및 씬 슬롯(Scene Slots)의 동적 프리로드 및 오버레이 관리를 담당하는 핵심 인게임 호스트 컴포넌트입니다.
 
 ---
