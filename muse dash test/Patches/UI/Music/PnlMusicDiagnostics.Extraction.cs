@@ -14,11 +14,7 @@ namespace muse_dash_test
             var info = new MusicInfo();
             if (pnlInstance == null) return info;
 
-            info.Title = FirstNonEmpty(
-                GetMemberText(pnlInstance, "musicNameTitle"),
-                GetMemberText(pnlInstance, "songNameTitle"),
-                GetMemberText(pnlInstance, "titleText"),
-                GetMemberText(pnlInstance, "musicTitle"));
+            info.Title = ReadTitleMembers(pnlInstance);
 
             info.Artist = FirstNonEmpty(
                 GetMemberText(pnlInstance, "artistNameTitle"),
@@ -33,13 +29,22 @@ namespace muse_dash_test
                 GetMemberText(pnlInstance, "chartDesignerName"),
                 GetMemberText(pnlInstance, "stageDesignerName"));
 
-            info.Clip = FirstNonEmpty(
-                FindAudioClipName(pnlInstance, out string clipReason),
-                FindSceneMusicAudioClipName(out string sceneClipReason),
-                GetMemberText(pnlInstance, "musicClip"),
-                GetMemberText(pnlInstance, "demoMusic"),
-                GetMemberText(pnlInstance, "clipName"),
-                GetMemberText(pnlInstance, "audioClip"));
+            // 앞 후보가 값을 주면 뒤 후보는 찾지 않습니다. 인자로 나란히 넘기면 전부 먼저 평가되어,
+            // 패널에서 클립을 찾았어도 씬 검색(GameObject.Find + 전체 AudioSource 검색)이 매번 돌았습니다.
+            string sceneClipReason = null;
+            info.Clip = FirstNonEmpty(FindAudioClipName(pnlInstance, out string clipReason));
+            if (info.Clip == null)
+            {
+                info.Clip = FirstNonEmpty(FindSceneMusicAudioClipName(out sceneClipReason));
+            }
+            if (info.Clip == null)
+            {
+                info.Clip = FirstNonEmpty(
+                    GetMemberText(pnlInstance, "musicClip"),
+                    GetMemberText(pnlInstance, "demoMusic"),
+                    GetMemberText(pnlInstance, "clipName"),
+                    GetMemberText(pnlInstance, "audioClip"));
+            }
             info.ClipReason = string.IsNullOrWhiteSpace(info.Clip) ? FirstNonEmpty(clipReason, sceneClipReason) : null;
 
             if (string.IsNullOrEmpty(info.Title) || string.IsNullOrEmpty(info.Artist) || string.IsNullOrEmpty(info.LevelDesigner) || string.IsNullOrEmpty(info.Clip))
@@ -71,6 +76,66 @@ namespace muse_dash_test
             }
 
             return info;
+        }
+
+        /// <summary>
+        /// 제목만 읽습니다. <see cref="ExtractMusicInfo"/>가 채우는 <c>Title</c>과 같은 값이지만
+        /// 클립 탐색(씬 검색)이나 나머지 멤버 읽기는 하지 않습니다. Verbose가 꺼져 있을 때 씁니다.
+        /// </summary>
+        private static string ExtractTitle(object pnlInstance)
+        {
+            if (pnlInstance == null) return null;
+
+            string title = ReadTitleMembers(pnlInstance);
+            return string.IsNullOrEmpty(title) ? FindTitleByNamedMembers(pnlInstance) : title;
+        }
+
+        private static string ReadTitleMembers(object pnlInstance)
+        {
+            return FirstNonEmpty(
+                GetMemberText(pnlInstance, "musicNameTitle"),
+                GetMemberText(pnlInstance, "songNameTitle"),
+                GetMemberText(pnlInstance, "titleText"),
+                GetMemberText(pnlInstance, "musicTitle"));
+        }
+
+        /// <summary>
+        /// <see cref="FillByNamedMembers"/>가 제목을 고르는 규칙만 떼어 낸 것입니다(프로퍼티 → 필드 순, 첫 후보).
+        /// 이름이 제목 후보가 아닌 멤버는 값을 읽지 않습니다.
+        /// </summary>
+        private static string FindTitleByNamedMembers(object obj)
+        {
+            var t = obj.GetType();
+
+            foreach (var p in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                try
+                {
+                    if (p.GetIndexParameters().Length > 0) continue;
+                    if (!IsTitleMemberName((p.Name ?? "").ToLowerInvariant())) continue;
+                    string text = ValueToUsefulText(p.GetValue(obj));
+                    if (!string.IsNullOrWhiteSpace(text) && !IsUiObjectName(text)) return text;
+                }
+                catch (Exception) { }
+            }
+
+            foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                try
+                {
+                    if (!IsTitleMemberName((f.Name ?? "").ToLowerInvariant())) continue;
+                    string text = ValueToUsefulText(f.GetValue(obj));
+                    if (!string.IsNullOrWhiteSpace(text) && !IsUiObjectName(text)) return text;
+                }
+                catch (Exception) { }
+            }
+
+            return null;
+        }
+
+        private static bool IsTitleMemberName(string lowerName)
+        {
+            return lowerName.Contains("song") || lowerName.Contains("title") || lowerName.Contains("musicname");
         }
 
         private static string GetMemberText(object obj, string memberName)
@@ -145,7 +210,7 @@ namespace muse_dash_test
             if (string.IsNullOrWhiteSpace(text)) return;
             if (IsUiObjectName(text)) return;
 
-            if (string.IsNullOrEmpty(info.Title) && (name.Contains("song") || name.Contains("title") || name.Contains("musicname")))
+            if (string.IsNullOrEmpty(info.Title) && IsTitleMemberName(name))
                 info.Title = text;
             else if (string.IsNullOrEmpty(info.Artist) && name.Contains("artist"))
                 info.Artist = text;

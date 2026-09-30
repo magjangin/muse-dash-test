@@ -170,6 +170,7 @@ namespace muse_dash_test
                     finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt, fingerprint, recordKey);
 
                 File.WriteAllText(filePath, json, Encoding.UTF8);
+                RecordCache.Invalidate(filePath);
                 ModLogger.Msg($"[CustomRecordStore] 기록 저장 완료 (신규 최고기록: {isNewHighScore}) → {filePath} (playCount={updatedPlayCount}, score={finalScore}, maxCombo={finalMaxCombo}, acc={finalAccuracy:0.0000}, FC={finalIsFullCombo}, AP={finalIsAllPerfect})");
 
                 try
@@ -212,7 +213,19 @@ namespace muse_dash_test
 
             /// <summary>기록 파일의 키로 쓰인 곡 폴더 이름입니다(파일을 열었을 때 어느 곡인지 알아보기 위한 것).</summary>
             public string songFolder = string.Empty;
+
+            internal PlayRecord Clone() => (PlayRecord)MemberwiseClone();
         }
+
+        /// <summary>
+        /// 기록 파일을 파싱한 결과입니다. 곡 선택/준비 패널이 갱신될 때마다(준비 화면은 즉시 + 0.25초 + 1초 지연 적용)
+        /// 같은 파일을 다시 열어 파싱하지 않도록, 파일이 그대로인 동안 재사용합니다.
+        ///
+        /// <para>키는 uid가 아니라 <b>파일 경로</b>입니다. uid는 폴더 순번이라 밀릴 수 있고, 경로는
+        /// <see cref="FindExistingRecordPath"/>가 매번 지금의 곡 폴더 이름으로 다시 해석합니다.
+        /// 보관하는 것은 파싱 결과뿐이고, 채보 지문 대조(<see cref="BelongsToCurrentChart"/>)는 매번 다시 합니다.</para>
+        /// </summary>
+        private static readonly FileStampCache<PlayRecord> RecordCache = new FileStampCache<PlayRecord>();
 
         /// <summary>같은 사유를 매 패널 갱신마다 찍지 않도록, 슬롯별로 한 번만 경고합니다(실측 세션당 86회 로드).</summary>
         private static readonly System.Collections.Generic.HashSet<string> WarnedSlots =
@@ -278,13 +291,16 @@ namespace muse_dash_test
                 string filePath = FindExistingRecordPath(uid, difficulty);
                 if (filePath == null) return null;
 
-                string content = File.ReadAllText(filePath, Encoding.UTF8);
-                var record = ParseJson(content);
-                if (record != null && record.playCount <= 0) record.playCount = 1;
+                // 보관본을 호출자가 고쳐도 다음 조회에 번지지 않도록 사본을 돌려줍니다.
+                var record = RecordCache.GetOrLoad(filePath, ReadRecordFile, out bool readFromDisk)?.Clone();
 
                 if (!BelongsToCurrentChart(record, uid, difficulty, filePath)) return null;
 
-                ModLogger.Msg($"[CustomRecordStore] 기록 로드 성공 → {filePath} (playCount={record?.playCount}, score={record?.score}, acc={record?.accuracy:0.0000}, FC={record?.isFullCombo})");
+                // 파일을 실제로 읽었을 때만 남깁니다. 패널 갱신마다 찍으면 이 로그 자체가 콘솔·디스크 I/O가 됩니다.
+                if (readFromDisk)
+                {
+                    ModLogger.Msg($"[CustomRecordStore] 기록 로드 성공 → {filePath} (playCount={record?.playCount}, score={record?.score}, acc={record?.accuracy:0.0000}, FC={record?.isFullCombo})");
+                }
                 return record;
             }
             catch (Exception ex)
@@ -292,6 +308,13 @@ namespace muse_dash_test
                 ModLogger.Error($"[CustomRecordStore] 기록 로드 중 예외 (uid={uid}, diff={difficulty}): {ex}");
                 return null;
             }
+        }
+
+        private static PlayRecord ReadRecordFile(string filePath)
+        {
+            var record = ParseJson(File.ReadAllText(filePath, Encoding.UTF8));
+            if (record != null && record.playCount <= 0) record.playCount = 1;
+            return record;
         }
 
         private static PlayRecord ParseJson(string json)

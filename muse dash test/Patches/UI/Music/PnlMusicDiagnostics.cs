@@ -34,39 +34,63 @@ namespace muse_dash_test
         {
             try
             {
-                string resolvedUid = ResolveCustomMusicUid(pnlInstance);
+                string lastKnownUid = CustomPlaySession.Current.LastKnownMusicUid;
+                string resolvedUid = ResolveCustomMusicUid(pnlInstance, lastKnownUid);
                 if (!string.IsNullOrEmpty(resolvedUid))
                 {
                     PnlMusicOverride.ApplySongTitleOverride(source, pnlInstance, resolvedUid);
                 }
-                var info = ExtractMusicInfo(pnlInstance, resolvedUid);
-                if (!IsUsefulTitle(info.Title))
+
+                // 여기서부터 화면에 쓰는 일은 "패널에서 쓸 만한 제목을 못 읽었으면 PnlStage에도 제목을 덮어쓴다" 하나뿐이고,
+                // 나머지(클립·아티스트·레벨 디자이너 추출)는 LogCompact 한 줄을 위한 관찰입니다.
+                // 관찰은 패널 멤버 전체 리플렉션과 씬 AudioSource 검색까지 가므로 Verbose가 꺼져 있으면 하지 않고
+                // 제목만 읽습니다. 준비 화면은 OnEnable/RefreshUi와 0.25초·1초 지연 적용으로 이 자리를 여러 번 지납니다.
+                bool diagnose = ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
+                // 지금 곡이 순정 곡으로 확인됐으면 PnlStage에서 다시 해석해도 같은 답(없음)이라 덮어쓸 것이 없습니다.
+                bool knownOfficialSong = !string.IsNullOrEmpty(lastKnownUid) && string.IsNullOrEmpty(resolvedUid);
+                if (!diagnose && knownOfficialSong) return;
+
+                MusicInfo info = diagnose ? ExtractMusicInfo(pnlInstance, resolvedUid) : null;
+                string title = diagnose ? info.Title : ExtractTitle(pnlInstance);
+                if (!IsUsefulTitle(title))
                 {
                     var stage = FindLivePnlStage();
                     if (stage != null)
                     {
-                        string stageResolvedUid = ResolveCustomMusicUid(stage);
+                        string stageResolvedUid = ResolveCustomMusicUid(stage, lastKnownUid);
                         if (!string.IsNullOrEmpty(stageResolvedUid))
                         {
                             PnlMusicOverride.ApplySongTitleOverride(source + "->PnlStage", stage, stageResolvedUid);
                         }
-                        var stageInfo = ExtractMusicInfo(stage, stageResolvedUid);
-                        if (IsUsefulTitle(stageInfo.Title)) info.Title = stageInfo.Title;
-                        if (!string.IsNullOrWhiteSpace(stageInfo.Clip)) info.Clip = stageInfo.Clip;
-                        if (!string.IsNullOrWhiteSpace(stageInfo.Artist)) info.Artist = stageInfo.Artist;
-                        if (!string.IsNullOrWhiteSpace(stageInfo.LevelDesigner)) info.LevelDesigner = stageInfo.LevelDesigner;
-                        if (string.IsNullOrWhiteSpace(info.ClipReason) || info.ClipReason == "AudioClip 후보 없음")
-                            info.ClipReason = stageInfo.ClipReason;
+                        if (diagnose)
+                        {
+                            var stageInfo = ExtractMusicInfo(stage, stageResolvedUid);
+                            if (IsUsefulTitle(stageInfo.Title)) info.Title = stageInfo.Title;
+                            if (!string.IsNullOrWhiteSpace(stageInfo.Clip)) info.Clip = stageInfo.Clip;
+                            if (!string.IsNullOrWhiteSpace(stageInfo.Artist)) info.Artist = stageInfo.Artist;
+                            if (!string.IsNullOrWhiteSpace(stageInfo.LevelDesigner)) info.LevelDesigner = stageInfo.LevelDesigner;
+                            if (string.IsNullOrWhiteSpace(info.ClipReason) || info.ClipReason == "AudioClip 후보 없음")
+                                info.ClipReason = stageInfo.ClipReason;
+                        }
                     }
                 }
-                LogCompact(source, info);
+                if (diagnose) LogCompact(source, info);
             }
             catch (Exception ex) { ModLogger.Error($"ApplyPrepMusicInfo 예외: {ex}"); }
         }
 
         public static string ResolveCustomMusicUid(object pnlInstance)
         {
-            string selected = CustomPlaySession.Current.LastKnownMusicUid;
+            return ResolveCustomMusicUid(pnlInstance, CustomPlaySession.Current.LastKnownMusicUid);
+        }
+
+        /// <summary>
+        /// <paramref name="selected"/>는 호출자가 이미 읽어 둔 <c>LastKnownMusicUid</c>입니다.
+        /// 그 프로퍼티는 비어 있을 때 씬을 뒤지므로, 한 번의 적용 안에서 두 번 읽지 않도록 받아 씁니다.
+        /// </summary>
+        private static string ResolveCustomMusicUid(object pnlInstance, string selected)
+        {
             if (!string.IsNullOrEmpty(selected))
             {
                 return CustomContentIds.IsVirtualSong(selected) ? selected : null;

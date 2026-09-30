@@ -165,7 +165,7 @@ CHECKLIST.md를 확인했다. 이번에는 문서만 변경하여 새 게임 실
 후속 최적화에서는 동일 곡·동일 설정의 프레임 시간/할당량을 먼저 기록하고,
 정상 BMS 경로와 BMS/앨범 없음 → `0-0` 폴백 → 실제 배틀 진입을 모두 검증해야 한다.
 
-## 후속 처리 상태 (2026-09-29 코드 대조)
+## 후속 처리 상태 (2026-09-29 코드 대조, 항목 3·6은 2026-09-30 수정)
 
 위 항목이 지금 코드에서 어떻게 됐는지 **소스를 읽어 확인한 결과**다. 프레임 시간이나 할당량을 다시 측정한 것은 아니므로 "해결"은 "지적한 코드 경로가 바뀌었다"는 뜻이다.
 
@@ -173,10 +173,10 @@ CHECKLIST.md를 확인했다. 이번에는 문서만 변경하여 새 게임 실
 | --- | --- | --- |
 | 1. 고스트 노트 캐시 적중 후 진단 순회 | **부분 해결** | `ProbeCachedState`가 첫 줄에서 `ModLogger.IsLevelEnabled(Verbose)`를 검사한다. 기본 설정에서는 순회하지 않는다. 임시 진단 코드 자체는 남아 있다([GHOST_NOTE_ALPHA_HOLD.md](../experiments/GHOST_NOTE_ALPHA_HOLD.md) §6). |
 | 2. BMS 캐시 조회의 설명 생성 | **해결(뜨거운 경로 기준)** | `TryGetCachedHwaBmsChart`의 설명 없는 2-인자 오버로드를 `ChartFingerprint`·`ExperimentHitPointInstaller`·`BossPatch`가 쓴다. 설명을 만드는 3-인자 오버로드는 차트 주입(`DBStageInfoExperimentChart.cs`) 한 곳뿐이다. |
-| 3. 음악 정보 진단이 Verbose 없이 실행됨 | **미해결로 봄** | `PnlMusicDiagnostics.ApplyPrepMusicInfo`가 여전히 `ExtractMusicInfo`를 무조건 부른다. Verbose 게이트는 `LogCompact`의 로그 출력에만 있다. |
+| 3. 음악 정보 진단이 Verbose 없이 실행됨 | **해결 (2026-09-30)** | `ApplyPrepMusicInfo`가 `ExtractMusicInfo`·`LogCompact`를 `ModLogger.IsLevelEnabled(Verbose)`일 때만 부른다. 꺼져 있으면 PnlStage 제목 덮어쓰기 판단에 필요한 제목만 읽고(`ExtractTitle`), 지금 곡이 순정 곡으로 확인되면 그것도 건너뛴다. 제목 덮어쓰기 두 곳(준비 패널, PnlStage)은 그대로다. Verbose일 때도 클립 후보를 차례로 평가해, 패널에서 클립을 찾으면 씬 검색을 하지 않는다. 0.25초·1초 지연 적용은 제목을 다시 덮어쓰는 역할이라 합치지 않았다. |
 | 4. 키 설정 실패 시 매 프레임 재탐색 | **해결** | `InputOverlay.Render.cs`의 재시도 조건에서 `airKeys.Count == 0`이 빠지고 `checkTimer >= CheckInterval`만 남았다(`InputOverlay.cs` 주석에 이유가 적혀 있다). |
 | 5. 같은 곡의 메뉴 BGM 중복 요청 | **해결** | `HwaMenuBgmController.TriggerMenuBgmChange`가 같은 UID의 클립이 이미 재생 중이면 재로드를 건너뛴다. A→B→A의 낡은 결과 차단은 세대 번호로 유지된다. |
-| 6. 기록 UI 갱신마다 JSON 재파싱 | **미해결** | `CustomRecordStore`에 기록 캐시가 없다. |
+| 6. 기록 UI 갱신마다 JSON 재파싱 | **해결 (2026-09-30)** | `CustomRecordStore.LoadResult`가 파싱 결과를 `FileStampCache`에 파일 경로별로 보관하고, 크기·수정시각이 그대로면 파일을 열지 않는다. `SaveResult`는 쓴 직후 무효화한다. 경로 해석(폴더 이름 키)과 채보 지문 대조는 캐시하지 않고 매번 한다. `기록 로드 성공` 로그도 실제로 읽었을 때만 남는다. 남는 비용은 속성 조회다(기록 파일 존재 확인 1~3회 + 속성 1회, BMS 지문 캐시 확인 2회). 본문이 말한 "항목 2의 전체 채보 순회"는 항목 2가 해결되면서 이미 사라졌다. 수정 전 세션 로그에는 `기록 로드 성공`이 40줄 있었다(2026-09-30 확인). 수정 후 게임 실행 측정은 아직 하지 않았다. |
 | 7. 커버 이미지 캐시 무한 증가 | **미해결** | `MusicButtonCellPatch`의 `cache` 딕셔너리에 퇴출 경로가 없다. 디코딩에 실패한 텍스처만 즉시 `Destroy`한다. |
 | 추가: 매 프레임 인스턴스 델리게이트 | **해결** | `HandleExperimentStageUpdate`가 `static`이 됐다. |
 

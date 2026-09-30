@@ -234,6 +234,8 @@ IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 �
 
 ### 📂 [UI/Music/PnlMusicDiagnostics.cs](../../muse%20dash%20test/Patches/UI/Music/PnlMusicDiagnostics.cs) [NEW]
 * 리플렉션을 활용해 인메모리 유니티 UI 컴포넌트의 문자열 필드 값을 안전하게 디코딩하고 정밀 덤프해 주는 분석 및 로그 수집 도구입니다. (부속: `PnlMusicDiagnostics.AudioClip.cs`, `PnlMusicDiagnostics.Extraction.cs`)
+* **`ApplyPrepMusicInfo`는 이름과 달리 화면에 쓰는 일도 합니다** — 가상 곡이면 준비 패널에 제목을 덮어쓰고, 패널에서 쓸 만한 제목을 못 읽었으면 `PnlStage`에도 덮어씁니다. 이 두 가지는 로그 수준과 무관하게 실행됩니다.
+* 그 밖의 추출(`ExtractMusicInfo` — 클립·아티스트·레벨 디자이너, 패널 멤버 전체 리플렉션, 씬 `AudioSource` 검색)은 `LogCompact` 한 줄을 위한 관찰이라 **`LogLevel = "Verbose"`일 때만** 실행됩니다. 꺼져 있으면 제목만 읽고(`ExtractTitle`), 지금 곡이 순정 곡으로 확인되면 그것도 건너뜁니다.
 
 ### 📂 [UI/Pnl/PnlStagePatchHelper.Search.cs](../../muse%20dash%20test/Patches/UI/Pnl/PnlStagePatchHelper.Search.cs) [NEW]
 * 입력된 검색어(Query)와 일치하는 `MusicInfo`를 글로벌 DB에서 찾아 유사도가 높은 곡을 반환하는 검색 모듈입니다.
@@ -266,6 +268,11 @@ IL2CPP에서 직접 접근하기 어려운 필드나 프라이빗 구조체를 �
 * **`ResolveRecordKey(string uid)` [v0.10.2]**: 기록 파일의 키를 **uid가 아니라 곡 폴더 이름으로** 해석합니다. uid(`1999-N`)는 `hwa` 폴더를 이름순 정렬한 **순번**이라(`HwaResourceManager.PreloadHwaManifest`) 곡 폴더를 추가·삭제·개명하면 통째로 밀리고, 그러면 남의 곡 기록이 붙습니다. 폴더를 해석할 수 없거나 결과가 `hwa` 루트 자체이면(테스트 슬롯 3개가 전부 같은 이름이 됨) uid로 돌아갑니다.
 * **채보 지문 대조 [v0.10.2]**: 읽어온 기록이 **지금 그 슬롯에 들어 있는 채보**의 것인지 `ChartFingerprint`로 확인하고, 아니면 `null`을 돌려줍니다. 파일은 지우지 않습니다.
 * 두 장치는 서로 다른 사고를 막습니다 — **폴더 이름 키**는 순번이 밀려 기록이 다른 곡에 붙는 것을, **채보 지문**은 같은 폴더 안에서 BMS만 갈아끼웠을 때 옛 기록이 남는 것을 막습니다. JSON에는 `chartFingerprint`와 `songFolder`가 함께 기록됩니다.
+* **파싱 결과 캐시**: 패널이 갱신될 때마다 같은 파일을 다시 열어 파싱하지 않도록 `FileStampCache`에 **파일 경로별로** 보관합니다(uid별이 아닙니다 — uid는 순번이라 밀립니다). 보관하는 것은 파싱 결과뿐이고 경로 해석과 채보 지문 대조는 매번 다시 합니다. `SaveResult`는 쓴 직후 그 경로를 무효화합니다. `기록 로드 성공` 로그는 **파일을 실제로 읽었을 때만** 나오므로, 같은 곡을 다시 골랐을 때 이 줄이 없는 것은 정상입니다.
+
+### 📂 [Core/FileStampCache.cs](../../muse%20dash%20test/Core/FileStampCache.cs)
+파일을 읽어 가공한 결과를 경로별로 보관하고, 파일의 크기·수정시각이 그대로면 다시 읽지 않는 작은 캐시입니다. 폴더 감시나 만료 시간을 쓰지 않으므로 게임 밖에서 파일을 고치거나 지워도 다음 조회에 반영됩니다. 게임에 의존하지 않아 로직 테스트(`FileStampCacheTests`)로 검증됩니다.
+* 같은 크기·같은 수정시각으로 다시 쓰인 파일은 속성만으로 구분할 수 없습니다(FAT 계열은 수정시각 해상도가 2초). 파일을 직접 쓰는 쪽은 `Invalidate`를 부르십시오.
 
 ### 📂 [Core/ChartFingerprint.cs](../../muse%20dash%20test/Core/ChartFingerprint.cs) [v0.10.2]
 BMS 파일 내용의 SHA-256 앞 16자리로 "지금 그 슬롯의 채보"를 식별합니다. BMS가 없는 슬롯은 `none`입니다.
