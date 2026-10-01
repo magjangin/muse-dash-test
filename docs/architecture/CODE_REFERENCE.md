@@ -34,9 +34,9 @@ graph TD
 ### 📂 [MainMod.cs](../../muse%20dash%20test/MainMod.cs)
 MelonLoader 모드 진입점 클래스입니다.
 * **`OnInitializeMelon()`**: 첫 줄에서 `PatchInstaller`로 패치를 겁니다(깨진 패치를 걸지 않기 위해 MelonLoader의 자동 `PatchAll`이 아닙니다). 이어서 커스텀 차트 정보가 담긴 `info.txt`(manifest)를 선읽기(Preload)하고 `hwa` 폴더 구조를 자동 정비합니다.
-* **`OnUpdate()`**: 매 프레임 `FeatureGuard`로 격리한 여섯 가지 작업을 돌립니다 — `config.txt` 핫리로드 확인(`InputOverlay.LoadConfigIfNeeded`), 배틀 동기화(`HwaSyncManager`), 배틀 스테이지 감지와 체력바 워터마크 재적용(`HywStageManager`, 0.1초 주기), 실험 스테이지 갱신, 히트포인트 설치, Discord Presence 갱신.
+* **`OnUpdate()`**: 매 프레임 `FeatureGuard`로 격리한 다섯 가지 작업을 돌립니다 — `config.txt` 핫리로드 확인(`InputOverlay.LoadConfigIfNeeded`), 배틀 동기화(`HwaSyncManager`), 배틀 스테이지 감지와 체력바 워터마크 재적용(`HywStageManager`, 0.1초 주기), 실험 스테이지 갱신, 히트포인트 설치. (Discord Presence는 매 프레임이 아니라 이벤트마다 보냅니다.)
 * **`OnGUI()`**: 배틀 중 `Repaint` 이벤트에서만 입력 오버레이와 판정바를 그립니다.
-* **`OnSceneWasLoaded()`**: 씬 로드 로그를 남기고, `FeatureGuard.RearmAll()`로 자동 비활성화된 기능에 재시도 기회를 주며, 입력 오버레이·히트포인트·Spine 계약 구간·결과 화면 캐시·오프셋 UID 캐시를 초기화합니다.
+* **`OnSceneWasLoaded()`**: 씬 로드 로그를 남기고, `FeatureGuard.RearmAll()`로 자동 비활성화된 기능에 재시도 기회를 주며, 입력 오버레이·히트포인트·결과 화면 캐시·오프셋 UID 캐시를 초기화합니다.
 
 ### 📂 [Bms/BmsParser.cs](../../muse%20dash%20test/Bms/BmsParser.cs)
 인게임 차트에 쓰이는 BMS(Be-Music Source) 형태의 노트를 해석하고 분석하기 위한 파서 모듈입니다. BMS 데이터 포맷 규격을 디코딩하여 곡 분석 작업을 보조합니다.

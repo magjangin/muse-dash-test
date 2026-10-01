@@ -126,7 +126,6 @@ namespace muse_dash_test
 
             // Discord RPC
             FeatureMap["Init.DiscordRPC"] = () => EnableDiscordRPC;
-            FeatureMap["DiscordRPC.Update"] = () => EnableDiscordRPC;
 
             // Hwa Media
             FeatureMap["HwaSync.Battle"] = () => EnableBattleMedia;

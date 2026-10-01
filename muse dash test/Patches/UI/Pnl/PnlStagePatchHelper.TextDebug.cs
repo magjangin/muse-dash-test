@@ -176,8 +176,4 @@ public static partial class PnlStagePatchHelper
             ModLogger.Error($"SyncExperimentModeFromStage \uc608\uc678: {ex}");
         }
     }
-
-    public static void LogButtons(string source, PnlStage stage)
-    {
-    }
 }

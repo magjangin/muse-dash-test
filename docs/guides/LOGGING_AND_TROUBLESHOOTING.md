@@ -298,7 +298,7 @@ LogLevel = "Auto" # "Auto", "Silent", "Error", "Warning", "Info", "Verbose"
 | `SpineActionContract.DumpEnabled` (`Spine/Patch_SpineActionContract.cs`) | `false` | `true`로 바꾸고 다시 빌드하면 배틀 캐릭터의 액션·애니메이션 목록을 `spine contract/` 폴더에 txt로 덤프합니다. 꺼져 있으면 폴더도 만들지 않습니다. |
 | `GameMusicScene_InitTimer_Patch` / `GameMusicScene_PreLoadEnemy_Patch`의 `EnableDebugLogs` | `true`(하드코딩) | 씬 변형·풀 빌드 진단 로그(Info)입니다. 로그 수준으로 끌 수 없습니다. |
 
-> `DumpMusicList`는 스위치가 아니라 함수입니다. 공식곡을 로드할 때마다 원본 차트의 미등록 노트를 훑어 `[OfficialSceneContext]` 로그를 Info로 남깁니다(README의 "특수 기믹 곡 스캔" 조사용). 이전 문서가 안내하던 `DumpStageBattleComponentProperties`/`DumpStageInfo`는 코드에서 제거되었습니다. 노트 상세 덤프(`StageBattleMusicDataDump`)는 코드에 남아 있지만 호출하는 곳이 없어 실행되지 않습니다.
+> `DumpMusicList`는 스위치가 아니라 함수입니다. 공식곡을 로드할 때마다 원본 차트의 미등록 노트를 훑어 `[OfficialSceneContext]` 로그를 Info로 남깁니다(README의 "특수 기믹 곡 스캔" 조사용). 이전 문서가 안내하던 `DumpStageBattleComponentProperties`/`DumpStageInfo`는 코드에서 제거되었습니다. 노트 상세 덤프(`StageBattleMusicDataDump`)는 호출하는 곳 없이 남아 있다가 지웠습니다. `StageBattleComponent`를 리플렉션으로 전부 훑는 진단이라 [CHECKLIST.md](CHECKLIST.md)의 "깊게 훑는 진단" 항목에 걸리기도 합니다. 꼭 필요하면 커밋 `e896584`의 `StageBattleComponentPatch.cs`에서 되살리되, 기본값 off로 두십시오.
 
 ## 빌드가 실패할 때
 

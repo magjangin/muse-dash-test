@@ -31,8 +31,6 @@ namespace muse_dash_test
         private static bool hasWarnedWriteFailure;
         private static readonly UTF8Encoding Utf8Bom = new UTF8Encoding(true);
 
-        public static void ResetWindow() { }
-
         public static void DumpSupply(SpineActionController sac)
         {
             try

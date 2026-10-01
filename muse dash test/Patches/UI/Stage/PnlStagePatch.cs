@@ -64,7 +64,6 @@ public class PnlStage_ChangeMusic_Patch
             PnlStagePatchHelper.SyncExperimentModeFromStage(__instance);
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.ChangeMusic", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.ChangeMusic.Force", __instance);
-            PnlStagePatchHelper.LogButtons("PnlStage.ChangeMusic", __instance);
             ModConfig.VerboseLog($"[PnlStage.ChangeMusic] exit index={i}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, currentShouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}, currentExperimentMode={CustomPlaySession.Current.IsExperimentModeActive}");
         }
         catch (Exception ex) { ModLogger.Error($"PnlStage.ChangeMusic Postfix 예외: {ex}"); }

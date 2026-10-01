@@ -13,8 +13,6 @@ namespace muse_dash_test.Patches.UI.Stage
     [HarmonyLib.HarmonyPatch(typeof(RankCell), nameof(RankCell.SetValue))]
     public class RankCell_SetValue_HookPatch
     {
-        private static int hiddenCount = 0;
-
         public static void Prefix(RankCell __instance, int number, string nickName, int score, float acc)
         {
             try
@@ -37,17 +35,9 @@ namespace muse_dash_test.Patches.UI.Stage
                 if (__instance != null && __instance.gameObject != null)
                 {
                     // 11위 이하(Top 10 초과) 셀은 세팅 후 즉시 비활성화 처리
-                    if (number > 10)
+                    if (number > 10 && __instance.gameObject.activeSelf)
                     {
-                        if (__instance.gameObject.activeSelf)
-                        {
-                            __instance.gameObject.SetActive(false);
-                            hiddenCount++;
-                        }
-                    }
-                    else
-                    {
-                        if (number == 1) hiddenCount = 0; // 1위 세팅 시 카운터 리셋
+                        __instance.gameObject.SetActive(false);
                     }
                 }
             }

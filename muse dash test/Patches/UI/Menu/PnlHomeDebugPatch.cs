@@ -33,9 +33,6 @@ namespace muse_dash_test.Patches.UI.Menu
                 bool isPlaying = bgmSource != null && bgmSource.isPlaying;
                 float volume = bgmSource != null ? bgmSource.volume : 0f;
 
-                var pnlMenu = UnityEngine.Object.FindObjectOfType<PnlMenu>();
-                bool menuActive = pnlMenu != null && pnlMenu.gameObject != null && pnlMenu.gameObject.activeInHierarchy;
-
                 ModLogger.Msg($"🔍 [UI.PanelDebug] ===== {eventName} =====");
                 ModLogger.Msg($"  - Selected UID: {selectedUid ?? "(null)"} (VirtualSong: {CustomContentIds.IsVirtualSong(selectedUid)})");
                 ModLogger.Msg($"  - BGM State: clip='{clipName}', playing={isPlaying}, vol={volume:F2}");

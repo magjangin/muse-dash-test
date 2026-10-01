@@ -123,8 +123,6 @@ namespace muse_dash_test
 
             FeatureGuard.Run("Scene.ResetInputOverlay", InputOverlay.ResetCache);
             FeatureGuard.Run("Scene.ResetHitPoint", ExperimentHitPointInstaller.Reset);
-            // 연타 도중 곡을 빠져나가면 구간 플래그가 켜진 채 남아 다음 곡까지 영향을 줍니다.
-            FeatureGuard.Run("Scene.ResetSpineContractWindow", SpineActionContract.ResetWindow);
             FeatureGuard.Run("Scene.ResetVictoryCache", Patches.VictoryDataCache.ResetSession);
             // 오프셋 훅이 들고 있는 폴백 UID 캐시를 버립니다. 씬이 바뀌면 곡도 바뀔 수 있습니다.
             FeatureGuard.Run("Scene.ResetOffsetUidCache", OffsetHookPatches.ResetUidCache);
@@ -144,7 +142,6 @@ namespace muse_dash_test
             FeatureGuard.Run("StageCheck", UpdateStageCheck);
             FeatureGuard.Run("ExperimentStage", HandleExperimentStageUpdate);
             FeatureGuard.Run("ExperimentHitPoint", UpdateExperimentHitPoint);
-            FeatureGuard.Run("DiscordRPC.Update", DiscordPresenceManager.Update);
         }
 
         private static void UpdateStageCheck()

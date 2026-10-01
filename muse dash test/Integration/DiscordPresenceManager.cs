@@ -42,10 +42,8 @@ namespace muse_dash_test
             }
         }
 
-        public static void Update()
-        {
-            // 게임 내장 DiscordManager가 자체 틱/콜백을 관리하므로 별도의 P/Invoke 폴링 불필요
-        }
+        // 매 프레임 부르는 Update()는 두지 않습니다. 게임 내장 DiscordManager가 자체 틱/콜백을 관리하므로
+        // 이 클래스는 이벤트(곡 선택·플레이·결과)마다 한 번씩 보내기만 합니다.
 
         public static void SetIdleState()
         {

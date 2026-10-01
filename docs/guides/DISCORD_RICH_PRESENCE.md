@@ -89,7 +89,7 @@ Il2Cpp.DiscordManager.SetUpdateActivity(bool isPlaying, string levelInfo)
 * 곡 선택 중과 플레이 중에 **곡 제목과 아티스트**가 Discord 프로필에 뜹니다. 커스텀 곡은 곡 폴더의 `info.txt`에 적은 제목·아티스트가 그대로 나가므로, 남에게 보이면 곤란한 이름은 쓰지 마세요.
 * 커스텀 곡 결과는 정확도와 `ALL PERFECT!`/`FULL COMBO!`/`CLEAR!` 여부까지 표시합니다.
 * 공식 곡도 `공식 차트`/`공식 플레이`로 표시됩니다. 커스텀 곡만 대상으로 하는 기능이 아닙니다.
-* `DiscordPresenceManager.Update()`는 비어 있습니다. 주기적으로 무언가를 보내는 폴링은 없고, 위의 이벤트마다 한 번씩 보냅니다(같은 내용은 다시 보내지 않습니다).
+* 주기적으로 무언가를 보내는 폴링은 없고, 위의 이벤트마다 한 번씩 보냅니다(`DiscordPresenceManager`를 거치는 경로는 같은 내용을 다시 보내지 않습니다). 매 프레임 부르던 빈 `Update()`는 지웠습니다.
 
 ---
 
