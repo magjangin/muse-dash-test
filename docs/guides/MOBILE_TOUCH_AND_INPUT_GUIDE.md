@@ -128,6 +128,7 @@ Vector2 pos = t.position.ReadValue();
 * **해결책 (상호 배타적 필터링):**
   * 공중(Air) 영역 클릭 시: `BATTLE_AIR`에 키를 주입하고, `BATTLE_GROUND`에 남아있던 원본 신호는 `result.Clear()`로 완전 차단.
   * 지상(Ground) 영역 클릭 시: `BATTLE_GROUND`에 키를 주입하고, `BATTLE_AIR` 신호는 `result.Clear()`로 완전 차단.
+* **결과적으로 키보드·패드의 공중/지상 입력은 꺼집니다.** `result.Clear()`는 `BATTLE_AIR`/`BATTLE_GROUND` 결과를 매번 통째로 비우고 마우스·터치 입력만 다시 채우므로, 모바일 터치 조작이 켜져 있는 동안(`EnableMobileTouch` + `모바일터치조작=true`)에는 키보드로 노트를 칠 수 없습니다. 피버(`BATTLE_FEVER`)는 건드리지 않습니다.
 * **키 ID 정규화:**
   * 임의의 큰 인덱스(100 등) 대신 인게임 정규 액션 인덱스(`0`, `1`)를 사용하여 롱노트 및 점프 체공이 끊기지 않고 100% 정상 유지되도록 수정.
 

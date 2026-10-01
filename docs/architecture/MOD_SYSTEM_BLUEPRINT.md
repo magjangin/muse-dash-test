@@ -155,7 +155,7 @@ $$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Gre
 
 1. **환경 빌드 및 초기 셋업**
    * [MODDING.md](../getting-started/MODDING.md): 프로젝트 구조, 인게임 핵심 개념, 빠른 수정 위치, 빌드(`build.bat`)와 게임 폴더 반영 방법. MelonLoader 자체 설치는 다루지 않습니다.
-   * [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](../guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md): 오프라인 샌드박스(`offline_custom_sandbox.flag`) 동작 원리와 사용법. 시작 시 한 번만 읽습니다.
+   * [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](../guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md): 오프라인 샌드박스(플래그 파일 `save custom key/OFFLINE_SANDBOX.txt`) 동작 원리와 사용법. 시작 시 한 번만 읽습니다.
 2. **곡 데이터베이스 확장 및 앨범 태그**
    * [UID_INJECTION.md](../experiments/UID_INJECTION.md): 가상 앨범 및 가상 곡 UID 동적 인젝션 프로세스 명세.
    * [CAST_AND_CUSTOM_TAG_GUIDE.md](CAST_AND_CUSTOM_TAG_GUIDE.md): IL2CPP 형변환 가이드 및 커스텀 앨범 태그 UI 추가 방법.

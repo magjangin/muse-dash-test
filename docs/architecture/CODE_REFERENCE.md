@@ -132,7 +132,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
   * `GetButton`: 마우스 좌클릭/우클릭 홀드 시 점프 체공 상태 및 롱노트 타격을 안정적으로 유지합니다.
   * `GetButtonUp`: 마우스 릴리즈 시 정확한 타이밍에 입력을 해제합니다.
 * **상호 배타적 필터링 (Mutual Exclusion)**:
-  * PC 기본 키 매핑으로 인해 마우스 클릭 시 `BATTLE_GROUND` 신호가 동시 유입되는 충돌을 감지하여, 공중(Air) 클릭 중에는 지상 신호를 `result.Clear()`로 완전 차단함으로써 점프 후 즉시 낙하하는 버그를 완벽하게 방지합니다.
+  * PC 기본 키 매핑으로 인해 마우스 클릭 시 `BATTLE_GROUND` 신호가 동시 유입되는 충돌을 감지하여, 공중(Air) 클릭 중에는 지상 신호를 `result.Clear()`로 완전 차단함으로써 점프 후 즉시 낙하하는 버그를 완벽하게 방지합니다. 이 `Clear()`는 `BATTLE_AIR`/`BATTLE_GROUND` 결과를 매번 비우고 마우스·터치만 다시 채우므로, 모바일 터치 조작이 켜진 동안에는 **키보드·패드의 공중/지상 입력이 통째로 꺼집니다**(`BATTLE_FEVER`는 그대로).
 * **멀티터치 & 마우스 우클릭 연타 지원**: 마우스 좌클릭(Finger 0)과 우클릭(Finger 1)을 독립된 터치 손가락으로 처리하여 고난도 롱노트 동시치기 및 연타 플레이를 지원합니다.
 * **터치스크린 10접점 입력**: 접점 판독은 [`Core/TouchInput.cs`](../../muse%20dash%20test/Core/TouchInput.cs)에 위임합니다. ROG Ally, 스팀덱 등에서 두 손가락으로 공중/지상 동시 입력이 가능합니다. 터치가 활성인 동안에는 승격된 마우스를 무시해 이중 판정을 막습니다.
 * **레인 고정 (`_touchSlotIsAir`)**: 공중/지상 판정을 누르는 순간에만 수행하고 접점별로 기억합니다. 매 프레임 현재 좌표로 재계산하면 롱노트를 잡은 채 손가락이 분할선을 넘을 때 노트가 끊기기 때문입니다.
@@ -157,7 +157,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 커스텀 BGM(오디오) 및 BGA(비디오)의 플레이어 재생 상태를 유기적으로 동기화 및 관리하는 오디오/비디오 컨트롤러입니다. 배틀 진입 시 카메라 아래에 `VideoBackgroundQuad`(3D Quad)를 만들고 `VideoPlayer`를 붙여 커스텀 MP4를 배경으로 재생하며, 결과 화면(Victory) 전환 시 미디어를 강제 정지시킵니다.
 
 ### 📂 [Hwa/HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) [NEW]
-* 곡 선택 및 플레이 준비 화면에서 가상/커스텀 곡을 선택할 때 배경음악(BGM) 및 데모 음원을 로컬 디렉터리의 OGG 파일(`music.ogg`)로 오디오 클립을 비동기 핫스왑(Hot-swap) 적용 및 관리하는 오디오 제어기입니다.
+* 곡 선택 및 플레이 준비 화면에서 가상/커스텀 곡을 선택할 때 배경음악(BGM) 및 데모 음원을 곡 폴더의 OGG 파일로 비동기 핫스왑(Hot-swap) 적용 및 관리하는 오디오 제어기입니다. 어느 OGG를 쓸지는 배틀 BGM과 같은 규칙(`SongAudioFiles`: 설정 txt와 같은 이름 → `bgm`/`battle`/`music`/`song` 키워드 → 이름순 첫 파일)으로 고릅니다.
 * 빠른 스크롤 스킵 및 오디오 재생 겹침 방지 장치가 내장되어 작동 안전성을 높였습니다.
 
 ### 📂 [UI/Custom/InputOverlay.cs](../../muse%20dash%20test/Patches/UI/Custom/InputOverlay.cs) [NEW]
@@ -173,7 +173,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 
 ### 📂 [Stage/DBStageInfoPatch.cs](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoPatch.cs)
 차트 개조의 핵심 패치입니다. 곡의 원본 데이터를 복제한 뒤, 곡 폴더에 BMS가 있으면 BMS에서 만든 `ExperimentNoteSpec`으로, 없으면 코드에 정의한 `ExperimentNotes` 배열로 차트를 다시 빌드하여 덮어씁니다.
-* **`ApplyExperimentChart()`**: 메모리 오염이나 리스트 뷰 불일치를 피하기 위해 `m_MusicTickData` 참조를 그대로 두고 내부 슬롯 데이터만 제자리에서 수정(In-place)합니다.
+* **`ApplyExperimentChart()`**: 메모리 오염이나 리스트 뷰 불일치를 피하기 위해 `DBStageInfo`의 노트 리스트(`_musicList_k__BackingField`) 참조를 그대로 두고, `Clear()` 뒤 앵커(`[0]`)와 새 노트를 다시 채우는 방식으로 제자리에서 수정(In-place)합니다.
 
 ### 📂 [Stage/DBStageInfoExperimentChart.cs](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoExperimentChart.cs) (partial 분할)
 롱노트 마디 연산, 보스 투사체 속도 보정, 특수 씬 전환 인덱스(`IbmsId`) 매핑 등 복잡한 차트 가공 로직을 담당하며, 책임별로 다음 partial 파일들로 분할되어 있습니다.

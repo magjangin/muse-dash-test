@@ -115,7 +115,7 @@ flowchart TD
 | 영역 | 주요 파일 | 역할 |
 | --- | --- | --- |
 | 오디오/BGA | `HwaBattleMediaController*`, `HwaSyncManager` | 커스텀 BGM/BGA 재생, 정지, 싱크 |
-| 메뉴 BGM | `HwaMenuBgmController` | 곡 선택/준비 화면에서 `music.ogg` 핫스왑 |
+| 메뉴 BGM | `HwaMenuBgmController` | 곡 선택/준비 화면에서 곡 폴더 OGG 핫스왑(배틀과 같은 선택 규칙, `SongAudioFiles`) |
 | 보스 | `BossPatch`, `BmsBossSwapPlanner` | BMS 이벤트 기반 보스 교체/액션 |
 | 정확도/결과 | `APModPatch`, `CustomRecordStore` | 커스텀 차트 정확도, AP 배너, 기록 저장 |
 | 모바일 터치/입력 | `MouseTouchBridgePatch`, `PnlInputMobilePatch`, `TouchInput` | 모바일 터치 설정 복원, 마우스/터치 배틀 입력 변환 및 키 충돌 방지. 터치 접점은 새 Input System으로 판독 (레거시 `UnityEngine.Input`은 Windows에서 동작하지 않음) |

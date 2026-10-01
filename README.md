@@ -9,7 +9,7 @@
 ## 🌟 Key Features (핵심 특징)
 
 * **No Native Hook (네이티브 훅 불필요)**
-  * 기존의 어려운 메모리 패치나 네이티브 훅 방식 대신, 게임 런타임에 인메모리에 생성된 `m_MusicTickData` 계열의 `MusicData` 리스트를 **In-place(메모리 내부 제자리 수정)** 방식으로 안전하게 재구성하여 완벽하고 안정적인 커스텀 차트 로드를 구현합니다.
+  * 기존의 어려운 메모리 패치나 네이티브 훅 방식 대신, 게임 런타임에 인메모리에 생성된 `DBStageInfo`의 `MusicData` 리스트(`musicList`)를 **In-place(메모리 내부 제자리 수정)** 방식으로 안전하게 재구성하여 완벽하고 안정적인 커스텀 차트 로드를 구현합니다.
 
 * **Dynamic Boss Swap & Rescue (실시간 보스 교체 및 부활)**
   * 런타임 보스 초기화(`Boss.InitBossObject`)를 제어합니다.
@@ -52,7 +52,7 @@
   * `save custom key/OFFLINE_SANDBOX.txt` 플래그 파일의 설정값(`오프라인_샌드박스=활성화/비활성화`)에 따라 오프라인 샌드박스 패치(전체 DLC 잠금 해제 및 검증 우회, 공식 서버 요청 차단)를 켜고 끕니다. 기본값은 **비활성화**입니다. 이 파일은 시작할 때 한 번만 읽으므로 바꾼 뒤에는 게임을 다시 시작해야 합니다. 사용 전에 [계정 관련 주의](#-계정온라인-사용-시-주의)와 [샌드박스 가이드](docs/guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md)를 읽으세요.
 
 * **Menu & Prep BGM Hot-Swapping (곡 선택/준비 화면 BGM 실시간 핫스왑) [NEW]** ✅
-  * 가상/커스텀 곡(`1999-*`)을 선택하거나 플레이 준비 화면(`PnlPreparation`)에 진입할 때, 현재 씬에서 재생 중인 BGM/데모용 `AudioSource`를 실시간으로 탐색하여 로컬 디렉터리의 OGG 파일(`music.ogg`)로 오디오 클립을 비동기 핫스왑(Hot-swap) 적용합니다.
+  * 가상/커스텀 곡(`1999-*`)을 선택하거나 플레이 준비 화면(`PnlPreparation`)에 진입할 때, 현재 씬에서 재생 중인 BGM/데모용 `AudioSource`를 실시간으로 탐색하여 곡 폴더의 OGG 파일(배틀 BGM과 같은 선택 규칙, `SongAudioFiles`)로 오디오 클립을 비동기 핫스왑(Hot-swap) 적용합니다.
 * **Mobile Touch Mode & Mouse Bridge (모바일 터치 설정 복원 및 마우스/터치 브릿지) [NEW]** ✅
   * PC 스팀 빌드 내에 잠들어 있던 모바일 전용 입력 설정창(`PnlInputMobile`)을 완벽 복원하여 좌우/상하 분할 모드, 되돌리기(반전), 오토 피버 옵션을 실시간 제어합니다.
   * 인게임 배틀에서 마우스 좌/우 클릭 및 터치스크린 입력을 공중/지상 타격 및 점프 체공(롱노트 홀드)으로 실시간 변환 주입하며, PC 기본 키 매핑 간섭을 원천 차단하는 상호 배타적 필터링이 적용되었습니다.
@@ -93,7 +93,7 @@
 | **Spine 커스텀 스킨 런타임 텍스처/아틀라스 주입 (`Spine/`)** | ✅ 완료 |
 | **오토 플레이(`AutoPlay`) 및 강제 올퍼펙트(`ForcePerfect`) 조작 패치** | ✅ 완료 |
 | **오프라인 샌드박스 플래그 파일 제어** (시작 시 1회 읽음) | ✅ 완료 |
-| **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (`music.ogg`)** | ✅ 완료 |
+| **곡 선택 및 준비 화면 BGM 실시간 핫스왑 (곡 폴더 OGG)** | ✅ 완료 |
 | **로컬 `cover.png` 기반 커스텀 곡 셀/디스크 앨범 아트 주입** | ✅ 완료 |
 | **가상 곡 플레이 기록(정확도·스코어·최대 콤보·풀콤보) 로컬 JSON 저장 및 결과/기록 카드 표시** | ✅ 완료 |
 | **모바일 전용 터치 조작 패널(`PnlInputMobile`) 복원 및 마우스/터치 배틀 입력 브릿지** | ✅ 완료 ([상세 문서](docs/guides/MOBILE_TOUCH_AND_INPUT_GUIDE.md)) |
@@ -114,7 +114,7 @@
 * **완료**: 커스텀 곡 선택 시 외부 BMS 파일로부터 노트를 실시간으로 읽어와 실제 플레이 가능한 커스텀 차트 로더 구현 (실시간 감시 및 핫 리로드 지원)
 * **완료**: 곡 선택/준비 화면의 가상 곡 커스텀 BGM(.ogg) 실시간 핫스왑 로딩 구현
 * **완료**: 로컬 `cover.png` 파일 디코딩 및 UID별 캐싱을 통한 커스텀 곡 셀/디스크 앨범 아트 동적 주입
-* **완료**: 가상 곡 플레이 데이터(정확도·스코어·최대 콤보·풀콤보)를 순정 세이브 손상 없이 로컬 전용 JSON(`record/{uid}_{난이도}.json`)으로 기록하고 결과창·기록 카드·곡 선택 화면에 표시 (등급/랭크 이미지 표시는 보류)
+* **완료**: 가상 곡 플레이 데이터(정확도·스코어·최대 콤보·풀콤보)를 순정 세이브 손상 없이 로컬 전용 JSON(`record/{곡 폴더 이름}_{난이도}.json`, 채보 지문으로 대조)으로 기록하고 결과창·기록 카드·곡 선택 화면에 표시 (등급/랭크 이미지 표시는 보류)
 * **진행 중**: **특수 기믹 곡 신규 UID/NoteType 스캔 및 커스텀 BMS 매핑 확장**
   * `[OfficialSceneContext]` 미등록 노트 탐지기(`LogUnregisteredOriginalChartNotes`)를 통해 공식 기믹 곡들의 신규 노트 UID 및 NoteType(>17) 분석 진행 중.
   * **대상 대표 기믹 곡 목록:**
@@ -193,11 +193,13 @@
 │   │   │   ├── HwaMenuBgmController.cs
 │   │   │   ├── HwaResourceManager*.cs
 │   │   │   └── HwaSyncManager.cs
-│   │   ├── Sandbox/          # 오프라인 샌드박스 (DLC 잠금 해제 및 검증 우회 토글)
-│   │   │   └── OfflineCustomSandbox.cs
+│   │   ├── Sandbox/          # 오프라인 샌드박스 (DLC 잠금 해제 및 검증 우회 토글, 공식 서버 요청 차단)
+│   │   │   ├── OfflineCustomSandbox.cs
+│   │   │   └── OfflineNetworkSandboxPatch.cs
 │   │   ├── Scene/            # 씬 전환 흐름 제어, 배틀 씬 초기화, 오브젝트 위치 트래킹
 │   │   │   ├── GameMusicScene*.cs
 │   │   │   ├── SceneFlowPatch.cs
+│   │   │   ├── SceneDiagnosticLogger.cs / ScenePatchHelpers.cs
 │   │   │   └── SceneZzTransformTracker*.cs
 │   │   └── UI/               # UI 정보 변조 및 커스텀 가상 앨범
 │   │       ├── Custom/       # 커스텀 태그, 체력바, 입력 오버레이, 판정바
@@ -215,6 +217,10 @@
 │   │       ├── Pnl/          # PnlStage 텍스트 탐색 헬퍼, 곡명 텍스트 대치
 │   │       │   ├── PnlStagePatchHelper*.cs
 │   │       │   └── SetSelectedMusicNameTxtPatch.cs
+│   │       ├── Setting/      # 모바일 입력 설정창(PnlInputMobile) 복원
+│   │       │   └── PnlInputMobilePatch.cs
+│   │       ├── Welcome/      # 업데이트 알림·버전 점검 차단(항상 켜짐)
+│   │       │   └── DisableUpdateNoticePatch.cs
 │   │       └── Stage/        # 곡 선택/준비 화면, 기록 카드, 리포트 카드, 랭크
 │   │           ├── CustomRecordUiPatchHelper.cs
 │   │           ├── HiddenUnlockGuide*.cs # 곡 선택창 히든 해금 조건 표시 (데이터·배치 2파일, 문구 규칙: Core/HiddenUnlockText.cs)
