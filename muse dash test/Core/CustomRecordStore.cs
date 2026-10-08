@@ -160,8 +160,11 @@ namespace muse_dash_test
                 int finalMiss = isNewHighScore || existing == null ? miss : existing.miss;
                 string finalSavedAt = isNewHighScore || existing == null ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) : existing.savedAtUtc;
 
-                // 방금 플레이한 채보의 지문을 함께 남깁니다. 계산에 실패해도(null) 기록 저장 자체는 막지 않습니다.
-                string fingerprint = ChartFingerprint.ForUid(uid) ?? ChartFingerprint.NoChart;
+                // 지문은 배틀 시작 때 고정한 값을 씁니다. 고정된 값이 없을 때만 지금 파일을 읽습니다.
+                // 계산에 실패해도(null) 기록 저장 자체는 막지 않습니다.
+                string fingerprint = CustomPlaySession.Current.TakeBattleChartFingerprint(uid)
+                    ?? ChartFingerprint.ForUid(uid)
+                    ?? ChartFingerprint.NoChart;
 
                 string recordKey = ResolveRecordKey(uid);
                 string filePath = RecordPathFor(recordKey, difficulty);

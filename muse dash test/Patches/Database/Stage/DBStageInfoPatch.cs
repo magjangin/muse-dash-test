@@ -110,6 +110,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
 
             ModLogger.Msg($"[ExperimentChart] 적용 시작: uid={uid ?? "(null)"}, reason={CustomPlaySession.Current.LastApplyDecisionReasonCode}, detail={CustomPlaySession.Current.LastApplyDecisionDescription}, isExperimentModeActive={CustomPlaySession.Current.IsExperimentModeActive}, selectedUid={CustomPlaySession.Current.SelectedMusicUid}, lastClickedUid={CustomPlaySession.Current.LastClickedMusicUid}");
+            // 이 배틀에서 쓸 채보의 지문을 지금 고정합니다. 결과 저장은 이 값을 써서, 플레이 중 파일이 바뀌어도 기록이 섞이지 않습니다.
+            CustomPlaySession.Current.RememberBattleChart(uid, muse_dash_test.ChartFingerprint.ForUid(uid));
             ApplyExperimentChart(__instance, uid);
         }
         catch (System.Exception ex)
