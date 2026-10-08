@@ -38,18 +38,26 @@ namespace muse_dash_test.Patches
     {
         public static void Postfix(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager __instance, Il2CppSystem.Object sender, Il2CppSystem.Object rev, Il2CppReferenceArray<Il2CppSystem.Object> pars)
         {
+            // 커스텀 BGM/BGA 정지와 커스텀 기록 저장은 AP 배너 설정과 무관하게 항상 실행합니다.
+            // 예전에는 아래 게이트 뒤에 있어서 AP 배너를 끄면 결과 화면까지 커스텀 BGM이 남고 기록도 빠졌습니다.
+            try
+            {
+                HwaBattleMediaController.StopMedia();
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[APMod] 결과 화면 미디어 정지 중 예외: {ex}");
+            }
+
+            // [기록 1단계] 커스텀 곡이면 별도 record/ 폴더에 플레이 결과를 저장합니다.
+            // 배너 UI(__instance) 유무, AP 설정과 무관하게 기록은 남도록 여기서 먼저 처리합니다.
+            TrySaveCustomRecord();
+
             if (!ModConfig.EnableAPMod) return;
             try
             {
                 ModLogger.Msg("[APMod] PnlVictory2dManager.OnShowVictory Postfix 감지!");
                 VictoryFlowGuard.StartGuard();
-
-                // 결과 화면 진입 시 커스텀 BGM/BGA 미디어를 강제로 정지시킵니다.
-                HwaBattleMediaController.StopMedia();
-
-                // [기록 1단계] 커스텀 곡이면 별도 record/ 폴더에 플레이 결과를 저장합니다.
-                // 배너 UI(__instance) 유무와 무관하게 기록은 남도록 여기서 먼저 처리합니다.
-                TrySaveCustomRecord();
 
                 if (__instance == null)
                 {
