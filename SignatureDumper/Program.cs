@@ -40,19 +40,26 @@ namespace SignatureDumper
             Console.WriteLine($"출력 폴더 : {outputDir}");
             Console.WriteLine();
 
+            int failedCount = 0;
+
             foreach (string targetName in targets)
             {
                 string dllPath = Path.Combine(gameAssembliesDir, targetName.Trim());
                 if (!File.Exists(dllPath))
                 {
-                    Console.WriteLine($"[건너뜀] 파일 없음: {dllPath}");
+                    // 요청한 대상이 없으면 건너뛰지 않고 실패로 셉니다. 자동화가 성공으로 오인하지 않게 합니다.
+                    Console.Error.WriteLine($"[실패] 파일 없음: {dllPath}");
+                    failedCount++;
                     continue;
                 }
 
                 string moduleOutputDir = Path.Combine(outputDir, Path.GetFileNameWithoutExtension(targetName.Trim()));
-                if (Directory.Exists(moduleOutputDir))
+
+                // 덤프는 임시 폴더에 쓰고, 성공했을 때만 기존 결과와 바꿉니다. 중간에 실패해도 이전 결과가 남습니다.
+                string stagingDir = moduleOutputDir + ".staging";
+                if (Directory.Exists(stagingDir))
                 {
-                    Directory.Delete(moduleOutputDir, recursive: true);
+                    Directory.Delete(stagingDir, recursive: true);
                 }
 
                 Console.WriteLine($"시그니처 덤프 중: {targetName} -> {moduleOutputDir}");
@@ -63,21 +70,38 @@ namespace SignatureDumper
                     {
                         TargetAssemblyPath = dllPath,
                         SearchDirectory = gameAssembliesDir,
-                        OutputDirectory = moduleOutputDir
+                        OutputDirectory = stagingDir
                     };
 
                     var dumper = new AssemblySignatureDumper(options);
                     dumper.Dump();
 
+                    if (Directory.Exists(moduleOutputDir))
+                    {
+                        Directory.Delete(moduleOutputDir, recursive: true);
+                    }
+                    Directory.Move(stagingDir, moduleOutputDir);
+
                     Console.WriteLine($"  완료: {targetName}");
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine($"  [실패] {targetName}: {ex.Message}");
+                    failedCount++;
+                    Console.Error.WriteLine($"  [실패] {targetName}: {ex.Message} (이전 결과는 그대로 남아 있습니다)");
+                    if (Directory.Exists(stagingDir))
+                    {
+                        Directory.Delete(stagingDir, recursive: true);
+                    }
                 }
             }
 
             Console.WriteLine();
+            if (failedCount > 0)
+            {
+                Console.Error.WriteLine($"{failedCount}개 대상이 실패했습니다.");
+                return 1;
+            }
+
             Console.WriteLine("모든 작업이 끝났습니다.");
             return 0;
         }
@@ -87,7 +111,6 @@ namespace SignatureDumper
             var candidates = new List<string>
             {
                 Path.Combine("H:\\muse dash hwa", "MelonLoader", "Il2CppAssemblies"),
-                Path.Combine("H:\\steam", "steamapps", "common", "MiSide", "MelonLoader", "Il2CppAssemblies"),
                 Path.Combine("H:\\steam", "steamapps", "common", "Muse Dash", "MelonLoader", "Il2CppAssemblies")
             };
 
