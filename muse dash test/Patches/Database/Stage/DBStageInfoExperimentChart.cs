@@ -39,9 +39,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             LogOriginalUidMatches(sourceNotes, "05", "05");
         }
 
-        musicList.Clear();
-        musicList.Add(anchor);
-
+        // 노트 목록은 스펙 계산(BMS 변환 포함)이 끝난 뒤에 비웁니다. 변환 중 예외가 나도 원본 목록이 남습니다.
         var runtimeSpecs = BuildRuntimeExperimentNotes(ExperimentNotes);
         bool usedBmsSpecs = false;
         if (UseBmsInjection && muse_dash_test.HwaResourceManager.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
@@ -59,6 +57,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
+        // 원본 목록을 보관한 뒤 비웁니다. 노트 수 상한을 넘으면 이 보관본으로 되돌립니다.
+        var originalNotes = new System.Collections.Generic.List<MusicData>(sourceCount);
+        for (int i = 0; i < sourceCount; i++)
+        {
+            originalNotes.Add(musicList[i]);
+        }
+
+        musicList.Clear();
+        musicList.Add(anchor);
+
         foreach (var spec in runtimeSpecs)
         {
             AddExperimentNotes(musicList, sourceNote, spec);
@@ -69,8 +77,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 롱노트는 ceil(length / LongMiddleStep)개로 전개되어 노트 수가 빠르게 불어나므로 상한을 감시합니다.
         if (musicList.Count > short.MaxValue)
         {
+            // 상한을 넘긴 채보는 상호참조가 깨져 정상 동작하지 않습니다. 주입하지 않고 원본 목록으로 되돌립니다.
             ModLogger.Error($"[ExperimentChart] 노트 수 {musicList.Count}개가 objId(short) 상한 {short.MaxValue}을 초과했습니다. " +
-                              "노트 간 상호참조가 깨져 채보가 정상 동작하지 않습니다. 롱노트 길이나 노트 수를 줄이세요.");
+                              "실험 차트를 적용하지 않고 원본 채보를 유지합니다. 롱노트 길이나 노트 수를 줄이세요.");
+            musicList.Clear();
+            for (int i = 0; i < originalNotes.Count; i++)
+            {
+                musicList.Add(originalNotes[i]);
+            }
+            RecountNoteTypes(musicList);
+            return;
         }
 
         SceneZzTransformTracker.ClearBmsOriginalIdentities();
