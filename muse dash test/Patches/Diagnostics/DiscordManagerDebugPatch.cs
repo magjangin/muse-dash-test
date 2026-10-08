@@ -24,6 +24,10 @@ namespace muse_dash_test
         [HarmonyPrefix]
         public static void SetUpdateActivity_Prefix(DiscordManager __instance, ref bool isPlaying, ref string levelInfo)
         {
+            // 기능이 꺼져 있으면 게임이 보내는 Discord 상태 인자를 바꾸지 않습니다. 예전에는 이 게이트가 없어
+            // EnableDiscordRPC=false여도 "In Menu" 등으로 인자가 덮였습니다.
+            if (!ModConfig.EnableDiscordRPC) return;
+
             bool isSelectionActive = IsStageSelectionContextActive();
             bool isInBattle = IsInBattleStageContext();
 
