@@ -86,7 +86,7 @@ public class GameMusicScene_InitTimer_Patch
 
                 LogGhostNoteIfNeeded(note, beforeUid, beforePrefab);
             }
-            catch (Exception) { }
+            catch (Exception ex) { ModLogger.Verbose($"[GameMusicScene.GhostLog] 무시된 예외: {ex.Message}"); }
         }
 
         LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {ScenePatchHelpers.FormatZzCounts(changedByOriginalZz)}");
@@ -113,7 +113,7 @@ public class GameMusicScene_InitTimer_Patch
                             $"prefab {beforePrefab ?? "(null)"} -> {nd.prefab_name ?? "(null)"}, scene={nd.scene ?? "(null)"}, " +
                             $"type={nd.type}, pathway={nd.pathway}, tick={note.tick}, showTick={note.showTick}, dt={note.dt}");
         }
-        catch (Exception) { }
+        catch (Exception ex) { ModLogger.Verbose($"[GameMusicScene.GhostLog] 무시된 예외: {ex.Message}"); }
     }
 
     /// <summary>

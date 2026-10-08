@@ -37,7 +37,7 @@ namespace muse_dash_test
             }
 
             ModLogger.Msg("모드가 로드되었습니다.");
-            try { UnityEngine.Input.multiTouchEnabled = true; } catch (Exception) { }
+            try { UnityEngine.Input.multiTouchEnabled = true; } catch (Exception ex) { ModLogger.Verbose($"[MainMod.Init] 무시된 예외: {ex.Message}"); }
             ModLogger.Msg("HywHpTextMod - 체력바 텍스트 모드가 성공적으로 연동 활성화되었습니다!");
 
             // 게임 업데이트로 깨진 패치 대상이 있는지 시작 시 점검하여 요약 로그로 표시합니다.

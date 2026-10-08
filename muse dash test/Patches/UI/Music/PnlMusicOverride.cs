@@ -107,7 +107,7 @@ namespace muse_dash_test
                 var memberGameObject = ModReflection.GetValue(obj, "gameObject", silent: true) as GameObject;
                 if (memberGameObject != null) return memberGameObject;
             }
-            catch (Exception) { }
+            catch (Exception ex) { ModLogger.Verbose($"[PnlMusicOverride] 무시된 예외: {ex.Message}"); }
             return null;
         }
 
@@ -124,7 +124,7 @@ namespace muse_dash_test
                         SetTextValue(target, value);
                     }
                 }
-                catch (Exception) { }
+                catch (Exception ex) { ModLogger.Verbose($"[PnlMusicOverride] 무시된 예외: {ex.Message}"); }
             }
         }
 
@@ -145,7 +145,7 @@ namespace muse_dash_test
                     return 1;
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex) { ModLogger.Verbose($"[PnlMusicOverride] 무시된 예외: {ex.Message}"); }
             return 0;
         }
 

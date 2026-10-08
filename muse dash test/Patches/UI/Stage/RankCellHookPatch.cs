@@ -25,7 +25,7 @@ namespace muse_dash_test.Patches.UI.Stage
                     ModLogger.Verbose($"🎯 [RankCell.SetValue] Number={number:D2}, NickName='{nickName}', Score={score:N0}, Acc={displayAcc:F2}% (UID={uid ?? "unknown"})");
                 }
             }
-            catch { }
+            catch (Exception ex) { ModLogger.Verbose($"[RankCellHook] 무시된 예외: {ex.Message}"); }
         }
 
         public static void Postfix(RankCell __instance, int number)
@@ -41,7 +41,7 @@ namespace muse_dash_test.Patches.UI.Stage
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { ModLogger.Verbose($"[RankCellHook] 무시된 예외: {ex.Message}"); }
         }
     }
 }

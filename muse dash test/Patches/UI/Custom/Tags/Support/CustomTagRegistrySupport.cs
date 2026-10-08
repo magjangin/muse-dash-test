@@ -222,7 +222,7 @@ namespace muse_dash_test
                                     if (castResult != null) return castResult;
                                 }
                             }
-                            catch { }
+                            catch (Exception ex) { ModLogger.Verbose($"[CustomTagRegistrySupport] 무시된 예외: {ex.Message}"); }
                         }
                         return cloned;
                     }
