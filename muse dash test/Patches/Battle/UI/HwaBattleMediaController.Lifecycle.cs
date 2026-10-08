@@ -93,6 +93,8 @@ namespace muse_dash_test
 
         public static void StopMedia()
         {
+            // 진행 중인 로드가 끝나도 재생하지 않도록 세대를 올립니다(HwaBattleMediaController.mediaGeneration 참고).
+            mediaGeneration++;
             try
             {
                 long heapMem = GC.GetTotalMemory(false);

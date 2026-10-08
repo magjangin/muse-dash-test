@@ -15,6 +15,10 @@ namespace muse_dash_test
     public static partial class HwaBattleMediaController
     {
         private static bool battleMediaInjectionStarted;
+
+        // 로드 코루틴이 끝났을 때 아직 같은 배틀인지 확인하는 번호입니다. 정지·리셋마다 올립니다.
+        // 정지 뒤에 끝난 옛 로드가 클립을 틀어 결과 화면에서 소리가 되살아나던 문제를 막습니다.
+        internal static int mediaGeneration;
         private static AudioSource injectedAudioSource;
         // 우리가 직접 주입한 커스텀 배틀 BGM 클립만 추적합니다(해제 대상 한정).
         private static AudioClip injectedClip;
@@ -25,6 +29,7 @@ namespace muse_dash_test
             string clipDesc = DescribeAudioClip(injectedClip);
             battleMediaInjectionStarted = false;
             injectedAudioSource = null;
+            mediaGeneration++;
             // 참조만 끊고 Destroy하지 않습니다. 이유는 Lifecycle.cs StopMedia의 [중요] 주석을 보십시오.
             injectedClip = null;
             ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, ManagedHeap={currentMem / 1048576f:F2}MB)");
@@ -116,10 +121,10 @@ namespace muse_dash_test
             }
 
             ModLogger.Msg($"[HwaBattleMediaController] 대상 AudioSource 선택: {DescribeAudioSource(targetSource)}");
-            MelonCoroutines.Start(LoadAndApplyClip(targetSource, oggPath));
+            MelonCoroutines.Start(LoadAndApplyClip(targetSource, oggPath, mediaGeneration));
         }
 
-        private static IEnumerator LoadAndApplyClip(AudioSource targetSource, string oggPath)
+        private static IEnumerator LoadAndApplyClip(AudioSource targetSource, string oggPath, int generation)
         {
             string uri = null;
             bool uriReady = false;
@@ -145,6 +150,13 @@ namespace muse_dash_test
                 handler.streamAudio = true;
                 request.downloadHandler = handler;
                 yield return request.SendWebRequest();
+
+                // 요청이 도는 동안 배틀이 끝났거나 다시 시작됐다면 이 클립은 더 이상 쓸 곳이 없습니다.
+                if (generation != mediaGeneration || targetSource == null)
+                {
+                    ModLogger.Verbose($"[HwaBattleMediaController] 로드 도중 배틀 미디어가 정지되어 주입을 취소합니다: {oggPath}");
+                    yield break;
+                }
 
                 if (!string.IsNullOrWhiteSpace(request.error))
                 {
