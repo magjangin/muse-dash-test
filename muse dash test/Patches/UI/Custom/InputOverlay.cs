@@ -30,9 +30,21 @@ namespace muse_dash_test
         /// </summary>
         private static float checkTimer = CheckInterval;
 
+        /// <summary>
+        /// 키 설정을 연속으로 못 읽은 횟수입니다. 실패할 때마다 재시도 간격을 두 배로 늘려(최대 32초) 설정 객체가 없는 동안
+        /// <c>Resources.FindObjectsOfTypeAll</c>(메모리 전체 검색)이 2초마다 도는 것을 막습니다. 씬이 바뀌면 0부터 다시 셉니다.
+        /// </summary>
+        private static int keyLoadFailures;
+
+        private static float CurrentRetryInterval()
+        {
+            return CheckInterval * (1 << System.Math.Min(keyLoadFailures, 4));
+        }
+
         public static void ResetCache()
         {
             keysLoaded = false;
+            keyLoadFailures = 0;
             checkTimer = CheckInterval; // 다음 그리기에서 바로 다시 읽습니다.
             ModLogger.Msg("[InputOverlay] 키 바인딩 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
         }

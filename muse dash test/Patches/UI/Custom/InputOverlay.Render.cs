@@ -88,10 +88,11 @@ namespace muse_dash_test
             if (!keysLoaded)
             {
                 checkTimer += Time.deltaTime;
-                if (checkTimer >= CheckInterval)
+                if (checkTimer >= CurrentRetryInterval())
                 {
                     checkTimer = 0f;
                     LoadPlayerKeybinds();
+                    keyLoadFailures = keysLoaded ? 0 : keyLoadFailures + 1;
                 }
                 return;
             }
