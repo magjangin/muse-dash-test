@@ -296,5 +296,33 @@ namespace muse_dash_test.LogicTests
             // 0~1틱: 120 BPM → 2초, 1~2틱: 240 BPM → 1초
             Assert.Equal(3f, BmsParser.CalculateTime(2f, changes));
         }
+
+        // 노트 시각은 파서의 단일 스윕이 계산하고, CalculateTime은 같은 규칙의 참조 구현입니다.
+        // 둘이 어긋나면 가변 BPM 채보의 노트 위치가 틀어지므로, 여러 BPM 변경과 여러 마디의 노트를 섞어 대조합니다.
+        public static void ParseText_NoteTimesMatchCalculateTimeAcrossBpmChanges()
+        {
+            var chart = BmsParser.ParseText("""
+                #BPM 120
+                #BPM01:240
+                #BPM02:60
+                #00108:01000000
+                #00208:02000000
+                #00013:01000100
+                #00113:01000100
+                #00213:01000100
+                #00313:01000100
+                """);
+
+            Assert.True(chart.BpmChanges.Count >= 3, "기본 BPM과 두 번의 변경이 있어야 합니다.");
+            Assert.True(chart.Notes.Count >= 8, "노트가 모두 파싱되어야 합니다.");
+
+            foreach (var note in chart.Notes)
+            {
+                float expected = BmsParser.CalculateTime(note.Tick, chart.BpmChanges);
+                Assert.True(
+                    Math.Abs(expected - note.Time) < 1e-4f,
+                    $"노트 시각이 참조 구현과 다릅니다: tick={note.Tick}, sweep={note.Time}, calculateTime={expected}");
+            }
+        }
     }
 }
