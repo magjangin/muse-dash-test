@@ -146,7 +146,7 @@ namespace muse_dash_test
             {
                 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             }
-            catch (Exception) { }
+            catch (Exception ex) { ModLogger.Verbose($"[InputOverlay.Config] 무시된 예외: {ex.Message}"); }
 
             byte[] bytes = File.ReadAllBytes(configPath);
 

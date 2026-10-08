@@ -89,7 +89,7 @@ namespace muse_dash_test
                     return full.Substring(root.Length);
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex) { ModLogger.Verbose($"[HwaManifestLoader.GetRelativeHwaPath] 무시된 예외: {ex.Message}"); }
 
             return Path.GetFileName(filePath);
         }

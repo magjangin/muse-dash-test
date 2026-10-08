@@ -32,7 +32,7 @@ namespace muse_dash_test
                     {
                         __instance.FailCallback(-1, "Offline Sandbox Blocked");
                     }
-                    catch { }
+                    catch (Exception ex) { ModLogger.Verbose($"[OfflineNetworkSandbox.FailCallback] 무시된 예외: {ex.Message}"); }
                     return false; // 원본 네트워크 전송 스킵
                 }
             }

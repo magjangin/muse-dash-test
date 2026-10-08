@@ -311,7 +311,7 @@ namespace muse_dash_test
                         if (casted != null) return casted;
                     }
                 }
-                catch { }
+                catch (Exception ex) { ModLogger.Verbose($"[ModReflection] 무시된 예외: {ex.Message}"); }
                 return value;
             }
 
