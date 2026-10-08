@@ -80,6 +80,33 @@ namespace muse_dash_test
             }
         }
 
+        // 배틀 시작 때 주입한 채보의 지문을 고정해 둡니다. 결과 저장 때 파일을 다시 읽으면, 플레이 도중 BMS를 고친 경우
+        // 옛 점수에 새 지문이 붙습니다(ChartFingerprint 참고). 그래서 저장은 이 값을 씁니다.
+        private string battleChartUid = string.Empty;
+        private string battleChartFingerprint;
+
+        public void RememberBattleChart(string uid, string fingerprint)
+        {
+            battleChartUid = uid ?? string.Empty;
+            battleChartFingerprint = fingerprint;
+        }
+
+        /// <summary>
+        /// 이번 배틀에서 고정한 지문을 돌려주고 비웁니다. 같은 곡의 값이 없으면 null입니다(호출부가 파일을 읽어 대신합니다).
+        /// </summary>
+        public string TakeBattleChartFingerprint(string uid)
+        {
+            string value = null;
+            if (!string.IsNullOrEmpty(uid) && string.Equals(battleChartUid, uid, StringComparison.Ordinal))
+            {
+                value = battleChartFingerprint;
+            }
+
+            battleChartUid = string.Empty;
+            battleChartFingerprint = null;
+            return value;
+        }
+
         public void ResetCounts()
         {
             TotalStandard = 0;
