@@ -338,7 +338,7 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:Gam
 ```
 
 * **빌드 결과물**: `muse dash test/bin/Debug/net6.0/muse-dash-custom-chart.dll` (또는 Release 빌드 시 `bin/Release/net6.0/muse-dash-custom-chart.dll`)
-* **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉터리. **`dotnet build`도 빌드가 끝나면 이 폴더로 자동 복사합니다**(csproj의 `DeployToMods`). 복사가 실패해도 `[AutoDeploy] Successfully deployed` 메시지는 그대로 찍히므로, 폴더에 실제 파일이 있는지 눈으로 확인하세요([CHECKLIST.md](docs/guides/CHECKLIST.md)).
+* **적용 위치**: Muse Dash 설치 폴더의 `Mods/` 디렉터리. **`dotnet build`도 빌드가 끝나면 이 폴더로 자동 복사합니다**(csproj의 `DeployToMods`). 복사에 실패하면 `[AutoDeploy] Successfully deployed` 대신 `배포 실패` 경고가 찍힙니다. 그래도 빌드 후 폴더에 실제 파일이 있는지 눈으로 확인하세요([CHECKLIST.md](docs/guides/CHECKLIST.md)).
 * `Mods/`에는 이 모드의 DLL이 **하나만** 있어야 합니다. MelonLoader는 폴더 안의 `.dll`을 전부 로드합니다.
 
 ---
@@ -346,7 +346,7 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:Gam
 ## 🧪 로직 테스트
 
 모드 본체는 IL2CPP 어셈블리(`Il2CppAssemblies`)를 참조하므로 게임 밖에서 로드할 수 없습니다.
-대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `PlayRecordMerge`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 108개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행합니다. 기록 파일 저장/파싱과 `config.txt` 파싱은 게임 의존 클래스 안에 있어 아직 테스트 대상이 아닙니다.)
+대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `PlayRecordMerge`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 111개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행합니다. 기록 파일 저장/파싱과 `config.txt` 파싱은 게임 의존 클래스 안에 있어 아직 테스트 대상이 아닙니다.)
 
 ```powershell
 .\run-logic-tests.bat

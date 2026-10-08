@@ -101,8 +101,9 @@
 ## 2. 빌드·배포
 
 - [ ] **Mods 폴더를 눈으로 확인했는가?**
-      `[AutoDeploy] Successfully deployed`는 **복사가 실패해도 찍힙니다.**
-      `DeployToMods` 타깃의 `Copy`에 `ContinueOnError="WarnAndContinue"`가 걸려 있고 `Message`는 무조건 출력됩니다.
+      `[AutoDeploy] Successfully deployed`는 **실제로 복사됐을 때만** 찍힙니다. 실패하면 `배포 실패` 경고가 나옵니다
+      (`DeployToMods`가 `Copy`의 `CopiedFiles`를 보도록 2026-10-08에 고쳤습니다). 그래도 AGENTS.md가 요구하므로
+      빌드 후 DLL이 그 폴더에 실제로 있는지 직접 확인합니다.
 
       ```bash
       ls -la "H:/muse dash hwa/Mods/"

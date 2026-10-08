@@ -25,5 +25,6 @@
     <Compile Include="..\muse dash test\Core\SongAudioFiles.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\HiddenUnlockText.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\FileStampCache.cs" Link="UnderTest\%(Filename)%(Extension)" />
+    <Compile Include="..\muse dash test\Core\AtomicFile.cs" Link="UnderTest\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

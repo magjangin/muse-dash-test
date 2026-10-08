@@ -18,6 +18,10 @@ namespace muse_dash_test
         [HarmonyPrefix]
         public static void Prefix(DataManager __instance)
         {
+            // 화면용으로 강제 true로 바꾼 IsUnlockAllMaster를 원래 값으로 되돌린 뒤 저장합니다.
+            // 이걸 빼면 강제값이 세이브 파일에 그대로 남습니다(UnlockAllMasterGuard 참고).
+            RestoreUnlockAllMasterForSave(__instance);
+
             try
             {
                 if (__instance == null) return;
@@ -143,6 +147,52 @@ namespace muse_dash_test
             catch (System.Exception ex)
             {
                 ModLogger.Error($"[SaveDataManagerPatch] Save Prefix 정화 중 예외 발생: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// 저장이 끝난 뒤 화면 표시를 위해 강제 설정을 다시 겁니다(Prefix에서 원래 값으로 되돌렸기 때문).
+        /// 원본 Save가 예외를 던지면 이 Postfix는 건너뛰어지므로, 그때는 다음 곡 선택 진입 때 다시 걸립니다.
+        /// </summary>
+        [HarmonyPostfix]
+        public static void Postfix(DataManager __instance)
+        {
+            ReapplyUnlockAllMasterAfterSave(__instance);
+        }
+
+        /// <summary>
+        /// 강제 설정했던 IsUnlockAllMaster를 저장 직전 원래 값으로 되돌립니다.
+        /// 강제한 적이 없으면(캡처 전) 아무것도 건드리지 않습니다. 원본을 모르는 상태에서 덮으면 원본을 망가뜨리기 때문입니다.
+        /// </summary>
+        private static void RestoreUnlockAllMasterForSave(DataManager dataManager)
+        {
+            if (!UnlockAllMasterGuard.IsCaptured) return;
+            SetUnlockAllMaster(dataManager, UnlockAllMasterGuard.GetRestoreValue(), "저장 직전 원복");
+        }
+
+        private static void ReapplyUnlockAllMasterAfterSave(DataManager dataManager)
+        {
+            if (!UnlockAllMasterGuard.IsCaptured) return;
+            SetUnlockAllMaster(dataManager, true, "저장 후 재강제");
+        }
+
+        private static void SetUnlockAllMaster(DataManager dataManager, bool value, string reason)
+        {
+            try
+            {
+                if (dataManager == null) return;
+
+                var account = (DataObject)dataManager["Account"];
+                if (account == null) return;
+
+                IVariable val = account["IsUnlockAllMaster"];
+                if (val == null) return;
+
+                VariableUtils.SetResult(val, (Il2CppSystem.Object)value);
+            }
+            catch (System.Exception ex)
+            {
+                ModLogger.Error($"[SaveDataManagerPatch] IsUnlockAllMaster {reason} 실패: {ex}");
             }
         }
 

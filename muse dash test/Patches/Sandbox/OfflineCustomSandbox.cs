@@ -104,7 +104,7 @@ namespace muse_dash_test
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(FlagFilePath)!);
-                File.WriteAllText(FlagFilePath,
+                AtomicFile.WriteAllText(FlagFilePath,
                     $"{FlagKey}={( enable ? ValueOn : ValueOff )}\n",
                     System.Text.Encoding.UTF8);
 

@@ -31,3 +31,6 @@ Decompiled_SpineUnity/
 
 # Zip archives
 *.zip
+
+# 진행도 초기화 스크립트가 만드는 세이브·레지스트리 백업(개인 데이터입니다)
+scripts/reset_progress_backup/

@@ -274,7 +274,7 @@ namespace muse_dash_test
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"히든해금표시={showHiddenGuide.ToString().ToLower()}");
 
-                File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
+                AtomicFile.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 ModLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");
             }
             catch (Exception ex)

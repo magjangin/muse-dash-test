@@ -20,6 +20,10 @@ namespace muse_dash_test
             ModLogger.Msg($"[UnlockAllMasterGuard] 원본 IsUnlockAllMaster 값 캡처: {s_originalValue}");
         }
 
+        /// <summary>한 번이라도 강제 설정했는지(= 원본을 캡처했는지)입니다. 강제한 적이 없으면 저장 패치가 손대지 않습니다.</summary>
+        public static bool IsCaptured => s_captured;
+
+        /// <summary>저장 직전에 디스크로 보낼 원래 값입니다. <see cref="IsCaptured"/>가 true일 때만 의미가 있습니다.</summary>
         public static bool GetRestoreValue()
         {
             return s_captured ? s_originalValue : false;

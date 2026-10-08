@@ -180,10 +180,10 @@ public class GameMusicScene_InitTimer_Patch
         var nd = note.noteData;
         nd.uid = newUid;
 
-        try { if (ScenePatchHelpers.IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch (Exception) { }
-        try { nd.scene = "scene_" + renderZz; } catch (Exception) { }
-        try { nd.prefab_name = renderPrefabName; } catch (Exception) { }
-        try { if (int.TryParse(newUid, out int parsedNoteUid)) nd.noteUid = parsedNoteUid; } catch (Exception) { }
+        try { if (ScenePatchHelpers.IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "mirror_uid", ex); }
+        try { nd.scene = "scene_" + renderZz; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "scene", ex); }
+        try { nd.prefab_name = renderPrefabName; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "prefab_name", ex); }
+        try { if (int.TryParse(newUid, out int parsedNoteUid)) nd.noteUid = parsedNoteUid; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "noteUid", ex); }
         // configData도 noteData와 같은 IL2CPP 값 타입이라 getter가 매번 새 박스를 돌려줍니다.
         // 예전에는 note.configData.note_uid에 바로 썼는데, 그 쓰기는 임시 박스에만 남아
         // 사라졌습니다(아래 nd처럼 setter로 되돌려 써야 합니다).
@@ -196,8 +196,25 @@ public class GameMusicScene_InitTimer_Patch
                 note.configData = cd;
             }
         }
-        catch (Exception) { }
-        try { note.noteData = nd; } catch (Exception) { }
+        catch (Exception ex) { LogNoteWriteBackFailure(newUid, "configData", ex); }
+        try { note.noteData = nd; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "noteData", ex); }
+    }
+
+    private static bool s_noteWriteBackWarned;
+
+    /// <summary>
+    /// 노트 필드 되쓰기 실패를 남깁니다. 실패가 노트마다 반복되면 로그가 쏟아지므로 첫 건만 경고로 올리고 나머지는 Verbose에 남깁니다.
+    /// 예전에는 이 자리가 빈 catch라서, 체크리스트의 "쓰기 유실" 사고가 로그 한 줄 없이 지나갔습니다.
+    /// </summary>
+    private static void LogNoteWriteBackFailure(string newUid, string field, Exception ex)
+    {
+        if (!s_noteWriteBackWarned)
+        {
+            s_noteWriteBackWarned = true;
+            ModLogger.Warning($"[GameMusicScene.InitTimer] 노트 필드 되쓰기 실패(첫 건만 경고, 이후는 Verbose): uid={newUid}, field={field}, {ex.GetType().Name}: {ex.Message}");
+            return;
+        }
+        ModLogger.Verbose($"[GameMusicScene.InitTimer] 노트 필드 되쓰기 실패: uid={newUid}, field={field}, {ex.Message}");
     }
 
     private static string ResolveInitialRenderZz()

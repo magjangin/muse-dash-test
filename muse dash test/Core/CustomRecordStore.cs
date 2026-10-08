@@ -169,7 +169,8 @@ namespace muse_dash_test
                     finalPerfect, finalGreat, finalMiss, finalScore, finalMaxCombo, finalAccuracy,
                     finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt, fingerprint, recordKey);
 
-                File.WriteAllText(filePath, json, Encoding.UTF8);
+                // 쓰는 도중 크래시가 나도 옛 기록이 잘리지 않도록 임시 파일을 거쳐 교체합니다(AtomicFile 참고).
+                AtomicFile.WriteAllText(filePath, json, Encoding.UTF8);
                 RecordCache.Invalidate(filePath);
                 ModLogger.Msg($"[CustomRecordStore] 기록 저장 완료 (신규 최고기록: {isNewHighScore}) → {filePath} (playCount={updatedPlayCount}, score={finalScore}, maxCombo={finalMaxCombo}, acc={finalAccuracy:0.0000}, FC={finalIsFullCombo}, AP={finalIsAllPerfect})");
 

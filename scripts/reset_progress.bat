@@ -39,7 +39,7 @@ echo.
 echo [INFO] 백업 폴더: !BACKUP_DIR!
 echo.
 
-:: 1. .sav 파일 백업 + 삭제
+:: 1. .sav 파일 백업 (여기서는 지우지 않습니다. 모든 백업이 끝난 뒤에 3단계에서 지웁니다)
 set "SAV_DIR=%LOCALAPPDATA%\Steam\MuseDash"
 set "FOUND_SAV="
 if exist "!SAV_DIR!" (
@@ -51,18 +51,48 @@ if exist "!SAV_DIR!" (
 if defined FOUND_SAV (
     echo [INFO] 세이브 파일 발견: !FOUND_SAV!
     copy /Y "!FOUND_SAV!" "!BACKUP_DIR!\MuseDashSaves_!TIMESTAMP!.sav" >nul
+    if errorlevel 1 (
+        echo [ERROR] 세이브 파일 백업에 실패했습니다. 아무것도 삭제하지 않고 중단합니다.
+        pause
+        exit /b 1
+    )
     echo [INFO] 백업 완료 -^> !BACKUP_DIR!\MuseDashSaves_!TIMESTAMP!.sav
-    del /F /Q "!FOUND_SAV!"
-    echo [INFO] 세이브 파일 삭제 완료.
 ) else (
     echo [WARN] 세이브 파일을 찾지 못했습니다: !SAV_DIR!\*MuseDashSaves.sav
 )
 
-:: 2. 레지스트리 백업 + 삭제
+:: 2. 레지스트리 백업 (키가 있을 때만 내보냅니다. 내보내기가 실패하면 아무것도 지우지 않고 중단합니다)
 echo.
 echo [INFO] 레지스트리 백업 중...
-reg export "HKCU\Software\PeroPeroGames\Muse Dash" "!BACKUP_DIR!\Registry_MuseDash_space_!TIMESTAMP!.reg" /y >nul 2>&1
-reg export "HKCU\Software\PeroPeroGames\MuseDash" "!BACKUP_DIR!\Registry_MuseDash_nospace_!TIMESTAMP!.reg" /y >nul 2>&1
+reg query "HKCU\Software\PeroPeroGames\Muse Dash" >nul 2>&1
+if not errorlevel 1 (
+    reg export "HKCU\Software\PeroPeroGames\Muse Dash" "!BACKUP_DIR!\Registry_MuseDash_space_!TIMESTAMP!.reg" /y >nul 2>&1
+    if errorlevel 1 (
+        echo [ERROR] 레지스트리 백업 실패 - Muse Dash 키. 아무것도 삭제하지 않고 중단합니다.
+        pause
+        exit /b 1
+    )
+)
+
+reg query "HKCU\Software\PeroPeroGames\MuseDash" >nul 2>&1
+if not errorlevel 1 (
+    reg export "HKCU\Software\PeroPeroGames\MuseDash" "!BACKUP_DIR!\Registry_MuseDash_nospace_!TIMESTAMP!.reg" /y >nul 2>&1
+    if errorlevel 1 (
+        echo [ERROR] 레지스트리 백업 실패 - MuseDash 키. 아무것도 삭제하지 않고 중단합니다.
+        pause
+        exit /b 1
+    )
+)
+
+:: 3. 모든 백업이 확인된 뒤에만 삭제합니다
+if defined FOUND_SAV (
+    del /F /Q "!FOUND_SAV!"
+    if exist "!FOUND_SAV!" (
+        echo [ERROR] 세이브 파일을 지우지 못했습니다. 백업은 남아 있습니다: !FOUND_SAV!
+    ) else (
+        echo [INFO] 세이브 파일 삭제 완료.
+    )
+)
 
 reg delete "HKCU\Software\PeroPeroGames\Muse Dash" /f >nul 2>&1
 reg delete "HKCU\Software\PeroPeroGames\MuseDash" /f >nul 2>&1

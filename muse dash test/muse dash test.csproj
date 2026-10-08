@@ -47,13 +47,17 @@
   <!-- 빌드 후 산출 DLL을 게임 Mods 폴더로 항상 자동 배포 -->
   <Target Name="DeployToMods" AfterTargets="Build">
     <MakeDir Directories="$(ModsDir)" Condition="!Exists('$(ModsDir)')" />
+    <!-- 성공 메시지는 실제로 복사된 파일이 있을 때만 찍습니다. ContinueOnError로 빌드는 계속되므로 여기서 갈라집니다. -->
     <Copy SourceFiles="$(TargetPath)"
           DestinationFolder="$(ModsDir)"
           OverwriteReadOnlyFiles="true"
-          ContinueOnError="WarnAndContinue" />
-    <Message Importance="high" Text="================================================================================" />
-    <Message Importance="high" Text="[AutoDeploy] Successfully deployed '$(TargetFileName)' -> '$(ModsDir)'" />
-    <Message Importance="high" Text="================================================================================" />
+          ContinueOnError="WarnAndContinue">
+      <Output TaskParameter="CopiedFiles" ItemName="DeployedFiles" />
+    </Copy>
+    <Message Condition="'@(DeployedFiles)' != ''" Importance="high" Text="================================================================================" />
+    <Message Condition="'@(DeployedFiles)' != ''" Importance="high" Text="[AutoDeploy] Successfully deployed '$(TargetFileName)' -> '$(ModsDir)'" />
+    <Message Condition="'@(DeployedFiles)' != ''" Importance="high" Text="================================================================================" />
+    <Warning Condition="'@(DeployedFiles)' == ''" Text="[AutoDeploy] 배포 실패: '$(TargetFileName)'을(를) '$(ModsDir)'에 복사하지 못했습니다. 게임이 이 DLL을 잡고 있지 않은지, 폴더 쓰기 권한이 있는지 확인하세요." />
   </Target>
 </Project>
 
