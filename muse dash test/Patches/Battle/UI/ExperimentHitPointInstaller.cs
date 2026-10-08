@@ -400,8 +400,8 @@ namespace muse_dash_test
                 }
             }
 
-            // Cache null so we do not run the expensive scan again for this missing prefab
-            prefabCache[prefabName] = null;
+            // 찾지 못한 결과는 캐시하지 않습니다. 프리팹이 나중에 로드될 수 있어 다음 시도에서 다시 찾아야 합니다.
+            // 검색 횟수는 호출부(RetryInterval 0.5초, MaxInstallAttempts 40회)가 제한합니다.
             return null;
         }
 
