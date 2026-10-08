@@ -1,5 +1,6 @@
 using MelonLoader;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace muse_dash_test
@@ -12,16 +13,21 @@ namespace muse_dash_test
         private static FileSystemWatcher bmsWatcher = null;
 
         /// <summary>
-        /// 같은 파일에 대해 이 시간 안에 다시 들어온 이벤트는 무시합니다.
-        /// FileSystemWatcher는 저장 한 번에 LastWrite와 Size 알림을 따로 올리고, 에디터에 따라
-        /// 쓰기 자체가 여러 번 일어나기도 합니다. 그때마다 파일을 다시 읽고 파싱하면
-        /// 저장 1회에 재파싱이 여러 번 도는 낭비가 생깁니다.
+        /// 마지막 변경 뒤 이 시간 동안 같은 곡에 새 변경이 없을 때 한 번 다시 읽습니다(디바운스).
+        /// 예전에는 이 시간 안의 후속 이벤트를 버렸는데, 여러 번에 나눠 쓰는 저장에서는 마지막 완성본이 버려져
+        /// 중간 상태가 캐시에 남았습니다. 지금은 마지막 이벤트 뒤에 읽으므로 최종 내용이 반영됩니다.
         /// </summary>
-        private static readonly TimeSpan BmsEventDebounceWindow = TimeSpan.FromMilliseconds(300);
+        private static readonly TimeSpan BmsReloadQuietPeriod = TimeSpan.FromMilliseconds(300);
 
-        /// <summary>경로별 마지막 처리 시각. 워처 이벤트는 스레드풀에서 오므로 접근을 잠급니다.</summary>
-        private static readonly System.Collections.Generic.Dictionary<string, DateTime> lastHandledByPath =
-            new System.Collections.Generic.Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>파일이 아직 완성되지 않아 읽지 못했을 때의 재시도 간격과 최대 횟수입니다.</summary>
+        private static readonly TimeSpan BmsReloadRetryDelay = TimeSpan.FromMilliseconds(500);
+        private const int BmsReloadMaxRetries = 3;
+
+        // 워처 이벤트와 타이머는 스레드풀에서 옵니다. 아래 상태는 bmsReloadLock으로만 접근합니다.
+        private static readonly object bmsReloadLock = new object();
+        private static readonly HashSet<string> pendingReloadUids = new HashSet<string>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, int> reloadRetryCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        private static System.Threading.Timer bmsReloadTimer;
 
         public static void InitializeBmsWatcher()
         {
@@ -68,6 +74,8 @@ namespace muse_dash_test
 
         private static void OnBmsFileRenamed(object sender, RenamedEventArgs e)
         {
+            // 이름을 바꾸면 옛 경로가 속한 곡도 바뀐 것입니다. 옛 경로와 새 경로를 모두 처리합니다.
+            HandleBmsFileEvent(e.OldFullPath);
             HandleBmsFileEvent(e.FullPath);
         }
 
@@ -81,18 +89,6 @@ namespace muse_dash_test
                 if (!string.Equals(ext, ".bms", StringComparison.OrdinalIgnoreCase)) return;
 
                 string fullPath = Path.GetFullPath(filePath);
-
-                // 저장 1회에 여러 알림이 몰려 오는 경우 첫 건만 처리합니다.
-                lock (lastHandledByPath)
-                {
-                    DateTime now = DateTime.UtcNow;
-                    if (lastHandledByPath.TryGetValue(fullPath, out DateTime last)
-                        && now - last < BmsEventDebounceWindow)
-                    {
-                        return;
-                    }
-                    lastHandledByPath[fullPath] = now;
-                }
 
                 string matchedUid = null;
                 string[] uidsSnapshot;
@@ -116,7 +112,7 @@ namespace muse_dash_test
 
                 if (matchedUid != null)
                 {
-                    ReloadBmsChartForUid(matchedUid);
+                    ScheduleBmsReload(matchedUid, BmsReloadQuietPeriod);
                 }
             }
             catch (Exception ex)
@@ -125,6 +121,53 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>
+        /// 곡의 재로드를 예약합니다. 이미 예약된 곡에 이벤트가 또 오면 타이머를 다시 맞춰 마지막 이벤트 뒤에 한 번만 읽습니다.
+        /// </summary>
+        private static void ScheduleBmsReload(string uid, TimeSpan delay)
+        {
+            lock (bmsReloadLock)
+            {
+                pendingReloadUids.Add(uid);
+                if (bmsReloadTimer == null)
+                {
+                    bmsReloadTimer = new System.Threading.Timer(OnBmsReloadTimer, null, delay, System.Threading.Timeout.InfiniteTimeSpan);
+                }
+                else
+                {
+                    bmsReloadTimer.Change(delay, System.Threading.Timeout.InfiniteTimeSpan);
+                }
+            }
+        }
+
+        private static void OnBmsReloadTimer(object state)
+        {
+            string[] uids;
+            lock (bmsReloadLock)
+            {
+                uids = new string[pendingReloadUids.Count];
+                pendingReloadUids.CopyTo(uids);
+                pendingReloadUids.Clear();
+            }
+
+            foreach (var uid in uids)
+            {
+                try
+                {
+                    ReloadBmsChartForUid(uid);
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.Error($"[HwaResourceManager.BmsWatcher] 재로드 중 오류: uid={uid}, {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 곡의 채보를 다시 읽어 캐시를 갱신합니다.
+        /// 새 채보를 얻으면 교체하고, 채보 파일이 사라졌으면 캐시에서 제거하고, 읽지 못했지만 파일은 남아 있으면
+        /// 옛 채보를 유지한 채 잠시 뒤 다시 시도합니다(저장 도중일 수 있습니다).
+        /// </summary>
         public static bool ReloadBmsChartForUid(string uid)
         {
             if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
@@ -139,19 +182,71 @@ namespace muse_dash_test
 
             ModLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 감지 -> [{uid}] 다시 읽기 시도: {songDir}");
             BmsChart newChart = LoadHwaBmsChart(songDir, manifest);
-            if (newChart != null)
+            if (newChart != null && newChart.Notes != null && newChart.Notes.Count > 0)
             {
                 lock (cachedBmsCharts)
                 {
                     cachedBmsCharts[uid] = newChart;
                 }
+                ClearRetryCount(uid);
                 ModLogger.Msg($"[HwaResourceManager.BmsWatcher] ✅ [{uid}] BMS 실시간 재로드 성공!");
                 return true;
             }
-            else
+
+            BmsChart current;
+            lock (cachedBmsCharts)
             {
-                ModLogger.Warning($"[HwaResourceManager.BmsWatcher] ❌ [{uid}] BMS 실시간 재로드 실패");
+                cachedBmsCharts.TryGetValue(uid, out current);
+            }
+
+            // 캐시에 있던 채보 파일이 사라졌다면(삭제, 이름 변경) 옛 채보를 계속 쓰면 안 됩니다.
+            if (current == null || string.IsNullOrEmpty(current.SourcePath) || !File.Exists(current.SourcePath))
+            {
+                lock (cachedBmsCharts)
+                {
+                    cachedBmsCharts.Remove(uid);
+                }
+                ClearRetryCount(uid);
+                ModLogger.Msg($"[HwaResourceManager.BmsWatcher] [{uid}] 채보 파일이 사라져 캐시에서 제거했습니다.");
                 return false;
+            }
+
+            ModLogger.Warning($"[HwaResourceManager.BmsWatcher] [{uid}] 재로드 실패. 이전 채보를 유지하고 잠시 뒤 다시 시도합니다.");
+            ScheduleRetry(uid);
+            return false;
+        }
+
+        private static void ScheduleRetry(string uid)
+        {
+            bool giveUp;
+            lock (bmsReloadLock)
+            {
+                reloadRetryCounts.TryGetValue(uid, out int attempts);
+                giveUp = attempts >= BmsReloadMaxRetries;
+                if (giveUp)
+                {
+                    reloadRetryCounts.Remove(uid);
+                }
+                else
+                {
+                    reloadRetryCounts[uid] = attempts + 1;
+                }
+            }
+
+            if (giveUp)
+            {
+                ModLogger.Warning($"[HwaResourceManager.BmsWatcher] [{uid}] {BmsReloadMaxRetries}회 재시도 후에도 읽지 못해 이전 채보를 유지합니다.");
+                return;
+            }
+
+            ScheduleBmsReload(uid, BmsReloadRetryDelay);
+        }
+
+        private static void ClearRetryCount(string uid)
+        {
+            lock (bmsReloadLock)
+            {
+                reloadRetryCounts.Remove(uid);
             }
         }
     }
