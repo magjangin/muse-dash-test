@@ -80,7 +80,7 @@ namespace muse_dash_test
 
                 // 곡 선택/준비 화면 이탈 시 디스코드 프로필도 In Menu 상태로 즉시 복원
                 var discordManager = Il2CppPeroTools2.Commons.Singleton<Il2Cpp.DiscordManager>.instance;
-                if (discordManager != null)
+                if (discordManager != null && ModConfig.EnableDiscordRPC)
                 {
                     discordManager.SetUpdateActivity(false, "In Menu");
                 }
