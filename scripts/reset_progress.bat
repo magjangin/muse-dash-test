@@ -32,8 +32,9 @@ if not errorlevel 1 (
 set "BACKUP_DIR=%~dp0reset_progress_backup"
 if not exist "!BACKUP_DIR!" mkdir "!BACKUP_DIR!"
 
-set "TIMESTAMP=%date:~0,4%%date:~5,2%%date:~8,2%_%time:~0,2%%time:~3,2%%time:~6,2%"
-set "TIMESTAMP=!TIMESTAMP: =0!"
+rem %date%는 로캘마다 형식이 달라 자르는 방식이 깨집니다. 날짜·시간은 PowerShell로 얻습니다.
+for /f %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "TIMESTAMP=%%T"
+if not defined TIMESTAMP set "TIMESTAMP=%RANDOM%%RANDOM%"
 
 echo.
 echo [INFO] 백업 폴더: !BACKUP_DIR!
@@ -42,10 +43,20 @@ echo.
 :: 1. .sav 파일 백업 (여기서는 지우지 않습니다. 모든 백업이 끝난 뒤에 3단계에서 지웁니다)
 set "SAV_DIR=%LOCALAPPDATA%\Steam\MuseDash"
 set "FOUND_SAV="
+set "SAV_COUNT=0"
 if exist "!SAV_DIR!" (
     for %%F in ("!SAV_DIR!\*MuseDashSaves.sav") do (
+        set /a SAV_COUNT+=1
         set "FOUND_SAV=%%F"
     )
+)
+
+:: 세이브가 여러 개면 어느 계정의 진행도인지 알 수 없으므로 아무것도 지우지 않고 중단합니다.
+if !SAV_COUNT! GTR 1 (
+    echo [ERROR] 세이브 파일이 여러 개 있어 어느 것을 지울지 정할 수 없습니다. 아무것도 삭제하지 않고 중단합니다.
+    for %%F in ("!SAV_DIR!\*MuseDashSaves.sav") do echo   - %%F
+    pause
+    exit /b 1
 )
 
 if defined FOUND_SAV (
