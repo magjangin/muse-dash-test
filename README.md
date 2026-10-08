@@ -18,7 +18,7 @@
 * **Custom Tag & LocalALBUMInfo Resolution (커스텀 태그 및 로컬라이제이션 원본 DB 조회 결합) [v0.9.3]** ✅
   * `MusicInfo.GetLocal(int language)` 및 `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(int index)` 훅을 연동하여 게임 엔진 본연의 로컬라이즈 DB 조회 시 커스텀 곡 제목과 아티스트명을 반환하도록 확장했습니다.
   * 이로써 언어팩 조회 경로가 원본 곡명을 되돌려 놓는 것을 차단하며, UI 상단 곡 제목 및 아티스트명이 정상 렌더링되도록 처리되었습니다. (→ [CAST_AND_CUSTOM_TAG_GUIDE.md](docs/architecture/CAST_AND_CUSTOM_TAG_GUIDE.md))
-  * `MusicInfoWrapper`에 `music` 필드 래퍼 프로퍼티를 추가하고 에셋 키 참조를 차단했습니다.
+  * `MusicInfoWrapper`에 `music` 필드 래퍼 프로퍼티를 추가했습니다. 음원 에셋 키(`music`)는 덮어쓰지 않고 원본 값을 그대로 씁니다. 표시 제목은 에셋 키 대신 마스크 렌더링 경로로 바꿉니다(체크리스트 §1 참고).
 
 * **UI Metadata Manipulation (곡 메타데이터 실시간 조작)**
   * 리플렉션과 Unity 컴포넌트 깊이 탐색을 조합하여, 곡 선택 및 플레이 준비 화면의 복잡한 UI 구조 하위에 숨겨진 텍스트 컴포넌트까지 찾아내 곡 제목, 아티스트, 레벨 디자이너 정보(라벨 및 이름)를 런타임에 원하는 텍스트로 실시간 덮어씁니다.
