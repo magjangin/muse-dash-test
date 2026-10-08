@@ -169,6 +169,8 @@ namespace muse_dash_test
                     finalPerfect, finalGreat, finalMiss, finalScore, finalMaxCombo, finalAccuracy,
                     finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt, fingerprint, recordKey);
 
+                KeepBackupBeforeOverwrite(filePath);
+
                 // 쓰는 도중 크래시가 나도 옛 기록이 잘리지 않도록 임시 파일을 거쳐 교체합니다(AtomicFile 참고).
                 AtomicFile.WriteAllText(filePath, json, Encoding.UTF8);
                 RecordCache.Invalidate(filePath);
@@ -187,6 +189,27 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 ModLogger.Error($"[CustomRecordStore] 기록 저장 중 예외: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// 덮어쓰기 전에 기존 기록 파일을 <c>.bak</c>으로 한 번 남깁니다. 옛 버전(지문 없는 기록 등)은 화면에 나오지 않지만
+        /// 파일이 사라지면 복구할 수 없으므로, 처음 덮어쓸 때의 원본을 보관합니다. 코드는 이 파일을 읽지 않습니다.
+        /// 백업 실패가 기록 저장을 막지 않도록 예외는 경고로만 남깁니다.
+        /// </summary>
+        private static void KeepBackupBeforeOverwrite(string filePath)
+        {
+            try
+            {
+                string backupPath = filePath + ".bak";
+                if (File.Exists(filePath) && !File.Exists(backupPath))
+                {
+                    File.Copy(filePath, backupPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[CustomRecordStore] 기존 기록의 .bak 백업에 실패했습니다(저장은 계속합니다): {filePath}, {ex.Message}");
             }
         }
 
