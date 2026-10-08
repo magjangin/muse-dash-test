@@ -236,7 +236,8 @@ public class PnlReportCard_RefreshBestRecord_Patch
             if (instance.txtCombo != null) instance.txtCombo.text = CustomRecordUiPatchHelper.FormatCombo(record);
             else ModLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtCombo가 null입니다.");
 
-            if (instance.txtTotalPassCountValue != null) instance.txtTotalPassCountValue.text = "1";
+            // 기록 패널(CustomRecordUiPatchHelper)과 같은 규칙으로 저장된 플레이/클리어 횟수를 씁니다.
+            if (instance.txtTotalPassCountValue != null) instance.txtTotalPassCountValue.text = (record.playCount > 0 ? record.playCount : 1).ToString();
             else ModLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtTotalPassCountValue가 null입니다.");
 
             if (instance.imgFc != null) instance.imgFc.gameObject.SetActive(record.isFullCombo);
