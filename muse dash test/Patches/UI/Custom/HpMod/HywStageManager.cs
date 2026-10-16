@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using MelonLoader;
 
 namespace muse_dash_test
