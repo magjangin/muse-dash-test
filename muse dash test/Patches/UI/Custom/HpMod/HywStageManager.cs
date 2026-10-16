@@ -1,10 +1,18 @@
-﻿using UnityEngine;
+using UnityEngine;
 using MelonLoader;
 
 namespace muse_dash_test
 {
     public class HywStageManager
     {
+        private static HywStageManager instance;
+        public static HywStageManager Instance => instance;
+
+        public HywStageManager()
+        {
+            instance = this;
+        }
+
         private bool isInStage = false;
         private UnityEngine.UI.Text targetTextComponent = null;
         private string lastText = "";
@@ -15,6 +23,21 @@ namespace muse_dash_test
 
         public bool IsInStage => isInStage;
         public static bool IsInStageStatic { get; private set; } = false;
+
+        /// <summary>
+        /// 승리 연출, 결과 화면 진입, 강제 이탈 시 외부에서 즉시 스테이지 종료 상태로 전환합니다.
+        /// </summary>
+        public void MarkStageEnded()
+        {
+            if (isInStage)
+            {
+                isInStage = false;
+                IsInStageStatic = false;
+                targetTextComponent = null;
+                lastText = "";
+                ModLogger.Msg("[HywHpTextMod] 스테이지 종료 감지 (이벤트 트리거).");
+            }
+        }
 
         public void CheckForStageAndModify()
         {
@@ -37,12 +60,18 @@ namespace muse_dash_test
                     return;
                 }
 
-                // 🚀 성능 최적화: 이미 체력바 텍스트 컴포넌트가 정상 확보되었으면
+                // 🚀 성능 최적화: 이미 체력바 텍스트 컴포넌트가 정상 확보되었고 현재 씬에서 활성화 상태이면
                 // 매 주기 무거운 GameObject.Find 16개 씬 전체 순회 검색을 건너뜁니다.
-                if (isInStage && targetTextComponent != null)
+                if (isInStage && targetTextComponent != null && targetTextComponent.gameObject != null && targetTextComponent.gameObject.activeInHierarchy)
                 {
                     IsInStageStatic = true;
                     return;
+                }
+
+                // 체력바 컴포넌트가 파괴되었거나 비활성화(결과 화면 진입 등)되었으면 캐시를 리셋합니다.
+                if (targetTextComponent != null && (targetTextComponent.gameObject == null || !targetTextComponent.gameObject.activeInHierarchy))
+                {
+                    targetTextComponent = null;
                 }
 
                 bool foundHealth = HealthBarFinder.FindHealthBar() != null;

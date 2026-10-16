@@ -49,6 +49,16 @@ namespace muse_dash_test.Patches
                 ModLogger.Error($"[APMod] 결과 화면 미디어 정지 중 예외: {ex}");
             }
 
+            // [인게임 오버레이 정리] 스테이지 클리어 연출 시작 시 인게임 키 뷰어와 판정바가 결과 화면에 잔존하지 않도록 즉시 종료 처리합니다.
+            try
+            {
+                HywStageManager.Instance?.MarkStageEnded();
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[APMod] 스테이지 종료 상태 알림 중 예외: {ex}");
+            }
+
             // [기록 1단계] 커스텀 곡이면 별도 record/ 폴더에 플레이 결과를 저장합니다.
             // 배너 UI(__instance) 유무, AP 설정과 무관하게 기록은 남도록 여기서 먼저 처리합니다.
             TrySaveCustomRecord();
