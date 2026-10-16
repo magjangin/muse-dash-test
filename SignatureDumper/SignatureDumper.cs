@@ -284,6 +284,17 @@ namespace SignatureDumper
         {
             if (t == null) return "void";
             if (t == typeof(void)) return "void";
+            if (t.IsByRef) return GetTypeName(t.GetElementType());
+            if (t.IsPointer) return GetTypeName(t.GetElementType()) + "*";
+            if (t.IsArray)
+            {
+                string rank = new string(',', t.GetArrayRank() - 1);
+                return $"{GetTypeName(t.GetElementType())}[{rank}]";
+            }
+            if (Nullable.GetUnderlyingType(t) is Type underlying)
+            {
+                return $"{GetTypeName(underlying)}?";
+            }
             if (t == typeof(int)) return "int";
             if (t == typeof(long)) return "long";
             if (t == typeof(short)) return "short";

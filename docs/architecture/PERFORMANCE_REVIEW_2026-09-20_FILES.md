@@ -8,7 +8,7 @@
 
 | 파일 | 줄 수 / 크기 | 검토 분류 |
 | --- | ---: | --- |
-| [.claude/settings.local.json](../../.claude/settings.local.json) | 117 | 설정/빌드: 실행·배포 경로 검색 |
+| `.claude/settings.local.json` (개인 로컬 설정, git 미추적) | 117 | 설정/빌드: 실행·배포 경로 검색 |
 | [.gitignore](../../.gitignore) | 33 | 설정/빌드: 실행·배포 경로 검색 |
 | [AGENTS.md](../../AGENTS.md) | 9 | 문서: 구조·기존 사고·성능 설명 검색 |
 | [README.md](../../README.md) | 325 | 문서: 구조·기존 사고·성능 설명 검색 |
