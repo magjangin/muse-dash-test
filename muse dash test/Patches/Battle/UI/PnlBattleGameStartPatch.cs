@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using System;
 using System.Reflection;
 using Il2CppAssets.Scripts.UI.Panels;
@@ -16,10 +16,11 @@ public class PnlBattle_GameStart_Patch
         {
             string uid = muse_dash_test.CustomPlaySession.Current.LastKnownMusicUid;
             muse_dash_test.DiscordPresenceManager.UpdateForPlaying(uid);
+            muse_dash_test.SpineActionController_PlayByKey_GhostNote_Patch.ResetCache();
         }
         catch (Exception ex)
         {
-            ModLogger.Error($"[PnlBattleGameStartPatch] Discord Presence 갱신 예외: {ex.Message}");
+            ModLogger.Error($"[PnlBattleGameStartPatch] 배틀 시작 처리 예외: {ex.Message}");
         }
     }
 }
