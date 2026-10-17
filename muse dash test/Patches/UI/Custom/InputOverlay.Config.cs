@@ -304,6 +304,8 @@ namespace muse_dash_test
                             showGhostNotes = ParseBool(val, key, showGhostNotes);
                             break;
                         case "강제퍼펙트":
+                        case "올퍼펙트":
+                        case "allperfect":
                         {
                             bool previous = forcePerfect;
                             forcePerfect = ParseBool(val, key, forcePerfect);

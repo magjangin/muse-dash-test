@@ -45,6 +45,12 @@ namespace muse_dash_test
             public const string GameStart = "GameStart";
         }
 
+        /// <summary>Il2CppFormulaBase.StageBattleComponent — 인게임 스테이지 배틀 컴포넌트.</summary>
+        public static class StageBattleComponent
+        {
+            public const string InitTimeNodeOrder = "InitTimeNodeOrder";
+        }
+
         /// <summary>Il2Cpp.SetSelectedMusicNameTxt — 선택 곡명 텍스트. (Awake/OnEnable은 Unity 메시지로 비교적 안정적)</summary>
         public static class SetSelectedMusicNameTxt
         {

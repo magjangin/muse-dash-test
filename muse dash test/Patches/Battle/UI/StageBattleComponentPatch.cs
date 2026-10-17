@@ -53,6 +53,13 @@ namespace muse_dash_test
                 Patches.VictoryDataCache.ResetSession();
                 // 클립 포인터는 에셋이 해제된 뒤 재사용될 수 있으므로 배틀마다 FC 효과음 판정 캐시를 버립니다.
                 Patches.AllPerfectSound.ResetClipCache();
+
+                // 사전 판정 테이블(TimeNodeOrders) 올 퍼펙트 조작 및 활성 컴포넌트 등록
+                ForcePerfectState.SetActiveStageBattle(__instance);
+                if (ModConfig.EnableForcePerfect && ForcePerfectState.Enabled)
+                {
+                    ForcePerfectState.PromoteTimeNodeOrders(__instance);
+                }
             }
             catch (Exception ex)
             {
@@ -99,6 +106,7 @@ namespace muse_dash_test
         {
             ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Exit 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
+            ForcePerfectState.SetActiveStageBattle(null);
             // 리셋을 먼저 수행해 StopMedia가 예외를 던져도 stale 플래그가 남지 않게 합니다.
             try { CustomPlaySession.Current.ResetApplyDecision(); }
             catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] Exit ResetApplyDecision 예외: {ex}"); }
@@ -114,6 +122,7 @@ namespace muse_dash_test
         {
             ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Release 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
+            ForcePerfectState.SetActiveStageBattle(null);
             try { CustomPlaySession.Current.ResetApplyDecision(); }
             catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] Release ResetApplyDecision 예외: {ex}"); }
             try { HwaBattleMediaController.StopMedia(); }
