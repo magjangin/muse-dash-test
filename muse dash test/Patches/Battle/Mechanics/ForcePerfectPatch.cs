@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using MelonLoader;
 using Il2CppPeroPeroGames.GlobalDefines;
 using Il2CppFormulaBase;
@@ -13,9 +12,8 @@ namespace muse_dash_test
     // 개입 지점은 두 단계(다층 방어선)입니다:
     //   1. StageBattleComponent.InitTimeNodeOrder (사전 판정 테이블 조작)
     //      뮤즈대시는 로딩 시점에 각 틱별 판정을 TimeNodeOrder 객체에 미리 구워서(Pre-bake)
-    //      m_TimeNodeOrders 테이블에 등록합니다. 이 테이블의 Great/Cool result를
-    //      Prefect로 덮어써서 엔진이 처음부터 Perfect 틱을 밟은 것으로 인식하게 만듭니다.
-    //      (isPerfectNode는 건드리지 않습니다 — 아래 PromoteTimeNodeOrders 주석 참고)
+    //      m_TimeNodeOrders 테이블에 등록합니다. 이 테이블의 isPerfectNode를 true로,
+    //      result를 Prefect로 덮어써서 엔진이 처음부터 Perfect 틱을 밟은 것으로 인식하게 만듭니다.
     //   2. GameTouchPlay.TouchResult (터치 판정 산출 직후 훅)
     //      실시간 타격 결과가 화면 표시·애니메이션·집계로 흩어지기 직전 Perfect로 보정하는 안전망입니다.
     //
@@ -95,9 +93,7 @@ namespace muse_dash_test
 
         /// <summary>
         /// 곡 로딩 시 StageBattleComponent가 생성해 둔 틱별 사전 판정 테이블(m_TimeNodeOrders)의
-        /// Great/Cool 틱 판정(result)을 원천적으로 Perfect로 조작합니다.
-        /// isPerfectNode는 건드리지 않습니다. 모든 TNO에 true를 박았을 때 결과 화면 PERFECT가
-        /// 최고 콤보보다 25개 많게 집계된 적이 있습니다(neon 9★, 888 vs 863).
+        /// 모든 판정(isPerfectNode, result)을 원천적으로 Perfect로 조작합니다.
         /// </summary>
         internal static int PromoteTimeNodeOrders(StageBattleComponent stageBattle)
         {
@@ -110,8 +106,6 @@ namespace muse_dash_test
 
                 int promoted = 0;
                 int total = 0;
-                var notesWithPerfectNode = new HashSet<short>();
-                var noteInfo = new Dictionary<short, (uint type, bool addCombo)>();
 
                 foreach (var pair in dict)
                 {
@@ -124,9 +118,10 @@ namespace muse_dash_test
                         if (tno == null) continue;
 
                         total++;
-                        CollectNodeInfo(tno, notesWithPerfectNode, noteInfo);
+                        // 1. 퍼펙트 노드 플래그 활성화
+                        tno.isPerfectNode = true;
 
-                        // Great(3) 또는 Cool(2) 틱으로 사전 구워진 판정을 Prefect(4)로 원천 승격
+                        // 2. Great(3) 또는 Cool(2) 틱으로 사전 구워진 판정을 Prefect(4)로 원천 승격
                         if (tno.result == (byte)TaskResult.Great || tno.result == (byte)TaskResult.Cool)
                         {
                             tno.result = (byte)TaskResult.Prefect;
@@ -138,7 +133,6 @@ namespace muse_dash_test
                 if (promoted > 0 || total > 0)
                 {
                     ModLogger.Msg($"[ForcePerfect] 사전 판정 테이블(m_TimeNodeOrders) 조작 완료: 승격={promoted} / 전체={total}");
-                    LogPerfectNodeCoverage(notesWithPerfectNode, noteInfo);
                 }
 
                 return promoted;
@@ -148,41 +142,6 @@ namespace muse_dash_test
                 ModLogger.Error($"[ForcePerfect.PromoteTimeNodeOrders] 판정 테이블 조작 중 예외: {ex}");
                 return 0;
             }
-        }
-
-        private static void CollectNodeInfo(TimeNodeOrder tno, HashSet<short> notesWithPerfectNode,
-            Dictionary<short, (uint type, bool addCombo)> noteInfo)
-        {
-            if (tno.isPerfectNode) notesWithPerfectNode.Add(tno.idx);
-            if (noteInfo.ContainsKey(tno.idx)) return;
-
-            var noteData = tno.md?.noteData;
-            noteInfo[tno.idx] = noteData != null ? (noteData.type, noteData.addCombo) : (uint.MaxValue, false);
-        }
-
-        /// <summary>
-        /// 순정 테이블에서 isPerfectNode가 한 번도 없는 노트를 타입·콤보 여부별로 남깁니다.
-        /// PERFECT 과다 집계(888 vs 863)가 이 노트들에서 왔는지 대조하려는 진단 로그입니다.
-        /// </summary>
-        private static void LogPerfectNodeCoverage(HashSet<short> notesWithPerfectNode,
-            Dictionary<short, (uint type, bool addCombo)> noteInfo)
-        {
-            var missing = new Dictionary<(uint type, bool addCombo), int>();
-            foreach (var pair in noteInfo)
-            {
-                if (notesWithPerfectNode.Contains(pair.Key)) continue;
-                missing.TryGetValue(pair.Value, out int count);
-                missing[pair.Value] = count + 1;
-            }
-
-            var parts = new List<string>();
-            foreach (var pair in missing)
-            {
-                parts.Add($"type={pair.Key.type}/addCombo={pair.Key.addCombo}:{pair.Value}");
-            }
-
-            ModLogger.Msg($"[ForcePerfect] 순정 isPerfectNode 분포: 노트={noteInfo.Count}, 퍼펙트노드 보유={notesWithPerfectNode.Count}, " +
-                          $"미보유={noteInfo.Count - notesWithPerfectNode.Count} [{string.Join(", ", parts)}]");
         }
 
         /// <summary>

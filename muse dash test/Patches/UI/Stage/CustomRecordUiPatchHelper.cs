@@ -9,9 +9,17 @@ namespace muse_dash_test
 {
     public static class CustomRecordUiPatchHelper
     {
-        // 콤보 표시값: 풀콤보면 전체 노트 수, 아니면 실제 최대 콤보(record.maxCombo)를 씁니다.
+        // 콤보 표시값: 실제 최대 콤보(record.maxCombo)를 씁니다. 풀콤보 기록은 콤보에 들어가는 노트 수를
+        // 넘을 수 없으므로 그 값으로 자릅니다. 예전 저장 코드는 풀콤보면 하트·음표까지 센 전체 노트 수를
+        // 최대 콤보로 저장했고(neon: 888, 실제 863), 기록 병합은 큰 값을 유지하므로 표시에서 바로잡습니다.
         public static string FormatCombo(CustomRecordStore.PlayRecord r)
-            => (r.isFullCombo ? r.noteCount : r.maxCombo).ToString();
+        {
+            if (!r.isFullCombo) return r.maxCombo.ToString();
+
+            int comboNotes = CustomRecordStore.ComboNoteCount(r.noteCount, r.hearts, r.blueNotes);
+            int combo = r.maxCombo > 0 ? Math.Min(r.maxCombo, comboNotes) : comboNotes;
+            return combo.ToString();
+        }
 
         // 점수 표시값: 게임에서 읽어 저장한 실제 점수를 천 단위 구분으로 표시합니다.
         public static string FormatScore(CustomRecordStore.PlayRecord r)

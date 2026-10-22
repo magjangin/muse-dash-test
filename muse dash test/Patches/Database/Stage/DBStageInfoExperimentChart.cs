@@ -287,6 +287,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         string uid = !string.IsNullOrEmpty(spec.Uid) ? spec.Uid : noteData.uid;
         int noteType = spec.NoteType >= 0 ? spec.NoteType : (int)noteData.type;
+
+        // 음표·하트는 일반 노트를 복제해서 만들면 판정 관련 필드가 일반 노트 값으로 남아,
+        // 먹는 아이템이 아니라 타격 판정(PERFECT)으로 집계됐습니다(neon: PERFECT 888 = 콤보 863 + 음표 25).
+        // 공식 곡은 PERFECT와 최고 콤보가 같습니다. 게임의 공식 노트 표에서 해당 uid 행을 바탕으로 삼습니다.
+        NoteConfigData official = null;
+        bool usesOfficialRow = IsItemNoteType(noteType) && TryCloneOfficialNoteConfig(uid, noteData, out official);
+        if (usesOfficialRow)
+        {
+            noteData = official;
+        }
         int pathway = spec.Pathway >= 0 ? spec.Pathway : noteData.pathway;
 
         if (spec.IsLong) noteType = NoteTypes.Long;
@@ -303,10 +313,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         noteData.pathway = pathway;
 
         // 홀드 노트는 isShowPlayEffect=false, 나머지는 true로 명시 설정
-        noteData.isShowPlayEffect = noteType != NoteTypes.Long;
+        // (공식 행을 바탕으로 한 아이템 노트는 공식 값을 그대로 둡니다)
+        if (!usesOfficialRow) noteData.isShowPlayEffect = noteType != NoteTypes.Long;
 
         // effect가 비어있거나 "0"이면 "1"로 보정 (파티클 이펙트 재생 보장)
-        if (string.IsNullOrEmpty(noteData.effect) || noteData.effect == "0")
+        if (!usesOfficialRow && (string.IsNullOrEmpty(noteData.effect) || noteData.effect == "0"))
         {
             noteData.effect = "1";
         }

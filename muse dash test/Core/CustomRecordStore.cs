@@ -125,8 +125,9 @@ namespace muse_dash_test
                 Directory.CreateDirectory(RecordFolderPath);
 
                 int noteCount = standard + gears + hearts + blueNotes;
-                // 풀콤보면 최대 콤보는 정의상 전체 노트 수입니다. (게임 필드 읽기 실패 시 안전 보정)
-                if (isFullCombo && maxCombo < noteCount) maxCombo = noteCount;
+                // 게임 필드(m_MaxCombo) 읽기에 실패했을 때만 보정합니다. 하트·음표는 콤보에 들어가지 않으므로
+                // 전체 노트 수로 채우면 안 됩니다(neon: 노트 888, 최고 콤보 863 — 음표 25개 차이).
+                if (isFullCombo && maxCombo <= 0) maxCombo = ComboNoteCount(noteCount, hearts, blueNotes);
 
                 // 1. 기존 기록을 읽어와 최고 점수 비교 및 플레이 횟수 누적을 수행합니다.
                 var existing = LoadResult(uid, difficulty);
@@ -242,6 +243,15 @@ namespace muse_dash_test
             public string songFolder = string.Empty;
 
             internal PlayRecord Clone() => (PlayRecord)MemberwiseClone();
+        }
+
+        /// <summary>
+        /// 풀콤보일 때의 최대 콤보, 즉 콤보에 들어가는 노트 수입니다. 하트·음표는 먹는 아이템이라 빠집니다.
+        /// (실측: 공식 곡 AP는 PERFECT = 최고 콤보, 커스텀 곡은 최고 콤보 = Standard. 기어는 실측 채보가 없어 그대로 둡니다.)
+        /// </summary>
+        public static int ComboNoteCount(int noteCount, int hearts, int blueNotes)
+        {
+            return Math.Max(0, noteCount - hearts - blueNotes);
         }
 
         /// <summary>

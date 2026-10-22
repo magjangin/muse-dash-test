@@ -1,5 +1,6 @@
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
+using muse_dash_test;
 
 // UID 해석(프리팹/오디오/dt/pathway), MusicData/NoteConfigData 복제, 수치 정규화 헬퍼.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
@@ -106,6 +107,71 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         newNote.longPressNum = originalNote.longPressNum;
         newNote.m_BattleScore = originalNote.m_BattleScore;
         return newNote;
+    }
+
+    private static readonly System.Collections.Generic.HashSet<string> LoggedOfficialNoteDiffs =
+        new System.Collections.Generic.HashSet<string>();
+
+    public static bool IsItemNoteType(int noteType)
+        => noteType == NoteTypes.Blue || noteType == NoteTypes.Heart;
+
+    /// <summary>
+    /// 게임 공식 노트 표(NoteDataMananger)에서 uid 행을 찾아 복제합니다. 못 찾으면 false.
+    /// uid별 첫 1회는 복제 원본(일반 노트)과 다른 판정 필드를 남깁니다.
+    /// </summary>
+    public static bool TryCloneOfficialNoteConfig(string uid, NoteConfigData sourceNoteData, out NoteConfigData official)
+    {
+        official = null;
+        if (string.IsNullOrEmpty(uid)) return false;
+
+        try
+        {
+            var manager = Il2CppAssets.Scripts.GameCore.Managers.NoteDataMananger.instance;
+            var row = manager != null ? manager.GetNoteByUid(uid) : null;
+            if (row == null || !string.Equals(row.uid, uid, System.StringComparison.OrdinalIgnoreCase)) return false;
+
+            official = CloneNoteConfigData(row);
+            if (LoggedOfficialNoteDiffs.Add(uid))
+            {
+                ModLogger.Msg($"[ExperimentChart] 아이템 노트 uid={uid}를 공식 노트 표 기준으로 생성합니다. " +
+                              $"복제 원본과 다른 필드: {DescribeNoteConfigDiff(sourceNoteData, row)}");
+            }
+            return official != null;
+        }
+        catch (System.Exception ex)
+        {
+            ModLogger.Warning($"[ExperimentChart] 공식 노트 표 조회 실패(uid={uid}), 복제 원본을 그대로 씁니다: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static string DescribeNoteConfigDiff(NoteConfigData a, NoteConfigData b)
+    {
+        if (a == null || b == null) return "(비교 불가)";
+
+        var diffs = new System.Collections.Generic.List<string>();
+        void Check(string name, object x, object y)
+        {
+            string sx = x?.ToString() ?? "null";
+            string sy = y?.ToString() ?? "null";
+            if (sx != sy) diffs.Add($"{name} {sx}->{sy}");
+        }
+
+        Check("type", a.type, b.type);
+        Check("des", a.des, b.des);
+        Check("effect", a.effect, b.effect);
+        Check("left_perfect_range", a.left_perfect_range, b.left_perfect_range);
+        Check("left_great_range", a.left_great_range, b.left_great_range);
+        Check("right_perfect_range", a.right_perfect_range, b.right_perfect_range);
+        Check("right_great_range", a.right_great_range, b.right_great_range);
+        Check("damage", a.damage, b.damage);
+        Check("score", a.score, b.score);
+        Check("fever", a.fever, b.fever);
+        Check("missCombo", a.missCombo, b.missCombo);
+        Check("addCombo", a.addCombo, b.addCombo);
+        Check("jumpNote", a.jumpNote, b.jumpNote);
+        Check("isShowPlayEffect", a.isShowPlayEffect, b.isShowPlayEffect);
+        return diffs.Count > 0 ? string.Join(", ", diffs) : "(없음)";
     }
 
     public static NoteConfigData CloneNoteConfigData(NoteConfigData originalNoteData)

@@ -25,6 +25,14 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// 앨범 현지화 표 안에서 이 곡의 행 번호(<c>BaseDataObject.listIndex</c>). 읽지 못하면 null.
+        /// <para>게임은 제목·작곡가를 <c>GetLocalAlbumInfoByIndex(listIndex)</c>로 묻습니다. <c>musicIndex</c>
+        /// (<c>m_MusicExInfo.m_MusicIndex</c>)와 다른 값이니 헷갈리지 마십시오.
+        /// 근거는 <c>DBConfigLocalALBUM_GetLocalAlbumInfoByIndex_Patch.IsIndexOwnedByVirtualSong</c> 참고.</para>
+        /// </summary>
+        public int? listIndex => Get<int?>("listIndex", silent: true);
+
+        /// <summary>
         /// 곡의 공식 타이틀 제목 명칭
         /// </summary>
         public string name

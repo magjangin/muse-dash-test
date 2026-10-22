@@ -248,14 +248,7 @@ namespace muse_dash_test
             /// 로컬라이제이션 DB는 언어별 테이블(m_LocalDic) 안의 행 번호로 조회되므로,
             /// 앨범 인덱스뿐 아니라 곡 행 번호(musicIndex)도 후보에 포함합니다.
             /// </summary>
-            private static readonly string[] AlbumIndexMembers = { "musicIndex", "albumJsonIndex", "albumIndex" };
-
-            /// <summary>
-            /// 실측으로 확정된 index의 출처. 로컬라이제이션 테이블의 곡 행 번호입니다.
-            /// (26-8-6_23-19-54.log: 게임이 넘긴 index=4 vs musicIndex=4 / ExInfo.musicIndex=4 일치,
-            ///  albumJsonIndex=1 · albumIndex=0은 불일치)
-            /// </summary>
-            private static readonly string[] OwnedIndexMembers = { "musicIndex" };
+            private static readonly string[] AlbumIndexMembers = { "listIndex", "musicIndex", "albumJsonIndex", "albumIndex" };
 
             private static bool _loggedIndexDiagnostics;
             private static bool _loggedIndexResolveFailure;
@@ -299,45 +292,39 @@ namespace muse_dash_test
             }
 
             /// <summary>
-            /// 조회된 index가 해당 가상 곡의 행 번호인지 판정합니다.
+            /// 조회된 index가 해당 가상 곡의 행 번호(<see cref="MusicInfoWrapper.listIndex"/>)인지 판정합니다.
             /// </summary>
             /// <remarks>
-            /// 가상 곡은 원본 곡의 얇은 복제본이므로 musicIndex를 원본에서 그대로 물려받고,
-            /// 게임도 같은 값으로 로컬라이제이션 테이블을 조회합니다(위 OwnedIndexMembers 주석의 실측 근거).
-            /// musicIndex를 MusicInfo에서도 MusicExInfo에서도 읽지 못하는 경우에만
-            /// (게임 업데이트로 멤버명이 바뀐 상황) 종전의 관대한 동작으로 폴백하고 1회 경고를 남깁니다.
+            /// 게임의 제목 조회는 두 겹입니다(ISIL 덤프, 게임 6.7.0 — <c>MusicInfo.GetLocal</c>,
+            /// <c>PnlStage.ChangeMusic</c>, <c>SetSelectedMusicNameTxt</c> 모두 같은 모양):
+            /// <list type="number">
+            /// <item><c>MusicInfo.m_MusicExInfo.m_AlbumIndex</c>(+0xE8, 프로퍼티 이름은 <c>albumJsonIndex</c>)로 앨범 현지화 표를 고르고</item>
+            /// <item>그 언어 표에 <c>BaseDataObject.listIndex</c>(+0x10)를 넘겨 <c>GetLocalAlbumInfoByIndex</c>를 부릅니다.</item>
+            /// </list>
+            /// 예전에는 musicIndex(ExInfo.m_MusicIndex)를 행 번호로 봤습니다. 가상 곡이 하나뿐이던 때는
+            /// 두 값이 우연히 같았지만(26-8-6 실측: 4 = 4), 곡이 늘자 갈라졌습니다(26-10-23 실측: 게임이 넘긴
+            /// index=23, musicIndex=10). 그래서 가로채기가 빗나가 원본 곡 23번 행의 제목(恋爱语音导航 feat.yousa)이
+            /// 곡 선택 화면 하단에 그대로 나왔습니다.
+            /// listIndex를 읽지 못하는 경우에만(게임 업데이트로 멤버가 바뀐 상황) 종전의 관대한 동작으로
+            /// 폴백하고 1회 경고를 남깁니다.
             /// </remarks>
             private static bool IsIndexOwnedByVirtualSong(string uid, int index)
             {
                 var info = GlobalDataBase.dbMusicTag?.GetMusicInfoFromAll(uid);
-                var exInfo = info != null ? ModReflection.GetValue(info, "m_MusicExInfo", silent: true) : null;
+                int? listIndex = info != null ? new MusicInfoWrapper(info).listIndex : null;
 
-                bool resolvedAny = false;
-                foreach (var source in new[] { info, exInfo })
-                {
-                    if (source == null) continue;
-                    foreach (var member in OwnedIndexMembers)
-                    {
-                        if (ModReflection.GetValue(source, member, silent: true) is int candidate)
-                        {
-                            resolvedAny = true;
-                            if (candidate == index) return true;
-                        }
-                    }
-                }
-
-                if (!resolvedAny)
+                if (listIndex == null)
                 {
                     if (!_loggedIndexResolveFailure)
                     {
                         _loggedIndexResolveFailure = true;
-                        ModLogger.Warning($"[DBConfigLocalALBUM Patch] '{uid}'의 musicIndex를 읽지 못해 인덱스 검사 없이 응답합니다. " +
+                        ModLogger.Warning($"[DBConfigLocalALBUM Patch] '{uid}'의 listIndex를 읽지 못해 인덱스 검사 없이 응답합니다. " +
                                             "(이 경고는 1회만 표시됩니다. 게임 업데이트로 멤버명이 바뀌었을 수 있습니다.)");
                     }
                     return true;
                 }
 
-                return false;
+                return listIndex.Value == index;
             }
 
             /// <summary>
