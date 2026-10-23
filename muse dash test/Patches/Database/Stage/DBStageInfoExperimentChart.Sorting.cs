@@ -236,17 +236,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 var roadNote = musicList[roadIndex];
                 var airNote = musicList[airIndex];
 
-                double sharedDt = System.Math.Max(ParseMusicDecimal(roadNote.dt), ParseMusicDecimal(airNote.dt));
-                double roadTick = ParseMusicDecimal(roadNote.tick);
-                double airTick = ParseMusicDecimal(airNote.tick);
-
-                roadNote.dt = (Il2CppSystem.Decimal)NormalizeTimingValue(sharedDt);
-                roadNote.showTick = (Il2CppSystem.Decimal)NormalizeChartValue(roadTick - sharedDt);
+                // 동시치기 짝으로만 묶습니다(캐릭터의 지상·공중 동시 타격 모션). dt/showTick은 각 노트 것을 그대로 둡니다.
+                // 예전엔 둘 중 큰 dt로 통일했는데, 속도가 다른 노트끼리 짝이 되면 빠른 쪽이 느린 쪽 dt를 받아
+                // 등장 애니메이션(uid 속도 자리가 정함)과 어긋났습니다(docs/experiments/NOTE_SPEED_DT.md).
                 roadNote.isDouble = true;
                 roadNote.doubleIdx = airNote.objId;
 
-                airNote.dt = (Il2CppSystem.Decimal)NormalizeTimingValue(sharedDt);
-                airNote.showTick = (Il2CppSystem.Decimal)NormalizeChartValue(airTick - sharedDt);
                 airNote.isDouble = true;
                 airNote.doubleIdx = roadNote.objId;
 
