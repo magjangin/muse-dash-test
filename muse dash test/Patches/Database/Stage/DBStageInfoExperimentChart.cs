@@ -356,6 +356,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             noteData.speed = (int)System.Math.Round(spec.Speed);
         }
+        else if (UidCode.Speed(uid) >= 2)
+        {
+            // 공식 노트의 speed 필드는 uid 속도 자리와 늘 같았습니다. 복제 원본(속도 1) 값을 남기지 않습니다.
+            noteData.speed = UidCode.Speed(uid);
+        }
 
         // des is intentionally not overridden by spec
 

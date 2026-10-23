@@ -21,21 +21,25 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return uid;
 
         string xx = UidCode.Xx(uid);
-        string yy = UidCode.Yy(uid);
         string lane = pathway == 1 ? "air" : "road";
         string motion = "nor";
         string variant = GetPrefabVariant(uid, noteType);
+        int motionGroup = UidCode.MotionGroup(uid);
 
         if (xx == "15") motion = "down";
         else if (xx == "16") motion = "up";
-        else if (yy == "07" || yy == "10") motion = "up";
-        else if (yy == "13" || yy == "16") motion = "down";
+        else if (motionGroup == 2 || motionGroup == 3) motion = "up";
+        else if (motionGroup == 4 || motionGroup == 5) motion = "down";
 
         return $"{uid}_{lane}_{motion}_{variant}";
     }
 
     public static string GetPrefabVariant(string uid, int noteType)
     {
+        // 공식 프리팹 이름 끝자리는 노트 속도입니다(091002_road_nor_2, 000302_road_nor_2).
+        int speed = UidCode.Speed(uid);
+        if (speed >= 2) return speed.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
         if (string.Equals(uid, "000301", System.StringComparison.OrdinalIgnoreCase)
             || string.Equals(uid, "000304", System.StringComparison.OrdinalIgnoreCase))
         {
@@ -258,9 +262,23 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static double GetEffectiveDt(MusicData note, ExperimentNoteSpec spec)
     {
-        if (spec != null && spec.Dt >= 0.0) return spec.Dt;
-
         string uid = !string.IsNullOrEmpty(spec?.Uid) ? spec.Uid : note.noteData?.uid;
+        bool isBossEvent = spec != null && !string.IsNullOrEmpty(spec.BossAction) && !IsBossProjectileUid(uid);
+
+        // 속도 2·3 uid는 그 속도의 애니메이션이 재생되므로 dt도 그에 맞춰야 합니다. WAV 이름의 _dt보다 우선합니다.
+        if (!isBossEvent && TryGetSpeedDt(uid, GetSpeed1Dt(uid, spec), out double speedDt, out bool measured))
+        {
+            LogSpeedDtOnce(uid, speedDt, measured, spec?.Dt ?? -1.0);
+            return speedDt;
+        }
+
+        if (spec != null && spec.Dt >= 0.0) return spec.Dt;
+        return GetSpeed1Dt(uid, spec);
+    }
+
+    /// <summary>속도 1 기준의 자동 dt입니다(속도 자리를 보기 전부터 있던 규칙).</summary>
+    private static double GetSpeed1Dt(string uid, ExperimentNoteSpec spec)
+    {
         if (string.IsNullOrEmpty(uid) || uid.Length < 6) return BaseDt;
 
         if (IsBossProjectileUid(uid)) return BossProjectileDt;
@@ -271,10 +289,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
 
         string xx = UidCode.Xx(uid);
-        string yy = UidCode.Yy(uid);
         if (xx == "15") return 0.8;
         if (xx == "16") return 1.25;
-        if (yy == "07" || yy == "10" || yy == "13" || yy == "16") return 1.0;
+        // Up·Down 묶음(속도 1이면 yy 07/10/13/16)
+        if (UidCode.MotionGroup(uid) >= 2) return 1.0;
 
         return BaseDt;
     }

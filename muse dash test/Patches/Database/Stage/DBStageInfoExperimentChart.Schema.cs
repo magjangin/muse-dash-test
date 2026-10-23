@@ -51,5 +51,23 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         /// <summary>UID[4..6) "yy" 코드. 길이 &lt; 6면 null.</summary>
         public static string Yy(string uid)
             => (uid != null && uid.Length >= 6) ? uid.Substring(4, 2) : null;
+
+        /// <summary>
+        /// "yy"(01~18)의 노트 속도 1·2·3. 01/02/03 지상 기본, 04/05/06 공중 기본, 07~09 지상 Up,
+        /// 10~12 공중 Up, 13~15 지상 Down, 16~18 공중 Down 순입니다(docs/experiments/NOTE_SPEED_DT.md).
+        /// 범위 밖이거나 숫자가 아니면 0.
+        /// </summary>
+        public static int Speed(string uid)
+            => TryParseYy(uid, out int yy) ? (yy - 1) % 3 + 1 : 0;
+
+        /// <summary>"yy"의 레인·모션 묶음. 0 지상 기본, 1 공중 기본, 2 지상 Up, 3 공중 Up, 4 지상 Down, 5 공중 Down. 범위 밖이면 -1.</summary>
+        public static int MotionGroup(string uid)
+            => TryParseYy(uid, out int yy) ? (yy - 1) / 3 : -1;
+
+        private static bool TryParseYy(string uid, out int yy)
+        {
+            yy = 0;
+            return int.TryParse(Yy(uid), out yy) && yy >= 1 && yy <= 18;
+        }
     }
 }
