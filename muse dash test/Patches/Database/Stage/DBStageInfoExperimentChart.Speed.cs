@@ -4,7 +4,8 @@ using muse_dash_test;
 // 공식 곡은 uid 속도 자리 → 프리팹 이름 끝자리 → Spine 등장 애니메이션 → dt가 한 세트로 움직입니다
 // (2026-10-23 OBLIVION 실측, docs/experiments/NOTE_SPEED_DT.md). 예전 커스텀 채보는 속도 1만 썼기에
 // dt만 바꾸면 1.467초짜리 애니메이션과 어긋나 렌더가 깨졌습니다.
-// 임시 구현입니다: 실측 칸은 실측값, 못 잰 칸은 속도 1 값에 비율을 곱한 추정값입니다.
+// 실측 칸은 실측값, 못 잰 칸은 속도 1 값에 비율을 곱한 추정값입니다. 속도 1 노트는 건드리지 않습니다.
+// 인게임 확인 기록: docs/experiments/NOTE_SPEED_DT.md 3절.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
     // 실측 비율: 일반 1.267/1.467, Up·Down 0.867/1.0, xx=15 0.7/0.8 → 0.86~0.88. 속도 3은 xx=15의 0.6/0.8.
@@ -57,67 +58,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return true;
     }
 
-    private static int _forcedSpeedCount;
-
     public static bool IsBossProjectileSeries(string xx) => xx == "06" || xx == "07" || xx == "08";
-
-    /// <summary>
-    /// [임시 실험] <c>ForceCustomNoteSpeed</c>가 2·3이면 속도 1 노트의 uid 끝자리를 그 속도로 바꿉니다.
-    /// WAV를 고치지 않고 속도별 렌더를 확인하려는 용도입니다. 보스 등장·퇴장·동작(xx=01, NoteType 0)과
-    /// WAV 이름이 프리팹을 직접 지정한 노트는 건드리지 않습니다.
-    /// 보스 동작이 붙은 발사체·보스 톱니는 공식 노트 표에서 바뀐 uid의 boss_action을 따릅니다.
-    /// </summary>
-    public static void ApplyForcedNoteSpeed(ExperimentNoteSpec spec)
-    {
-        int forced = ModConfig.ForceCustomNoteSpeed;
-        if (forced != 2 && forced != 3) return;
-        if (spec == null || string.IsNullOrEmpty(spec.Uid) || spec.Uid.Length != 6) return;
-        if (UidCode.Speed(spec.Uid) != 1 || spec.NoteType == NoteTypes.Boss) return;
-        if (!string.IsNullOrEmpty(spec.PrefabName)) return;
-
-        string xx = UidCode.Xx(spec.Uid);
-        bool bossProjectile = IsBossProjectileSeries(xx) || xx == "09";
-        if (!string.IsNullOrEmpty(spec.BossAction) && !bossProjectile) return;
-        // 보스 톱니(xx=09)의 yy 07 이후는 Up/Down이 아니라 다른 계열이라(090908_road_2_nor_2) 지상·공중 기본만 바꿉니다.
-        if (xx == "09" && UidCode.MotionGroup(spec.Uid) > 1) return;
-
-        int yy = int.Parse(UidCode.Yy(spec.Uid)) + (forced - 1);
-        string forcedUid = spec.Uid.Substring(0, 4) + yy.ToString("00", System.Globalization.CultureInfo.InvariantCulture);
-        if (_forcedSpeedCount++ == 0)
-        {
-            ModLogger.Msg($"[ExperimentChart.Speed] ForceCustomNoteSpeed={forced}: 속도 1 노트를 속도 {forced}로 바꿔 주입합니다 (예: {spec.Uid} → {forcedUid}).");
-        }
-
-        if (!string.IsNullOrEmpty(spec.BossAction))
-        {
-            string officialAction = TryGetOfficialBossAction(forcedUid);
-            if (!string.IsNullOrEmpty(officialAction) && officialAction != spec.BossAction)
-            {
-                LogBossActionOnce(forcedUid, spec.BossAction, officialAction);
-                spec.BossAction = officialAction;
-            }
-        }
-        spec.Uid = forcedUid;
-    }
-
-    private static string TryGetOfficialBossAction(string uid)
-    {
-        try
-        {
-            var row = Il2CppAssets.Scripts.GameCore.Managers.NoteDataMananger.instance?.GetNoteByUid(uid);
-            return row != null && string.Equals(row.uid, uid, System.StringComparison.OrdinalIgnoreCase) ? row.boss_action : null;
-        }
-        catch (System.Exception)
-        {
-            return null;
-        }
-    }
-
-    private static void LogBossActionOnce(string uid, string wavAction, string officialAction)
-    {
-        if (!LoggedSpeedDtUids.Add("boss:" + uid)) return;
-        ModLogger.Msg($"[ExperimentChart.Speed] uid={uid} 보스 동작을 공식 표 기준으로 바꿉니다: {wavAction} → {officialAction}");
-    }
 
     private static void LogSpeedDtOnce(string uid, double dt, bool measured, double wavDt)
     {

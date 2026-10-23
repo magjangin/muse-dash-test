@@ -255,7 +255,8 @@ namespace muse_dash_test
 
             private static bool Prefix(DBConfigLocalALBUM __instance, int index, ref LocalALBUMInfo __result)
             {
-                string currentUid = CustomPlaySession.Current.SelectedMusicUid;
+                // 곡을 바꾸는 순간엔 세션의 선택 곡이 아직 이전 곡입니다. 지금 그리는 곡을 먼저 봅니다.
+                string currentUid = SelectedSongLocalizationScope.DrawingUid ?? CustomPlaySession.Current.SelectedMusicUid;
                 if (!CustomContentIds.IsVirtualSong(currentUid)) return true;
 
                 LogIndexDiagnostics(currentUid, index);

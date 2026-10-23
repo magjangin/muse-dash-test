@@ -27,7 +27,6 @@ namespace muse_dash_test
         public static MelonPreferences_Entry<bool> MobileTouchEntry { get; private set; }
         public static MelonPreferences_Entry<bool> VerboseLogEntry { get; private set; }
         public static MelonPreferences_Entry<string> LogLevelEntry { get; private set; }
-        public static MelonPreferences_Entry<int> ForceCustomNoteSpeedEntry { get; private set; }
 
         public static bool EnableCustomChart => CustomChartEntry?.Value ?? true;
         public static bool EnableHiddenGuide => HiddenGuideEntry?.Value ?? true;
@@ -43,8 +42,6 @@ namespace muse_dash_test
         public static bool EnableSpineSkin => SpineSkinEntry?.Value ?? true;
         public static bool EnableMobileTouch => MobileTouchEntry?.Value ?? true;
         public static bool EnableVerboseLog => VerboseLogEntry?.Value ?? false;
-        /// <summary>임시 실험용. 2·3이면 커스텀 채보의 속도 1 노트를 그 속도로 바꿔 주입합니다. 0이면 끔.</summary>
-        public static int ForceCustomNoteSpeed => ForceCustomNoteSpeedEntry?.Value ?? 0;
 
         private static readonly Dictionary<string, Func<bool>> FeatureMap = new Dictionary<string, Func<bool>>(StringComparer.OrdinalIgnoreCase);
 
@@ -69,8 +66,6 @@ namespace muse_dash_test
             MobileTouchEntry = Category.CreateEntry("EnableMobileTouch", true, description: "모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화");
             VerboseLogEntry = Category.CreateEntry("EnableVerboseLog", false, description: "진단 로그 상세 출력 활성화 (개발/디버깅용, 평소에는 꺼두세요)");
             LogLevelEntry = Category.CreateEntry("LogLevel", "Auto", description: "로그 출력 수준 ('Auto', 'Silent', 'Error', 'Warning', 'Info', 'Verbose'). Auto 설정 시 UMPC(ROG Ally, Steam Deck 등)에서는 자동으로 Error(치명적 오류만) 레벨로 작동하여 불필요한 로그 출력이 완전히 차단(음소거)됩니다.");
-
-            ForceCustomNoteSpeedEntry = Category.CreateEntry("ForceCustomNoteSpeed", 0, description: "[임시 실험] 커스텀 채보의 속도 1 노트를 이 속도(2 또는 3)로 바꿔 주입합니다. WAV 파일은 그대로 두고 uid 끝자리·프리팹·dt만 바뀝니다. 0이면 끔");
 
             ConfigureLogLevel();
             RegisterFeatureMapping();

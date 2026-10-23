@@ -16,13 +16,15 @@
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB).
 3. **설계 의도**
-   - 가상 곡은 공식 `MusicInfo`의 얇은 복제본입니다. 제목은 게임이 `m_MusicExInfo.m_AlbumIndex`로 앨범 현지화 표를 고른 뒤 `BaseDataObject.listIndex` 행을 묻는 두 겹 조회로 정해지므로, `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex`에서 `MusicInfoWrapper.listIndex`가 같고 선택 곡 스코프 안일 때만 커스텀 제목으로 답합니다.
+   - 가상 곡은 공식 `MusicInfo`의 얇은 복제본입니다. 제목은 게임이 `m_MusicExInfo.m_AlbumIndex`로 앨범 현지화 표를 고른 뒤 `BaseDataObject.listIndex` 행을 묻는 두 겹 조회로 정해지므로, `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex`에서 `MusicInfoWrapper.listIndex`가 같고 선택 곡 스코프 안일 때만 커스텀 제목으로 답합니다. 판정할 곡은 `SelectedSongLocalizationScope.DrawingUid`(ChangeMusic 안 `SetAchievementPercent`에서 받은 새 곡)를 먼저 씁니다. 세션의 선택 곡은 조회보다 늦게 갱신됩니다.
+   - 노트 속도는 uid `yy`의 속도 자리로 정해집니다. 속도 2·3 uid는 프리팹 끝자리·`speed`·dt를 그 속도에 맞춥니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
    - 커스텀 음표·하트는 `NoteDataMananger.GetNoteByUid`의 공식 행을 바탕으로 만듭니다. 일반 노트를 복제하면 타격 판정으로 집계됩니다.
    - 커스텀 곡 정확도는 `AccuracyCalculator`가 덮어씁니다: (PERFECT + GREAT/2 + 기어 통과 + 하트 `m_EnergyCount` + 음표 `m_MusicCount`) / 전체.
 4. **핵심 훅**: `DBStageInfo.SetRuntimeMusicData`(BMS → `MusicData` 주입, `DBStageInfoExperimentChart*.cs`), `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` / `MusicInfo.GetLocal`(제목), `TaskStageTarget.GetAccuracy*`(정확도), `GameTouchPlay.TouchResult` / `StageBattleComponent.InitTimeNodeOrder`(강제 퍼펙트).
 5. **막다른 길**
    - 현지화 행 번호를 `musicIndex`로 본 것: 값이 우연히 같았을 뿐, 실제는 `listIndex`입니다.
    - 하단 제목을 `LongSongNameController.Refresh`에서 바꾸는 것: 화면은 맞지만 원인보다 늦은 자리라 버렸습니다.
+   - 제목 조회를 세션의 선택 곡(`SelectedMusicUid`)으로 판정한 것: 곡을 넘기는 순간엔 이전 곡이라 원본 제목이 나왔습니다.
    - PERFECT 과다를 `ForcePerfect`의 `isPerfectNode` 탓으로 본 것: 강제퍼펙트를 끈 오토플레이에서도 재현되어 무관했습니다.
    - 노트 속도를 dt만 바꿔 내려는 것: 애니메이션은 uid `yy`가 정하므로 렌더가 깨집니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
 6. **빌드·배포**: `dotnet build`(또는 `build.bat`) → `H:\muse dash hwa\Mods\muse-dash-custom-chart.dll`로 자동 배포. `[AutoDeploy] Successfully deployed` 줄과 `ls -la "H:/muse dash hwa/Mods/"`로 확인합니다.

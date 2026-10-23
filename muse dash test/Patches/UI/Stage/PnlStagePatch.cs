@@ -224,6 +224,8 @@ public class PnlStage_SetAchievementPercent_Patch
         try
         {
             ModConfig.VerboseLog($"PnlStage.SetAchievementPercent Prefix: {PnlStagePatchHelper.DescribeMusicInfo(musicInfo)}");
+            // ChangeMusic 안에서는 이 호출 직후 새 곡 제목을 조회합니다(SelectedSongLocalizationScope.DrawingUid 참고).
+            SelectedSongLocalizationScope.SetDrawingUid(musicInfo?.uid);
         }
         catch (Exception ex) { ModLogger.Error($"PnlStage.SetAchievementPercent Prefix 예외: {ex}"); }
     }

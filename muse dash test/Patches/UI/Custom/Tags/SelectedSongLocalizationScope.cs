@@ -31,13 +31,30 @@ namespace muse_dash_test
         private static int _frame;
         private static readonly HashSet<string> _loggedRefusals = new HashSet<string>();
 
+        private static string _drawingUid;
+
         /// <summary>지금 선택 곡 한 곡을 그리는 중이라 인덱스 기반 조회에 답해도 되는지 여부입니다.</summary>
         public static bool IsActive => _depth > 0 && Time.frameCount == _frame;
+
+        /// <summary>
+        /// 스코프 안에서 지금 그리는 곡의 uid. 모르면 null(호출자는 세션의 선택 곡으로 대신합니다).
+        /// <para><c>PnlStage.ChangeMusic</c>은 새 곡의 제목을 먼저 조회하고 그 뒤에 <c>RefreshDiffUI</c>를 부르는데,
+        /// 세션의 선택 곡은 <c>RefreshDiffUI</c>에서 갱신됩니다. 그래서 곡을 바꾸는 순간의 조회는 이전 곡의 uid로
+        /// 판정돼 원본 곡 제목이 나왔습니다(2026-10-23, 커스텀 곡끼리 넘길 때). 조회보다 먼저 불리는
+        /// <c>SetAchievementPercent(MusicInfo)</c>에서 새 곡 uid를 받아 둡니다(ISIL: ChangeMusic 097 → 150).</para>
+        /// </summary>
+        public static string DrawingUid => IsActive ? _drawingUid : null;
+
+        public static void SetDrawingUid(string uid)
+        {
+            if (IsActive) _drawingUid = uid;
+        }
 
         public static void Enter()
         {
             // 프레임이 넘어갔다면 짝이 맞지 않은 채 남은 깊이이므로 버립니다(스코프 고착 방지).
             if (_depth > 0 && Time.frameCount != _frame) _depth = 0;
+            if (_depth == 0) _drawingUid = null;
 
             _frame = Time.frameCount;
             _depth++;

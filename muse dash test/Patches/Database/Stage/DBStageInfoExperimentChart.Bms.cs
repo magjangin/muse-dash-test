@@ -6,7 +6,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
     public static System.Collections.Generic.List<ExperimentNoteSpec> BuildBmsExperimentNotes(muse_dash_test.BmsChart chart, string activeUid)
     {
-        _forcedSpeedCount = 0;
         var specs = new System.Collections.Generic.List<ExperimentNoteSpec>();
         if (chart?.Notes == null || chart.Notes.Count == 0)
         {
@@ -91,8 +90,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 : NormalizeChartValue(note.Time),
             Dt = wavInfo.Dt >= 0.0 ? NormalizeTimingValue(wavInfo.Dt) : wavInfo.Dt
         };
-
-        ApplyForcedNoteSpeed(spec);
 
         if (!string.IsNullOrEmpty(spec.BossAction) && !string.IsNullOrEmpty(spec.Uid) && spec.Uid.Length >= 2)
         {
