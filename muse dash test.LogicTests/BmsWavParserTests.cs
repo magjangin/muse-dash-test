@@ -119,6 +119,18 @@ namespace muse_dash_test.LogicTests
             Assert.Null(BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010107_1번 씬 보스 원거리1 액션 시작_dt0.wav").BossTransition);
         }
 
+        public static void ParseWavName_MapsSpeedTwoAndThreeProjectilesToTheirSpeedOneAction()
+        {
+            // 실제 차트(Star Trace)의 속도 2·3 보스 발사체. 매핑 표는 속도 1 번호만 갖고 있습니다.
+            Assert.Equal("boss_far_atk_2", BmsWavParser.ParseWavName(@"2번 씬 스피드2 wav폴더\020702_보스 발사체2 보스 액션 사용 지상 스피드2_boss_dt0.7.wav").BossAction);
+            Assert.Equal("boss_far_atk_2", BmsWavParser.ParseWavName(@"4번 씬 스피드3 wav폴더\040806_보스 발사체3 보스 액션 사용 공중 스피드3_boss_dt0.6.wav").BossAction);
+            Assert.Equal("boss_far_atk_1_R", BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010603_보스 발사체1 보스 액션 사용 지상 스피드3_boss_dt0.6.wav").BossAction);
+            Assert.Equal("boss_far_atk_1_L", BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010605_보스 발사체1 보스 액션 사용 공중 스피드2_boss_dt0.7.wav").BossAction);
+
+            // _boss 표시가 없으면 속도와 관계없이 비워집니다.
+            Assert.Equal("", BmsWavParser.ParseWavName(@"2번 씬 wav폴더\020702_보스 발사체2 보스 없이 지상 스피드2_dt0.7.wav").BossAction);
+        }
+
         public static void ParseWavName_AssignsProjectileActionOnlyWhenNameMarksBoss()
         {
             var withBoss = BmsWavParser.ParseWavName(@"1번 씬 wav폴더\010601_보스 발사체1 보스 액션 사용 지상_boss_dt0.8.wav");

@@ -147,6 +147,21 @@ namespace muse_dash_test
             return info;
         }
 
+        /// <summary>
+        /// 보스 발사체(xx=06/07/08)의 속도 2·3 uid를 같은 레인의 속도 1 xxyy로 바꿉니다(yy 02·03 → 01, 05·06 → 04).
+        /// 매핑 표는 속도 1 번호만 알아서, 속도 2·3 발사체에 _boss를 붙여도 보스 동작이 비어 보스가 멈춰 있었습니다
+        /// (2026-10-23, Star Trace: 020702·040703 등). 공식 표에서도 속도를 바꾼 발사체의 boss_action이 다른 경우는
+        /// 없었습니다(docs/experiments/NOTE_SPEED_DT.md 3절 확인 기록 4). 보스 톱니(xx=09)는 표가 속도별 번호를
+        /// 따로 갖고 있어 그대로 둡니다.
+        /// </summary>
+        private static string SpeedOneProjectileXxyy(string xx, string xxyy)
+        {
+            if (xx != "06" && xx != "07" && xx != "08") return xxyy;
+            if (!int.TryParse(xxyy.Substring(2, 2), out int yy) || yy < 1 || yy > 6) return xxyy;
+
+            return xx + (yy <= 3 ? "01" : "04");
+        }
+
         private static void ApplyBossProjectileAction(BmsWavInfo info, string lowerName, string xx, string xxyy)
         {
             bool isBossProjectile = xx == "06" || xx == "07" || xx == "08";
@@ -164,7 +179,7 @@ namespace muse_dash_test
                     info.BossAction = "boss_far_atk_1_L";
                 else if (lowerName.Contains("boss_far_atk_2"))
                     info.BossAction = "boss_far_atk_2";
-                else if (XxyyProjectileAction.TryGetValue(xxyy, out string mappedAction))
+                else if (XxyyProjectileAction.TryGetValue(SpeedOneProjectileXxyy(xx, xxyy), out string mappedAction))
                     info.BossAction = mappedAction;
 
                 // 보스의 사전 전조 애니메이션 시간을 확보하려고 dt를 0.7초로 당겨 주는 자리입니다.
