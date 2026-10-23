@@ -185,13 +185,20 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return 0;
         }
 
-        if (!string.IsNullOrWhiteSpace(wavInfo?.Uid) && wavInfo.Uid.Length >= 6)
+        // 공중은 yy 묶음이 홀수(1 공중 기본 04~06, 3 공중 Up 10~12, 5 공중 Down 16~18)인 경우입니다.
+        // 예전엔 속도 1 번호(04/10/16)만 봐서 021405(공중 속도 2)가 지상으로 분류됐고, 게임에 없는
+        // 021405_road_nor_2 프리팹을 찾아 노트가 보이지 않았습니다(2026-10-23).
+        // 속도 자리가 없는 uid(씬 전환 0004yy, 보스 동작 xx=01)는 예전 규칙 그대로 둡니다.
+        int motionGroup = UidCode.MotionGroup(wavInfo?.Uid);
+        if (motionGroup >= 0)
         {
-            string yy = UidCode.Yy(wavInfo.Uid);
-            if (yy == "04" || yy == "10" || yy == "16")
-            {
-                return 1;
-            }
+            return motionGroup % 2 == 1 ? 1 : 0;
+        }
+
+        string yy = UidCode.Yy(wavInfo?.Uid);
+        if (yy == "04" || yy == "10" || yy == "16")
+        {
+            return 1;
         }
 
         return 0;
