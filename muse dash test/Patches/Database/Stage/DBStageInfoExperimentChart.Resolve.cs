@@ -70,8 +70,10 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         string xx = UidCode.Xx(uid);
         string yy = UidCode.Yy(uid);
-        bool projectileSeries = xx == "06" || xx == "07" || xx == "08";
-        bool normalLane = yy == "01" || yy == "04";
+        bool projectileSeries = IsBossProjectileSeries(xx);
+        // 지상·공중 기본 레인의 모든 속도(01~06). 속도 2·3 발사체도 발사체로 다룹니다.
+        int motionGroup = UidCode.MotionGroup(uid);
+        bool normalLane = motionGroup == 0 || motionGroup == 1;
         return projectileSeries && normalLane;
     }
 
@@ -263,7 +265,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static double GetEffectiveDt(MusicData note, ExperimentNoteSpec spec)
     {
         string uid = !string.IsNullOrEmpty(spec?.Uid) ? spec.Uid : note.noteData?.uid;
-        bool isBossEvent = spec != null && !string.IsNullOrEmpty(spec.BossAction) && !IsBossProjectileUid(uid);
+        bool isBossEvent = spec != null && !string.IsNullOrEmpty(spec.BossAction)
+            && !IsBossProjectileUid(uid) && UidCode.Xx(uid) != "09";
 
         // 속도 2·3 uid는 그 속도의 애니메이션이 재생되므로 dt도 그에 맞춰야 합니다. WAV 이름의 _dt보다 우선합니다.
         if (!isBossEvent && TryGetSpeedDt(uid, GetSpeed1Dt(uid, spec), out double speedDt, out bool measured))
