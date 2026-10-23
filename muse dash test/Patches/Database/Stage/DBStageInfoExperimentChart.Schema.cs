@@ -67,7 +67,20 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         private static bool TryParseYy(string uid, out int yy)
         {
             yy = 0;
+            if (!HasLaneSpeedYy(uid)) return false;
             return int.TryParse(Yy(uid), out yy) && yy >= 1 && yy <= 18;
+        }
+
+        /// <summary>
+        /// "yy"가 레인·속도 코드인 uid인지. 씬 전환 노트(0004yy)의 yy는 바꿀 씬 번호이고,
+        /// 보스 동작(xx=01)의 yy는 동작 번호라 속도로 읽으면 안 됩니다.
+        /// (2026-10-23: 속도 강제 스위치가 000401을 000402로 바꿔 1번 씬 전환이 2번 씬이 됐습니다.)
+        /// </summary>
+        private static bool HasLaneSpeedYy(string uid)
+        {
+            if (uid == null || uid.Length < 6) return false;
+            if (uid.StartsWith("0004", System.StringComparison.Ordinal)) return false;
+            return Xx(uid) != "01";
         }
     }
 }
