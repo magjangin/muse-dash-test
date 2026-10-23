@@ -41,6 +41,31 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return true;
     }
 
+    private static int _forcedSpeedCount;
+
+    /// <summary>
+    /// [임시 실험] <c>ForceCustomNoteSpeed</c>가 2·3이면 속도 1 노트의 uid 끝자리를 그 속도로 바꿉니다.
+    /// WAV를 고치지 않고 속도별 렌더를 확인하려는 용도입니다. 보스 이벤트, 롱노트(xx=02, 공식 곡 실측 없음),
+    /// WAV 이름이 프리팹을 직접 지정한 노트는 건드리지 않습니다.
+    /// </summary>
+    public static void ApplyForcedNoteSpeed(ExperimentNoteSpec spec)
+    {
+        int forced = ModConfig.ForceCustomNoteSpeed;
+        if (forced != 2 && forced != 3) return;
+        if (spec == null || string.IsNullOrEmpty(spec.Uid) || spec.Uid.Length != 6) return;
+        if (UidCode.Speed(spec.Uid) != 1) return;
+        if (!string.IsNullOrEmpty(spec.BossAction) || spec.NoteType == NoteTypes.Boss) return;
+        if (UidCode.Xx(spec.Uid) == "02" || !string.IsNullOrEmpty(spec.PrefabName)) return;
+
+        int yy = int.Parse(UidCode.Yy(spec.Uid)) + (forced - 1);
+        string forcedUid = spec.Uid.Substring(0, 4) + yy.ToString("00", System.Globalization.CultureInfo.InvariantCulture);
+        if (_forcedSpeedCount++ == 0)
+        {
+            ModLogger.Msg($"[ExperimentChart.Speed] ForceCustomNoteSpeed={forced}: 속도 1 노트를 속도 {forced}로 바꿔 주입합니다 (예: {spec.Uid} → {forcedUid}).");
+        }
+        spec.Uid = forcedUid;
+    }
+
     private static void LogSpeedDtOnce(string uid, double dt, bool measured, double wavDt)
     {
         if (!LoggedSpeedDtUids.Add(uid)) return;
