@@ -60,12 +60,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static bool IsBossProjectileSeries(string xx) => xx == "06" || xx == "07" || xx == "08";
 
-    private static void LogSpeedDtOnce(string uid, double dt, bool measured, double wavDt)
+    private static void LogSpeedDtOnce(string uid, double dt, bool measured)
     {
         if (!LoggedSpeedDtUids.Add(uid)) return;
 
-        string wavPart = wavDt >= 0.0 ? $", WAV 이름의 dt {wavDt}는 무시" : "";
-        ModLogger.Msg($"[ExperimentChart.Speed] uid={uid} 속도 {UidCode.Speed(uid)} → dt={dt:0.###} " +
-                      $"({(measured ? "실측" : "추정")}{wavPart}), 프리팹 끝자리 _{UidCode.Speed(uid)}");
+        ModLogger.Msg($"[ExperimentChart.Speed] uid={uid} 속도 {UidCode.Speed(uid)}: WAV에 _dt가 없어 표 값 dt={dt:0.###} " +
+                      $"({(measured ? "실측" : "추정")}), 프리팹 끝자리 _{UidCode.Speed(uid)}");
     }
 }

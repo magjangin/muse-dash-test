@@ -17,7 +17,7 @@
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB).
 3. **설계 의도**
    - 가상 곡은 공식 `MusicInfo`의 얇은 복제본입니다. 제목은 게임이 `m_MusicExInfo.m_AlbumIndex`로 앨범 현지화 표를 고른 뒤 `BaseDataObject.listIndex` 행을 묻는 두 겹 조회로 정해지므로, `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex`에서 `MusicInfoWrapper.listIndex`가 같고 선택 곡 스코프 안일 때만 커스텀 제목으로 답합니다. 판정할 곡은 `SelectedSongLocalizationScope.DrawingUid`(ChangeMusic 안 `SetAchievementPercent`에서 받은 새 곡)를 먼저 씁니다. 세션의 선택 곡은 조회보다 늦게 갱신됩니다.
-   - 노트 속도는 uid `yy`의 속도 자리로 정해집니다. 속도 2·3 uid는 프리팹 끝자리·`speed`·dt를 그 속도에 맞춥니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
+   - 노트 속도는 uid `yy`의 속도 자리로 정해집니다. 속도 2·3 uid는 프리팹 끝자리·`speed`·지상/공중을 그 속도 uid에 맞추고, dt는 WAV `_dt`를 따르며 없을 때만 속도별 표 값을 씁니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
    - 커스텀 음표·하트는 `NoteDataMananger.GetNoteByUid`의 공식 행을 바탕으로 만듭니다. 일반 노트를 복제하면 타격 판정으로 집계됩니다.
    - 커스텀 곡 정확도는 `AccuracyCalculator`가 덮어씁니다: (PERFECT + GREAT/2 + 기어 통과 + 하트 `m_EnergyCount` + 음표 `m_MusicCount`) / 전체.
 4. **핵심 훅**: `DBStageInfo.SetRuntimeMusicData`(BMS → `MusicData` 주입, `DBStageInfoExperimentChart*.cs`), `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` / `MusicInfo.GetLocal`(제목), `TaskStageTarget.GetAccuracy*`(정확도), `GameTouchPlay.TouchResult` / `StageBattleComponent.InitTimeNodeOrder`(강제 퍼펙트).

@@ -267,14 +267,17 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         bool isBossEvent = spec != null && !string.IsNullOrEmpty(spec.BossAction)
             && !IsBossProjectileUid(uid) && UidCode.Xx(uid) != "09";
 
-        // 속도 2·3 uid는 그 속도의 애니메이션이 재생되므로 dt도 그에 맞춰야 합니다. WAV 이름의 _dt보다 우선합니다.
+        // WAV 이름에 적은 _dt가 언제나 먼저입니다. 속도마다 맞는 dt가 한 값이 아니라 범위라서(속도 2 1.38~1.18,
+        // 속도 3 1.28~0.98, 사용자 커스텀 차트 실측) 채보 작성자가 고른 값을 덮지 않습니다.
+        if (spec != null && spec.Dt >= 0.0) return spec.Dt;
+
+        // _dt가 없을 때만, 속도 2·3 uid는 그 속도의 표 값을 씁니다.
         if (!isBossEvent && TryGetSpeedDt(uid, GetSpeed1Dt(uid, spec), out double speedDt, out bool measured))
         {
-            LogSpeedDtOnce(uid, speedDt, measured, spec?.Dt ?? -1.0);
+            LogSpeedDtOnce(uid, speedDt, measured);
             return speedDt;
         }
 
-        if (spec != null && spec.Dt >= 0.0) return spec.Dt;
         return GetSpeed1Dt(uid, spec);
     }
 
