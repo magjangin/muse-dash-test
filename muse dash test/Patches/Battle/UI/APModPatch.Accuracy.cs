@@ -35,7 +35,10 @@ namespace muse_dash_test.Patches
             int miss = ModReflection.GetInt(instance, "MissResult");
             int jumpOver = ModReflection.GetInt(instance, "JumpOverResult");
             int energy = ModReflection.GetInt(instance, "EnergyCount");
-            int bluePoint = ModReflection.GetInt(instance, "BluePoint");
+            // 음표(블루노트)는 먹은 개수가 m_MusicCount에 쌓입니다(공식 곡과 같은 경로).
+            // 예전엔 m_BluePoint를 더했는데, 커스텀 음표가 PERFECT로 잘못 집계되던 동안엔 분자에 이미 들어가 있어
+            // 드러나지 않았습니다. 판정을 바로잡자 neon이 863/888 = 97.2%로 떨어졌습니다(m_MusicCount=25).
+            int musicCount = ModReflection.GetInt(instance, "MusicCount");
 
             int totalStandard = CustomPlaySession.Current.TotalStandard;
             int totalGears = CustomPlaySession.Current.TotalGears;
@@ -45,7 +48,7 @@ namespace muse_dash_test.Patches
             int denominator = totalStandard + totalGears + totalHearts + totalBlueNotes;
             if (denominator > 0)
             {
-                float numerator = perfect + (great * 0.5f) + jumpOver + energy + bluePoint;
+                float numerator = perfect + (great * 0.5f) + jumpOver + energy + musicCount;
                 return Math.Min(1.0f, numerator / denominator);
             }
             else
