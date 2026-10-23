@@ -69,7 +69,6 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (string.IsNullOrEmpty(uid) || uid.Length < 6) return false;
 
         string xx = UidCode.Xx(uid);
-        string yy = UidCode.Yy(uid);
         bool projectileSeries = IsBossProjectileSeries(xx);
         // 지상·공중 기본 레인의 모든 속도(01~06). 속도 2·3 발사체도 발사체로 다룹니다.
         int motionGroup = UidCode.MotionGroup(uid);
