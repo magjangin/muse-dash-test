@@ -64,6 +64,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         return !string.IsNullOrEmpty(bossAction) && noteType == NoteTypes.Boss && !IsBossProjectileUid(uid);
     }
 
+    public static bool IsBossProjectileSeries(string xx) => xx == "06" || xx == "07" || xx == "08";
+
     public static bool IsBossProjectileUid(string uid)
     {
         if (string.IsNullOrEmpty(uid) || uid.Length < 6) return false;
@@ -263,26 +265,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static double GetEffectiveDt(MusicData note, ExperimentNoteSpec spec)
     {
-        string uid = !string.IsNullOrEmpty(spec?.Uid) ? spec.Uid : note.noteData?.uid;
-        bool isBossEvent = spec != null && !string.IsNullOrEmpty(spec.BossAction)
-            && !IsBossProjectileUid(uid) && UidCode.Xx(uid) != "09";
-
-        // WAV 이름에 적은 _dt가 언제나 먼저입니다. 속도마다 맞는 dt가 한 값이 아니라 범위라서(속도 2 1.38~1.18,
-        // 속도 3 1.28~0.98, 사용자 커스텀 차트 실측) 채보 작성자가 고른 값을 덮지 않습니다.
+        // dt는 채보 작성자가 WAV 이름에 적은 _dt를 그대로 씁니다. 속도 2·3도 마찬가지입니다
+        // (속도별 dt는 docs/experiments/NOTE_SPEED_DT.md 4절. 모드가 속도별 값으로 보정하지 않습니다).
         if (spec != null && spec.Dt >= 0.0) return spec.Dt;
 
-        // _dt가 없을 때만, 속도 2·3 uid는 그 속도의 표 값을 씁니다.
-        if (!isBossEvent && TryGetSpeedDt(uid, GetSpeed1Dt(uid, spec), out double speedDt, out bool measured))
-        {
-            LogSpeedDtOnce(uid, speedDt, measured);
-            return speedDt;
-        }
-
-        return GetSpeed1Dt(uid, spec);
+        string uid = !string.IsNullOrEmpty(spec?.Uid) ? spec.Uid : note.noteData?.uid;
+        return GetDefaultDt(uid, spec);
     }
 
-    /// <summary>속도 1 기준의 자동 dt입니다(속도 자리를 보기 전부터 있던 규칙).</summary>
-    private static double GetSpeed1Dt(string uid, ExperimentNoteSpec spec)
+    /// <summary>WAV에 _dt가 없을 때 쓰는 기본 dt입니다. 속도 1 노트 기준 값이며 uid 속도 자리는 보지 않습니다.</summary>
+    private static double GetDefaultDt(string uid, ExperimentNoteSpec spec)
     {
         if (string.IsNullOrEmpty(uid) || uid.Length < 6) return BaseDt;
 
