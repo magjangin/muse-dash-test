@@ -47,7 +47,7 @@
 | [DIALOG_INJECTION.md](experiments/DIALOG_INJECTION.md) | 커스텀 곡 대사(Dialog) 주입 설계 및 실측 기록 (보류) |
 | [GHOST_NOTE_ALPHA_HOLD.md](experiments/GHOST_NOTE_ALPHA_HOLD.md) | 고스트 노트가 사라지지 않게 하는 Spine 알파 키 재작성 원리와 캐시 무효화(포인터 키) 해결 기록 |
 | [NOTE_SPEED_DT.md](experiments/NOTE_SPEED_DT.md) | 노트 속도별 dt 실측 — uid `yy`의 속도 자리와 Spine 등장 애니메이션 길이(프레임/30) |
-| [HOLD_TAIL_RENDER_LAG.md](experiments/HOLD_TAIL_RENDER_LAG.md) | **미해결** — 공중 홀드 꼬리와 지상 홀드 머리가 같은 박자일 때 꼬리 렌더가 살짝 늦는 문제, 배제한 원인과 다음 조사 지점 |
+| [HOLD_TAIL_RENDER_LAG.md](experiments/HOLD_TAIL_RENDER_LAG.md) | **미해결** — 공중 홀드 꼬리와 지상 홀드 머리가 같은 박자일 때 꼬리 렌더가 살짝 늦는 문제, 배제한 원인, 채보 우회법(32분 한 칸 앞당기기) |
 | [NOTE_COLOR_TINTING.md](experiments/NOTE_COLOR_TINTING.md) | 노트 종류별 색조(Tint) 변조 가능성 실측 (참고용 코드, 현재 모드에는 포함되지 않음) |
 
 ## 🔮 muse-dash-2/ — 차기작 대비 분석
