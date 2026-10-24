@@ -177,6 +177,18 @@ namespace muse_dash_test
             else if (name == "Backspace") name = "BS";
             else if (name == "Delete") name = "DEL";
             else if (name == "Escape") name = "ESC";
+            // 구두점 키는 영문 이름("Semicolon")이 키 박스 폭을 넘쳐 "semicolc"처럼 잘리므로 기호로 줄입니다.
+            else if (name == "Semicolon") name = ";";
+            else if (name == "Comma") name = ",";
+            else if (name == "Period") name = ".";
+            else if (name == "Slash") name = "/";
+            else if (name == "Quote") name = "'";
+            else if (name == "Minus") name = "-";
+            else if (name == "Equals") name = "=";
+            else if (name == "LeftBracket") name = "[";
+            else if (name == "RightBracket") name = "]";
+            else if (name == "Backslash") name = "\\";
+            else if (name == "BackQuote") name = "`";
 
             keyNameCache[key] = name;
             return name;
