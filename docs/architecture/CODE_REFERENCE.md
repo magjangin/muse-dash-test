@@ -1,4 +1,4 @@
-﻿# 코드 파일별 레퍼런스
+# 코드 파일별 레퍼런스
 
 이 문서는 `muse dash test` 프로젝트의 C# 파일별 역할, 주요 클래스·메서드, 상호 작용 흐름을 정리한 코드 레퍼런스입니다.
 
@@ -81,7 +81,7 @@ MelonLoader 모드 진입점 클래스입니다.
   * 실행 스레드 차단 없이 활성화된 `TaskStageTarget` 객체 참조를 정적 캐시에 자동 등록합니다.
   * 동시에, 배틀 HUD 스코어 컴포넌트(`PnlBattle.instance.currentComps.scoreValue`)로부터 인게임용 메인 시그니처 폰트인 `LuckiestGuy-Regular_150_115`를 dynamic 스캔하여 결과 배너로 넘기기 위해 캐싱 처리합니다.
 * **`TaskStageTarget_GetAccuracy_Patch`, `GetTrueAccuracy_Patch` & `GetTrueAccuracyNew_Patch` (Postfix)**:
-  * 커스텀 차트 플레이 시, 원본 곡의 고정 분모로 인해 발생하는 정확도 부정합을 해소합니다. 차트 로딩 시점에 일반 노트(단타, 롱노트 머리, 샌드백 등), 톱니바퀴(기어), 하트, 파란 음표를 전수 스캔하여 분모를 캐싱하고, 인게임 판정 누계(`Perfect`, `Great`, `JumpOver`, `EnergyCount`, `BluePoint`)를 공식에 대입하여 실제 정확도를 정밀 산출합니다.
+  * 커스텀 차트 플레이 시, 원본 곡의 고정 분모로 인해 발생하는 정확도 부정합을 해소합니다. 차트 로딩 시점에 일반 노트(단타, 롱노트 머리, 샌드백 등), 톱니바퀴(기어), 하트, 파란 음표를 전수 스캔하여 분모를 캐싱하고, 인게임 판정 누계(`Perfect`, `Great`, `JumpOver`, `EnergyCount`, `MusicCount`)를 공식에 대입하여 실제 정확도를 정밀 산출합니다(음표 수는 점수용 `m_BluePoint`가 아니라 `m_MusicCount`).
   * 정확도 갱신 시 분석 및 로깅을 위해 원본 및 오버라이드 변수 상태를 로그(`[APMod.Debug.Accuracy]`, Verbose 전용)로 기록합니다.
 * **`TaskStageTarget_IsFullCombo_Patch` (Postfix)**:
   * 풀콤보 판단 타이밍에 `TaskStageTarget` 인스턴스를 확보하여 유실을 방지합니다.
@@ -89,14 +89,15 @@ MelonLoader 모드 진입점 클래스입니다.
   * 곡 플레이 종료 직후 화면에 풀콤보 텍스트 배너가 활성화되는 순간(`OnShowVictory`)에 개입합니다.
   * 캐싱해 둔 `TaskStageTarget` 객체 참조를 통해 **Great 0, Miss 0, Full Combo (정확도 100%)** 조건이 완벽히 만족되는지(`isAllPerfect`) 판정합니다.
   * **올 퍼펙트 달성 시**: 기본 출력되는 `"F-U-L-L C-O-M-B-O"` 알파벳 이미지들을 모두 비활성화하고, 새 `"CustomAPText"` GameObject를 추가해 골드 단색(`RGBA(1, 0.85, 0, 1)`)과 검은 외곽선·그림자가 적용된 **"ALL PERFECT !"** 텍스트를 대신 표시합니다.
-* **`EnableAPMod` 스위치**: `AddScore`·`IsFullCombo`·`OnShowVictory` 훅은 `ModConfig.EnableAPMod`가 꺼져 있으면 아무것도 하지 않습니다. 정확도 오버라이드 훅(`GetAccuracy`/`GetTrueAccuracy`/`GetTrueAccuracyNew`)은 이 스위치의 영향을 받지 않습니다. 결과 화면 훅(`OnShowVictory`)이 꺼지면 **커스텀 곡 기록 저장(`CustomRecordStore.SaveResult`)도 함께 건너뜁니다.** 기록을 남기려면 켜 두어야 합니다.
+* **`EnableAPMod` 스위치**: `AddScore`·`IsFullCombo` 훅과 `OnShowVictory`의 배너 교체는 `ModConfig.EnableAPMod`가 꺼져 있으면 건너뜁니다. 반면 정확도 오버라이드 및 `GetAccuracy`에서의 `ActiveTarget` 캐싱, 그리고 `OnShowVictory` 앞부분의 **배틀 미디어 정지·스테이지 종료 표시(`HywStageManager.MarkStageEnded`)·커스텀 곡 기록 저장(`CustomRecordStore.SaveResult`)** 은 `EnableAPMod` 게이트보다 먼저 실행되므로 스위치를 꺼도 정상 동작합니다.
 
 ### 📂 [Battle/Mechanics/AutoPlayPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/AutoPlayPatch.cs)
 * **`DBSkill_SetAutoPlay_Patch`**: 스킬 오토플레이 여부를 결정하는 `DBSkill.SetAutoPlay` 메서드를 후킹해, 전달된 인자를 설정값(`InputOverlay.forceAutoPlay`)으로 덮어씁니다. `ModConfig.EnableAutoPlay`가 꺼져 있으면 개입하지 않습니다. 모드 로드 직후에는 항상 오토가 꺼진 상태로 시작하며(첫 설정 로드에서는 `config.txt`의 `오토플레이=true`를 무시), 게임 도중 `config.txt`를 저장하면 그때부터 파일 값이 그대로 적용됩니다.
 
 ### 📂 [Battle/Mechanics/ForcePerfectPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.cs)
 `config.txt`의 `강제퍼펙트=true`일 때 **친 노트의 판정을** Perfect로 승격시키는 패치입니다. 오토플레이(입력 대행)와는 무관하며, 노트 입력과 타이밍은 그대로 사람이 칩니다.
-* **`GameTouchPlay_TouchResult_ForcePerfect_Patch` (Prefix)**: 터치 판정이 산출된 직후인 `GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)`의 `resultCode`를 `TaskResult.Prefect`로 덮어씁니다. 이 값이 판정 표시(`GameTouchPlay.ShowPlayResult`), 캐릭터 액션(`GirlActionController.Attack(actKey, result)`), 집계로 함께 흘러가므로 **인게임 판정 표시와 기록이 어긋나지 않습니다**. 개입 지점은 이 하나뿐입니다.
+* **`StageBattleComponent_InitTimeNodeOrder_ForcePerfect_Patch` (Postfix)**: 스테이지 시작 시 사전 구워진 시간축 판정 테이블(`StageBattleComponent.m_TimeNodeOrders`)을 순회하며 모든 노드에 `isPerfectNode = true`를 세팅하고 `Great(3)`/`Cool(2)` 구간을 `Prefect(4)`로 미리 승격합니다(배틀 도중 설정을 켰을 때도 즉시 현재 테이블을 승격).
+* **`GameTouchPlay_TouchResult_ForcePerfect_Patch` (Prefix)**: 터치 판정이 산출된 직후인 `GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)`의 `resultCode`를 `TaskResult.Prefect`로 덮어쓰는 런타임 안전망입니다. 이 값이 판정 표시(`GameTouchPlay.ShowPlayResult`), 캐릭터 액션(`GirlActionController.Attack(actKey, result)`), 집계로 함께 흘러가므로 **인게임 판정 표시와 기록이 어긋나지 않습니다**.
 * **승격 대상 제한**: 타격 판정인 `Miss(1)`, `Cool(2)`, `Great(3)`만 `Prefect(4)`로 올립니다. `None(0)`(미판정), `JumpOver(5)`(톱니 회피), `Fever(6)`는 종류가 다른 결과이므로 그대로 두어야 정확도 분모와 톱니/피버 집계가 유지됩니다.
 * **안 친 노트(미스)는 손대지 않습니다.** 미스는 화면·체력·기록 모두 순정 그대로입니다.
 
@@ -198,8 +199,8 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 ### 📂 [Custom/Tags/CustomTagPatch.AlbumPatches.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/CustomTagPatch.AlbumPatches.cs)
 * `GetAlbumInfoByMusicInfo` 등을 후킹하여, 가상 곡의 앨범 정보를 요청하면 미리 만들어 둔 커스텀 앨범 메타데이터(`CustomAlbumInfo`)를 반환합니다. 이를 통해 가상 앨범에서도 UI 스크롤이 정상 동작합니다.
 * **현지화 DB는 곡을 UID가 아니라 "행 번호"로 물어봅니다.** `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(index)`(곡명·아티스트)와 `DBConfigLocalAlbums.GetLocalTitleByIndex(index)`(팩 이름) 둘 다 인덱스 하나만 받습니다. 그래서 **"누구를 위한 질문인지"가 인자에 없습니다.**
-  * 가상 곡은 숙주의 얇은 복제본이라 행 번호까지 물려받습니다(실측 `musicIndex=4`). "그 번호로 오는 조회에 커스텀 이름을 답한다"로만 막으면 **다른 곡의 이름 조회까지 가로채** 곡 인덱스 화면의 엉뚱한 곡들이 커스텀 곡명으로 보입니다. 팩 이름 쪽도 마찬가지로 "커스텀 태그를 보는 동안"만 조건으로 두면 화면의 팩 이름이 전부 `실험 앨범`이 됩니다.
-  * 그래서 [SelectedSongLocalizationScope](../../muse%20dash%20test/Patches/UI/Custom/Tags/SelectedSongLocalizationScope.cs)로 **"지금 선택된 곡 한 곡을 그리는 중"인 구간에서만** 답합니다. 스코프를 여는 곳은 실측으로 확인된 두 곳입니다 — `PnlStage.ChangeMusic`(선택 곡 정보 패널 갱신 일체를 감쌉니다)과 `SetSelectedMusicNameTxt.Awake`/`OnEnable`. 스코프는 `Enter`/`Exit` 짝이 깨져도 **프레임이 넘어가면 스스로 닫힙니다**(열린 채 고착되면 버그가 그대로 돌아오기 때문).
+  * 가상 곡은 숙주의 얇은 복제본이거나 다른 앨범 곡과 같은 행 번호(`BaseDataObject.listIndex`, `MusicInfoWrapper.listIndex`)를 가집니다(예전에는 `musicIndex`를 행 번호로 보았으나 곡이 7개로 늘자 `listIndex=23` vs `musicIndex=10`으로 갈라져 ISIL 분석으로 바로잡았습니다). "그 번호로 오는 조회에 커스텀 이름을 답한다"로만 막으면 **다른 곡의 이름 조회까지 가로채** 곡 인덱스 화면의 엉뚱한 곡들이 커스텀 곡명으로 보입니다. 팩 이름 쪽도 마찬가지로 "커스텀 태그를 보는 동안"만 조건으로 두면 화면의 팩 이름이 전부 `실험 앨범`이 됩니다.
+  * 그래서 [SelectedSongLocalizationScope](../../muse%20dash%20test/Patches/UI/Custom/Tags/SelectedSongLocalizationScope.cs)로 **"지금 선택된 곡 한 곡을 그리는 중"인 구간에서만** 답합니다. 스코프를 여는 곳은 실측으로 확인된 두 곳입니다 — `PnlStage.ChangeMusic`(선택 곡 정보 패널 갱신 일체를 감쌉니다. 이때 제목 조회가 세션의 `SelectedMusicUid` 갱신보다 먼저 일어나므로 앞서 불리는 `PnlStage.SetAchievementPercent(MusicInfo)`에서 새 곡 UID를 `DrawingUid`로 받아 둡니다)과 `SetSelectedMusicNameTxt.Awake`/`OnEnable`. 스코프는 `Enter`/`Exit` 짝이 깨져도 **프레임이 넘어가면 스스로 닫힙니다**(열린 채 고착되면 버그가 그대로 돌아오기 때문).
   * 스코프 밖에서 들어와 거절된 조회는 호출 지점당 1회 로그를 남깁니다. **그 로그가 보이는데 커스텀 이름이 안 나오는 화면이 생겼다면, 그 화면을 그리는 메서드를 스코프 진입점에 추가하라는 신호입니다.**
   * 남은 한계(허용): 곡을 넘기는 `ChangeMusic` 안에서 목록 셀이 같이 그려지면, 그 프레임 한정으로 같은 행 번호의 곡 하나가 커스텀 이름으로 보일 수 있습니다. `index == 1999`(전역 앨범 인덱스)로 들어오는 팩 이름 조회는 실제 앨범이 그만큼 많지 않으므로 스코프와 무관하게 항상 답합니다.
 

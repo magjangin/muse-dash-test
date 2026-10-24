@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using muse_dash_test;
 
 // BMS 차트(BmsChart) → 실험 노트 스펙(ExperimentNoteSpec) 변환 및 보스 등장/퇴장 자동 스왑 로직.
@@ -127,9 +127,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                             $"prefab={(string.IsNullOrEmpty(spec.PrefabName) ? "(자동생성)" : spec.PrefabName)}, pathway={spec.Pathway}, " +
                             $"keyAudio={spec.KeyAudio}, tick={note.Tick}, time={note.Time:0.###}, dt={spec.Dt}");
 
-            // 페이드는 여기서 손대지 않습니다. 알파를 담당하는 메서드가 따로 있습니다 —
-            // Il2Cpp.SpineActionController.SetAlpha(float). 고스트 노트의 페이드는 그 호출을
-            // 막는 쪽이 정확하므로 type/프리팹은 원본 그대로 둡니다. (GhostNoteAlphaHold 참고)
+            // 페이드는 노트 데이터에 필드가 없고 Spine 애니메이션('in_nor_44')의 컬러 타임라인이
+            // 알파를 깎기 때문에 여기서 손대지 않습니다. type/프리팹은 원본 그대로 두고
+            // PlayByKey 시점에 타임라인 알파 키를 덮어씁니다(GhostNoteAlphaHold 참고).
         }
 
         return spec;

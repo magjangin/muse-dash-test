@@ -1,4 +1,4 @@
-﻿# muse-dash-custom-chart 🎵
+# muse-dash-custom-chart 🎵
 
 > **뮤즈대시(Muse Dash)를 네이티브 훅(Native Detour) 없이 관리형 Harmony 계층만으로 다뤄, 실시간 커스텀 차트와 보스 연출을 구현한 최초의 모드입니다. (첫 배포 버전)**
 >
@@ -291,7 +291,7 @@
 | `EnableJudgmentBar` | `true` | 화면 하단 판정 타임라인 시각화 그래프 UI 표시 |
 | `EnableDiscordRPC` | `true` | Discord Rich Presence 실시간 상태 연동. 끄더라도 곡 선택 시 게임 내장 Discord 호출과 상태 가로채기는 남습니다([상세](docs/guides/DISCORD_RICH_PRESENCE.md)) |
 | `EnableHpTextMod` | `true` | 배틀 체력바 텍스트 워터마크 표시 |
-| `EnableAPMod` | `true` | 올 퍼펙트 배너 및 결과 화면 처리. **끄면 결과 화면 훅이 빠져 커스텀 곡 기록 저장도 함께 멈춥니다.** 정확도 계산 오버라이드는 이 값과 무관하게 동작합니다 |
+| `EnableAPMod` | `true` | 올 퍼펙트 배너 및 결과 화면 처리. 끄면 ALL PERFECT 골드 배너 교체만 건너뛰며, 정확도 계산 오버라이드·배틀 미디어 정지·커스텀 곡 기록 저장은 이 값과 무관하게 동작합니다 |
 | `EnableAllPerfectSound` | `true` | 올 퍼펙트 달성 시 시그니처 효과음 재생 |
 | `EnableAutoPlay` | `true` | 오토 플레이 패치 활성화 |
 | `EnableForcePerfect` | `true` | All-Perfect 파라미터 모드 (강제 퍼펙트 판정) 활성화 |
@@ -346,7 +346,7 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:Gam
 ## 🧪 로직 테스트
 
 모드 본체는 IL2CPP 어셈블리(`Il2CppAssemblies`)를 참조하므로 게임 밖에서 로드할 수 없습니다.
-대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `PlayRecordMerge`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 111개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행합니다. 기록 파일 저장/파싱과 `config.txt` 파싱은 게임 의존 클래스 안에 있어 아직 테스트 대상이 아닙니다.)
+대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `PlayRecordMerge`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 113개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행합니다. 기록 파일 저장/파싱과 `config.txt` 파싱은 게임 의존 클래스 안에 있어 아직 테스트 대상이 아닙니다.)
 
 ```powershell
 .\run-logic-tests.bat

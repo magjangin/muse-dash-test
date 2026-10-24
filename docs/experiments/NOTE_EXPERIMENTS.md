@@ -74,10 +74,10 @@ public struct MusicData
 | `pathway=0` | 지상 노트 | `road` |
 | `pathway=1` | 공중 노트 | `air` |
 
-자동 프리팹명은 보통 아래 형태입니다.
+자동 프리팹명은 보통 아래 형태입니다(끝자리 숫자는 `yy`에서 계산한 속도 `1`/`2`/`3` — 상세는 [NOTE_SPEED_DT.md](NOTE_SPEED_DT.md) 참고).
 
 ```text
-{uid}_{road/air}_{nor/up/down}_1
+{uid}_{road/air}_{nor/up/down}_{1/2/3}
 ```
 
 예시:
@@ -124,16 +124,16 @@ public struct MusicData
 | `16` | 라이더 | UID별 보정 |
 | `17` | 고스트 | `4` |
 
-`yy`는 아래처럼 관찰했습니다.
+`yy`는 1속도 기준으로 아래처럼 관찰했습니다(각 묶음의 다음 두 번호인 `+1`, `+2`는 각각 2속도·3속도이며, 자세한 규칙과 `dt` 실측치는 [NOTE_SPEED_DT.md](NOTE_SPEED_DT.md)에 정리되어 있습니다).
 
-| `yy` | 의미 |
+| `yy` (1속도 / 2속도 / 3속도) | 의미 |
 | --- | --- |
-| `01` | 지상 일반, `road_nor` |
-| `04` | 공중 일반, `air_nor` |
-| `07` | 지상 up, `road_up` |
-| `10` | 공중 up, `air_up` |
-| `13` | 지상 down, `road_down` |
-| `16` | 공중 down, `air_down` |
+| `01` (`02` / `03`) | 지상 일반, `road_nor` |
+| `04` (`05` / `06`) | 공중 일반, `air_nor` |
+| `07` (`08` / `09`) | 지상 up, `road_up` |
+| `10` (`11` / `12`) | 공중 up, `air_up` |
+| `13` (`14` / `15`) | 지상 down, `road_down` |
+| `16` (`17` / `18`) | 공중 down, `air_down` |
 
 하트와 음표는 앞 네 자리 `zzxx`를 따로 보는 편이 쉽습니다.
 

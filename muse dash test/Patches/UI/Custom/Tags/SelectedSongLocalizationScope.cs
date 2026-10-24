@@ -7,10 +7,10 @@ namespace muse_dash_test
     /// <summary>
     /// "지금 선택된 곡 하나를 그리는 중"인 구간을 표시하는 스코프입니다.
     ///
-    /// <para><b>왜 필요한가</b> — 현지화 DB는 곡을 UID가 아니라 <b>행 번호(index)</b>로 물어봅니다
+    /// <para><b>왜 필요한가</b> — 현지화 DB는 곡을 UID가 아니라 <b>행 번호(listIndex)</b>로 물어봅니다
     /// (<c>DBConfigLocalALBUM.GetLocalAlbumInfoByIndex</c>, <c>DBConfigLocalAlbums.GetLocalTitleByIndex</c>).
-    /// 가상 곡은 숙주의 얇은 복제본이라 행 번호도 숙주 것을 그대로 물려받기 때문에
-    /// (실측: <c>musicIndex=4</c>), "그 번호로 들어온 조회에 커스텀 이름을 답한다"로만 막으면
+    /// 가상 곡은 숙주의 얇은 복제본이거나 다른 앨범의 곡과 같은 행 번호(<c>BaseDataObject.listIndex</c>)를
+    /// 가질 수 있기 때문에, "그 번호로 들어온 조회에 커스텀 이름을 답한다"로만 막으면
     /// <b>다른 곡을 대상으로 한 조회까지</b> 가로채 버립니다. il2cpp는 호출자가 스택에 남지 않아
     /// 조회만 봐서는 "누구를 위한 질문인지" 알 수 없으므로, 답해도 되는 구간을 호출자 쪽에서 열어 줍니다.</para>
     ///

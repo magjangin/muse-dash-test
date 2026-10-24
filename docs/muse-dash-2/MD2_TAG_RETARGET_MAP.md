@@ -166,7 +166,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 > **임무 C의 패턴은 가이드의 "② 조회/반환(Getter) 계열" 그대로**입니다. MD2에서도 `Get...By...`, `Find...` 키워드로 ILSpy 검색하면 대응물이 나옵니다.
 >
-> **C8이 🔴인 이유**: 현지화 DB는 곡을 UID가 아니라 행 번호로 묻고, 가상 곡은 숙주의 행 번호(실측 `musicIndex=4`)를 그대로 물려받습니다. 같은 번호로 **다른 곡**(곡 목록 렌더링)을 묻는 조회까지 가로채면 목록의 엉뚱한 곡들이 커스텀 곡 이름으로 보입니다(1편 실측). 1편은 `musicIndex` 대조 + "지금 선택 곡 한 곡을 그리는 중" 구간 표시([SelectedSongLocalizationScope.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/SelectedSongLocalizationScope.cs))로 풀었습니다. IL2CPP는 호출자가 스택에 남지 않아 조회만 보고는 누구를 위한 질문인지 알 수 없기 때문입니다. 2편에서도 `...ByIndex` 계열이 보이면 이 문제부터 의심하십시오.
+> **C8이 🔴인 이유**: 현지화 DB는 곡을 UID가 아니라 두 겹 조회(`m_MusicExInfo.m_AlbumIndex`로 앨범 표 선택 → `BaseDataObject.listIndex`로 행 번호 조회)로 묻습니다. 가상 곡은 숙주의 행 번호를 물려받거나 다른 앨범 곡과 같은 `listIndex`를 가지므로, 같은 번호로 **다른 곡**(곡 목록 렌더링)을 묻는 조회까지 가로채면 목록의 엉뚱한 곡들이 커스텀 곡 이름으로 보입니다(1편 실측). 또한 `PnlStage.ChangeMusic`은 새 곡 제목을 먼저 조회한 뒤 `RefreshDiffUI`에서야 세션의 선택 곡(`SelectedMusicUid`)을 갱신하므로, 조회보다 먼저 불리는 `PnlStage.SetAchievementPercent(MusicInfo)`에서 새 곡 UID를 `SelectedSongLocalizationScope.DrawingUid`로 받아 두고 `MusicInfoWrapper.listIndex` 대조 + "지금 선택 곡 한 곡을 그리는 중" 구간 표시([SelectedSongLocalizationScope.cs](../../muse%20dash%20test/Patches/UI/Custom/Tags/SelectedSongLocalizationScope.cs))로 풀었습니다. (초기에는 `musicIndex`를 행 번호로 보았으나 가상 곡이 7개로 늘자 `listIndex=23` vs `musicIndex=10`으로 갈라져 ISIL 분석으로 바로잡았습니다.) 2편에서도 `...ByIndex` 계열이 보이면 이 문제부터 의심하십시오.
 
 ---
 
@@ -208,7 +208,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | C1.3 | `TaskStageTarget` | `GetTrueAccuracyNew()` | 후크(Postfix) | 전체 오브젝트 정밀 정확도 반환 | 🟡 | |
 | C1.4 | `TaskStageTarget` | `AddScore(int, int, string, ...)` | 후크(Prefix) | `TaskStageTarget` 캐싱 및 HUD 폰트 가로채기 | 🟡 | |
 | C1.5 | `TaskStageTarget` | `IsFullCombo()` | 후크(Postfix) | 결과창 노출 전 `TaskStageTarget` 인스턴스 백업 | 🟡 | |
-| C1.6 | `TaskStageTarget` | `m_PerfectResult`, `m_GreatResult`, `m_MissResult`, `m_JumpOverResult`, `m_EnergyCount`, `m_BluePoint` | 필드 | 판정 변수 값 조회 (분자/분모 산출) | 🟡 | |
+| C1.6 | `TaskStageTarget` | `m_PerfectResult`, `m_GreatResult`, `m_MissResult`, `m_JumpOverResult`, `m_EnergyCount`, `m_MusicCount` | 필드 | 판정 변수 값 조회 (분자/분모 산출. 음표 수는 `m_BluePoint`가 아니라 `m_MusicCount`) | 🟡 | |
 | C1.7 | `PnlVictory2dManager` | `OnShowVictory()` | 후크(Postfix) | AP 판정 검증 및 Custom AP 골드 배너 동적 주입 | 🔴 | |
 | C1.8 | `PnlBattle` | `instance.currentComps.scoreValue` | UI 경로 | 팝아트풍 폰트(`LuckiestGuy-Regular`) 리소스 추출 | 🔴 | |
 
@@ -265,7 +265,8 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
-| M1.1 | `GameTouchPlay` | `TouchResult(int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill)` — 모드는 `ref byte resultCode`만 받음 | 후크(Prefix) | 판정 코드 Perfect 강제 조작 (All-Perfect Parameter Mod). Miss/Cool/Great만 승격. 판정바(`JudgmentBar`)도 같은 메서드에 따로 걸림 | 🟡 | |
+| M1.0 | `StageBattleComponent` | `InitTimeNodeOrder()` Postfix + `m_TimeNodeOrders` (`List<TimeNodeOrder>`) | 후크(Postfix)/필드 | 사전 구워진 판정 테이블 조작 (`isPerfectNode = true`, `Great`/`Cool` → `Prefect` 승격) | 🟡 | |
+| M1.1 | `GameTouchPlay` | `TouchResult(int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill)` — 모드는 `ref byte resultCode`만 받음 | 후크(Prefix) | 런타임 판정 코드 Perfect 강제 조작 안전망 (Miss/Cool/Great만 승격). 판정바(`JudgmentBar`)도 같은 메서드에 따로 걸림 | 🟡 | |
 | M1.2 | `DBSkill` | `SetAutoPlay(ref bool)` | 후크(Prefix) | 오토플레이 설정 인자 강제 덮어쓰기 | 🟡 | |
 | M1.3 | `InputOverlay` / `JudgmentBar` | `OnGUI()` | 렌더링 | 유니티 표준 GUI로 화면 하단 키보드 오버레이 및 판정바 렌더링 | 🟢 | |
 
@@ -279,9 +280,9 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 | 영역 | MD1 대상 (타입.메서드) | 모드 파일 | 위험 | **MD2 이름** |
 |---|---|---|---|---|
-| 차트 주입 | `DBStageInfo.SetRuntimeMusicData(List)` Postfix | `Patches/Database/Stage/DBStageInfo*.cs` | 🟡 | |
+| 차트 주입 | `DBStageInfo.SetRuntimeMusicData(List)` Postfix + `NoteDataMananger.instance.GetNoteByUid(string)` 호출(아이템 노트 공식 행 복제) | `Patches/Database/Stage/DBStageInfo*.cs` | 🟡 | |
 | 오프셋/딜레이 | `StageBattleComponent.FixedOffset()`, `FixedMusicOffset(AudioSource)`, `DBStageInfo.delay` getter (모두 Postfix) | `Patches/Diagnostics/OffsetHookPatches.cs` | 🟡 | |
-| 배틀 수명주기 | `StageBattleComponent.Load/LoadMusicData/InitData/Pause/Resume/End/Exit/Release/GameRestart` | `Patches/Battle/UI/StageBattleComponentPatch.cs` | 🟡 | |
+| 배틀 수명주기 | `StageBattleComponent.Load/LoadMusicData/InitData/Pause/Resume/End/Exit/Release/GameRestart`, `StageBattleComponent.InitTimeNodeOrder()`(강제 퍼펙트 사전 테이블 조작) | `Patches/Battle/UI/StageBattleComponentPatch.cs`, `ForcePerfectPatch.cs` | 🟡 | |
 | 배틀 수명주기 | `GameMusicScene.LoadScene/InitSceneEvents/InitTimer/PreLoadEnemy/Run` | `Patches/Scene/GameMusicScene*.cs` | 🟡 | |
 | 배틀 UI | `PnlBattle.GameStart()`, `PnlBattle.MusicProgressInit()` | `PnlBattleGameStartPatch.cs`, `ProgressBarPatch.cs` | 🔴 | |
 | 씬 전환 노트 | `SceneChangeController.ChangeScene/ChangeNote/SceneAnimationReset(int)` — 커스텀 곡에서 `ChangeNote` 원본 차단 | `Patches/Scene/SceneFlowPatch.cs` | 🟡 | |

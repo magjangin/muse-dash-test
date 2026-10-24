@@ -92,7 +92,7 @@ $$\text{Accuracy (Standard)} = \min\left(1.0, \frac{\text{Perfect} + \text{Great
 
 #### 2) 종합 판정 정확도 (`GetTrueAccuracyNew()`)
 톱니바퀴, 하트, 음표를 포함한 모든 오브젝트 판정을 포함하여 계산합니다.
-$$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Great} \times 0.5 + \text{JumpOver} + \text{EnergyCount} + \text{BluePoint}}{\text{TotalStandard} + \text{TotalGears} + \text{TotalHearts} + \text{TotalBlueNotes}}\right)$$
+$$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Great} \times 0.5 + \text{JumpOver} + \text{EnergyCount} + \text{MusicCount}}{\text{TotalStandard} + \text{TotalGears} + \text{TotalHearts} + \text{TotalBlueNotes}}\right)$$
 
 ---
 

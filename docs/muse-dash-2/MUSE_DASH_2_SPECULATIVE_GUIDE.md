@@ -8,12 +8,12 @@
 
 ---
 
-## 🧰 먼저 알아둘 것 — 1편에서 실측으로 확인된 사실 (2026-09-28, 게임 6.7.0)
+## 🧰 먼저 알아둘 것 — 1편에서 실측으로 확인된 사실 (2026-10-23 갱신, 게임 6.7.0)
 
 이 가이드의 나머지는 추측이 섞여 있지만, 아래는 1편 코드·덤프·로그로 확인한 사실입니다. 2편 계획은 이 전제 위에 세웁니다.
 
 - **1편은 IL2CPP 게임입니다.** ILSpy로 `Assembly-CSharp.dll`(MelonLoader가 만든 `Il2CppAssemblies`)을 열면 **시그니처만 보이고 메서드 본문은 없습니다.** 이 저장소는 [SignatureDumper](../../SignatureDumper)로 `Decompiled/`에 덤프해서 검색합니다. 이 가이드에서 "ILSpy 검색"은 **덤프 검색**으로 읽으십시오. 2편이 Mono라면 `ilspycmd`로 본문까지 볼 수 있어 분석이 훨씬 쉬워집니다. **2편을 받으면 가장 먼저 백엔드부터 확인합니다**(`GameAssembly.dll`이 있으면 IL2CPP).
-- **본문이 없으니 "무엇을 하는 메서드인지"는 로그로 확인합니다.** 1편의 [inferred_game_code](../inferred_game_code/README.md) 문서들은 Postfix 로그와 호출 스택으로 동작을 역추적한 결과입니다. 2편에서도 같은 방식이 필요합니다.
+- **본문이 필요할 때는 로그 역추적 + Cpp2IL ISIL 덤프를 함께 씁니다.** 1편의 [inferred_game_code](../inferred_game_code/README.md) 문서들은 Postfix 로그와 호출 스택으로 동작을 역추적한 결과입니다. 여기에 더해, 로그만으로 알 수 없는 내부 필드 조회나 호출 순서는 MelonLoader 내장 `Cpp2IL.exe --game-path "<게임 경로>" --output-as isil --output-to <폴더>`로 ISIL(중간 어셈블리, 약 30초 소요)을 뽑아 메서드 본문을 직접 읽었습니다(예: `MusicInfo.GetLocal`이 `musicIndex`가 아니라 `BaseDataObject.listIndex`를 넘긴다는 사실, `StageBattleComponent.InitTimeNodeOrder`의 판정 표 구조). 2편에서도 시그니처 검색 → 로그 탐침 → 필요한 함수만 ISIL 확인 순서로 접근하십시오.
 - **IL2CPP에서 Harmony 패치는 네이티브 디투어입니다.** MelonLoader의 `Il2CppInterop.HarmonySupport`(`Il2CppDetourMethodPatcher`)는 게임 함수의 네이티브 포인터(`MethodPointer`)에 디투어를 걸고, 그 앞에 관리 코드 트램펄린을 둡니다. 로그의 `During invoking native->managed trampoline`과 스택의 `DMD<...>`가 그 흔적입니다. 즉 **"관리형 래퍼를 쓰니까 네이티브 훅이 아니다"는 성립하지 않습니다**(Phase 1 경고 참고).
 - **게임 멤버 이름이 컴파일러 검사를 거치지 않는 곳이 따로 있습니다.** `typeof`/`nameof`로 쓴 것은 빌드가 잡지만, [ModReflection](../../muse%20dash%20test/Patches/Common/ModReflection.cs)·래퍼·`[HarmonyPatch(..., "문자열")]`로 쓴 이름은 게임에서 실행해 보기 전까지 모릅니다. 6.7.0 대조 때 이런 이름이 약 50개였습니다.
 - **덤프로 절대 확인할 수 없는 것**: GameObject 이름(`"BGM"`, `"TxtArtist"` 등), 씬 계층, 에셋·프리팹 이름, 애니메이션 이름. 이런 것은 로그로만 확인할 수 있습니다. 2편에서 가장 늦게까지 불확실하게 남을 부분입니다.
@@ -47,7 +47,7 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 - **목적**: 게임 엔진이 가상 UID(`1999-0` 등)를 조회할 때 NullReference 예외로 폭사하지 않고, 우리가 준비한 복제본 데이터를 정상적으로 찾아가도록 우회 반환로를 가로채는 데 쓰입니다.
 - **주요 키워드**: `Get...By...`, `Find...`, `Search...`
 - **예시**: 1편의 `GetMusicInfoFromAll(string uid)`(호출만 함), `GetAlbumInfoByMusicInfo()`, `GetAlbumIndexByUid()`(Prefix로 가로챔)
-- **1편에서 뒤늦게 발견한 함정 — UID가 아니라 "행 번호"로 묻는 조회**: 현지화 DB(`DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(index)`, `DBConfigLocalAlbums.GetLocalTitleByIndex(index)`)는 곡을 UID가 아니라 인덱스 하나로 묻습니다. 가상 곡은 숙주 곡의 얇은 복제본이라 행 번호까지 물려받으므로, "누구를 위한 질문인지"를 인자로 구분할 수 없습니다. 1편은 곡 선택 문맥(`SelectedSongLocalizationScope`)과 `musicIndex` 대조로 풀었습니다. 2편에서도 `...ByIndex` 계열은 따로 의심하십시오.
+- **1편에서 뒤늦게 발견한 함정 — UID가 아니라 "행 번호"로 묻는 두 겹 조회**: 현지화 DB(`DBConfigLocalALBUM.GetLocalAlbumInfoByIndex(index)`, `DBConfigLocalAlbums.GetLocalTitleByIndex(index)`)는 곡을 UID가 아니라 인덱스 하나로 묻습니다. ISIL 분석으로 확인한 실제 구조는 `m_MusicExInfo.m_AlbumIndex`(`albumJsonIndex`)로 앨범 현지화 표를 고른 뒤 **`BaseDataObject.listIndex`**(처음엔 `musicIndex`로 오인했으나 곡이 7개로 늘자 `listIndex=23` vs `musicIndex=10`으로 갈라짐)를 행 번호로 넘기는 두 겹 조회입니다. 또한 `PnlStage.ChangeMusic`은 새 곡의 제목을 먼저 조회한 뒤에야 `RefreshDiffUI`를 불러 세션의 선택 곡(`SelectedMusicUid`)을 갱신하므로, 조회보다 먼저 불리는 `PnlStage.SetAchievementPercent(MusicInfo)`에서 새 곡 UID를 `SelectedSongLocalizationScope.DrawingUid`에 받아 두고 `listIndex` 대조와 함께 가로챕니다. 2편에서도 `...ByIndex` 계열은 ① 진짜로 넘기는 인덱스 필드(`listIndex` vs `musicIndex`)와 ② 선택 곡 갱신과 제목 조회의 선후 관계를 반드시 확인하십시오.
 
 ### ③ 필터/제외 (Filter / Sanitization) 계열
 - **목적**: 가상 곡을 깨고 점수를 저장할 때 가짜 UID 기록이 순정 세이브 파일에 포함되어 세이브가 깨지는 현상을 방지하는 타겟을 찾는 데 쓰입니다.
@@ -179,7 +179,11 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 - **목표**: 게임이 순정 차트를 런타임 노트 리스트로 **다 조립한 직후**, 노트 생성기(`NoteSpawner`)가 그 리스트를 읽기 전 지점을 찾습니다. 1편은 `DBStageInfo.SetRuntimeMusicData`의 **Postfix**입니다(Prefix가 아님). 게임이 만든 리스트를 템플릿 삼아 쓰기 때문에 "만들어진 뒤"여야 합니다.
 
 ### 2. 차트 변조 메커니즘 (1편 실제 흐름, [DBStageInfoExperimentChart.cs](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoExperimentChart.cs))
-- 순정 리스트의 `[0]`(앵커)과 `[1]`(노트 템플릿) 두 개만 복제해 둡니다. 새 노트는 전부 이 템플릿을 복제한 뒤 UID·타입·시각만 바꿔 만듭니다. **그래서 노트 연출 일부(des, key_audio, scene 등)는 "숙주로 쓴 순정 곡"을 따라갑니다.**
+- 순정 리스트의 `[0]`(앵커)과 `[1]`(노트 템플릿) 두 개를 기본 템플릿으로 복제해 둡니다. 일반 노트는 이 템플릿을 복제한 뒤 UID·타입·시각만 바꿔 만듭니다. **단, 음표(`0003`, 타입 7)와 하트(`0002`, 타입 6) 같은 수집형 아이템 노트는 일반 노트 템플릿을 그대로 복제하면 타격 판정 관련 필드가 남아 타격 노트(`PERFECT`)로 집계되므로(실측: `maxCombo`보다 `PERFECT`가 더 많아짐), 반드시 `NoteDataMananger.instance.GetNoteByUid(uid)`에서 공식 아이템 노트 행을 가져와 복제해야 합니다**([DBStageInfoExperimentChart.Resolve.cs](../../muse%20dash%20test/Patches/Database/Stage/DBStageInfoExperimentChart.Resolve.cs)).
+- **노트 속도(1·2·3단)와 동시치기(Double Note) 처리**([NOTE_SPEED_DT.md](../experiments/NOTE_SPEED_DT.md)):
+  - 6자리 UID `zzxxyy`의 `yy`(`01`~`18`)는 3개씩 끊어 `(yy - 1) / 3`이 레인·모션 묶음(짝수 묶음=지상, 홀수 묶음=공중)이고 `(yy - 1) % 3 + 1`이 속도(1·2·3)입니다(씬 전환 `0004yy`와 보스 본체 `xx=01` 제외).
+  - 속도 2·3 노트는 게임 에셋에 프리팹 끝자리 `_2`·`_3`만 존재하므로(`_1`로 두면 프리팹이 없어 노트가 안 보임), 프리팹 이름 끝자리(`GetPrefabVariant`), `noteData.speed`, 지상/공중 판정을 모두 `yy`의 속도에 맞춰야 합니다. 보스 원거리 탄(`xx=06/07/08`)의 속도 2·3(`yy=02/03`, `05/06`)은 보스 발사 모션 조회 시 속도 1의 키(`01`/`04`)로 정규화합니다.
+  - 노트의 등장 애니메이션은 `time - dt` 시점에 Spine 액션 `in`을 재생하며, 비행 속도는 `dt`가 아니라 `yy`가 고른 Spine 애니메이션 길이(`frames / 30`초)가 결정합니다. 따라서 `dt`는 인위적으로 보정하지 않고 WAV 정의의 `_dt`를 그대로 쓰며(공식 일반 노트 기준 속도 1=`1.48`, 속도 2=`1.28`, 속도 3=`1.08`), 같은 틱의 지상+공중 동시치기(`ApplyBmsDoubleState`)에서도 `isDouble`/`doubleIdx`만 묶고 각 노트의 `dt`와 `showTick`은 덮어쓰지 않아야 서로 다른 속도의 동시치기 연출이 깨지지 않습니다.
 - 리스트를 `Clear()`하고 앵커를 되돌려 넣은 뒤, `BmsParser`가 해석한 노트를 `Add`합니다. 이어서 더블 노트 상태를 맞추고 `showTick` 순으로 정렬합니다.
 - **복제 함수는 필드를 하나씩 손으로 복사합니다.** 게임 업데이트로 노트 데이터에 필드가 생기면 그 필드는 조용히 빠집니다. 1편 6.7.0 대조에서는 `MusicData` 15개, `NoteConfigData` 27개, `MusicConfigData` 6개 멤버를 빠짐없이 복사하고 있었습니다. 2편에서는 이 대조를 가장 먼저 다시 하십시오.
 - 노트끼리는 `objId`(1편은 `short`)로 서로를 가리킵니다. 롱노트는 잘게 전개되어 노트 수가 빨리 불어나므로 상한을 감시합니다.
@@ -232,7 +236,7 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
   - 곡이 끝나는 연출 시점에 개입하여 판정 결과 이미지와 컴포넌트를 오버라이딩합니다.
 
 ### 2. 정밀 정확도 산출 공식 설계
-2편에서도 판정 통계 변수들(`Perfect`, `Great`, `Miss`, `JumpOver`/톱니바퀴, `Energy`/하트, `BluePoint`/음표 등)은 각기 다른 필드에 보관될 것입니다.
+2편에서도 판정 통계 변수들(`Perfect`, `Great`, `Miss`, `JumpOver`/톱니바퀴, `EnergyCount`/하트, `MusicCount`/음표 등)은 각기 다른 필드에 보관될 것입니다. (주의: 1편 `TaskStageTarget`에는 점수용 `m_BluePoint`와 실제 음표 획득 수인 **`m_MusicCount`**가 따로 있습니다. 초기에는 `m_BluePoint`를 읽는 바람에 음표 노트가 제 타입으로 판정되자 정확도가 100%를 넘거나 어긋났고, `m_MusicCount`로 바로잡아 해결했습니다.)
 - **분모 스캔**: 차트 로드 시점에 더미/이벤트 노트를 제외하고 실제 판정이 발생하는 노트를 종류별로 전수 조사해 **진짜 분모값**을 미리 집계합니다.
   - 일반 판정 노트(단타, 롱노트 머리, 샌드백 등) 수량: `TotalStandard`
   - 톱니바퀴 수량: `TotalGears`
@@ -242,7 +246,7 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
   - **`GetTrueAccuracy()`** (일반 노트 대상):
     $$\text{Accuracy} = \frac{\text{Perfect} + \text{Great} \times 0.5}{\text{TotalStandard}}$$
   - **`GetTrueAccuracyNew()`** (모든 오브젝트 대상):
-    $$\text{Accuracy} = \frac{\text{Perfect} + \text{Great} \times 0.5 + \text{JumpOver} + \text{EnergyCount} + \text{BluePoint}}{\text{TotalStandard} + \text{TotalGears} + \text{TotalHearts} + \text{TotalBlueNotes}}$$
+    $$\text{Accuracy} = \frac{\text{Perfect} + \text{Great} \times 0.5 + \text{JumpOver} + \text{EnergyCount} + \text{MusicCount}}{\text{TotalStandard} + \text{TotalGears} + \text{TotalHearts} + \text{TotalBlueNotes}}$$
   - **`GetAccuracy()`** (최종 노출용): UI에 표시할 소수점 3째 자리 반올림 값을 반환합니다.
 
 ### 3. 결과 화면 ALL PERFECT 골드 배너 동적 주입
@@ -293,8 +297,8 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 - 그래서 `actionKey == "in"`이고 고스트 노트(UID `zzxxyy`의 `xx=17`, 타입 4)일 때, 그 애니메이션의 컬러 타임라인에서 **알파 키만 1로 덮어씁니다.** 이동·스케일 타임라인은 건드리지 않습니다.
 - `SkeletonData`는 프로세스 전체가 공유하므로, 덮기 전 알파를 기억해 두었다가 설정이 꺼진 곡에서는 되돌립니다. 곡별 설정은 커스텀 곡이면 `info.txt`, 공식곡이면 `config.txt`를 따릅니다.
 - **확인된 막다른 길**(2편에서 다시 파지 않도록): `SetAlpha`, `OnNoteDisappear`, `NoteDisappearLogic`은 고스트 노트에 대해 불리지 않았고, 애니메이션을 통째로 바꾸면 비행 이동까지 사라져 노트가 멈췄습니다. 알파 필드는 노트 데이터(`NoteConfigData`/`MusicData`) 어디에도 없어서 차트 주입 단계에서는 손댈 수 없습니다.
-- **아직 열린 문제**: "보이기 설정이 저절로 풀린다"는 증상이 있고, 원인으로 `SkeletonData`가 다시 만들어졌는데 모드 캐시는 "이미 덮었다"고 기억하는 경우를 의심하고 있습니다(임시 진단 코드가 들어가 있음). 2편에서는 캐시 키에 데이터 인스턴스(포인터)를 포함하는 쪽으로 시작하십시오.
-- `SpineActionContract`는 알파를 제어하는 장치가 아니라 **애니메이션 목록을 파일로 떨어뜨리는 읽기 전용 탐침**입니다(개발자 스위치로만 켜짐). 위 `in_nor_44`를 찾은 것도 이 덤프였습니다. (씬 전환 때 부르던 빈 `ResetWindow()`는 지웠습니다.)
+- **해결된 재진입 캐시 함정**: 배틀을 나갔다 다시 들어오면 `SkeletonData` 네이티브 인스턴스가 새로 만들어지는데, 캐시 키를 스켈레톤 이름과 애니메이션 이름으로만 잡으면 모드가 "이미 덮어썼다"고 착각해 두 번째 판부터 고스트 노트가 다시 투명해졌습니다. 캐시 키에 네이티브 포인터(`{SkeletonName}|0x{data.Pointer:X}|{AnimationName}`)를 포함하고 배틀 시작(`PnlBattle.GameStart`) 때마다 `ResetCache()`를 호출하여 해결했습니다. 2편에서도 처음부터 포인터를 캐시 키에 넣으십시오.
+- `SpineActionContract`는 알파를 제어하는 장치가 아니라 **애니메이션 목록을 파일로 떨어뜨리는 읽기 전용 탐침**입니다(개발자 스위치로만 켜짐). 위 `in_nor_44`를 찾은 것도 이 덤프였습니다.
 
 ---
 
@@ -311,9 +315,10 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 모드 시연 영상 제작, 커스텀 차트 난이도 테스트, 봇 시뮬레이션을 위해 판정을 정밀 조작하거나 화면에 키 입력 시각화를 렌더링합니다.
 
-### 1. All-Perfect Parameter Mod (`ForcePerfectPatch`)
-- **ILSpy 타겟**: `GameTouchPlay.TouchResult` (터치/키 판정 처리 시점)
-- **동작**: 판정이 발생한 직후 결과 코드(`resultCode`)를 Perfect 코드로 덮어써서 판정 파라미터를 조작하고 올퍼펙트를 유도합니다.
+### 1. All-Perfect Parameter Mod ([ForcePerfectPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.cs))
+- **2단계 방어 구조 (1편 6.7.0 ISIL 분석으로 완성)**:
+  1. **1단계 — 사전 판정 테이블 조작 (`StageBattleComponent.InitTimeNodeOrder` Postfix)**: 게임은 곡 로드 시 각 노트의 시간축 오프셋마다 판정 등급(`Great`/`Cool`/`Prefect`)을 미리 구워 둔 리스트(`StageBattleComponent.m_TimeNodeOrders`)를 만듭니다. 이 테이블의 모든 엔트리에서 `isPerfectNode = true`로 세팅하고 `result`가 `Great(3)` 또는 `Cool(2)`인 칸을 `Prefect(4)`로 덮어씁니다(배틀 도중 설정을 켰을 때도 즉시 현재 테이블을 승격).
+  2. **2단계 — 런타임 판정 승격 안전망 (`GameTouchPlay.TouchResult` Prefix)**: 테이블을 거치지 않는 경로(놓쳐서 들어오는 `Miss(1)` 등)까지 포함하여, `Miss`/`Cool`/`Great` 판정 코드(`resultCode`)를 `Prefect(4)`로 덮어씁니다(`JumpOver` 등 특수 코드는 보존).
 - **범위 주의**: 1편은 이 조작과 오토플레이·피버 차단을 **공식곡에도** 적용합니다(`config.txt`로 켜고 끔). 2편이 온라인 기록을 올린다면, 조작된 판정의 기록이 서버로 가지 않게 막는 장치를 함께 두어야 합니다(Phase 1 경고 참고).
 
 ### 2. 오토 플레이 스킬 패치 (`AutoPlayPatch`)
