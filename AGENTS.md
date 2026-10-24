@@ -11,13 +11,13 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-10-24 (v0.11.0 릴리즈: 노트 스폰 밀림/버벅거림 수정, 씬 배경 스왑 무변형 분리, 커버 LRU 캐시 및 키뷰어·판정선·판정바 캐시 정리)
+마지막 갱신: 2026-10-24 (홀드 dt 1.47 / 1.26 / 1.10 확정: 홀드 막대 길이 기준과 `_dt` 불일치로 꼬리가 일찍 지나가던 문제 해결. 일반 노트 확인은 남음)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB).
 3. **설계 의도**
    - 가상 곡은 공식 `MusicInfo`의 얇은 복제본입니다. 제목은 게임이 `m_MusicExInfo.m_AlbumIndex`로 앨범 현지화 표를 고른 뒤 `BaseDataObject.listIndex` 행을 묻는 두 겹 조회로 정해지므로, `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex`에서 `MusicInfoWrapper.listIndex`가 같고 선택 곡 스코프 안일 때만 커스텀 제목으로 답합니다. 판정할 곡은 `SelectedSongLocalizationScope.DrawingUid`(ChangeMusic 안 `SetAchievementPercent`에서 받은 새 곡)를 먼저 씁니다. 세션의 선택 곡은 조회보다 늦게 갱신됩니다.
-   - 노트 속도는 uid `yy`의 속도 자리로 정해집니다. 속도 2·3 uid는 프리팹 끝자리(`_2`/`_3`, 게임에 그 이름만 있음)·`speed`·지상/공중을 그 uid에 맞춥니다. dt는 보정하지 않고 WAV `_dt`를 그대로 씁니다(일반 노트 1.48 / 1.28 / 1.08)([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
+   - 노트 속도는 uid `yy`의 속도 자리로 정해집니다. 속도 2·3 uid는 프리팹 끝자리(`_2`/`_3`, 게임에 그 이름만 있음)·`speed`·지상/공중을 그 uid에 맞춥니다. dt는 보정하지 않고 WAV `_dt`를 그대로 씁니다(일반 노트 1.48 / 1.28 / 1.08, 홀드 1.47 / 1.26 / 1.10, 보스 발사체 0.8 / 0.7 / 0.6)([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md), [HOLD_BAR_LENGTH_DT.md](docs/experiments/HOLD_BAR_LENGTH_DT.md)). 홀드 dt가 다른 이유는 게임이 홀드 막대 길이를 dt가 아니라 속도 단계의 고정 시간(44 / 38 / 33프레임)으로 그리기 때문입니다. 일반 노트의 렌더-판정 일치는 아직 확인하지 않았습니다.
    - 커스텀 음표·하트는 `NoteDataMananger.GetNoteByUid`의 공식 행을 바탕으로 만듭니다. 일반 노트를 복제하면 타격 판정으로 집계됩니다.
    - 커스텀 곡 정확도는 `AccuracyCalculator`가 덮어씁니다: (PERFECT + GREAT/2 + 기어 통과 + 하트 `m_EnergyCount` + 음표 `m_MusicCount`) / 전체.
    - 씬 배경 스왑은 `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`과 `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)`을 `true`로 패치하여 `LoadMusicData`가 배경 목록(`curSceneChangeType`)만 등록하고 노트 정체(`noteData`/`configData.note_uid`)는 덮어쓰지 못하게 차단합니다(`musicList` 무변형 유지, [SCENE_BACKGROUND_SWAP.md](docs/experiments/SCENE_BACKGROUND_SWAP.md)).
@@ -31,5 +31,5 @@
    - 노트 속도를 dt만 바꿔 내려는 것: 애니메이션은 uid `yy`가 정하므로 렌더가 깨집니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
    - 속도 2·3 프리팹 끝자리를 `_1`로 두는 것: 게임에 그 이름의 프리팹이 없어 노트가 안 보입니다.
    - `HwaSyncManager`에서 `sldProgress.value`를 기준으로 스트리밍 Ogg `bgmSource.time`을 역으로 시크한 것: 호스트 곡 길이로 도는 진행바 때문에 0.5초마다 오디오 디코더 재탐색 히치와 노트 밀림을 유발했습니다.
-   - 홀드 머리·꼬리를 동시치기 짝(`isDouble`)에 넣은 것: 짝마다 `BaseEnemyObjectController.OnControllerAttacked` NRE가 났습니다. 홀드 꼬리 어긋남의 원인은 짝이 아니라 막대 길이 기준(속도 3 = 1.10초)과 `_dt`의 차이였습니다([HOLD_TAIL_RENDER_LAG.md](docs/experiments/HOLD_TAIL_RENDER_LAG.md)).
+   - 홀드 머리·꼬리를 동시치기 짝(`isDouble`)에 넣은 것: 짝마다 `BaseEnemyObjectController.OnControllerAttacked` NRE가 났습니다. 홀드 꼬리 어긋남의 원인은 짝이 아니라 막대 길이 기준과 `_dt`의 차이였습니다([HOLD_BAR_LENGTH_DT.md](docs/experiments/HOLD_BAR_LENGTH_DT.md)).
 6. **빌드·배포**: `dotnet build`(또는 `build.bat`) → `H:\muse dash hwa\Mods\muse-dash-custom-chart.dll`로 자동 배포. `[AutoDeploy] Successfully deployed` 줄과 `ls -la "H:/muse dash hwa/Mods/"`로 확인합니다.
