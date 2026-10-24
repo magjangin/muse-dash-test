@@ -38,18 +38,49 @@ namespace muse_dash_test
             installAttempts = 0;
             nextAttemptTime = 0f;
             lastStatusLog = null;
+            lastLoadSceneOriginal = -1;
+            lastLoadSceneRedirected = -1;
             prefabCache.Clear();
             cachedCandidates = null;
         }
 
         public static void RememberLoadSceneRedirect(string originalSceneName, string redirectedSceneName)
         {
+            // 인게임 재시작(GameRestart)은 Unity 씬을 다시 로드하지 않고 LoadScene만 다시 호출하므로,
+            // 이전 판의 설치 완료 플래그나 후보 캐시, 파괴된 프리팹 참조가 남지 않도록 함께 초기화합니다.
+            installed = false;
+            gaveUp = false;
+            installAttempts = 0;
+            nextAttemptTime = 0f;
+            lastStatusLog = null;
+            cachedCandidates = null;
+            PurgeDeadPrefabsFromCache();
+
             lastLoadSceneOriginal = TryParseSceneName(originalSceneName, out int originalScene)
                 ? originalScene
                 : -1;
             lastLoadSceneRedirected = TryParseSceneName(redirectedSceneName, out int redirectedScene)
                 ? redirectedScene
                 : -1;
+        }
+
+        private static void PurgeDeadPrefabsFromCache()
+        {
+            if (prefabCache.Count == 0) return;
+
+            var deadKeys = new List<string>();
+            foreach (var kv in prefabCache)
+            {
+                if (kv.Value == null)
+                {
+                    deadKeys.Add(kv.Key);
+                }
+            }
+
+            for (int i = 0; i < deadKeys.Count; i++)
+            {
+                prefabCache.Remove(deadKeys[i]);
+            }
         }
 
         public static void Update(bool isInStage)
@@ -108,6 +139,7 @@ namespace muse_dash_test
                     GameObject existingInstance = FindChildByName(sceneObjectController.transform, instanceName);
                     if (existingInstance != null)
                     {
+                        CleanupStaleChildHitPoints(sceneObjectController.transform, existingInstance);
                         installed = true;
                         ModLogger.Msg($"[ExperimentHitPoint] 기존 인스턴스 확인: {GetPath(existingInstance.transform)}, source={candidate.Source}");
                         return;
@@ -121,6 +153,7 @@ namespace muse_dash_test
                             existingInstance.transform.SetParent(sceneObjectController.transform, false);
                         }
 
+                        CleanupStaleChildHitPoints(sceneObjectController.transform, existingInstance);
                         installed = true;
                         ModLogger.Msg($"[ExperimentHitPoint] 기존 전역 인스턴스 확인/연결: {GetPath(existingInstance.transform)}, source={candidate.Source}");
                         return;
@@ -142,6 +175,7 @@ namespace muse_dash_test
                     instance.transform.SetParent(sceneObjectController.transform, false);
                     instance.SetActive(true);
 
+                    CleanupStaleChildHitPoints(sceneObjectController.transform, instance);
                     installed = true;
                     ModLogger.Msg(
                         $"[ExperimentHitPoint] 게임 원본 HitPoint 설치 완료: path={GetPath(instance.transform)}, " +
@@ -164,6 +198,29 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 ModLogger.Error($"[ExperimentHitPoint] 설치 중 예외: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// SceneObjectController 하위에 이전 씬/호스트 곡에서 남은 다른 HitPoints 인스턴스가 중복으로 쌓여 있으면 정리합니다.
+        /// </summary>
+        private static void CleanupStaleChildHitPoints(Transform parent, GameObject activeHitPoint)
+        {
+            if (parent == null || activeHitPoint == null) return;
+
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (child == null || child.gameObject == null || child.gameObject == activeHitPoint)
+                {
+                    continue;
+                }
+
+                if (TryParseHitPointScene(child.name, out _))
+                {
+                    ModLogger.Verbose($"[ExperimentHitPoint] 중복 판정선(HitPoints) 인스턴스 정리: {child.name}");
+                    UnityEngine.Object.Destroy(child.gameObject);
+                }
             }
         }
 
@@ -384,7 +441,11 @@ namespace muse_dash_test
         {
             if (prefabCache.TryGetValue(prefabName, out GameObject cached))
             {
-                return cached;
+                if (cached != null)
+                {
+                    return cached;
+                }
+                prefabCache.Remove(prefabName);
             }
 
             var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>();

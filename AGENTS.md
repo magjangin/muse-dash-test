@@ -11,7 +11,7 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-10-24 (`fix/input-overlay-punctuation-labels` 머지 및 MD2 문서 최신화 완료)
+마지막 갱신: 2026-10-24 (v0.11.0 릴리즈: 노트 스폰 밀림/버벅거림 수정, 씬 배경 스왑 무변형 분리, 커버 LRU 캐시 및 키뷰어·판정선·판정바 캐시 정리)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB).
@@ -20,7 +20,9 @@
    - 노트 속도는 uid `yy`의 속도 자리로 정해집니다. 속도 2·3 uid는 프리팹 끝자리(`_2`/`_3`, 게임에 그 이름만 있음)·`speed`·지상/공중을 그 uid에 맞춥니다. dt는 보정하지 않고 WAV `_dt`를 그대로 씁니다(일반 노트 1.48 / 1.28 / 1.08)([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
    - 커스텀 음표·하트는 `NoteDataMananger.GetNoteByUid`의 공식 행을 바탕으로 만듭니다. 일반 노트를 복제하면 타격 판정으로 집계됩니다.
    - 커스텀 곡 정확도는 `AccuracyCalculator`가 덮어씁니다: (PERFECT + GREAT/2 + 기어 통과 + 하트 `m_EnergyCount` + 음표 `m_MusicCount`) / 전체.
-4. **핵심 훅**: `DBStageInfo.SetRuntimeMusicData`(BMS → `MusicData` 주입, `DBStageInfoExperimentChart*.cs`), `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` / `MusicInfo.GetLocal`(제목), `TaskStageTarget.GetAccuracy*`(정확도), `GameTouchPlay.TouchResult` / `StageBattleComponent.InitTimeNodeOrder`(강제 퍼펙트).
+   - 씬 배경 스왑은 `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`과 `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)`을 `true`로 패치하여 `LoadMusicData`가 배경 목록(`curSceneChangeType`)만 등록하고 노트 정체(`noteData`/`configData.note_uid`)는 덮어쓰지 못하게 차단합니다(`musicList` 무변형 유지, [SCENE_BACKGROUND_SWAP.md](docs/experiments/SCENE_BACKGROUND_SWAP.md)).
+   - 프레임 드랍 직후 늦게 스폰된 Spine 노트는 엔진의 `FixSpineAnim`이 `Animator`만 앞당기고 `SkeletonAnimation`을 빠뜨려 오른쪽에 뒤처지므로, `SpineActionController.PlayByKey`("in")에서 `currentAnimationTime = timeFromMusicStart - showTick`으로 즉시 보정합니다(`NoteAnimationSyncPatch.cs`).
+4. **핵심 훅**: `DBStageInfo.SetRuntimeMusicData`(BMS → `MusicData` 주입, `DBStageInfoExperimentChart*.cs`), `StageBattleComponent.IsIgnoreCurrentNoteChecking` / `GameMusicScene.IsIgnoreCurrentNoteChecking`(씬 스왑 노트 무변형 보호), `SpineActionController.PlayByKey`(고스트 알파 고정 + 스폰 지연 위치 보정), `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` / `MusicInfo.GetLocal`(제목), `TaskStageTarget.GetAccuracy*`(정확도), `GameTouchPlay.TouchResult` / `StageBattleComponent.InitTimeNodeOrder`(강제 퍼펙트).
 5. **막다른 길**
    - 현지화 행 번호를 `musicIndex`로 본 것: 값이 우연히 같았을 뿐, 실제는 `listIndex`입니다.
    - 하단 제목을 `LongSongNameController.Refresh`에서 바꾸는 것: 화면은 맞지만 원인보다 늦은 자리라 버렸습니다.
@@ -28,4 +30,5 @@
    - PERFECT 과다를 `ForcePerfect`의 `isPerfectNode` 탓으로 본 것: 강제퍼펙트를 끈 오토플레이에서도 재현되어 무관했습니다.
    - 노트 속도를 dt만 바꿔 내려는 것: 애니메이션은 uid `yy`가 정하므로 렌더가 깨집니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
    - 속도 2·3 프리팹 끝자리를 `_1`로 두는 것: 게임에 그 이름의 프리팹이 없어 노트가 안 보입니다.
+   - `HwaSyncManager`에서 `sldProgress.value`를 기준으로 스트리밍 Ogg `bgmSource.time`을 역으로 시크한 것: 호스트 곡 길이로 도는 진행바 때문에 0.5초마다 오디오 디코더 재탐색 히치와 노트 밀림을 유발했습니다.
 6. **빌드·배포**: `dotnet build`(또는 `build.bat`) → `H:\muse dash hwa\Mods\muse-dash-custom-chart.dll`로 자동 배포. `[AutoDeploy] Successfully deployed` 줄과 `ls -la "H:/muse dash hwa/Mods/"`로 확인합니다.

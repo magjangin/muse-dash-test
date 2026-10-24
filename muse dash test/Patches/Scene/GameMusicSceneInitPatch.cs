@@ -4,22 +4,59 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Il2CppGameLogic.GameMusicScene.InitTimer / InitSceneEvents 패치 클래스입니다.
-/// 인게임 스테이지 진입 시 노트 UID의 렌더 씬(zz) 계층을 커스텀 채보에 맞게 변형(TransformSceneSegments)합니다.
-/// 
-/// [UID 구조 규약] (자세한 내용은 docs/guides/BMS_PARSING.md 참조)
-/// 6자리 숫자 UID = zzxxyy
-///   - zz: 렌더 씬 번호 (배경/스테이지 계열)
-///   - xx: 노트 타입
-///   - yy: 슬롯/세부값
-///   - "0004…": 씬 전환 토글 노트 (끝 2자리 yy = 전환할 씬 번호)
-///   - zz == "00": 특정 씬에 묶이지 않는 무관 노트 (변형 대상 제외)
+/// 커스텀 차트 플레이 시 씬 전환(`m_IsSceneChange`)이 활성화되더라도 게임 엔진(`StageBattleComponent.LoadMusicData` 및
+/// `GameMusicScene.PreLoad`)이 노트의 `uid`/`prefab_name`/`configData.note_uid`를 씬 번호(`zz`)로 덮어쓰지 못하도록
+/// `IsIgnoreCurrentNoteChecking`에서 차단하고, `InitTimer`의 총 시간(`total`)을 커스텀 채보 길이에 맞게 확장합니다.
+///
+/// [결합도 분리 (Decoupled Design)]
+/// 기존에는 `StageBattleComponent.LoadMusicData()`가 씬 전환 구간 이후 노트들의 `noteData`를 인플레이스로 덮어썼기 때문에
+/// `InitTimer`에서 `TransformSceneSegments`로 변형하고 `PreLoadEnemy` 직후 `RestoreIdentities`/`RestoreRuntimeObjects`로
+/// 복구하는 2단 우회 구조를 썼습니다.
+/// Cpp2IL/ISIL 역공학 결과, `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`과
+/// `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)`이 `true`를 반환하면:
+///   1) `StageBattleComponent.LoadMusicData()`가 배경 씬 목록(`curSceneChangeType`/`m_Scenes`)과 `isSceneChangeType`은 그대로 등록하되,
+///      개별 노트의 `noteData`(`uid`, `prefab_name` 등) 및 `configData.note_uid` 덮어쓰기와 `configData.scenes` 생성을 건너뜁니다.
+///   2) `GameMusicScene.PreLoad`가 각 노트를 BMS 원본 `prefab_name` 그대로 단일 프리팹으로 인스턴스화합니다.
+/// 따라서 `musicList`를 인플레이스로 변형·복구할 필요가 완전히 사라집니다.
 /// </summary>
+[HarmonyLib.HarmonyPatch(typeof(Il2CppFormulaBase.StageBattleComponent), "IsIgnoreCurrentNoteChecking",
+    new Type[] { typeof(string) })]
+public class StageBattleComponent_IsIgnoreCurrentNoteChecking_Patch
+{
+    public static bool Prefix(string prefabName, ref bool __result)
+    {
+        if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+        {
+            return true;
+        }
+
+        __result = true;
+        return false;
+    }
+}
+
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "IsIgnoreCurrentNoteChecking",
+    new Type[] { typeof(int), typeof(string) })]
+public class GameMusicScene_IsIgnoreCurrentNoteChecking_Patch
+{
+    public static bool Prefix(int curScene, string notePrefabName, ref bool __result)
+    {
+        if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+        {
+            return true;
+        }
+
+        __result = true;
+        return false;
+    }
+}
+
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "InitTimer",
     new Type[] { typeof(Il2CppSystem.Decimal) })]
 public class GameMusicScene_InitTimer_Patch
 {
     private static bool EnableDebugLogs => true;
+    private static readonly HashSet<string> loggedGhostUids = new HashSet<string>();
 
     private static void LogDebug(string message)
     {
@@ -27,13 +64,23 @@ public class GameMusicScene_InitTimer_Patch
         SceneDiagnosticLogger.Log("GameMusicScene.InitTimer", message, 20);
     }
 
-    public static void Prefix(Il2CppGameLogic.GameMusicScene __instance, Il2CppSystem.Decimal total)
+    public static void Prefix(Il2CppGameLogic.GameMusicScene __instance, ref Il2CppSystem.Decimal total)
     {
         try
         {
-            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart)
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
                 return;
+            }
+
+            // FixUpdateTimer는 total에서 카운트다운하며 (total - md.showTick) 시점에 노트를 스폰합니다.
+            // 커스텀 채보나 음원이 기본 total(360초)보다 길면 후반 노트의 (total - showTick)이 음수가 되어 잘리므로 확장합니다.
+            float requiredTotal = ProgressBarPatch.GetEffectiveDuration() + 30f;
+            float currentTotal = (float)total;
+            if (requiredTotal > currentTotal)
+            {
+                total = (Il2CppSystem.Decimal)requiredTotal;
+                ModLogger.Msg($"[GameMusicScene.InitTimer] 장시간 커스텀 곡 타이머 한도 확장: {currentTotal:F1}s -> {requiredTotal:F1}s");
             }
 
             if (EnableDebugLogs)
@@ -43,29 +90,23 @@ public class GameMusicScene_InitTimer_Patch
                 SceneDiagnosticLogger.Log("GameMusicScene.InitTimer.Prefix", $"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}", 20);
             }
 
-            string initialZz = ResolveInitialRenderZz();
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
-            int changed = TransformSceneSegments(db != null ? db.musicList : null, initialZz);
-            LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형(initial={initialZz}): {changed}개");
+            InspectPureSceneSegments(db != null ? db.musicList : null);
         }
-        catch (Exception ex) 
-        { 
-            ModLogger.Error($"[GameMusicScene.InitTimer] Prefix 예외: {ex}"); 
+        catch (Exception ex)
+        {
+            ModLogger.Error($"[GameMusicScene.InitTimer] Prefix 예외: {ex}");
         }
     }
 
     /// <summary>
-    /// 로드된 스테이지의 전체 노트 리스트를 순회하며 렌더 씬(zz) 세그먼트를 변환합니다.
+    /// 변형 없이 보존된 BMS 원본 노트들의 zz 분포와 고스트 노트 상태를 관찰 로깅합니다.
     /// </summary>
-    private static int TransformSceneSegments(Il2CppSystem.Collections.Generic.List<Il2CppGameLogic.MusicData> list, string initialZz)
+    private static void InspectPureSceneSegments(Il2CppSystem.Collections.Generic.List<Il2CppGameLogic.MusicData> list)
     {
-        if (list == null || string.IsNullOrEmpty(initialZz)) return 0;
+        if (list == null) return;
 
-        int changedCount = 0;
-        var changedByOriginalZz = new SortedDictionary<string, int>();
-        string activeRenderZz = initialZz;
-
-        muse_dash_test.SceneZzTransformTracker.Clear();
+        var zzCounts = new SortedDictionary<string, int>();
         loggedGhostUids.Clear();
 
         for (int i = 0; i < list.Count; i++)
@@ -75,166 +116,29 @@ public class GameMusicScene_InitTimer_Patch
                 var note = list[i];
                 if (note == null || note.noteData == null) continue;
 
-                string beforeUid = note.noteData.uid;
-                string beforePrefab = note.noteData.prefab_name;
-
-                if (ProcessSingleNote(note, i, ref activeRenderZz, changedByOriginalZz))
-                {
-                    list[i] = note;
-                    changedCount++;
-                }
-
-                LogGhostNoteIfNeeded(note, beforeUid, beforePrefab);
+                string uid = note.noteData.uid;
+                ScenePatchHelpers.CountZz(zzCounts, uid);
+                LogGhostNoteIfNeeded(note, uid, note.noteData.prefab_name);
             }
             catch (Exception ex) { ModLogger.Verbose($"[GameMusicScene.GhostLog] 무시된 예외: {ex.Message}"); }
         }
 
-        LogDebug($"[GameMusicScene.InitTimer] 구간 렌더 zz 변형 분포: {ScenePatchHelpers.FormatZzCounts(changedByOriginalZz)}");
-        return changedCount;
+        LogDebug($"[GameMusicScene.InitTimer] 무변형 순수 BMS zz 분포: {ScenePatchHelpers.FormatZzCounts(zzCounts)}");
     }
 
-    private static readonly HashSet<string> loggedGhostUids = new HashSet<string>();
-
-    /// <summary>
-    /// 고스트 노트(xx=17)의 zz 변형 전후 상태를 UID당 한 번 남깁니다.
-    /// 이 계열만 렌더러 페이드를 동반하므로, 변형이 프리팹명을 어디로 옮겼는지가 페이드 성패를 가릅니다.
-    /// 원본 프리팹 규칙은 {uid}_{road/air}_{up/down}_1이며 yy가 그 변형(07/10/13/16)을 정합니다.
-    /// </summary>
-    private static void LogGhostNoteIfNeeded(Il2CppGameLogic.MusicData note, string beforeUid, string beforePrefab)
+    private static void LogGhostNoteIfNeeded(Il2CppGameLogic.MusicData note, string uid, string prefab)
     {
         try
         {
-            if (!ScenePatchHelpers.IsSixDigitUid(beforeUid)) return;
-            if (beforeUid.Substring(2, 2) != "17") return;
-            if (!loggedGhostUids.Add(beforeUid)) return;
+            if (!ScenePatchHelpers.IsSixDigitUid(uid)) return;
+            if (uid.Substring(2, 2) != "17") return;
+            if (!loggedGhostUids.Add(uid)) return;
 
             var nd = note.noteData;
-            ModLogger.Msg($"[GameMusicScene.InitTimer.Ghost] uid {beforeUid} -> {nd.uid ?? "(null)"}, " +
-                            $"prefab {beforePrefab ?? "(null)"} -> {nd.prefab_name ?? "(null)"}, scene={nd.scene ?? "(null)"}, " +
-                            $"type={nd.type}, pathway={nd.pathway}, tick={note.tick}, showTick={note.showTick}, dt={note.dt}");
+            ModLogger.Msg($"[GameMusicScene.InitTimer.Ghost] uid={uid}, prefab={prefab ?? "(null)"}, scene={nd.scene ?? "(null)"}, " +
+                          $"type={nd.type}, pathway={nd.pathway}, tick={note.tick}, showTick={note.showTick}, dt={note.dt}");
         }
         catch (Exception ex) { ModLogger.Verbose($"[GameMusicScene.GhostLog] 무시된 예외: {ex.Message}"); }
-    }
-
-    /// <summary>
-    /// 개별 노트의 UID 및 렌더 씬 정보를 검출하고 필요 시 렌더 씬(zz) 필드를 갱신합니다.
-    /// </summary>
-    private static bool ProcessSingleNote(
-        Il2CppGameLogic.MusicData note, 
-        int index, 
-        ref string activeRenderZz, 
-        SortedDictionary<string, int> changedByOriginalZz)
-    {
-        var nd = note.noteData;
-        string uid = nd.uid;
-
-        if (!ScenePatchHelpers.IsSixDigitUid(uid)) return false;
-
-        // 씬 전환 토글 노트(0004xx) 처리
-        if (IsSceneToggleUid(uid))
-        {
-            string nextRenderZz = uid.Substring(4, 2);
-            LogDebug($"[GameMusicScene.InitTimer] 씬 전환 구간 관찰: index={index}, uid={uid}, sceneInfo={nextRenderZz}, activeRenderZz={activeRenderZz}");
-            return false;
-        }
-
-        string fromZz = uid.Substring(0, 2);
-        if (fromZz == "00" || fromZz == activeRenderZz) return false;
-
-        string renderZz = activeRenderZz;
-        if (muse_dash_test.SceneZzTransformTracker.TryGetBmsOriginalUid(note.objId, out string bmsOriginalUid)
-            && ScenePatchHelpers.IsSixDigitUid(bmsOriginalUid))
-        {
-            renderZz = bmsOriginalUid.Substring(0, 2);
-        }
-
-        if (fromZz == renderZz) return false;
-
-        // 변환될 새로운 UID 및 프리맵 이름 생성
-        string newUid = renderZz + uid.Substring(2);
-        string renderPrefabName = nd.prefab_name;
-        if (!string.IsNullOrEmpty(nd.prefab_name) && nd.prefab_name.StartsWith(fromZz))
-        {
-            renderPrefabName = renderZz + nd.prefab_name.Substring(2);
-        }
-
-        // 추적 기록 및 카운트
-        muse_dash_test.SceneZzTransformTracker.Record(note, newUid, renderPrefabName);
-        ScenePatchHelpers.CountZz(changedByOriginalZz, fromZz);
-
-        // il2cpp 필드 갱신 (독립 예외 격리)
-        ApplyTransformedFields(note, fromZz, renderZz, newUid, renderPrefabName);
-        return true;
-    }
-
-    /// <summary>
-    /// il2cpp 바인딩 객체의 각 필드 쓰기를 개별 try-catch로 격리하여 안전하게 대입합니다.
-    /// </summary>
-    private static void ApplyTransformedFields(
-        Il2CppGameLogic.MusicData note,
-        string fromZz,
-        string renderZz,
-        string newUid,
-        string renderPrefabName)
-    {
-        var nd = note.noteData;
-        nd.uid = newUid;
-
-        try { if (ScenePatchHelpers.IsSixDigitUid(nd.mirror_uid) && nd.mirror_uid.StartsWith(fromZz)) nd.mirror_uid = renderZz + nd.mirror_uid.Substring(2); } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "mirror_uid", ex); }
-        try { nd.scene = "scene_" + renderZz; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "scene", ex); }
-        try { nd.prefab_name = renderPrefabName; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "prefab_name", ex); }
-        try { if (int.TryParse(newUid, out int parsedNoteUid)) nd.noteUid = parsedNoteUid; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "noteUid", ex); }
-        // configData도 noteData와 같은 IL2CPP 값 타입이라 getter가 매번 새 박스를 돌려줍니다.
-        // 예전에는 note.configData.note_uid에 바로 썼는데, 그 쓰기는 임시 박스에만 남아
-        // 사라졌습니다(아래 nd처럼 setter로 되돌려 써야 합니다).
-        try
-        {
-            var cd = note.configData;
-            if (cd != null && ScenePatchHelpers.IsSixDigitUid(cd.note_uid) && cd.note_uid.StartsWith(fromZz))
-            {
-                cd.note_uid = renderZz + cd.note_uid.Substring(2);
-                note.configData = cd;
-            }
-        }
-        catch (Exception ex) { LogNoteWriteBackFailure(newUid, "configData", ex); }
-        try { note.noteData = nd; } catch (Exception ex) { LogNoteWriteBackFailure(newUid, "noteData", ex); }
-    }
-
-    private static bool s_noteWriteBackWarned;
-
-    /// <summary>
-    /// 노트 필드 되쓰기 실패를 남깁니다. 실패가 노트마다 반복되면 로그가 쏟아지므로 첫 건만 경고로 올리고 나머지는 Verbose에 남깁니다.
-    /// 예전에는 이 자리가 빈 catch라서, 체크리스트의 "쓰기 유실" 사고가 로그 한 줄 없이 지나갔습니다.
-    /// </summary>
-    private static void LogNoteWriteBackFailure(string newUid, string field, Exception ex)
-    {
-        if (!s_noteWriteBackWarned)
-        {
-            s_noteWriteBackWarned = true;
-            ModLogger.Warning($"[GameMusicScene.InitTimer] 노트 필드 되쓰기 실패(첫 건만 경고, 이후는 Verbose): uid={newUid}, field={field}, {ex.GetType().Name}: {ex.Message}");
-            return;
-        }
-        ModLogger.Verbose($"[GameMusicScene.InitTimer] 노트 필드 되쓰기 실패: uid={newUid}, field={field}, {ex.Message}");
-    }
-
-    private static string ResolveInitialRenderZz()
-    {
-        string uid = muse_dash_test.CustomPlaySession.Current.LastKnownMusicUid;
-
-        if (muse_dash_test.HwaResourceManager.TryGetCachedHwaScene(uid, out int manifestScene))
-        {
-            return manifestScene.ToString("00");
-        }
-
-        // manifest에 씬 번호가 지정되지 않은 커스텀 곡의 기본 렌더 씬.
-        // 07은 대부분의 곡에 존재하는 표준 배경 씬이라 안전한 기본값으로 사용한다.
-        LogDebug($"[GameMusicScene.InitTimer] manifest scene 없음, 기본 렌더 씬 07 사용: uid={uid ?? "(null)"}");
-        return "07";
-    }
-
-    private static bool IsSceneToggleUid(string uid)
-    {
-        return ScenePatchHelpers.IsSixDigitUid(uid) && uid.StartsWith("0004", StringComparison.OrdinalIgnoreCase);
     }
 }
 
@@ -245,7 +149,7 @@ public class GameMusicScene_InitSceneEvents_Patch
     {
         try
         {
-            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             int frame = 0;
             try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
@@ -258,7 +162,7 @@ public class GameMusicScene_InitSceneEvents_Patch
     {
         try
         {
-            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             int sceneCount = -1;
             try { sceneCount = __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1; } catch (Exception) { }

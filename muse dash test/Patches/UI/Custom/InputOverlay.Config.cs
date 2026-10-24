@@ -464,6 +464,7 @@ namespace muse_dash_test
         private static Texture2D CreateColorTexture(Color color)
         {
             Texture2D texture = new Texture2D(1, 1);
+            texture.hideFlags = HideFlags.HideAndDontSave;
             texture.SetPixel(0, 0, color);
             texture.Apply();
             return texture;

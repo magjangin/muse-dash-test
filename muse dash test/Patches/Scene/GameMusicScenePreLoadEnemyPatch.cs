@@ -2,9 +2,9 @@ using MelonLoader;
 using System;
 using muse_dash_test;
 
-
-// Il2CppGameLogic.GameMusicScene.PreLoadEnemy() 후킹 — 노트 오브젝트 풀(preloads/objCtrls)을 빌드하는 지점.
-// 이 풀이 어느 소스 리스트에서 만들어지는지 판별: musicList(우리가 비운 것, 68) vs oriMusicList(원본, 501?).
+// Il2CppGameLogic.GameMusicScene.PreLoadEnemy() 후킹 — 노트 오브젝트 풀(preloads/objCtrls) 빌드 전후 상태 진단.
+// StageBattleComponent.IsIgnoreCurrentNoteChecking 및 GameMusicScene.IsIgnoreCurrentNoteChecking 패치를 통해
+// musicList와 런타임 오브젝트가 처음부터 BMS 원본 정체 그대로 생성되므로, 인플레이스 변형/복구 루프 없이 상태만 검증합니다.
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "PreLoadEnemy")]
 public class GameMusicScene_PreLoadEnemy_Patch
 {
@@ -16,8 +16,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
         {
             Boss_InitBossObject_Patch.ResetPrewarmedScenes();
 
-            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
-
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
             if (!EnableDebugLogs) return;
 
             int frame = 0;
@@ -34,19 +33,17 @@ public class GameMusicScene_PreLoadEnemy_Patch
                 oriHead = DescribeCompact(db.oriMusicList);
             }
 
-            // 변형은 SetRuntimeMusicData(더 이른 시점)로 옮겼다. 여기선 그 결과만 확인한다.
             var summary = $"[PreLoadEnemy] PRE frame={frame}: musicList.Count={musicCount}, oriMusicList.Count={oriCount}\n[PreLoadEnemy]   musicList    {musicHead}\n[PreLoadEnemy]   oriMusicList {oriHead}";
             SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Prefix", summary, 20);
         }
         catch (Exception ex) { ModLogger.Error($"[PreLoadEnemy] Prefix 예외: {ex}"); }
     }
 
-    // 빌드 후 풀 크기 → 어느 리스트로 만들었는지 판별.
     public static void Postfix(Il2CppGameLogic.GameMusicScene __instance)
     {
         try
         {
-            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
             if (EnableDebugLogs)
             {
@@ -54,15 +51,9 @@ public class GameMusicScene_PreLoadEnemy_Patch
                 try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch (Exception) { }
                 try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch (Exception) { }
                 try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch (Exception) { }
-                SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Postfix", $"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}", 20);
-            }
 
-            var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
-            int restored = SceneZzTransformTracker.RestoreIdentities(db != null ? db.musicList : null);
-            int runtimeRestored = SceneZzTransformTracker.RestoreRuntimeObjects(__instance);
-            if (EnableDebugLogs)
-            {
-                var summary = $"[PreLoadEnemy] POST BMS 정체 복구: restored={restored}, tracked={SceneZzTransformTracker.Count}, bmsOriginals={SceneZzTransformTracker.BmsOriginalCount}\n[PreLoadEnemy] POST 런타임 객체 BMS 정체 복구: restored={runtimeRestored}\n[PreLoadEnemy] POST 복구 후 musicList {DescribeCompact(db != null ? db.musicList : null)}";
+                var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
+                var summary = $"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}\n[PreLoadEnemy] POST 무변형 musicList 유지 확인: {DescribeCompact(db != null ? db.musicList : null)}";
                 SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Postfix", summary, 20);
             }
         }
