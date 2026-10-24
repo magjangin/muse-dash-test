@@ -16,7 +16,9 @@ namespace muse_dash_test
 
     public static class JudgmentBar
     {
-        private static readonly List<HitTick> hitHistory = new List<HitTick>();
+        private const int MaxHitHistoryCount = 64;
+
+        private static readonly List<HitTick> hitHistory = new List<HitTick>(MaxHitHistoryCount);
         private static float lastHitOffsetMs = 0f;
         private static float lastHitTime = -999f;
         private static Color lastHitColor = Color.white;
@@ -44,20 +46,41 @@ namespace muse_dash_test
         internal static void DiscardHistory()
         {
             if (hitHistory.Count > 0) hitHistory.Clear();
+            cachedMsText = "";
+            lastHitTime = -999f;
         }
 
         /// <summary>
-        /// 유효 시간이 지난 틱을 제거합니다. 뒤에서부터 훑어 가비지를 만들지 않습니다.
+        /// 씬 전환 또는 스테이지 진입/재시작 시 이전 판의 잔상 틱과 텍스트/스타일 캐시를 완전히 초기화합니다.
+        /// </summary>
+        public static void ResetCache()
+        {
+            hitHistory.Clear();
+            lastHitOffsetMs = 0f;
+            lastHitTime = -999f;
+            lastHitColor = Color.white;
+            cachedMsText = "";
+            labelStyle = null;
+        }
+
+        /// <summary>
+        /// 유효 시간이 지난 틱 및 최대 보유 상한(<see cref="MaxHitHistoryCount"/>)을 초과한 오래된 틱을 제거합니다.
         /// </summary>
         private static void TrimExpiredTicks(float now)
         {
             float duration = InputOverlay.tickDuration;
             for (int i = hitHistory.Count - 1; i >= 0; i--)
             {
-                if (now - hitHistory[i].timeAdded > duration)
+                float age = now - hitHistory[i].timeAdded;
+                if (age > duration || age < -0.5f)
                 {
                     hitHistory.RemoveAt(i);
                 }
+            }
+
+            if (hitHistory.Count > MaxHitHistoryCount)
+            {
+                hitHistory.RemoveRange(0, hitHistory.Count - MaxHitHistoryCount);
             }
         }
 
@@ -66,13 +89,6 @@ namespace muse_dash_test
             try
             {
                 // 판정바가 꺼져 있으면 기록하지 않고, 그동안 쌓인 것도 한 번 비웁니다.
-                //
-                // 예전에는 여기에 게이트가 없었고 만료 정리는 DrawJudgmentBar 안에만 있었습니다.
-                // 그런데 Draw는 showBar가 false면 정리 루프 '앞에서' return하고, EnableJudgmentBar가
-                // 꺼져 있으면 FeatureGuard가 Draw 호출 자체를 막습니다. 반면 이 메서드를 부르는
-                // Harmony 훅(GameTouchPlay.TouchResult)에는 아무 게이트가 없었습니다.
-                // 그래서 판정바를 끈 채 플레이하면 hitHistory에 노트마다 계속 쌓이기만 하고
-                // 비우는 코드는 영영 실행되지 않았습니다.
                 if (!IsRecordingEnabled)
                 {
                     DiscardHistory();
@@ -138,7 +154,7 @@ namespace muse_dash_test
                 hitHistory.Add(new HitTick
                 {
                     offsetMs = offsetMs,
-                    timeAdded = Time.time,
+                    timeAdded = lastHitTime,
                     color = tickColor
                 });
 
@@ -156,7 +172,11 @@ namespace muse_dash_test
         {
             try
             {
-                if (!InputOverlay.showBar) return;
+                if (!InputOverlay.showBar)
+                {
+                    DiscardHistory();
+                    return;
+                }
 
                 // 1. 유효 시간이 지난 틱 제거.
                 //    새 입력이 없어도 남은 잔상이 사라져야 하므로 그리기 쪽에도 그대로 둡니다.
@@ -224,7 +244,7 @@ namespace muse_dash_test
 
                 // 7. 실시간 ms 오차 텍스트 출력 (캐싱된 문자열 사용으로 GC 할당 0)
                 float textElapsed = now - lastHitTime;
-                if (textElapsed < duration && !string.IsNullOrEmpty(cachedMsText))
+                if (textElapsed >= 0f && textElapsed < duration && !string.IsNullOrEmpty(cachedMsText))
                 {
                     string msText = cachedMsText;
 
@@ -279,10 +299,6 @@ namespace muse_dash_test
         {
             try
             {
-                // 판정바가 꺼져 있으면 여기서 끝냅니다. 아래 md.tick.ToString()과 파싱은 노트마다
-                // 도는 문자열 변환이라, 보이지도 않는 판정바를 위해 플레이 내내 할 일이 아닙니다.
-                // (게이트를 '쓰는 쪽'에만 달면 끈 상태에서 목록만 쌓입니다 — docs/guides/CHECKLIST.md
-                //  참고. 그래서 늘리는 곳과 같은 자리에서 비우는 것까지 함께 합니다.)
                 if (!JudgmentBar.IsRecordingEnabled)
                 {
                     JudgmentBar.DiscardHistory();
@@ -302,13 +318,9 @@ namespace muse_dash_test
 
                     float lastMusicTick = music.m_LastMusicTick;
 
-                    // Convert.ToSingle(md.tick.ToString())을 쓰면 안 됩니다. 문자열을 만드는 쪽은
-                    // IL2CPP 런타임의 문화권을, Convert는 관리 런타임의 문화권을 따르므로 둘이
-                    // 어긋날 수 있고, 그때 Convert.ToSingle은 TryParse와 달리 '예외를 던집니다'.
-                    // 이 자리는 노트를 칠 때마다 도는 곳이라 바깥 catch가 노트마다 에러 로그를
-                    // 찍게 되고(플레이 중 로그 폭발), 판정바는 조용히 안 보이게 됩니다.
-                    // 문화권 2단 폴백은 MusicDecimalText가 이미 담당합니다.
-                    float tickVal = (float)MusicDecimalText.Parse(md.tick.ToString());
+                    // Il2CppSystem.Decimal의 명시적 float 캐스트를 우선 사용하여 매 노트 타격마다
+                    // md.tick.ToString() 문자열 할당이 발생하는 것을 방지합니다.
+                    float tickVal = (float)md.tick;
 
                     // 오차(초 단위) 계산: (lastMusicTick / 1000f) - tickVal
                     float gap = (lastMusicTick / 1000f) - tickVal;

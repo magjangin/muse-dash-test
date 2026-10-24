@@ -21,12 +21,6 @@ namespace muse_dash_test
 
         /// <summary>
         /// 다음 로드 시도까지 쌓인 시간입니다. <see cref="CheckInterval"/>에서 시작하므로 첫 시도는 기다리지 않습니다.
-        ///
-        /// <para>예전에는 "키가 하나도 없으면(<c>airKeys.Count == 0</c>) 바로 다시 시도"하는 조건이 함께 있었습니다.
-        /// 첫 로드를 기다리지 않으려던 것인데, 키 설정을 끝내 못 읽는 환경에서는 그 조건이 계속 참이라
-        /// 2초 간격이 무시되고 <b>매 프레임</b> <c>Resources.FindObjectsOfTypeAll</c>(메모리 전체 검색)이 돌았습니다.
-        /// 반대로 씬 전환 후(<see cref="ResetCache"/>)에는 예전 키가 남아 있어 2초를 기다리느라 오버레이가 잠깐 사라졌습니다.
-        /// 지금은 "재로드가 필요해지면 즉시 1회, 실패하면 2초마다"로 통일했습니다.</para>
         /// </summary>
         private static float checkTimer = CheckInterval;
 
@@ -46,7 +40,13 @@ namespace muse_dash_test
             keysLoaded = false;
             keyLoadFailures = 0;
             checkTimer = CheckInterval; // 다음 그리기에서 바로 다시 읽습니다.
-            ModLogger.Msg("[InputOverlay] 키 바인딩 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
+            airKeys.Clear();
+            groundKeys.Clear();
+            activeAirKeys.Clear();
+            activeGroundKeys.Clear();
+            keyNameCache.Clear();
+            stylesDirty = true;
+            ModLogger.Msg("[InputOverlay] 키 바인딩 및 스타일 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace muse_dash_test
                 string airKeyName = ResolveProposalKeyName(proposalDict, "KeyBattleAir", "Air");
                 string groundKeyName = ResolveProposalKeyName(proposalDict, "KeyBattleGround", "Ground");
 
-                // 3. 각 키 이름에 바인딩된 KeyCode 리스트를 추출.
+                // 3. 각 키 이름에 바인딩된 KeyCode 리스트를 추출하고 유효 키 목록(activeAirKeys/activeGroundKeys)을 즉시 갱신합니다.
                 airKeys.Clear();
                 if (airKeyName != null && TryGetDictItem(proposalDict, airKeyName, out var airList))
                 {
@@ -104,9 +104,10 @@ namespace muse_dash_test
                     ReadKeyCodeList(groundList, groundKeys);
                 }
 
+                RebuildActiveKeyLists();
                 keysLoaded = true;
 
-                ModLogger.Msg($"[InputOverlay] 키 바인딩 데이터 로드 완료! 공중 키: [{FormatKeys(airKeys)}], 지상 키: [{FormatKeys(groundKeys)}]");
+                ModLogger.Msg($"[InputOverlay] 키 바인딩 데이터 로드 완료! 공중 키: [{FormatKeys(activeAirKeys)}], 지상 키: [{FormatKeys(activeGroundKeys)}]");
             }
             catch (Exception ex)
             {
@@ -114,6 +115,33 @@ namespace muse_dash_test
                 if (ex.InnerException != null)
                 {
                     ModLogger.Error($"[InputOverlay] 상세 원인(InnerException): {ex.InnerException}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 로드된 원시 키 목록에서 <see cref="KeyCode.None"/> 및 중복 키를 걸러내어 렌더링용 활성 키 캐시를 1회 구축합니다.
+        /// (매 OnGUI 프레임마다 리스트를 재구축하던 불필요한 연산을 제거합니다.)
+        /// </summary>
+        private static void RebuildActiveKeyLists()
+        {
+            activeAirKeys.Clear();
+            for (int i = 0; i < airKeys.Count; i++)
+            {
+                KeyCode key = airKeys[i];
+                if (key != KeyCode.None && !activeAirKeys.Contains(key))
+                {
+                    activeAirKeys.Add(key);
+                }
+            }
+
+            activeGroundKeys.Clear();
+            for (int i = 0; i < groundKeys.Count; i++)
+            {
+                KeyCode key = groundKeys[i];
+                if (key != KeyCode.None && !activeGroundKeys.Contains(key))
+                {
+                    activeGroundKeys.Add(key);
                 }
             }
         }
@@ -229,9 +257,11 @@ namespace muse_dash_test
                 if (countProp == null || getItem == null) return;
 
                 int count = (int)countProp.GetValue(listObj);
+                var indexArg = new object[1];
                 for (int i = 0; i < count; i++)
                 {
-                    dest.Add((UnityEngine.KeyCode)getItem.Invoke(listObj, new object[] { i }));
+                    indexArg[0] = i;
+                    dest.Add((UnityEngine.KeyCode)getItem.Invoke(listObj, indexArg));
                 }
             }
             catch (Exception ex)

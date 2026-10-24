@@ -54,19 +54,7 @@ namespace muse_dash_test
         {
             if (!showOverlay || !keysLoaded) return -1f;
 
-            int airCount = 0;
-            for (int i = 0; i < airKeys.Count; i++)
-            {
-                if (airKeys[i] != KeyCode.None) airCount++;
-            }
-
-            int groundCount = 0;
-            for (int i = 0; i < groundKeys.Count; i++)
-            {
-                if (groundKeys[i] != KeyCode.None) groundCount++;
-            }
-
-            int maxKeys = Math.Max(airCount, groundCount);
+            int maxKeys = Math.Max(activeAirKeys.Count, activeGroundKeys.Count);
             if (maxKeys == 0) return -1f;
 
             float screenHeight = Screen.height;
@@ -97,19 +85,6 @@ namespace muse_dash_test
                 return;
             }
 
-            // None이 아닌 실제 유효한 키들만 수집하여 오버레이를 그립니다. (캐시 리스트 클리어 후 사용)
-            activeAirKeys.Clear();
-            for (int i = 0; i < airKeys.Count; i++)
-            {
-                if (airKeys[i] != KeyCode.None) activeAirKeys.Add(airKeys[i]);
-            }
-
-            activeGroundKeys.Clear();
-            for (int i = 0; i < groundKeys.Count; i++)
-            {
-                if (groundKeys[i] != KeyCode.None) activeGroundKeys.Add(groundKeys[i]);
-            }
-
             int maxKeys = Math.Max(activeAirKeys.Count, activeGroundKeys.Count);
             if (maxKeys == 0) return;
 
@@ -123,8 +98,12 @@ namespace muse_dash_test
             // 피버 바 위쪽이자 판정 텍스트 방해하지 않는 하단 중앙 구역
             float startY = screenHeight - (keyHeight * 2f) - spacing - offsetFromBottom;
 
-            // 텍스처 및 스타일 캐시 초기화 (null일 때만 재생성)
-            if (airActiveStyle == null || groundActiveStyle == null || inactiveStyle == null || airActiveTex == null || groundActiveTex == null || inactiveTex == null)
+            // 텍스처 및 스타일 캐시 초기화 (씬 언로드로 배경 텍스처가 해제된 경우도 함께 감지)
+            if (airActiveStyle == null || groundActiveStyle == null || inactiveStyle == null
+                || airActiveTex == null || groundActiveTex == null || inactiveTex == null
+                || airActiveStyle.normal.background == null
+                || groundActiveStyle.normal.background == null
+                || inactiveStyle.normal.background == null)
             {
                 UpdateTextures();
                 UpdateStyles();

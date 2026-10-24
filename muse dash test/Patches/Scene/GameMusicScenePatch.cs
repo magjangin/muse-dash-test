@@ -10,8 +10,12 @@ public class GameMusicScene_LoadScene_Patch
     {
         try
         {
+            // 새 스테이지 로드 및 인게임 재시작(GameRestart)마다 판정바 잔상 캐시를 비웁니다.
+            JudgmentBar.ResetCache();
+
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
+                ExperimentHitPointInstaller.Reset();
                 ModLogger.Msg($"[GameMusicScene.LoadScene] 스킵: 커스텀 씬 리다이렉션 비활성, scene={sceneName}, {CustomPlaySession.Current.DescribeApplyDecision()}");
                 return;
             }
