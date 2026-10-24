@@ -23,6 +23,9 @@ namespace muse_dash_test
         // 우리가 직접 주입한 커스텀 배틀 BGM 클립만 추적합니다(해제 대상 한정).
         private static AudioClip injectedClip;
 
+        internal static AudioSource ActiveAudioSource => injectedAudioSource;
+        internal static AudioClip ActiveAudioClip => injectedClip;
+
         public static void ResetState()
         {
             long currentMem = GC.GetTotalMemory(false);
@@ -32,6 +35,8 @@ namespace muse_dash_test
             mediaGeneration++;
             // 참조만 끊고 Destroy하지 않습니다. 이유는 Lifecycle.cs StopMedia의 [중요] 주석을 보십시오.
             injectedClip = null;
+            ProgressBarPatch.Reset();
+            HwaSyncManager.ResetCache();
             ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, ManagedHeap={currentMem / 1048576f:F2}MB)");
         }
 
@@ -194,6 +199,7 @@ namespace muse_dash_test
                 targetSource.Play();
                 injectedAudioSource = targetSource;
                 injectedClip = clip;
+                ProgressBarPatch.OnCustomAudioClipLoaded(clip.length);
 
                 long heapMem = GC.GetTotalMemory(false);
                 ModLogger.Msg($"[HwaBattleMediaController.Memory] 배틀 BGM 주입 완료 (ManagedHeap={heapMem / 1048576f:F2}MB): loadedClip={DescribeAudioClip(clip)}");

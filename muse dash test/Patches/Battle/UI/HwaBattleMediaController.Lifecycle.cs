@@ -8,7 +8,7 @@ namespace muse_dash_test
     /// <summary>
     /// HwaBattleMediaController의 재생 라이프사이클 제어부입니다.
     /// 일시정지/재개(일시정지 화면 진입·복귀), 정지(배틀 종료)에 맞춰
-    /// 커스텀 BGM(HwaBattleBgmSource)과 배경 비디오(VideoPlayer)의 상태를 일괄 조작합니다.
+    /// 커스텀 BGM(injectedAudioSource / HwaBattleBgmSource)과 배경 비디오(VideoPlayer)의 상태를 일괄 조작합니다.
     /// 미디어 로딩/주입 로직은 HwaBattleMediaController.cs를 참고하세요.
     /// </summary>
     public static partial class HwaBattleMediaController
@@ -31,6 +31,12 @@ namespace muse_dash_test
                         vp.Pause();
                         ModLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 일시정지했습니다.");
                     }
+                }
+
+                if (injectedAudioSource != null && injectedAudioSource.isPlaying)
+                {
+                    injectedAudioSource.Pause();
+                    ModLogger.Msg("[HwaBattleMediaController] 주입된 BGM 오디오 재생을 일시정지했습니다.");
                 }
 
                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
@@ -74,6 +80,12 @@ namespace muse_dash_test
                     }
                 }
 
+                if (injectedAudioSource != null && !injectedAudioSource.isPlaying)
+                {
+                    injectedAudioSource.UnPause();
+                    ModLogger.Msg("[HwaBattleMediaController] 주입된 BGM 오디오 재생을 재개했습니다.");
+                }
+
                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
                 if (bgmGo != null)
                 {
@@ -95,6 +107,8 @@ namespace muse_dash_test
         {
             // 진행 중인 로드가 끝나도 재생하지 않도록 세대를 올립니다(HwaBattleMediaController.mediaGeneration 참고).
             mediaGeneration++;
+            ProgressBarPatch.Reset();
+            HwaSyncManager.ResetCache();
             try
             {
                 long heapMem = GC.GetTotalMemory(false);
