@@ -91,22 +91,31 @@ dt를 권장 표로 고치기 = 활성화
 
 `씬번호: N`은 게임의 `scene_NN` 배경을 불러옵니다(`GameMusicScene.LoadScene`에서 이름을 바꿔 줌). 곡 중간 전환은 WAV 이름 `0004NN_..._dt0.wav` 노트로 하며, 1~10과 12만 됩니다([NOTE_EXPERIMENTS.md](../experiments/NOTE_EXPERIMENTS.md)).
 
-게임 폴더의 배경 번들(`gamescene_NN_assets_all_*.bundle`)은 01~12가 있습니다. 번들 안 문자열로 테마를 확인한 것만 적습니다.
+게임 폴더의 배경 번들(`gamescene_NN_assets_all_*.bundle`)은 01~12가 있습니다. 아래 표는 **게임의 곡 설정 파일**(`config_others_assets_album*` 번들 안 JSON의 `scene` 값, UnityPy로 추출)에서 어떤 곡이 그 씬을 쓰는지, 그리고 실기 확인을 근거로 적었습니다.
 
-| 씬번호 | 확인된 테마 | 비고 |
+> **고친 기록**: 처음에는 번들 안에 `Arknight` 글자가 보인다는 것만으로 12번을 명일방주로 적었는데 틀렸습니다. 12번은 비취 랜드입니다(2026-10-25 실기 확인). 번들 안 글자만으로는 테마를 정하지 마십시오.
+
+| 씬번호 | 쓰는 공식 곡(설정 파일 기준) | 비고 |
 | --- | --- | --- |
-| 5 | 캔디 계열 | 크리스마스 판(`scene_05_christmas`)이 같은 번들 안에 있음(아래) |
-| 8 | 동방 | Bad Apple은 게임이 `scene_touhou_black`으로 바꿔 씀 |
-| 10 | 하츠네 미쿠 콜라보 | |
-| 12 | 명일방주 콜라보 | 곡 중간 전환도 됨(`000412`). 시작 때 `OPERATION` 카드가 뜨며 커스텀 곡은 작전 번호 자리에 uid가 나올 것으로 보임([ARKNIGHTS_SCENE_INTRO.md](../experiments/ARKNIGHTS_SCENE_INTRO.md)) |
-| 1~4, 6, 7, 9, 11 | 번들 문자열로는 미확인 | 번호를 넣어 보고 화면으로 확인 |
+| 1~6 | 일반 곡 대부분(1번 209곡, 2번 86곡, 3번 67곡, 4번 47곡, 5번 144곡, 6번 31곡) | 5번은 캔디 계열이고 크리스마스 판(`scene_05_christmas`)이 같은 번들 안에 있음(아래) |
+| 7 | `29-0`~`29-5` (Groove Prayer, FUJIN Rumble 등) | |
+| 8 | 동방 곡(`42-*`, `55-*` 등 30곡) | Bad Apple은 게임이 `scene_touhou_black`으로 바꿔 씀 |
+| 9 | `48-*` (glory day, OBLIVION 등 15곡) | |
+| 10 | 하츠네 미쿠·보컬로이드 곡(`66-*`, `70-*`) | 카가미네 린·렌 곡(`70-0` 등)도 10번 |
+| 11 | `72-0` (P E R O P E R O 兄☆貴☆乱☆舞) | 번들 안에 `Kagamine`, `Len`, `Kaito`, `AnimMiku` 오브젝트가 있는 보컬로이드 무대. "LEN" 글자가 보이는 무대가 이것으로 보임 |
+| 12 | `84-0` (喵斯摇), `87-5` (大家好) | **비취 랜드** (실기 확인) |
+| 13 | `93-0` (Serve, Sushi, Serve!) | `gamescene_13` 번들은 없음. 데이브 더 다이버 곡이라 `gamescene_dave` 번들일 것으로 추정(미확인). 모드의 곡 중간 전환 표에는 없음 |
+
+**명일방주는 씬 번호가 아닙니다.** 명일방주 곡(`59-*`, `82-*`)은 설정상 1·2·4번 같은 일반 씬을 씁니다. `OPERATION` 카드 같은 명일방주 연출은 곡이 속한 **앨범**(`music_package_59`/`music_package_82`)으로 켜집니다([ARKNIGHTS_SCENE_INTRO.md](../experiments/ARKNIGHTS_SCENE_INTRO.md)).
+
+**만우절 배경과 새가 된 적**: 컴퓨터 날짜가 **4월 1일**이면 `BattleHelper.isFool`이 참이 되어(ISIL 확인) 게임이 `_fool` 판 배경 번들(`gamescene_NN_fool_*`)과 `FoolEnemyController`를 씁니다. 적이 새로 바뀌는 것이 이 판입니다. 번들은 01~12 모두 있습니다. 어느 함수가 `_fool` 판으로 바꾸는지는 아직 따라가지 않았습니다.
 
 **크리스마스 배경은 번호가 따로 없습니다.** 게임의 `GameMusicScene.SceneFestival("scene_05")`이 아래 중 하나일 때만 `scene_05_christmas`로 바꿉니다(ISIL 확인).
 
 - 컴퓨터 날짜가 12월 24일 또는 25일
 - 지금 곡 uid가 `43-68`, `0-47`, `38-1` 중 하나
 
-커스텀 곡(uid `1999-*`)은 날짜 조건으로만 나옵니다. 그 밖에 `_cy`, `_fool`(만우절), `dave`, `touhou_black` 번들도 있지만 `씬번호`(정수)로는 고를 수 없습니다.
+커스텀 곡(uid `1999-*`)은 날짜 조건으로만 나옵니다. 그 밖에 `_cy`, `_fool`(만우절), `dave`, `touhou_black` 번들도 있지만 `씬번호`(정수)로는 고를 수 없습니다(`씬번호`는 `scene_NN` 이름만 만듭니다).
 
 ---
 

@@ -50,7 +50,7 @@
 | [GHOST_NOTE_ALPHA_HOLD.md](experiments/GHOST_NOTE_ALPHA_HOLD.md) | 고스트 노트가 사라지지 않게 하는 Spine 알파 키 재작성 원리와 캐시 무효화(포인터 키) 해결 기록 |
 | [NOTE_SPEED_DT.md](experiments/NOTE_SPEED_DT.md) | 노트 속도별 dt 실측 — uid `yy`의 속도 자리와 Spine 등장 애니메이션 길이(프레임/30) |
 | [HOLD_BAR_LENGTH_DT.md](experiments/HOLD_BAR_LENGTH_DT.md) | 노트 계열별 최종 dt 표(전 계열 실기 확정), 홀드 막대 길이와 dt가 어긋나 꼬리가 일찍 지나가던 문제의 원인·해결 |
-| [ARKNIGHTS_SCENE_INTRO.md](experiments/ARKNIGHTS_SCENE_INTRO.md) | 명일방주 배경의 `OPERATION 0-2` 인트로 카드 로직(곡 uid → 작전 번호 표), 커스텀 곡에서의 예상 동작 (조사만) |
+| [ARKNIGHTS_SCENE_INTRO.md](experiments/ARKNIGHTS_SCENE_INTRO.md) | 명일방주 곡의 `OPERATION 0-2` 인트로 카드 로직(곡 uid → 작전 번호 표, 앨범으로 켜짐), 커스텀 곡에서의 예상 동작 (조사만) |
 | [CHARACTER_SKILL_LOGIC.md](experiments/CHARACTER_SKILL_LOGIC.md) | 캐릭터·엘핀 스킬이 `BattleProperty`에 넣는 값 전체 표, 어린 악마 마리쟈 체력 감소 경로 |
 | [JUDGMENT_BAR_TIMING.md](experiments/JUDGMENT_BAR_TIMING.md) | 판정바 오차 계산을 REA로 게임 판정 로직과 대조한 점검 기록(시계는 같음, 읽는 시점·색 기준 차이) |
 | [NOTE_COLOR_TINTING.md](experiments/NOTE_COLOR_TINTING.md) | 노트 종류별 색조(Tint) 변조 가능성 실측 (참고용 코드, 현재 모드에는 포함되지 않음) |

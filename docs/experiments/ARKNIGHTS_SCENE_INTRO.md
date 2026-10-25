@@ -1,6 +1,8 @@
 # 명일방주 배경의 "OPERATION" 인트로 (조사만)
 
-명일방주 배경(`씬번호: 12`)에서 곡 시작 때 뜨는 `OPERATION 0-2 / ManiFesto:` 타이틀 카드가 어떻게 정해지는지 조사한 기록입니다. **모드 코드는 바꾸지 않았습니다.**
+명일방주 곡에서 곡 시작 때 뜨는 `OPERATION 0-2 / ManiFesto:` 타이틀 카드가 어떻게 정해지는지 조사한 기록입니다. **모드 코드는 바꾸지 않았습니다.**
+
+> **고친 기록**: 처음에는 이 카드가 `씬번호: 12`에 딸린다고 적었는데 틀렸습니다. 12번은 비취 랜드이고(실기 확인), 명일방주 곡은 설정상 1·2·4번 같은 일반 씬을 씁니다. 명일방주 연출은 씬이 아니라 **앨범**으로 켜집니다(2-1절).
 
 - 조사일: 2026-10-25, 게임 6.7.0(IL2CPP)
 - 방법: Cpp2IL ISIL로 `ArkNightGameSceneStartControl`의 `.ctor`/`Start`/`Update` 본문을 읽고, 필드 위치는 `cpp2il_out`을 `ilspycmd -t ArkNightGameSceneStartControl`로 확인했습니다.
@@ -44,11 +46,17 @@ LayoutRebuilder.ForceRebuildLayoutImmediate(m_SongInfo);
 
 `OPERATION` 글자와 붉은 띠, 뒤의 `MUSE DASH` 글자는 코드에 없어서 프리팹에 박힌 그림으로 보입니다.
 
+## 2-1. 명일방주 곡인지 정하는 곳 (ISIL 확인)
+
+- `StageBattleComponent.EnterGameBattle()`이 배틀에 들어갈 때 `GlobalDataBase.dbOther.CheckIsArkNightSong()`을 부릅니다.
+- `DBOther.CheckIsArkNightSong()`은 지금 곡의 앨범(`DBConfigAlbums.GetAlbumInfoByMusicInfo(CurMusicInfo())`)의 uid가 `music_package_59` 또는 `music_package_82`면 `IsArkNightSong = true`로 둡니다.
+- 이 값을 읽는 곳으로 `PnlVictory2dManager.Init`(결과 화면)과 `ChangeScoreValue.InitUi`(점수 UI)를 찾았습니다. 카드(`ArkNightGameSceneStartControl`)가 어디서 켜지는지는 아직 따라가지 않았습니다.
+- 로딩 화면 그림(`loadinginterlude_assets_interlude_arknights_1~4` 번들)도 명일방주 전용으로 있습니다.
+
 ## 3. 커스텀 곡에서 생길 일 (추정, 실기 미확인)
 
-- `씬번호: 12`로 명일방주 배경을 쓰면 이 카드도 같은 배경에 딸려 나올 것으로 보입니다.
-- 커스텀 곡 uid(`1999-N`)는 표에 없으므로 가운데에 **`1999-N`이 그대로** 뜰 것입니다.
-- 곡 이름은 `MusicInfo.GetLocal`에서 오는데, 모드가 이 함수를 가로채 커스텀 제목을 돌려주므로(`CustomTagPatch.AlbumPatches.cs`) **커스텀 제목**이 뜰 것입니다.
+- 커스텀 곡은 모드가 만든 가상 앨범(`1999-0`)에 속하므로 `IsArkNightSong`이 거짓이라, **씬 번호와 상관없이 이 카드와 명일방주 결과 화면은 나오지 않을 것**으로 봅니다.
+- 만약 카드를 켠다면 커스텀 곡 uid(`1999-N`)는 작전 번호 표에 없으므로 가운데에 `1999-N`이 그대로 뜨고, 곡 이름은 모드가 가로챈 `MusicInfo.GetLocal` 덕분에 커스텀 제목이 뜰 것입니다.
 
 ## 4. 고친다면 (구상만)
 
