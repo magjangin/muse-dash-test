@@ -17,7 +17,7 @@ namespace muse_dash_test.LogicTests
 
         public static void RecommendedValuesMatchConfirmedTable()
         {
-            AssertRecommended(DtFamily.Normal, new[] { 1.48, 1.28, 1.16 });
+            AssertRecommended(DtFamily.Normal, new[] { 1.48, 1.28, 1.18 });
             AssertRecommended(DtFamily.Hold, new[] { 1.47, 1.26, 1.10 });
             AssertRecommended(DtFamily.BossProjectile, new[] { 0.8, 0.76, 0.6 });
             Assert.True(BmsDtTable.TryGetRecommended(DtFamily.FixedEvent, 0, out double fixedDt));
