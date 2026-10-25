@@ -8,7 +8,7 @@
 
 ---
 
-## 🧰 먼저 알아둘 것 — 1편에서 실측으로 확인된 사실 (2026-10-23 갱신, 게임 6.7.0)
+## 🧰 먼저 알아둘 것 — 1편에서 실측으로 확인된 사실 (2026-10-25 갱신, 게임 6.7.0)
 
 이 가이드의 나머지는 추측이 섞여 있지만, 아래는 1편 코드·덤프·로그로 확인한 사실입니다. 2편 계획은 이 전제 위에 세웁니다.
 
@@ -183,7 +183,9 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 - **노트 속도(1·2·3단)와 동시치기(Double Note) 처리**([NOTE_SPEED_DT.md](../experiments/NOTE_SPEED_DT.md)):
   - 6자리 UID `zzxxyy`의 `yy`(`01`~`18`)는 3개씩 끊어 `(yy - 1) / 3`이 레인·모션 묶음(짝수 묶음=지상, 홀수 묶음=공중)이고 `(yy - 1) % 3 + 1`이 속도(1·2·3)입니다(씬 전환 `0004yy`와 보스 본체 `xx=01` 제외).
   - 속도 2·3 노트는 게임 에셋에 프리팹 끝자리 `_2`·`_3`만 존재하므로(`_1`로 두면 프리팹이 없어 노트가 안 보임), 프리팹 이름 끝자리(`GetPrefabVariant`), `noteData.speed`, 지상/공중 판정을 모두 `yy`의 속도에 맞춰야 합니다. 보스 원거리 탄(`xx=06/07/08`)의 속도 2·3(`yy=02/03`, `05/06`)은 보스 발사 모션 조회 시 속도 1의 키(`01`/`04`)로 정규화합니다.
-  - 노트의 등장 애니메이션은 `time - dt` 시점에 Spine 액션 `in`을 재생하며, 비행 속도는 `dt`가 아니라 `yy`가 고른 Spine 애니메이션 길이(`frames / 30`초)가 결정합니다. 따라서 `dt`는 인위적으로 보정하지 않고 WAV 정의의 `_dt`를 그대로 쓰며(일반 노트 기준 속도 1=`1.48`, 속도 2=`1.28`, 속도 3=`1.18`. 홀드·보스 발사체는 값이 다릅니다: [HOLD_BAR_LENGTH_DT.md](../experiments/HOLD_BAR_LENGTH_DT.md)), 같은 틱의 지상+공중 동시치기(`ApplyBmsDoubleState`)에서도 `isDouble`/`doubleIdx`만 묶고 각 노트의 `dt`와 `showTick`은 덮어쓰지 않아야 서로 다른 속도의 동시치기 연출이 깨지지 않습니다.
+  - 노트의 등장 애니메이션은 `time - dt` 시점에 Spine 액션 `in`을 재생하며, 비행 속도는 `dt`가 아니라 `yy`가 고른 Spine 애니메이션 길이(`frames / 30`초)가 결정합니다. 따라서 `dt`는 기본적으로 WAV 정의의 `_dt`를 그대로 씁니다(권장값: 일반 노트 속도 1=`1.48`, 속도 2=`1.28`, 속도 3=`1.18`. 홀드는 `1.47`/`1.26`/`1.10`, 보스 발사체는 `0.8`/`0.76`/`0.6`: [HOLD_BAR_LENGTH_DT.md](../experiments/HOLD_BAR_LENGTH_DT.md)). 곡 `info.txt`에 `dt를 권장 표로 고치기 = 활성화`가 있을 때만 권장표([BmsDtTable.cs](../../muse%20dash%20test/Bms/BmsDtTable.cs))로 덮어쓰고(`ApplyDtTable`, 샌드백·보스 톱니 제외), 꺼져 있으면 허용 범위 밖 값을 경고만 합니다([DT_RECOMMENDED_TABLE.md](../guides/DT_RECOMMENDED_TABLE.md)). 홀드 dt가 다른 이유는 게임이 홀드 막대 길이를 dt가 아니라 속도 단계의 고정 시간으로 그리기 때문이니, 2편에서도 노트 계열별로 dt를 따로 재야 합니다.
+  - 같은 틱의 지상+공중 동시치기(`ApplyBmsDoubleState`)에서도 `isDouble`/`doubleIdx`만 묶고 각 노트의 `dt`와 `showTick`은 덮어쓰지 않아야 서로 다른 속도의 동시치기 연출이 깨지지 않습니다. 짝은 **일반 노트(타입 1)끼리만** 묶습니다. 홀드 머리·꼬리를 짝에 넣었더니 짝마다 `BaseEnemyObjectController.OnControllerAttacked` NRE가 났습니다(되돌림).
+- **씬 배경 전환은 노트를 건드리지 않게 막습니다**([GameMusicSceneInitPatch.cs](../../muse%20dash%20test/Patches/Scene/GameMusicSceneInitPatch.cs), [SCENE_BACKGROUND_SWAP.md](../experiments/SCENE_BACKGROUND_SWAP.md)). 1편 `StageBattleComponent.LoadMusicData`는 씬 전환이 켜지면 이후 노트의 `noteData`(`uid`, `prefab_name`)와 `configData.note_uid`를 씬 번호로 덮어씁니다. 예전엔 덮어쓴 뒤 복구하는 2단 우회를 썼지만, ISIL 분석으로 `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`과 `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)`이 `true`면 배경 목록만 등록하고 노트 덮어쓰기는 건너뛴다는 것을 찾아, 커스텀 곡에서 이 둘을 `true`로 답하게 바꿨습니다(`musicList` 무변형). 2편에서도 "배경을 바꾸면 노트가 바뀐다"면 변형·복구보다 이런 건너뛰기 분기부터 찾으십시오.
 - 리스트를 `Clear()`하고 앵커를 되돌려 넣은 뒤, `BmsParser`가 해석한 노트를 `Add`합니다. 이어서 더블 노트 상태를 맞추고 `showTick` 순으로 정렬합니다.
 - **복제 함수는 필드를 하나씩 손으로 복사합니다.** 게임 업데이트로 노트 데이터에 필드가 생기면 그 필드는 조용히 빠집니다. 1편 6.7.0 대조에서는 `MusicData` 15개, `NoteConfigData` 27개, `MusicConfigData` 6개 멤버를 빠짐없이 복사하고 있었습니다. 2편에서는 이 대조를 가장 먼저 다시 하십시오.
 - 노트끼리는 `objId`(1편은 `short`)로 서로를 가리킵니다. 롱노트는 잘게 전개되어 노트 수가 빨리 불어나므로 상한을 감시합니다.
@@ -216,10 +218,10 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 > - **소팅 레이어 및 오더**: UI 및 노트, 캐릭터 등의 인게임 스프라이트를 가리지 않도록 `MeshRenderer`의 `sortingLayerName`은 `"Background"`, `sortingOrder`는 `-17` 이하의 충분히 낮은 값으로 지정하여 백그라운드 영역으로 완벽히 밀어내야 합니다.
 
 > [!TIP]
-> **오디오-비디오 싱크 및 재생 타이밍 보정**:
-> - 프레임 드랍이나 로딩 지연으로 인해 BGM 오디오와 BGA 비디오의 싱크가 틀어지는 것을 방지해야 합니다.
-> - 인게임 진행도 게이지(예: `sldProgress.value`)의 비율을 활용해 오디오/비디오의 목표 재생 시간(`expectedTime = progressRatio * duration`)을 계산합니다.
-> - 실시간 오차가 일정 범위(예: `0.2초`) 이상 벌어질 때만 강제로 재생 시점(`time`)을 보정하도록 구현하되, 한 번 보정이 일어난 후에는 짧은 쿨다운(예: `0.5초`)을 설정하여 동기화 연산이 무한 충돌하는 현상을 차단해야 끊김 없는 부드러운 연출이 가능합니다.
+> **오디오-비디오 싱크 — 비디오만 맞추고 BGM은 절대 시크하지 않습니다** ([HwaSyncManager.cs](../../muse%20dash%20test/Patches/Hwa/HwaSyncManager.cs)):
+> - 기준 시계는 커스텀 BGM의 `AudioSource.time`이고, BGM이 없으면 `StageBattleComponent.timeFromMusicStart`입니다. 이 시계에 비디오(`VideoPlayer.time`)만 맞춥니다(0.1초마다 검사, 오차 `0.35초` 초과 시 보정, 보정 뒤 쿨다운 `2초`, 루프 영상은 경계 근처 오차 제외).
+> - **막다른 길(1편 실제 사고)**: 예전엔 진행바(`sldProgress.value`) 비율로 목표 시간을 계산해 BGM `time`까지 강제로 맞췄습니다. 진행바가 호스트 곡 길이로 돌아서 기준 자체가 틀렸고, 스트리밍 Ogg(`streamAudio = true`)를 시크할 때마다 디코더 재탐색 히치가 나서, 게임이 노트 시계로 읽는 `bgm.time`이 흔들려 노트가 밀렸습니다. 2편에서도 리듬 게임의 음악 시계는 읽기만 하십시오.
+> - **진행바도 따로 고쳐야 합니다** ([ProgressBarPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/ProgressBarPatch.cs)): 1편 `PnlBattle.MusicProgressInit`은 커스텀 `.ogg`가 로드되기 전에 불려 호스트 곡 길이로 DOTween을 만듭니다. 그래서 그 트윈의 세터(컴파일러 생성 람다 `_MusicProgressInit_b__48_1(float)`)와 `StageBattleComponent.GetTimeProgress()`를 `max(커스텀 오디오 길이, 채보 끝 시각)` 기준 비율로 바꿉니다. 람다 이름은 빌드마다 번호가 바뀌기 쉬우니 2편에서 가장 먼저 깨질 훅으로 보십시오.
 
 
 ---
@@ -261,10 +263,11 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 ### 1. ILSpy 분석 및 훅 타겟 찾기
 - **검색 키워드**: `Save`, `Serialize`, `SaveDataManager`, `LocalSave`, `CloudSave`
-- **목표**: 게임 저장 명령이 실행되는 시점의 **Prefix 후크**를 뚫어줍니다. 1편은 `Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager.Save()`입니다(6.7.0 기준 같은 클래스에 `_Save()`, `FixSave()`도 있으니 2편에서는 **저장 경로가 하나뿐인지** 먼저 확인하십시오).
+- **목표**: 게임 저장 명령이 실행되는 시점의 **Prefix 후크**를 뚫어줍니다. 1편은 `Il2CppAssets.Scripts.PeroTools.Nice.Datas.DataManager.Save()`의 Prefix + Postfix입니다(6.7.0 기준 같은 클래스에 `_Save()`, `FixSave()`도 있으니 2편에서는 **저장 경로가 하나뿐인지** 먼저 확인하십시오).
 
 ### 2. 세이브 정화(Sanitization) (1편 실제 동작, [SaveDataManagerPatch.cs](../../muse%20dash%20test/Patches/Database/Save/SaveDataManagerPatch.cs))
 - 저장 직전 `1999-`로 시작하는 항목을 걸러냅니다(`CustomContentIds.IsVirtualContent`). 보는 곳: 각 데이터 묶음의 필드 키, `Achievement.highest`(최고 기록), `Achievement.recentPassLevelData`(최근 플레이), `easy_pass`/`hard_pass`/`master_pass`(난이도별 클리어 목록).
+- **화면용으로 강제한 값도 저장 직전에 되돌립니다.** 1편은 곡 선택 화면에서 잠금을 풀려고 `IsUnlockAllMaster`를 강제로 `true`로 바꾸는데, 그대로 두면 이 값이 세이브에 영구히 남습니다. 그래서 처음 강제할 때 원래 값을 한 번 기억해 두고([UnlockAllMasterGuard.cs](../../muse%20dash%20test/Core/UnlockAllMasterGuard.cs)), `Save()` Prefix에서 원래 값으로 돌린 뒤 저장하고 Postfix에서 다시 강제합니다(원본 `Save`가 예외를 던지면 Postfix가 건너뛰어지므로 다음 곡 선택 진입 때 다시 걸림). 2편에서도 "가상 UID 지우기"만이 아니라 "표시용으로 바꾼 진짜 세이브 값 되돌리기"까지 정화 범위에 넣으십시오.
 - **커스텀 곡 기록은 게임 세이브 대신 모드 전용 폴더(`record/`)에 따로 씁니다**([CustomRecordStore.cs](../../muse%20dash%20test/Core/CustomRecordStore.cs)). 2편에서도 "게임 세이브에서 지우기"와 "우리 쪽에 따로 남기기"를 짝으로 옮기십시오.
 - **정화가 못 막는 경로**: 가상 UID가 아니라 **순정 UID로 커스텀 차트를 치는 경우**입니다. 1편은 매니페스트의 `uid:`로 지정한 숙주 곡을 실험 모드에서 고르면 커스텀 차트를 적용하는 경로(`ExperimentHost`)가 있는데, 이 판의 기록은 `1999-`가 아니라서 정화 대상이 아닙니다. 2편에서는 이런 경로를 두지 않거나, 둔다면 그 기록도 막아야 합니다.
 
@@ -298,6 +301,7 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 - `SkeletonData`는 프로세스 전체가 공유하므로, 덮기 전 알파를 기억해 두었다가 설정이 꺼진 곡에서는 되돌립니다. 곡별 설정은 커스텀 곡이면 `info.txt`, 공식곡이면 `config.txt`를 따릅니다.
 - **확인된 막다른 길**(2편에서 다시 파지 않도록): `SetAlpha`, `OnNoteDisappear`, `NoteDisappearLogic`은 고스트 노트에 대해 불리지 않았고, 애니메이션을 통째로 바꾸면 비행 이동까지 사라져 노트가 멈췄습니다. 알파 필드는 노트 데이터(`NoteConfigData`/`MusicData`) 어디에도 없어서 차트 주입 단계에서는 손댈 수 없습니다.
 - **해결된 재진입 캐시 함정**: 배틀을 나갔다 다시 들어오면 `SkeletonData` 네이티브 인스턴스가 새로 만들어지는데, 캐시 키를 스켈레톤 이름과 애니메이션 이름으로만 잡으면 모드가 "이미 덮어썼다"고 착각해 두 번째 판부터 고스트 노트가 다시 투명해졌습니다. 캐시 키에 네이티브 포인터(`{SkeletonName}|0x{data.Pointer:X}|{AnimationName}`)를 포함하고 배틀 시작(`PnlBattle.GameStart`) 때마다 `ResetCache()`를 호출하여 해결했습니다. 2편에서도 처음부터 포인터를 캐시 키에 넣으십시오.
+- **같은 `PlayByKey("in")` 자리에 두 번째 패치가 있습니다 — 늦게 스폰된 노트 위치 보정**([NoteAnimationSyncPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/NoteAnimationSyncPatch.cs)). 프레임 드랍 직후 `showTick`보다 늦게 스폰된 노트는 게임의 `OnControllerStart` → `FixSpineAnim()`이 지연만큼 애니메이션을 앞당겨야 하는데, ISIL로 보니 `FixSpineAnim`은 `Animator`만 앞당기고 `SkeletonAnimation`(Spine 노트) 분기가 빠져 있어 노트가 판정선보다 오른쪽에 뒤처졌습니다. 그래서 `currentAnimationTime = timeFromMusicStart - showTick`을 넣고 `ForceUpdateSkAnim`으로 즉시 반영합니다(지연이 20ms 이하이거나 dt의 85% 이상이면 건너뜀). `PlayByKey`는 캐릭터·모든 노트가 지나는 핫 패스라 첫 줄에서 `actionKey`로 거릅니다. 2편에서도 "프레임이 튄 직후에만 노트가 밀린다"면 엔진의 스폰 지연 보정 함수부터 의심하십시오.
 - `SpineActionContract`는 알파를 제어하는 장치가 아니라 **애니메이션 목록을 파일로 떨어뜨리는 읽기 전용 탐침**입니다(개발자 스위치로만 켜짐). 위 `in_nor_44`를 찾은 것도 이 덤프였습니다.
 
 ---

@@ -234,7 +234,8 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
-| S1.1 | `DataManager` (MD1 6.7.0 실제 후킹 대상) | `Save()` | 후크(Prefix) | 세이브 직전 가상 키(`1999-` 접두사) 컬렉션 정화 | 🟡 | |
+| S1.1 | `DataManager` (MD1 6.7.0 실제 후킹 대상) | `Save()` | 후크(Prefix) | 세이브 직전 가상 키(`1999-` 접두사) 컬렉션 정화 + 화면용으로 강제한 `IsUnlockAllMaster`를 원래 값으로 되돌림 | 🟡 | |
+| S1.2 | `DataManager` | `Save()` | 후크(Postfix) | 저장이 끝난 뒤 `IsUnlockAllMaster` 강제값을 다시 걸기([UnlockAllMasterGuard.cs](../../muse%20dash%20test/Core/UnlockAllMasterGuard.cs)) | 🟡 | |
 
 ---
 
@@ -247,6 +248,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | SK1 | `SpineActionController` | `Init(int idx, int curScene)`, `OnControllerStart()` | 후크(Postfix) | GameObject 이름으로 대상을 골라 `skeletonAnimation.skeletonDataAsset`을 런타임 에셋(`SpineAtlasAsset`/`SkeletonDataAsset.CreateRuntimeInstance`)으로 바꾸고 `Initialize(true)` | 🟡 | |
 | SK1b | `SpineActionController` | `Awake()` | 후크(Postfix) | 이름에 `battle`이 든 오브젝트 이름을 로그로 찍는 탐침(대상 이름 찾기용) | 🟢 | |
 | SK2 | `SpineActionController` | `PlayByKey(string actionKey, bool isOverride)` | 후크(Postfix) | 고스트 노트의 `in` 애니메이션(`in_nor_44`) 컬러 타임라인 알파 키를 1로 덮어씀(원본 기억 후 복원) | 🟡 | |
+| SK3 | `SpineActionController` | `PlayByKey` Postfix + `currentAnimationTime`, `ForceUpdateSkAnim(bool)`, `m_MusicData` | 후크(Postfix)/필드 | 늦게 스폰된 노트의 `in` 재생 시각을 `timeFromMusicStart - showTick`으로 앞당김(엔진 `FixSpineAnim`이 Spine 분기를 빠뜨림, [NoteAnimationSyncPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/NoteAnimationSyncPatch.cs)) | 🟡 | |
 
 ---
 
@@ -276,6 +278,8 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 위 표들은 기능별로 골라 적은 것이라 빠진 훅이 많습니다. 아래는 **현재 모드 DLL이 실제로 거는 대상 전부**입니다. 모드 DLL을 6.7.0 `Il2CppAssemblies`에 붙여 Harmony와 같은 규칙(그 클래스에 직접 선언된 멤버만 찾기)으로 해석한 결과이며, 패치 클래스 119개·대상 161건(같은 대상에 Prefix/Postfix가 둘 다 있으면 2건)이 전부 해석되고 파라미터 연결도 맞았습니다. MD2 작업 때는 이 목록이 "옮길 것 전체"입니다.
 
+> **2026-09-28 집계 이후 추가된 대상**(위 숫자에는 없고, 아래 표에는 반영함, 2026-10-25 코드 대조): `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`·`GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)`(씬 전환 노트 보호), `PnlBattle._MusicProgressInit_b__48_1(float)`·`StageBattleComponent.GetTimeProgress()`(진행바), `SpineActionController.PlayByKey` 두 번째 Postfix(스폰 지연 보정), `DataManager.Save()` Postfix. 숫자를 다시 맞추려면 위와 같은 방식으로 재집계해야 합니다.
+
 위험 신호는 위와 같습니다. 🔴 UI 계층·로그로만 확인 가능, 🟡 데이터·로직 계층, 🟢 Unity 표준 API라 거의 그대로.
 
 | 영역 | MD1 대상 (타입.메서드) | 모드 파일 | 위험 | **MD2 이름** |
@@ -284,7 +288,8 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | 오프셋/딜레이 | `StageBattleComponent.FixedOffset()`, `FixedMusicOffset(AudioSource)`, `DBStageInfo.delay` getter (모두 Postfix) | `Patches/Diagnostics/OffsetHookPatches.cs` | 🟡 | |
 | 배틀 수명주기 | `StageBattleComponent.Load/LoadMusicData/InitData/Pause/Resume/End/Exit/Release/GameRestart`, `StageBattleComponent.InitTimeNodeOrder()`(강제 퍼펙트 사전 테이블 조작) | `Patches/Battle/UI/StageBattleComponentPatch.cs`, `ForcePerfectPatch.cs` | 🟡 | |
 | 배틀 수명주기 | `GameMusicScene.LoadScene/InitSceneEvents/InitTimer/PreLoadEnemy/Run` | `Patches/Scene/GameMusicScene*.cs` | 🟡 | |
-| 배틀 UI | `PnlBattle.GameStart()`, `PnlBattle.MusicProgressInit()` | `PnlBattleGameStartPatch.cs`, `ProgressBarPatch.cs` | 🔴 | |
+| 씬 전환 노트 보호 | `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`, `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)` — 커스텀 곡에서 `true`로 답해 `LoadMusicData`/`PreLoad`가 노트 `noteData`·`configData.note_uid`를 씬 번호로 덮어쓰지 못하게 함 | `Patches/Scene/GameMusicSceneInitPatch.cs` | 🟡 | |
+| 배틀 UI | `PnlBattle.GameStart()`(고스트 알파 캐시 초기화), `PnlBattle.MusicProgressInit()`(관찰만), `PnlBattle._MusicProgressInit_b__48_1(float)`(진행바 트윈 세터, **컴파일러 생성 람다 이름**), `StageBattleComponent.GetTimeProgress()` — 진행바를 커스텀 곡 길이 기준으로 | `PnlBattleGameStartPatch.cs`, `ProgressBarPatch.cs` | 🔴 | |
 | 씬 전환 노트 | `SceneChangeController.ChangeScene/ChangeNote/SceneAnimationReset(int)` — 커스텀 곡에서 `ChangeNote` 원본 차단 | `Patches/Scene/SceneFlowPatch.cs` | 🟡 | |
 | 보스 | `Boss.Play(string, bool)`(`swap:` 키 처리, 원본 차단), `Boss.InitBossObject(string, int, bool)`, `Boss.SceneBossChange(int)` | `Patches/Battle/Mechanics/BossPatch.cs` | 🟡 | |
 | 판정 | `GameTouchPlay.TouchResult(...)` ×2(강제 퍼펙트, 판정바) | `ForcePerfectPatch.cs`, `JudgmentBar.cs` | 🟡 | |
@@ -301,11 +306,11 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | 준비·기록 화면 | `PnlPreparation.OnEnable/RefreshUi/GameStart/OnBattleStart/OnDownloadBestReport`, `PnlReportCard.RefreshBestRecord`(가상 곡이면 원본 차단), `PnlRecord.RefreshRecord` | `Patches/UI/Stage/*.cs` | 🔴 | |
 | 랭킹 | `PnlRank.Refresh/RefreshGeneral/UIRefresh/NsRefreshFail`, `RankCell.SetValue` | `PnlRankHookPatch.cs`, `RankCellHookPatch.cs`, `OfflineNetworkSandboxPatch.cs` | 🔴 | |
 | 태그·앨범 | 위 임무 A~D 표 + `MusicTagManager.InitDatas()` | `Patches/UI/Custom/Tags/*.cs` | 🟡/🔴 | |
-| 세이브 | `DataManager.Save()` Prefix | `Patches/Database/Save/SaveDataManagerPatch.cs` | 🟡 | |
+| 세이브 | `DataManager.Save()` Prefix + Postfix | `Patches/Database/Save/SaveDataManagerPatch.cs` | 🟡 | |
 | 업데이트 알림 차단 | `VersionHelper.CheckNeedUpdate/CheckVersion/CheckUpdateStateAndShowConfirm/ShowUpdateConfirmPopup/ShowUpdateTip`, `WelcomeSelect.Start/OnEnable/AdjustWelcomeUI/OnGetRecommendVersion`, `RecommendVersionController.Awake/Init/OnEnable`, `OptionSelect.OnGetRecommendVersion` | `Patches/UI/Welcome/DisableUpdateNoticePatch.cs` | 🔴 | |
 | 오프라인 샌드박스 | `SteamApps.BIsDlcInstalled(AppId_t)`, `SteamManager.DLCVerify()`, `StandardNetworkRequest.SendRequest()`, `PnlRank.RefreshGeneral(string)` | `Patches/Sandbox/*.cs` | 🟡 | |
 | 디스코드 | `DiscordManager.InitDiscord/SetUpdateActivity/Destroy`(진단) + `SetUpdateActivity` 직접 호출 | `DiscordManagerDebugPatch.cs`, `Integration/DiscordPresenceManager.cs` | 🟡 | |
-| Spine | `SpineActionController.Awake/Init/OnControllerStart/PlayByKey` | `Spine/*.cs`, `GhostNoteAlphaHold.cs` | 🟡 | |
+| Spine | `SpineActionController.Awake/Init/OnControllerStart`, `PlayByKey` ×2(고스트 알파, 스폰 지연 보정) | `Spine/*.cs`, `GhostNoteAlphaHold.cs`, `NoteAnimationSyncPatch.cs` | 🟡 | |
 | 메뉴 | `PnlMenu.OnEnable` ×2(메뉴 BGM 정지, 진단) | `Patches/UI/Menu/*.cs` | 🔴 | |
 | 진단 전용 | `DBConfigDlcUIExtension.Deserialize(string)`(콜라보 종료일 덤프) | `Patches/Diagnostics/CollabEndTimeDumpPatch.cs` | 🟢 | |
 
