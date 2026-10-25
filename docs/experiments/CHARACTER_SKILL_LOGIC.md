@@ -20,7 +20,7 @@ StageBattleComponent.InitGame()            ← 배틀 시작(곡 선택이 끝�
 ```
 
 - `Apply`는 대부분 **숫자만** 넣습니다. 발동 조건이 있는 스킬(횟수, 특정 노트 반응)은 `SkillManager`의 캐릭터별 메서드에 있습니다(예: `RampageSkill`(불량소녀 린 GREAT→PERFECT), `PirateRin_*`, `MikuSkill_*`, `RinLenSkill_*`, `WisadelSkill_*`, `BloodHeirSkill_*`, `SkillRacerRin_*`).
-- 모드에서 스킬 값을 바꾸려면 **그 스킬의 `Apply` Postfix에서 `BattleProperty` 필드를 고치는 것**이 가장 좁은 자리입니다. 배틀마다 `Apply`가 다시 불리므로 값이 다음 판으로 새지 않습니다. 이 방식의 첫 사례가 아래 3절입니다.
+- 모드에서 스킬 값을 바꾸려면 **그 스킬의 `Apply` Postfix에서 `BattleProperty` 필드를 고치는 것**이 가장 좁은 자리입니다. 배틀마다 `Apply`가 다시 불리므로 값이 다음 판으로 새지 않습니다. 다만 **지금 모드는 캐릭터 스킬을 바꾸지 않기로 했습니다**(2026-10-25 결정, 3절).
 
 ## 2. 스킬별 Apply가 바꾸는 값
 
@@ -41,7 +41,7 @@ StageBattleComponent.InitGame()            ← 배틀 시작(곡 선택이 끝�
 | Character_8 | ViolinSkill | maxHp 250, missComboMax 100 | |
 | Character_9 | MaidSkill | maxHp 250, hpSkillCount 1, hpRevive 100, reviveRate 2.5, skillMissHardTime 2.0 | 부활 계열 |
 | Character_10 | MagicSkill | maxHp 200, maxFever 100 | |
-| **Character_11** | **EvilSkill** | **maxHp 200, hpChangedPerTime −0.1, scoreExtraRate 1.25** | **시간당 체력 감소가 있는 유일한 스킬.** 어린 악마 마리쟈로 보고 3절의 옵션을 붙였습니다(실기 로그로 이름 확인 필요) |
+| **Character_11** | **EvilSkill** | **maxHp 200, hpChangedPerTime −0.1, scoreExtraRate 1.25** | **시간당 체력 감소가 있는 유일한 스킬.** 어린 악마 마리쟈로 추정(이름은 실기 미확인) |
 | Character_12 | BlackSkill | maxHp 250, hitRangeAddValue +0.01, blockRG −0.03, isCloseOptimize | 판정 범위 확대. `TimeNodeOrderFactory.RangeFixed`가 칸을 만들기 전에 더함 |
 | Character_13 | SantaRinSkill | maxHp 250 | |
 | Character_14 | JKSkill | maxHp 250, isCatchAvailable, scoreCoefficient 0.8 | |
@@ -60,7 +60,7 @@ StageBattleComponent.InitGame()            ← 배틀 시작(곡 선택이 끝�
 | Character_29 | WisadelSkill | maxHp 250 | `SkillManager.WisadelSkill_*` |
 | Character_34 | HorseSkill | maxHp 250, missComboMax 100 | |
 | Character_35 | SpectreSkill | maxHp 250 | |
-| Character_36 | ThiefSkill | maxHp 200, 다른 캐릭터 스킬을 `ApplyRoleSkill`로 대신 적용 | 훔친 스킬의 `Apply`가 그대로 불리므로, 3절 옵션도 함께 적용됨 |
+| Character_36 | ThiefSkill | maxHp 200, 다른 캐릭터 스킬을 `ApplyRoleSkill`로 대신 적용 | 훔친 스킬의 `Apply`가 그대로 불림 |
 
 ### 엘핀
 
@@ -90,4 +90,4 @@ if (BattleProperty.isHpChangable && BattleProperty.hpChangedPerTime != 0 && !Sta
 
 - `EvilSkill`은 `hpChangedPerTime = −0.1`이라 **0.1초마다 체력 1**(초당 10)이 줄고, 최대 체력은 200입니다. 회복 없이 20초면 바닥납니다.
 - `isHpChangable`은 `TimerStepTrigger`가 첫 노트를 처리할 때 켜고 배틀이 끝날 때 끕니다. 홀드 애니메이션(`PlayLongPressAnimator`)과 샌드백(`MultHitEnemyController.OnControllerAttacked`/`InvokeHitEnd`)에서도 껐다 켜는데, 어느 순간에 끄는지는 아직 보지 않았습니다.
-- 모드 옵션: `config.txt`의 `어린 악마 마리쟈 체력 감소 속도`(0~100, 기본 100). [EvilSkillHpDrainPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/EvilSkillHpDrainPatch.cs)가 `EvilSkill.Apply` Postfix에서 간격을 `0.1 × 100 / 값`초(0.01초 단위로 반올림)로 늘립니다. 깎는 양(1)은 그대로입니다. 0이면 `hpChangedPerTime = 0`이라 감소가 멈춥니다. **커스텀 곡에만** 적용됩니다.
+- **넣었다 뺀 옵션**: `config.txt`의 `어린 악마 마리쟈 체력 감소 속도`(0~100)로 `EvilSkill.Apply` Postfix에서 간격을 `0.1 × 100 / 값`초로 늘리는 기능을 만들었다가(커밋 `6f22de5`), 실기 확인 전에 "캐릭터는 건드리지 않는다"는 결정으로 뺐습니다. 다시 필요하면 그 커밋을 보면 됩니다. 간격은 게임 시간 눈금(0.01초)의 배수여야 나머지 연산이 0이 되는 순간이 맞고, `hpChangedPerTime = 0`이면 게임이 감소를 건너뜁니다.
