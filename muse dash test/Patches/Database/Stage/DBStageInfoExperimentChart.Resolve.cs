@@ -266,7 +266,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static double GetEffectiveDt(MusicData note, ExperimentNoteSpec spec)
     {
         // dt는 채보 작성자가 WAV 이름에 적은 _dt를 그대로 씁니다. 속도 2·3도 마찬가지입니다
-        // (속도별 dt는 docs/experiments/NOTE_SPEED_DT.md 4절. 모드가 속도별 값으로 보정하지 않습니다).
+        // (속도별 dt는 docs/experiments/NOTE_SPEED_DT.md 4절). info.txt 'dt를 권장 표로 고치기'를 켜면
+        // spec.Dt가 이미 권장값으로 바뀌어 들어옵니다(ApplyDtTable).
         if (spec != null && spec.Dt >= 0.0) return spec.Dt;
 
         string uid = !string.IsNullOrEmpty(spec?.Uid) ? spec.Uid : note.noteData?.uid;
