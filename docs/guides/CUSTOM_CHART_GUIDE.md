@@ -84,7 +84,29 @@ dt를 권장 표로 고치기 = 활성화
 | **지연, 지연시간, delay** | `delay` | 실수 | 곡의 음악적 연출 지연 속성 (`DBStageInfo.delay`). **최대 소수점 28자리**까지 무손실 반영됩니다. |
 | **싱크, 오프셋, offset** | `offset` | 실수 | 노트의 판정선 및 연출 기준 오프셋 (`StageBattleComponent.offset`). **최대 소수점 7자리**까지 무손실 반영됩니다. |
 | **커스텀 곡 고스트 노트 보이기** | `ghostnote` | 활성화/비활성화 | 고스트 노트(UID `xx=17`)가 판정선 근처에서 사라지지 않게 합니다. `활성화`/`비활성화` 외에 `true`/`false`, `on`/`off`, `켜기`/`끄기`, `1`/`0`도 됩니다. **적지 않으면** 공식곡용 전역 설정(`config.txt`의 `공식곡에서도 고스트 노트 보이기`)을 그대로 따릅니다. |
+| *(아래 "씬번호와 배경" 참고)* | | | |
 | **dt를 권장 표로 고치기** (키에 `권장표`·`권장dt`·`dt보정`이 들어간 줄) | `fixdt`, `recommendeddt` | 활성화/비활성화 | 켜면 WAV `_dt`를 무시하고 노트 계열·속도별 권장 dt로 덮어씁니다. 적지 않거나 끄면 WAV `_dt`를 그대로 쓰고, 허용 범위를 벗어난 값만 로그로 경고합니다. 권장표와 허용 범위는 [DT_RECOMMENDED_TABLE.md](DT_RECOMMENDED_TABLE.md) |
+
+### 🎨 씬번호와 배경 (2026-10-25 확인)
+
+`씬번호: N`은 게임의 `scene_NN` 배경을 불러옵니다(`GameMusicScene.LoadScene`에서 이름을 바꿔 줌). 곡 중간 전환은 WAV 이름 `0004NN_..._dt0.wav` 노트로 하며, 1~10과 12만 됩니다([NOTE_EXPERIMENTS.md](../experiments/NOTE_EXPERIMENTS.md)).
+
+게임 폴더의 배경 번들(`gamescene_NN_assets_all_*.bundle`)은 01~12가 있습니다. 번들 안 문자열로 테마를 확인한 것만 적습니다.
+
+| 씬번호 | 확인된 테마 | 비고 |
+| --- | --- | --- |
+| 5 | 캔디 계열 | 크리스마스 판(`scene_05_christmas`)이 같은 번들 안에 있음(아래) |
+| 8 | 동방 | Bad Apple은 게임이 `scene_touhou_black`으로 바꿔 씀 |
+| 10 | 하츠네 미쿠 콜라보 | |
+| 12 | 명일방주 콜라보 | 곡 중간 전환도 됨(`000412`). 시작 때 `OPERATION` 카드가 뜨며 커스텀 곡은 작전 번호 자리에 uid가 나올 것으로 보임([ARKNIGHTS_SCENE_INTRO.md](../experiments/ARKNIGHTS_SCENE_INTRO.md)) |
+| 1~4, 6, 7, 9, 11 | 번들 문자열로는 미확인 | 번호를 넣어 보고 화면으로 확인 |
+
+**크리스마스 배경은 번호가 따로 없습니다.** 게임의 `GameMusicScene.SceneFestival("scene_05")`이 아래 중 하나일 때만 `scene_05_christmas`로 바꿉니다(ISIL 확인).
+
+- 컴퓨터 날짜가 12월 24일 또는 25일
+- 지금 곡 uid가 `43-68`, `0-47`, `38-1` 중 하나
+
+커스텀 곡(uid `1999-*`)은 날짜 조건으로만 나옵니다. 그 밖에 `_cy`, `_fool`(만우절), `dave`, `touhou_black` 번들도 있지만 `씬번호`(정수)로는 고를 수 없습니다.
 
 ---
 

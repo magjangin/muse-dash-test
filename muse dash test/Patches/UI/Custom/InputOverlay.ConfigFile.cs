@@ -33,7 +33,9 @@ namespace muse_dash_test
         /// 설정값은 그대로 둔 채 파일 전체를 새 레이아웃으로 다시 씁니다.
         /// (레이아웃만 바뀌면 키 목록은 그대로라 '누락/중복' 검사만으로는 갱신되지 않기 때문입니다.)
         /// </summary>
-        private const int ConfigFormatVersion = 4;
+        // v5는 잠깐 넣었다 뺀 '어린 악마 마리쟈 체력 감소 속도' 항목이 있던 레이아웃입니다.
+        // v6으로 올려 그 판으로 저장된 config.txt에서 남은 줄을 지웁니다.
+        private const int ConfigFormatVersion = 6;
 
         /// <summary>레이아웃 버전을 기록하는 주석 줄의 앞부분.</summary>
         private const string ConfigFormatMarkerPrefix = "config-format:";

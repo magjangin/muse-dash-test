@@ -196,11 +196,10 @@
 │   │   ├── Sandbox/          # 오프라인 샌드박스 (DLC 잠금 해제 및 검증 우회 토글, 공식 서버 요청 차단)
 │   │   │   ├── OfflineCustomSandbox.cs
 │   │   │   └── OfflineNetworkSandboxPatch.cs
-│   │   ├── Scene/            # 씬 전환 흐름 제어, 배틀 씬 초기화, 오브젝트 위치 트래킹
+│   │   ├── Scene/            # 씬 전환 흐름 제어, 배틀 씬 초기화, 씬 배경 스왑 노트 보호
 │   │   │   ├── GameMusicScene*.cs
 │   │   │   ├── SceneFlowPatch.cs
-│   │   │   ├── SceneDiagnosticLogger.cs / ScenePatchHelpers.cs
-│   │   │   └── SceneZzTransformTracker*.cs
+│   │   │   └── SceneDiagnosticLogger.cs / ScenePatchHelpers.cs
 │   │   └── UI/               # UI 정보 변조 및 커스텀 가상 앨범
 │   │       ├── Custom/       # 커스텀 태그, 체력바, 입력 오버레이, 판정바
 │   │       │   ├── HpMod/    # 배틀 체력바 스타일러
