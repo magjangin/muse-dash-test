@@ -11,7 +11,7 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-10-25 (강제 퍼펙트가 `isPerfectNode`를 켜 홀드가 일찍 끝나던 문제 수정·실기 확인, 판정바 REA 점검 기록)
+마지막 갱신: 2026-10-25 (v0.11.1 릴리즈: 강제 퍼펙트 홀드 조기 종료 수정, 노트 dt 권장 표 스위치, 일반 속도 3 dt 1.18 정정, `SceneZzTransformTracker` 제거)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB). 의사코드가 필요하면 `H:\source\repos\rea-hwa\tools\pe_slice.py --dll "H:/muse dash hwa/GameAssembly.dll" --rva <RVA> --out <조각.dll>`로 함수만 잘라 REA `open_binary`(`provider_id: "ghidra"`) → `procedure_pseudo_code`로 봅니다(`GameAssembly.dll` 통째로 열면 시간 초과).

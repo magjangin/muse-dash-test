@@ -6,7 +6,7 @@ namespace muse_dash_test
     /// </summary>
     public static class ModInfo
     {
-        public const string Version = "0.11.0";
+        public const string Version = "0.11.1";
 
         /// <summary>어셈블리 버전은 네 자리(major.minor.build.revision)여야 합니다.</summary>
         public const string AssemblyVersion = Version + ".0";
