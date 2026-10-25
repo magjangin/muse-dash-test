@@ -98,7 +98,7 @@ dt를 권장 표로 고치기 = 활성화
 | 5 | 캔디 계열 | 크리스마스 판(`scene_05_christmas`)이 같은 번들 안에 있음(아래) |
 | 8 | 동방 | Bad Apple은 게임이 `scene_touhou_black`으로 바꿔 씀 |
 | 10 | 하츠네 미쿠 콜라보 | |
-| 12 | 명일방주 콜라보 | 곡 중간 전환도 됨(`000412`) |
+| 12 | 명일방주 콜라보 | 곡 중간 전환도 됨(`000412`). 시작 때 `OPERATION` 카드가 뜨며 커스텀 곡은 작전 번호 자리에 uid가 나올 것으로 보임([ARKNIGHTS_SCENE_INTRO.md](../experiments/ARKNIGHTS_SCENE_INTRO.md)) |
 | 1~4, 6, 7, 9, 11 | 번들 문자열로는 미확인 | 번호를 넣어 보고 화면으로 확인 |
 
 **크리스마스 배경은 번호가 따로 없습니다.** 게임의 `GameMusicScene.SceneFestival("scene_05")`이 아래 중 하나일 때만 `scene_05_christmas`로 바꿉니다(ISIL 확인).
