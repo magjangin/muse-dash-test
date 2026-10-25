@@ -50,6 +50,7 @@
 | [NOTE_SPEED_DT.md](experiments/NOTE_SPEED_DT.md) | 노트 속도별 dt 실측 — uid `yy`의 속도 자리와 Spine 등장 애니메이션 길이(프레임/30) |
 | [HOLD_BAR_LENGTH_DT.md](experiments/HOLD_BAR_LENGTH_DT.md) | 노트 계열별 최종 dt 표(전 계열 실기 확정), 홀드 막대 길이와 dt가 어긋나 꼬리가 일찍 지나가던 문제의 원인·해결 |
 | [NOTE_COLOR_TINTING.md](experiments/NOTE_COLOR_TINTING.md) | 노트 종류별 색조(Tint) 변조 가능성 실측 (참고용 코드, 현재 모드에는 포함되지 않음) |
+| [CHARACTER_SKILL_IDEAS.md](experiments/CHARACTER_SKILL_IDEAS.md) | 불량소녀 린·라봇-233 횟수 999, 유메 톱니 부수기 아이디어와 ISIL·실측 기록 (보류, 코드는 로컬 브랜치에만) |
 
 ## 🔮 muse-dash-2/ — 차기작 대비 분석
 
