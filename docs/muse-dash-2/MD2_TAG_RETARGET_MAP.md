@@ -267,7 +267,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 
 | # | MD1 게임 타입 | MD1 멤버 (메서드/필드) | 종류 | 우리가 하는 일 | 위험 | **MD2 이름 (← 채울 칸)** |
 |---|---|---|---|---|---|---|
-| M1.0 | `StageBattleComponent` | `InitTimeNodeOrder()` Postfix + `m_TimeNodeOrders` (`List<TimeNodeOrder>`) | 후크(Postfix)/필드 | 사전 구워진 판정 테이블 조작 (`isPerfectNode = true`, `Great`/`Cool` → `Prefect` 승격) | 🟡 | |
+| M1.0 | `StageBattleComponent` | `InitTimeNodeOrder()` Postfix + `m_TimeNodeOrders` (`List<TimeNodeOrder>`) | 후크(Postfix)/필드 | 사전 구워진 판정 테이블 조작 (`Great`/`Cool` → `Prefect` 승격만. `isPerfectNode`는 홀드 완료 신호라 건드리지 않음) | 🟡 | |
 | M1.1 | `GameTouchPlay` | `TouchResult(int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill)` — 모드는 `ref byte resultCode`만 받음 | 후크(Prefix) | 런타임 판정 코드 Perfect 강제 조작 안전망 (Miss/Cool/Great만 승격). 판정바(`JudgmentBar`)도 같은 메서드에 따로 걸림 | 🟡 | |
 | M1.2 | `DBSkill` | `SetAutoPlay(ref bool)` | 후크(Prefix) | 오토플레이 설정 인자 강제 덮어쓰기 | 🟡 | |
 | M1.3 | `InputOverlay` / `JudgmentBar` | `OnGUI()` | 렌더링 | 유니티 표준 GUI로 화면 하단 키보드 오버레이 및 판정바 렌더링 | 🟢 | |

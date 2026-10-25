@@ -321,7 +321,8 @@ ILSpy를 켜고 `Assembly-CSharp.dll`을 분석할 때, 무작위 검색 대신 
 
 ### 1. All-Perfect Parameter Mod ([ForcePerfectPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.cs))
 - **2단계 방어 구조 (1편 6.7.0 ISIL 분석으로 완성)**:
-  1. **1단계 — 사전 판정 테이블 조작 (`StageBattleComponent.InitTimeNodeOrder` Postfix)**: 게임은 곡 로드 시 각 노트의 시간축 오프셋마다 판정 등급(`Great`/`Cool`/`Prefect`)을 미리 구워 둔 리스트(`StageBattleComponent.m_TimeNodeOrders`)를 만듭니다. 이 테이블의 모든 엔트리에서 `isPerfectNode = true`로 세팅하고 `result`가 `Great(3)` 또는 `Cool(2)`인 칸을 `Prefect(4)`로 덮어씁니다(배틀 도중 설정을 켰을 때도 즉시 현재 테이블을 승격).
+  1. **1단계 — 사전 판정 테이블 조작 (`StageBattleComponent.InitTimeNodeOrder` Postfix)**: 게임은 곡 로드 시 각 노트의 시간축 오프셋마다 판정 등급(`Great`/`Cool`/`Prefect`)을 미리 구워 둔 리스트(`StageBattleComponent.m_TimeNodeOrders`)를 만듭니다. 이 테이블에서 `result`가 `Great(3)` 또는 `Cool(2)`인 칸을 `Prefect(4)`로 덮어씁니다(배틀 도중 설정을 켰을 때도 즉시 현재 테이블을 승격).
+     - **막다른 길**: 처음엔 모든 칸에 `isPerfectNode = true`도 켰습니다. 그런데 게임은 이 값을 "정확한 시각" 표시로 쓰고, 홀드 꼬리에서는 `LongPressController.OnControllerHit` → `TouchEndResult`가 `isPerfectNode`나 `isRight`가 켜진 칸에서 홀드를 끝냅니다. 그래서 꼬리 판정 창의 첫 칸에서 홀드가 일찍 끝났습니다. 게임의 Perfect 계열 스킬도 이 플래그는 건드리지 않습니다. `BlackSkill`(`Character_12`)은 칸을 만들기 전에 `BattleProperty.hitRangeAddValue`로 판정 범위만 넓히고(`TimeNodeOrderFactory.RangeFixed`), `RampageSkill` 등은 `TouchResult`에서 결과 값만 바꿉니다. 2편에서도 판정표의 구조 플래그는 그대로 두고 결과 값만 바꾸십시오.
   2. **2단계 — 런타임 판정 승격 안전망 (`GameTouchPlay.TouchResult` Prefix)**: 테이블을 거치지 않는 경로(놓쳐서 들어오는 `Miss(1)` 등)까지 포함하여, `Miss`/`Cool`/`Great` 판정 코드(`resultCode`)를 `Prefect(4)`로 덮어씁니다(`JumpOver` 등 특수 코드는 보존).
 - **범위 주의**: 1편은 이 조작과 오토플레이·피버 차단을 **공식곡에도** 적용합니다(`config.txt`로 켜고 끔). 2편이 온라인 기록을 올린다면, 조작된 판정의 기록이 서버로 가지 않게 막는 장치를 함께 두어야 합니다(Phase 1 경고 참고).
 

@@ -12,8 +12,12 @@ namespace muse_dash_test
     // 개입 지점은 두 단계(다층 방어선)입니다:
     //   1. StageBattleComponent.InitTimeNodeOrder (사전 판정 테이블 조작)
     //      뮤즈대시는 로딩 시점에 각 틱별 판정을 TimeNodeOrder 객체에 미리 구워서(Pre-bake)
-    //      m_TimeNodeOrders 테이블에 등록합니다. 이 테이블의 isPerfectNode를 true로,
-    //      result를 Prefect로 덮어써서 엔진이 처음부터 Perfect 틱을 밟은 것으로 인식하게 만듭니다.
+    //      m_TimeNodeOrders 테이블에 등록합니다. 이 테이블의 result만 Prefect로 덮어써서
+    //      엔진이 처음부터 Perfect 틱을 밟은 것으로 인식하게 만듭니다.
+    //      isPerfectNode는 건드리지 않습니다. 게임은 이 값을 "정확한 시각" 표시로 쓰고, 홀드 꼬리에서는
+    //      "여기서 홀드를 끝내라"는 신호로 씁니다(LongPressController.TouchEndResult). 전부 true로 켜면
+    //      꼬리 판정 창의 첫 칸에서 홀드가 완료되어 일찍 끝났습니다. 게임의 Perfect 계열 스킬
+    //      (BlackSkill의 판정 범위 확대, RampageSkill 등의 결과 변환)도 이 플래그는 손대지 않습니다.
     //   2. GameTouchPlay.TouchResult (터치 판정 산출 직후 훅)
     //      실시간 타격 결과가 화면 표시·애니메이션·집계로 흩어지기 직전 Perfect로 보정하는 안전망입니다.
     //
@@ -93,7 +97,7 @@ namespace muse_dash_test
 
         /// <summary>
         /// 곡 로딩 시 StageBattleComponent가 생성해 둔 틱별 사전 판정 테이블(m_TimeNodeOrders)의
-        /// 모든 판정(isPerfectNode, result)을 원천적으로 Perfect로 조작합니다.
+        /// 판정 결과(result)를 원천적으로 Perfect로 조작합니다. isPerfectNode는 그대로 둡니다(파일 머리 주석 참고).
         /// </summary>
         internal static int PromoteTimeNodeOrders(StageBattleComponent stageBattle)
         {
@@ -118,10 +122,8 @@ namespace muse_dash_test
                         if (tno == null) continue;
 
                         total++;
-                        // 1. 퍼펙트 노드 플래그 활성화
-                        tno.isPerfectNode = true;
 
-                        // 2. Great(3) 또는 Cool(2) 틱으로 사전 구워진 판정을 Prefect(4)로 원천 승격
+                        // Great(3) 또는 Cool(2) 틱으로 사전 구워진 판정을 Prefect(4)로 원천 승격
                         if (tno.result == (byte)TaskResult.Great || tno.result == (byte)TaskResult.Cool)
                         {
                             tno.result = (byte)TaskResult.Prefect;
