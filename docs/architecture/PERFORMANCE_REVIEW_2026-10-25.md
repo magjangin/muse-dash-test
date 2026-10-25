@@ -31,9 +31,11 @@
 - 검증: 기능을 끈 상태에서 이 훅을 뺀 빌드와 비교해 배틀 중 GC 할당량과 프레임 시간을 잽니다.
 - 같은 성격(훅 비용은 남고 본문은 가벼움): `AudioSource.PlayOneShot` ×2(모든 효과음), `SpineActionController.PlayByKey` Postfix ×2(모든 노트·캐릭터 애니메이션), `GameTouchPlay.TouchResult` ×2(모든 타격). 기능상 필요한 훅이라 빼기보다 측정해 볼 대상입니다.
 
-### 2.2 씬 스왑 추적기가 결과를 아무도 안 읽는데 채보마다 돈다 (낮음, 정리 대상)
+### 2.2 씬 스왑 추적기가 결과를 아무도 안 읽는데 채보마다 돈다 (낮음) — ✅ 제거함
 
-- 위치: [SceneZzTransformTracker.cs](../../muse%20dash%20test/Patches/Scene/SceneZzTransformTracker.cs) 외 2개 파일(합계 약 730줄)
+> 2026-10-25 `feature/tracker-cleanup-devil-hp`에서 추적기 3개 파일과 등록 호출을 지웠습니다. 씬 배경 스왑 실기 확인이 남아 있습니다.
+
+- 위치: `Patches/Scene/SceneZzTransformTracker*.cs` 3개 파일(합계 약 730줄, 삭제됨)
 - 씬 스왑이 `IsIgnoreCurrentNoteChecking` 방식으로 바뀐 뒤 `Record`, `RestoreIdentities`, `RestoreRuntimeObjects`, `TryGetBmsOriginalUid`를 부르는 곳이 없습니다(2026-10-25 저장소 검색).
 - 그런데 `DBStageInfoExperimentChart.cs`가 채보를 주입할 때마다 `RegisterBmsOriginalIdentities`를 불러, 노트마다 IL2CPP 문자열 필드 약 14개를 읽어 사전에 담습니다. 이 사전은 다시 읽히지 않습니다.
 - 개선 방향: 등록 호출과 추적기 파일을 제거. 씬 배경 스왑을 실기로 한 번 확인해야 합니다([SCENE_BACKGROUND_SWAP.md](../experiments/SCENE_BACKGROUND_SWAP.md)).
