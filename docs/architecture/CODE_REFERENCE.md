@@ -166,7 +166,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 인게임 화면 구석에 실시간 키 입력을 렌더링하여 모니터링하는 오버레이 기능입니다. 누락된 항목을 보존하는 자체 복구(Self-healing) 설정 로직을 내장하고 있습니다.
 
 ### 📂 [UI/Custom/JudgmentBar.cs](../../muse%20dash%20test/Patches/UI/Custom/JudgmentBar.cs) [NEW]
-게임 타격 판정 시 발생한 오차 시간을 실시간으로 분석하여 판정바 UI 상에 인디케이터 눈금으로 그려주는 그래픽 시각화 패치입니다.
+게임 타격 판정 시 발생한 오차 시간을 실시간으로 분석하여 판정바 UI 상에 인디케이터 눈금으로 그려주는 그래픽 시각화 패치입니다. 오차는 `GameTouchPlay.TouchResult` Postfix에서 `m_LastMusicTick / 1000 − md.tick`으로 계산합니다. 게임 판정 로직과의 대조(시계는 같고, 읽는 시점과 고정 ±50/±130ms 색 기준이 다를 수 있음)는 [JUDGMENT_BAR_TIMING.md](../experiments/JUDGMENT_BAR_TIMING.md)에 있습니다.
 
 ---
 

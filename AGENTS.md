@@ -11,16 +11,17 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-10-25 (일반 속도 3 dt 1.16 → 1.18 정정, info.txt `dt를 권장 표로 고치기` 옵션·차터 허용 범위 추가)
+마지막 갱신: 2026-10-25 (강제 퍼펙트가 `isPerfectNode`를 켜 홀드가 일찍 끝나던 문제 수정·실기 확인, 판정바 REA 점검 기록)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
-2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB).
+2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB). 의사코드가 필요하면 `H:\source\repos\rea-hwa\tools\pe_slice.py --dll "H:/muse dash hwa/GameAssembly.dll" --rva <RVA> --out <조각.dll>`로 함수만 잘라 REA `open_binary`(`provider_id: "ghidra"`) → `procedure_pseudo_code`로 봅니다(`GameAssembly.dll` 통째로 열면 시간 초과).
 3. **설계 의도**
    - 가상 곡은 공식 `MusicInfo`의 얇은 복제본입니다. 제목은 게임이 `m_MusicExInfo.m_AlbumIndex`로 앨범 현지화 표를 고른 뒤 `BaseDataObject.listIndex` 행을 묻는 두 겹 조회로 정해지므로, `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex`에서 `MusicInfoWrapper.listIndex`가 같고 선택 곡 스코프 안일 때만 커스텀 제목으로 답합니다. 판정할 곡은 `SelectedSongLocalizationScope.DrawingUid`(ChangeMusic 안 `SetAchievementPercent`에서 받은 새 곡)를 먼저 씁니다. 세션의 선택 곡은 조회보다 늦게 갱신됩니다.
    - 노트 속도는 uid `yy`의 속도 자리로 정해집니다. 속도 2·3 uid는 프리팹 끝자리(`_2`/`_3`, 게임에 그 이름만 있음)·`speed`·지상/공중을 그 uid에 맞춥니다. dt는 기본적으로 WAV `_dt`를 그대로 씁니다(권장: 일반 노트 1.48 / 1.28 / 1.18, 홀드 1.47 / 1.26 / 1.10, 보스 발사체 0.8 / 0.76 / 0.6)([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md), [HOLD_BAR_LENGTH_DT.md](docs/experiments/HOLD_BAR_LENGTH_DT.md)). 곡 `info.txt`에 `dt를 권장 표로 고치기 = 활성화`가 있을 때만 `BmsDtTable` 권장표로 덮어쓰고(`ApplyDtTable`, 샌드백·보스 톱니는 제외), 꺼져 있으면 허용 범위(일반 속도 1 = 1.48, 속도 2 = 1.18~1.38, 속도 3 = 0.98~1.28, 나머지 계열은 권장값만) 밖 값을 경고만 합니다([DT_RECOMMENDED_TABLE.md](docs/guides/DT_RECOMMENDED_TABLE.md), 2026-10-25 추가·실기 확인). 홀드 dt가 다른 이유는 게임이 홀드 막대 길이를 dt가 아니라 속도 단계의 고정 시간(44 / 38 / 33프레임)으로 그리기 때문입니다. 모든 계열을 2026-10-25에 실기로 확정했습니다.
    - 커스텀 음표·하트는 `NoteDataMananger.GetNoteByUid`의 공식 행을 바탕으로 만듭니다. 일반 노트를 복제하면 타격 판정으로 집계됩니다.
    - 커스텀 곡 정확도는 `AccuracyCalculator`가 덮어씁니다: (PERFECT + GREAT/2 + 기어 통과 + 하트 `m_EnergyCount` + 음표 `m_MusicCount`) / 전체.
    - 씬 배경 스왑은 `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`과 `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)`을 `true`로 패치하여 `LoadMusicData`가 배경 목록(`curSceneChangeType`)만 등록하고 노트 정체(`noteData`/`configData.note_uid`)는 덮어쓰지 못하게 차단합니다(`musicList` 무변형 유지, [SCENE_BACKGROUND_SWAP.md](docs/experiments/SCENE_BACKGROUND_SWAP.md)).
+   - 강제 퍼펙트는 판정표(`m_TimeNodeOrders`)의 `result`만 그레이트·쿨에서 퍼펙트로 올리고 `isPerfectNode`는 건드리지 않습니다. 게임은 이 값을 "정확한 시각" 표시로 쓰고, 홀드 꼬리에서는 `LongPressController.OnControllerHit` → `TouchEndResult`가 `isPerfectNode`/`isRight` 칸에서 홀드를 끝냅니다. 게임의 퍼펙트 계열 스킬도 같은 방식입니다(`BlackSkill`은 `BattleProperty.hitRangeAddValue`로 범위만 넓히고 `TimeNodeOrderFactory.RangeFixed`가 칸 생성 전에 반영, `RampageSkill` 등은 `TouchResult`에서 결과 값만 변경).
    - 프레임 드랍 직후 늦게 스폰된 Spine 노트는 엔진의 `FixSpineAnim`이 `Animator`만 앞당기고 `SkeletonAnimation`을 빠뜨려 오른쪽에 뒤처지므로, `SpineActionController.PlayByKey`("in")에서 `currentAnimationTime = timeFromMusicStart - showTick`으로 즉시 보정합니다(`NoteAnimationSyncPatch.cs`).
 4. **핵심 훅**: `DBStageInfo.SetRuntimeMusicData`(BMS → `MusicData` 주입, `DBStageInfoExperimentChart*.cs`), `StageBattleComponent.IsIgnoreCurrentNoteChecking` / `GameMusicScene.IsIgnoreCurrentNoteChecking`(씬 스왑 노트 무변형 보호), `SpineActionController.PlayByKey`(고스트 알파 고정 + 스폰 지연 위치 보정), `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` / `MusicInfo.GetLocal`(제목), `TaskStageTarget.GetAccuracy*`(정확도), `GameTouchPlay.TouchResult` / `StageBattleComponent.InitTimeNodeOrder`(강제 퍼펙트).
 5. **막다른 길**
@@ -28,6 +29,7 @@
    - 하단 제목을 `LongSongNameController.Refresh`에서 바꾸는 것: 화면은 맞지만 원인보다 늦은 자리라 버렸습니다.
    - 제목 조회를 세션의 선택 곡(`SelectedMusicUid`)으로 판정한 것: 곡을 넘기는 순간엔 이전 곡이라 원본 제목이 나왔습니다.
    - PERFECT 과다를 `ForcePerfect`의 `isPerfectNode` 탓으로 본 것: 강제퍼펙트를 끈 오토플레이에서도 재현되어 무관했습니다.
+   - 강제 퍼펙트에서 모든 판정 칸에 `isPerfectNode = true`를 켠 것: 홀드가 꼬리 판정 창의 첫 칸에서 완료되어 일찍 끝났습니다. 줄을 빼고 2026-10-25 실기 확인했습니다.
    - 노트 속도를 dt만 바꿔 내려는 것: 애니메이션은 uid `yy`가 정하므로 렌더가 깨집니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
    - 속도 2·3 프리팹 끝자리를 `_1`로 두는 것: 게임에 그 이름의 프리팹이 없어 노트가 안 보입니다.
    - `HwaSyncManager`에서 `sldProgress.value`를 기준으로 스트리밍 Ogg `bgmSource.time`을 역으로 시크한 것: 호스트 곡 길이로 도는 진행바 때문에 0.5초마다 오디오 디코더 재탐색 히치와 노트 밀림을 유발했습니다.
