@@ -47,6 +47,10 @@ namespace muse_dash_test
         // 게임에 "기록되는 판정"만 Perfect로 승격시킵니다. (<see cref="ForcePerfectState"/>)
         public static bool forcePerfect = false;
 
+        // 어린 악마 마리쟈(EvilSkill)의 시간당 체력 감소 속도(%). 100 = 원래(0.1초마다 1), 0 = 감소 없음.
+        // 커스텀 곡에만 적용됩니다. (<see cref="EvilSkill_Apply_HpDrain_Patch"/>)
+        public static int devilMarijaHpDrainPercent = 100;
+
         // 공식곡의 고스트 노트(UID xx=17)가 판정선 근처에서 사라지지 않도록 알파를 되돌립니다.
         // 커스텀 곡은 이 값 대신 각자의 `hwa info.txt`에 적은 '커스텀 곡 고스트 노트 보이기'를 따릅니다.
         public static bool showGhostNotes = true;
@@ -315,6 +319,12 @@ namespace muse_dash_test
                             }
                             break;
                         }
+                        case DevilMarijaHpDrainKey:
+                            if (int.TryParse(val, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int drainPercent))
+                            {
+                                devilMarijaHpDrainPercent = Math.Max(0, Math.Min(100, drainPercent));
+                            }
+                            break;
                         case "모바일터치조작":
                         case "모바일터치":
                             enableMobileTouch = ParseBool(val, key, enableMobileTouch);

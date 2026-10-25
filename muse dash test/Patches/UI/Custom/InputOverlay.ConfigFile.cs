@@ -21,6 +21,10 @@ namespace muse_dash_test
         /// </summary>
         private const string GhostNotesKey = "공식곡에서도고스트노트보이기";
 
+        /// <summary>어린 악마 마리쟈 체력 감소 속도 항목의 파일 문구와 비교용 키. 고스트 노트 항목처럼 두 상수를 같이 고치세요.</summary>
+        private const string DevilMarijaHpDrainKeyText = "어린 악마 마리쟈 체력 감소 속도";
+        private const string DevilMarijaHpDrainKey = "어린악마마리쟈체력감소속도";
+
         /// <summary>굵은 구분선. 섹션의 시작과 끝을 나눕니다.</summary>
         private const string Rule = "# ============================================================================";
 
@@ -33,7 +37,7 @@ namespace muse_dash_test
         /// 설정값은 그대로 둔 채 파일 전체를 새 레이아웃으로 다시 씁니다.
         /// (레이아웃만 바뀌면 키 목록은 그대로라 '누락/중복' 검사만으로는 갱신되지 않기 때문입니다.)
         /// </summary>
-        private const int ConfigFormatVersion = 4;
+        private const int ConfigFormatVersion = 5;
 
         /// <summary>레이아웃 버전을 기록하는 주석 줄의 앞부분.</summary>
         private const string ConfigFormatMarkerPrefix = "config-format:";
@@ -50,6 +54,7 @@ namespace muse_dash_test
             "판정바표시", "판정바가로크기", "판정바세로크기", "판정바하단여백",
             "판정바글자크기", "판정바틱유지시간", "판정바반응형",
             "오토플레이", "피버충전금지", "시네마", "강제퍼펙트",
+            DevilMarijaHpDrainKey,
             GhostNotesKey,
             "모바일터치조작",
             "히든해금표시",
@@ -228,10 +233,17 @@ namespace muse_dash_test
                 sb.AppendLine("#  피버충전금지 : 피버 게이지가 차지 않게 막습니다.");
                 sb.AppendLine("#  강제퍼펙트   : 오토플레이가 아닙니다. 입력은 직접 하되 '기록되는 판정'만 Perfect로 올립니다.");
                 sb.AppendLine($"#  값 형식      : {onOff}");
+                sb.AppendLine("#");
+                sb.AppendLine($"#  {DevilMarijaHpDrainKeyText}");
+                sb.AppendLine("#         : 어린 악마 마리쟈는 시간이 지나면 체력이 계속 줄어듭니다(원래 0.1초마다 1).");
+                sb.AppendLine("#           그 속도를 퍼센트로 정합니다. 100 = 원래 속도, 50 = 절반, 0 = 줄지 않음.");
+                sb.AppendLine("#           커스텀 곡에만 적용되고, 공식 곡은 원래 속도 그대로입니다. 다음 판부터 반영됩니다.");
+                sb.AppendLine("#  값 형식 : 0 ~ 100 사이 숫자");
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"오토플레이={forceAutoPlay.ToString().ToLower()}");
                 sb.AppendLine($"피버충전금지={blockFever.ToString().ToLower()}");
                 sb.AppendLine($"강제퍼펙트={forcePerfect.ToString().ToLower()}");
+                sb.AppendLine($"{DevilMarijaHpDrainKeyText}={devilMarijaHpDrainPercent}");
                 sb.AppendLine();
                 sb.AppendLine();
 

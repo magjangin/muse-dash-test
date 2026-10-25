@@ -300,7 +300,9 @@
 | `EnableVerboseLog` | `false` | 진단 로그 상세 출력(`LogLevel`이 `Auto`일 때 Verbose로 올림). UMPC로 감지되면 `Auto`는 이 값과 무관하게 `Error`가 됩니다 |
 | `LogLevel` | `Auto` | `Auto`, `Silent`, `Error`, `Warning`, `Info`, `Verbose` 중 하나. 자세한 동작은 [LOGGING_AND_TROUBLESHOOTING.md](docs/guides/LOGGING_AND_TROUBLESHOOTING.md) |
 
-> 위 표의 `Enable*` 항목은 **MelonPreferences(기능 전체 스위치)** 이고, 게임 중 메모장으로 고쳐 저장하면 약 1초 안에 반영되는 **`save custom key/config.txt`**(키 오버레이·판정바·오토플레이·강제퍼펙트·피버충전금지·시네마·고스트 노트·모바일 터치·히든 해금 표시)는 별개입니다. 같은 기능에 스위치가 둘 있을 때는 **둘 다 켜져 있어야** 동작합니다(예: 판정바 = `EnableJudgmentBar` + `판정바표시`).
+> 위 표의 `Enable*` 항목은 **MelonPreferences(기능 전체 스위치)** 이고, 게임 중 메모장으로 고쳐 저장하면 약 1초 안에 반영되는 **`save custom key/config.txt`**(키 오버레이·판정바·오토플레이·강제퍼펙트·피버충전금지·어린 악마 마리쟈 체력 감소 속도·시네마·고스트 노트·모바일 터치·히든 해금 표시)는 별개입니다. 같은 기능에 스위치가 둘 있을 때는 **둘 다 켜져 있어야** 동작합니다(예: 판정바 = `EnableJudgmentBar` + `판정바표시`).
+>
+> `어린 악마 마리쟈 체력 감소 속도`(0~100, 기본 100)는 그 캐릭터의 시간당 체력 감소(원래 0.1초마다 1)를 퍼센트로 늦춥니다. 0이면 줄지 않습니다. 커스텀 곡에만 적용되고 다음 판부터 반영됩니다([CHARACTER_SKILL_LOGIC.md](docs/experiments/CHARACTER_SKILL_LOGIC.md)).
 
 ## ⚠️ 계정(온라인) 사용 시 주의
 
