@@ -96,7 +96,7 @@ MelonLoader 모드 진입점 클래스입니다.
 
 ### 📂 [Battle/Mechanics/ForcePerfectPatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/ForcePerfectPatch.cs)
 `config.txt`의 `강제퍼펙트=true`일 때 **친 노트의 판정을** Perfect로 승격시키는 패치입니다. 오토플레이(입력 대행)와는 무관하며, 노트 입력과 타이밍은 그대로 사람이 칩니다.
-* **`StageBattleComponent_InitTimeNodeOrder_ForcePerfect_Patch` (Postfix)**: 스테이지 시작 시 사전 구워진 시간축 판정 테이블(`StageBattleComponent.m_TimeNodeOrders`)을 순회하며 모든 노드에 `isPerfectNode = true`를 세팅하고 `Great(3)`/`Cool(2)` 구간을 `Prefect(4)`로 미리 승격합니다(배틀 도중 설정을 켰을 때도 즉시 현재 테이블을 승격).
+* **`StageBattleComponent_InitTimeNodeOrder_ForcePerfect_Patch` (Postfix)**: 스테이지 시작 시 사전 구워진 시간축 판정 테이블(`StageBattleComponent.m_TimeNodeOrders`)을 순회하며 `Great(3)`/`Cool(2)` 구간을 `Prefect(4)`로 미리 승격합니다(배틀 도중 설정을 켰을 때도 즉시 현재 테이블을 승격). `isPerfectNode`는 건드리지 않습니다. 게임이 홀드 꼬리에서 이 값을 "홀드 완료" 신호로 써서, 전부 켜면 홀드가 꼬리 판정 창 첫 칸에서 일찍 끝났습니다(2026-10-25).
 * **`GameTouchPlay_TouchResult_ForcePerfect_Patch` (Prefix)**: 터치 판정이 산출된 직후인 `GameTouchPlay.TouchResult(int idx, byte resultCode, uint actionType, ...)`의 `resultCode`를 `TaskResult.Prefect`로 덮어쓰는 런타임 안전망입니다. 이 값이 판정 표시(`GameTouchPlay.ShowPlayResult`), 캐릭터 액션(`GirlActionController.Attack(actKey, result)`), 집계로 함께 흘러가므로 **인게임 판정 표시와 기록이 어긋나지 않습니다**.
 * **승격 대상 제한**: 타격 판정인 `Miss(1)`, `Cool(2)`, `Great(3)`만 `Prefect(4)`로 올립니다. `None(0)`(미판정), `JumpOver(5)`(톱니 회피), `Fever(6)`는 종류가 다른 결과이므로 그대로 두어야 정확도 분모와 톱니/피버 집계가 유지됩니다.
 * **안 친 노트(미스)는 손대지 않습니다.** 미스는 화면·체력·기록 모두 순정 그대로입니다.
@@ -166,7 +166,7 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 인게임 화면 구석에 실시간 키 입력을 렌더링하여 모니터링하는 오버레이 기능입니다. 누락된 항목을 보존하는 자체 복구(Self-healing) 설정 로직을 내장하고 있습니다.
 
 ### 📂 [UI/Custom/JudgmentBar.cs](../../muse%20dash%20test/Patches/UI/Custom/JudgmentBar.cs) [NEW]
-게임 타격 판정 시 발생한 오차 시간을 실시간으로 분석하여 판정바 UI 상에 인디케이터 눈금으로 그려주는 그래픽 시각화 패치입니다.
+게임 타격 판정 시 발생한 오차 시간을 실시간으로 분석하여 판정바 UI 상에 인디케이터 눈금으로 그려주는 그래픽 시각화 패치입니다. 오차는 `GameTouchPlay.TouchResult` Postfix에서 `m_LastMusicTick / 1000 − md.tick`으로 계산합니다. 게임 판정 로직과의 대조(시계는 같고, 읽는 시점과 고정 ±50/±130ms 색 기준이 다를 수 있음)는 [JUDGMENT_BAR_TIMING.md](../experiments/JUDGMENT_BAR_TIMING.md)에 있습니다.
 
 ---
 

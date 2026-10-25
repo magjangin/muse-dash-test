@@ -12,6 +12,9 @@
       표시용 값으로 에셋 키를 덮지 말 것. `MusicInfo.music`은 제목이 아니라 음원 에셋 키(`iyaiya_music`)이고,
       제목 렌더링은 `musicName` / `music_name` 마스크가 담당합니다.
       (v0.9.2~v0.9.5: `music`을 표시 제목으로 덮어써 `PnlBattle.MusicProgressInit`이 NRE. 커밋 `6025537`)
+      이름만 보고 판정 플래그를 고치지도 말 것. `TimeNodeOrder.isPerfectNode`는 "퍼펙트 판정"이 아니라
+      "정확한 시각" 표시이고, 홀드 꼬리에서는 홀드 완료 신호입니다(`LongPressController.TouchEndResult`).
+      (2026-10-25: 강제 퍼펙트가 모든 칸에 `true`를 켜서 홀드가 꼬리 판정 창 첫 칸에서 일찍 끝남)
 
 - [ ] **원인을 계측으로 확정했는가?** 증상에서 원인을 단정하지 말 것.
       고친 뒤에는 수정 전/후 로그를 **같은 시퀀스 위치**에서 대조해 확인합니다.
