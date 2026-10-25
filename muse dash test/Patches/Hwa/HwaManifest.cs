@@ -25,5 +25,11 @@ namespace muse_dash_test
         /// 그때는 공식곡용 전역 설정(`config.txt`)을 그대로 따릅니다.
         /// </summary>
         public bool? ShowGhostNotes;
+
+        /// <summary>
+        /// WAV <c>_dt</c>를 무시하고 노트 계열·속도별 권장 dt(<see cref="BmsDtTable"/>)로 덮어쓸지.
+        /// `hwa info.txt`의 'dt를 권장 표로 고치기'입니다. 적지 않거나 비활성화면 WAV <c>_dt</c>를 그대로 씁니다.
+        /// </summary>
+        public bool? FixDtToRecommended;
     }
 }

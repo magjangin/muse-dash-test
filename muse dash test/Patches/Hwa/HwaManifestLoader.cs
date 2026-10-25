@@ -169,6 +169,7 @@ namespace muse_dash_test
 
             string normalizedKey = NormalizeManifestKey(key);
             if (TryApplyBool(normalizedKey, value, v => manifest.ShowGhostNotes = v, "고스트노트보이기", "고스트보이기", "노트보이기", "ghostnote")) return;
+            if (TryApplyBool(normalizedKey, value, v => manifest.FixDtToRecommended = v, "권장표", "권장dt", "dt보정", "recommendeddt", "fixdt")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.Album = v, "가져올앨범", "앨범", "album")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.Uid = v, "uid")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.CustomArtist = v, "커스텀아티스트", "customartist", "customauthor")) return;
@@ -340,7 +341,8 @@ namespace muse_dash_test
                 + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString() : "(null)")
                 + ", delay=" + (manifest.Delay.HasValue ? manifest.Delay.Value.ToString("F7") : "(null)")
                 + ", offset=" + (manifest.Offset.HasValue ? manifest.Offset.Value.ToString("F7") : "(null)")
-                + ", showGhostNotes=" + (manifest.ShowGhostNotes.HasValue ? manifest.ShowGhostNotes.Value.ToString() : "(null)");
+                + ", showGhostNotes=" + (manifest.ShowGhostNotes.HasValue ? manifest.ShowGhostNotes.Value.ToString() : "(null)")
+                + ", fixDtToRecommended=" + (manifest.FixDtToRecommended.HasValue ? manifest.FixDtToRecommended.Value.ToString() : "(null)");
         }
     }
 }

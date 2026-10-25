@@ -30,6 +30,7 @@
 | --- | --- |
 | [CUSTOM_CHART_GUIDE.md](guides/CUSTOM_CHART_GUIDE.md) | 커스텀 곡/차트/음원/BGA 제작 및 폴더 구성 |
 | [BMS_PARSING.md](guides/BMS_PARSING.md) | BMS 파싱·매핑 규칙 및 셀 코드 사양 |
+| [DT_RECOMMENDED_TABLE.md](guides/DT_RECOMMENDED_TABLE.md) | 노트 dt 권장표, 차터 허용 범위, info.txt `dt를 권장 표로 고치기` 옵션 |
 | [OFFLINE_CUSTOM_SANDBOX_GUIDE.md](guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md) | 오프라인 샌드박스 구성 및 플래그 설정 |
 | [DISCORD_RICH_PRESENCE.md](guides/DISCORD_RICH_PRESENCE.md) | 디스코드 리치 프레젠스 연동 명세 |
 | [LOGGING_AND_TROUBLESHOOTING.md](guides/LOGGING_AND_TROUBLESHOOTING.md) | 로그 읽는 법과 문제 해결 순서 |

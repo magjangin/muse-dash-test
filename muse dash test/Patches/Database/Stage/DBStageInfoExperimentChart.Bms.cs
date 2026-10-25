@@ -61,6 +61,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             specs.Add(CreateExperimentNoteSpecFromBms(note, wavInfo, activeUid));
         }
 
+        ApplyDtTable(specs, activeUid);
+
         specs.Sort((left, right) =>
         {
             int tickCompare = left.StartTick.CompareTo(right.StartTick);
