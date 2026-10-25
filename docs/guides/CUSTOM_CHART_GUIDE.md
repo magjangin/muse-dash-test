@@ -99,14 +99,16 @@ dt를 권장 표로 고치기 = 활성화
 | --- | --- | --- |
 | 1~6 | 일반 곡 대부분(1번 209곡, 2번 86곡, 3번 67곡, 4번 47곡, 5번 144곡, 6번 31곡) | 5번은 캔디 계열이고 크리스마스 판(`scene_05_christmas`)이 같은 번들 안에 있음(아래) |
 | 7 | `29-0`~`29-5` (Groove Prayer, FUJIN Rumble 등) | |
-| 8 | 동방 곡(`42-*`, `55-*` 등 30곡) | Bad Apple은 게임이 `scene_touhou_black`으로 바꿔 씀 |
+| 8 | 동방 곡(`42-*`, `55-*` 등 30곡) | Bad Apple 흑백 연출은 옵션이 아니라 곡 uid로 켜짐(아래) |
 | 9 | `48-*` (glory day, OBLIVION 등 15곡) | |
 | 10 | 하츠네 미쿠·보컬로이드 곡(`66-*`, `70-*`) | 카가미네 린·렌 곡(`70-0` 등)도 10번 |
-| 11 | `72-0` (P E R O P E R O 兄☆貴☆乱☆舞) | 번들 안에 `Kagamine`, `Len`, `Kaito`, `AnimMiku` 오브젝트가 있는 보컬로이드 무대. "LEN" 글자가 보이는 무대가 이것으로 보임 |
+| 11 | `72-0` 한 곡만 (P E R O P E R O 兄☆貴☆乱☆舞, 난이도는 Hard `?` 하나뿐인 특수곡) | **공식 테마 목록에는 없는 번호**입니다. 설정 파일에 `scene_11`이 적힌 곡이 이 하나뿐이고 번들(`gamescene_11`, 약 370KB로 다른 번호보다 훨씬 작음)이 있다는 것까지만 확인했습니다. 번들 안 오브젝트 이름(`Kagamine`, `Len`, `Kaito`, `AnimMiku`)만 보고 "LEN 무대"라고 추정했던 것은 근거가 약해 뺐습니다 |
 | 12 | `84-0` (喵斯摇), `87-5` (大家好) | **비취 랜드** (실기 확인) |
 | 13 | `93-0` (Serve, Sushi, Serve!) | `gamescene_13` 번들은 없음. 데이브 더 다이버 곡이라 `gamescene_dave` 번들일 것으로 추정(미확인). 모드의 곡 중간 전환 표에는 없음 |
 
 **명일방주는 씬 번호가 아닙니다.** 명일방주 곡(`59-*`, `82-*`)은 설정상 1·2·4번 같은 일반 씬을 씁니다. `OPERATION` 카드 같은 명일방주 연출은 곡이 속한 **앨범**(`music_package_59`/`music_package_82`)으로 켜집니다([ARKNIGHTS_SCENE_INTRO.md](../experiments/ARKNIGHTS_SCENE_INTRO.md)).
+
+**Bad Apple 흑백 연출 (ISIL 확인)**: 설정 옵션이 아닙니다. `DBTouhou.AwakeInit`이 배틀 준비 때 `isBadApple = (지금 곡 uid == "42-0")`으로 정합니다(`42-0` = Bad Apple!! feat. Nomico). 이 값이 참이면 20곳이 넘는 `TouhouLogic.ReplaceBadApple*` 호출이 배경(`scene_08` → `scene_touhou_black`), 효과(`fx_hp_ground` 등), 롱노트·캐치 색, 피버, 캐릭터·엘핀·보스 그림을 흑백판으로 바꿉니다. 같은 함수의 `isTouhouEasterEgg`는 동방 캐릭터(`DBSkill.isTouhouRole`)로 탄막 채보(`SpecialSongManager.IsBarrageBms`)를 칠 때 켜지는 별개의 이스터 에그입니다. 커스텀 곡(uid `1999-*`)은 어느 쪽도 켜지지 않습니다.
 
 **만우절 배경과 새가 된 적**: 컴퓨터 날짜가 **4월 1일**이면 `BattleHelper.isFool`이 참이 되어(ISIL 확인) 게임이 `_fool` 판 배경 번들(`gamescene_NN_fool_*`)과 `FoolEnemyController`를 씁니다. 적이 새로 바뀌는 것이 이 판입니다. 번들은 01~12 모두 있습니다. 어느 함수가 `_fool` 판으로 바꾸는지는 아직 따라가지 않았습니다.
 
