@@ -26,7 +26,7 @@ namespace muse_dash_test
     public static class BmsDtTable
     {
         // [속도 1, 속도 2, 속도 3]
-        private static readonly double[] NormalDt = { 1.48, 1.28, 1.16 };
+        private static readonly double[] NormalDt = { 1.48, 1.28, 1.18 };
         private static readonly double[] HoldDt = { 1.47, 1.26, 1.10 };
         private static readonly double[] BossProjectileDt = { 0.8, 0.76, 0.6 };
 
