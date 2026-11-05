@@ -26,6 +26,44 @@ namespace muse_dash_test
         }
     }
 
+    // 숙주 곡에 없는 난이도를 고르면 게임이 없는 차트 에셋을 불러오다 멈춥니다(BmsHostMaps 참고).
+    // 숙주 차트는 틀로만 쓰므로 있는 난이도의 에셋을 대신 불러오게 하고, 난이도 번호 자체는 그대로 둡니다.
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "GetMusicDataFromStageInfo")]
+    public class StageBattleComponent_GetMusicDataFromStageInfo_Patch
+    {
+        public static void Prefix()
+        {
+            try
+            {
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
+                if (!CustomContentIds.IsVirtualSong(uid)) return;
+
+                var stage = Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage;
+                if (stage == null) return;
+
+                int difficulty = stage.selectedDifficulty;
+                int map = HwaResourceManager.ResolveHostMap(uid, difficulty);
+                if (map == difficulty) return;
+
+                string from = stage.m_StageMapName;
+                if (string.IsNullOrEmpty(from) || !from.EndsWith(difficulty.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal))
+                {
+                    ModLogger.Warning($"[StageBattleComponent.GetMusicDataFromStageInfo] 차트 에셋 이름이 예상과 달라 그대로 둡니다: uid={uid}, difficulty={difficulty}, name={from ?? "(null)"}");
+                    return;
+                }
+
+                string to = from.Substring(0, from.Length - difficulty.ToString(System.Globalization.CultureInfo.InvariantCulture).Length)
+                    + map.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                stage.m_StageMapName = to;
+                ModLogger.Msg($"[StageBattleComponent.GetMusicDataFromStageInfo] 숙주에 없는 난이도라 다른 차트 에셋을 틀로 씁니다: uid={uid}, difficulty={difficulty}, {from} -> {to}");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[StageBattleComponent.GetMusicDataFromStageInfo] Prefix 예외: {ex}");
+            }
+        }
+    }
+
     [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "InitData")]
     public class StageBattleComponent_InitData_Patch
     {

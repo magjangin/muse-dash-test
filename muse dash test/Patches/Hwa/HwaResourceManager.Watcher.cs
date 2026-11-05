@@ -164,9 +164,9 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 곡의 채보를 다시 읽어 캐시를 갱신합니다.
-        /// 새 채보를 얻으면 교체하고, 채보 파일이 사라졌으면 캐시에서 제거하고, 읽지 못했지만 파일은 남아 있으면
-        /// 옛 채보를 유지한 채 잠시 뒤 다시 시도합니다(저장 도중일 수 있습니다).
+        /// 곡의 채보를 난이도별로 전부 다시 읽어 캐시를 갱신합니다.
+        /// 칸마다 새 채보를 얻으면 교체하고, 채보 파일이 사라졌으면 비우고, 읽지 못했지만 파일은 남아 있으면
+        /// 옛 채보를 유지한 채 잠시 뒤 다시 시도합니다(저장 도중일 수 있습니다). 합치는 규칙은 <see cref="BmsChartSet.MergeReload"/>에 있습니다.
         /// </summary>
         public static bool ReloadBmsChartForUid(string uid)
         {
@@ -181,26 +181,18 @@ namespace muse_dash_test
             }
 
             ModLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 감지 -> [{uid}] 다시 읽기 시도: {songDir}");
-            BmsChart newChart = LoadHwaBmsChart(songDir, manifest);
-            if (newChart != null && newChart.Notes != null && newChart.Notes.Count > 0)
-            {
-                lock (cachedBmsCharts)
-                {
-                    cachedBmsCharts[uid] = newChart;
-                }
-                ClearRetryCount(uid);
-                ModLogger.Msg($"[HwaResourceManager.BmsWatcher] ✅ [{uid}] BMS 실시간 재로드 성공!");
-                return true;
-            }
+            BmsChartSet freshCharts = LoadHwaBmsChartSet(songDir, manifest);
 
-            BmsChart current;
+            BmsChartSet currentCharts;
             lock (cachedBmsCharts)
             {
-                cachedBmsCharts.TryGetValue(uid, out current);
+                cachedBmsCharts.TryGetValue(uid, out currentCharts);
             }
 
-            // 캐시에 있던 채보 파일이 사라졌다면(삭제, 이름 변경) 옛 채보를 계속 쓰면 안 됩니다.
-            if (current == null || string.IsNullOrEmpty(current.SourcePath) || !File.Exists(current.SourcePath))
+            BmsChartSet merged = BmsChartSet.MergeReload(freshCharts, currentCharts, File.Exists, out bool keptOld);
+
+            // 캐시에 있던 채보 파일이 모두 사라졌다면(삭제, 이름 변경) 옛 채보를 계속 쓰면 안 됩니다.
+            if (merged.IsEmpty)
             {
                 lock (cachedBmsCharts)
                 {
@@ -211,9 +203,21 @@ namespace muse_dash_test
                 return false;
             }
 
-            ModLogger.Warning($"[HwaResourceManager.BmsWatcher] [{uid}] 재로드 실패. 이전 채보를 유지하고 잠시 뒤 다시 시도합니다.");
-            ScheduleRetry(uid);
-            return false;
+            lock (cachedBmsCharts)
+            {
+                cachedBmsCharts[uid] = merged;
+            }
+
+            if (keptOld)
+            {
+                ModLogger.Warning($"[HwaResourceManager.BmsWatcher] [{uid}] 읽지 못한 채보가 있어 그 채보만 이전 것을 유지하고 잠시 뒤 다시 시도합니다: {merged.Describe()}");
+                ScheduleRetry(uid);
+                return false;
+            }
+
+            ClearRetryCount(uid);
+            ModLogger.Msg($"[HwaResourceManager.BmsWatcher] ✅ [{uid}] BMS 실시간 재로드 성공: {merged.Describe()}");
+            return true;
         }
 
         private static void ScheduleRetry(string uid)

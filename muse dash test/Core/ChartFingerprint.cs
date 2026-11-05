@@ -35,16 +35,16 @@ namespace muse_dash_test
             new Dictionary<string, CacheEntry>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
-        /// uid에 해당하는 채보의 지문을 돌려줍니다.
+        /// 곡의 해당 난이도에서 쓰는 채보의 지문을 돌려줍니다. 난이도마다 채보가 다를 수 있습니다.
         /// BMS가 없는 슬롯이면 <see cref="NoChart"/>, 읽기에 실패하면 <c>null</c>(= 판정 불가)입니다.
         /// </summary>
-        public static string ForUid(string uid)
+        public static string ForUid(string uid, int difficulty)
         {
             try
             {
                 if (string.IsNullOrEmpty(uid)) return null;
 
-                if (!HwaResourceManager.TryGetCachedHwaBmsChart(uid, out BmsChart chart)
+                if (!HwaResourceManager.TryGetCachedHwaBmsChart(uid, difficulty, out BmsChart chart)
                     || chart == null
                     || string.IsNullOrEmpty(chart.SourcePath))
                 {

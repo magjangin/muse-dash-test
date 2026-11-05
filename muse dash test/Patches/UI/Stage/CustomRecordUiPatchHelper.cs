@@ -36,7 +36,7 @@ namespace muse_dash_test
                 if (stage == null || musicInfo == null) return;
                 if (!CustomContentIds.IsVirtualSong(musicInfo.uid)) return;
 
-                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
+                int difficulty = CustomRecordStore.ResolveSelectedDifficulty();
 
                 ModLogger.Verbose($"[CustomRecordUiPatchHelper.PnlStage] 적용 감지: uid={musicInfo.uid}, diff={difficulty}");
 
@@ -77,7 +77,7 @@ namespace muse_dash_test
                 string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 
-                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
+                int difficulty = CustomRecordStore.ResolveSelectedDifficulty();
 
                 ModLogger.Verbose($"[CustomRecordUiPatchHelper.PnlPrep] 적용 감지: uid={uid}, diff={difficulty}");
 
@@ -131,7 +131,7 @@ namespace muse_dash_test
                 string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 
-                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
+                int difficulty = CustomRecordStore.ResolveSelectedDifficulty();
 
                 ModLogger.Verbose($"[CustomRecordUiPatchHelper.PnlRecord] 적용 감지: uid={uid}, diff={difficulty}");
 

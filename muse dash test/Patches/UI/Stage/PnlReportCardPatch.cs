@@ -23,7 +23,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
                 return true;
             }
 
-            int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
+            int difficulty = CustomRecordStore.ResolveSelectedDifficulty();
             ModLogger.Msg($"[PnlReportCard.RefreshBestRecord] 가상 곡 기록 적용 시작: uid={uid}, diff={difficulty}");
 
             // 모듈화된 영역별 텍스트 및 비주얼 주입 실행

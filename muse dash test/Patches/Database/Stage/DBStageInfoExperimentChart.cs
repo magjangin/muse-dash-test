@@ -10,7 +10,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     // true: BMS 파일이 있으면 BMS 차트를 주입, false: ExperimentNotes 배열만 사용
     private static readonly bool UseBmsInjection = true;
 
-    public static void ApplyExperimentChart(DBStageInfo __instance, string activeUid)
+    public static void ApplyExperimentChart(DBStageInfo __instance, string activeUid, int difficulty)
     {
         var musicList = __instance._musicList_k__BackingField;
         if (musicList == null || musicList.Count <= SourceNoteIndex)
@@ -42,14 +42,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         // 노트 목록은 스펙 계산(BMS 변환 포함)이 끝난 뒤에 비웁니다. 변환 중 예외가 나도 원본 목록이 남습니다.
         var runtimeSpecs = BuildRuntimeExperimentNotes(ExperimentNotes);
         bool usedBmsSpecs = false;
-        if (UseBmsInjection && muse_dash_test.HwaResourceManager.TryGetCachedHwaBmsChart(activeUid, out var bmsChart, out string bmsDescription))
+        if (UseBmsInjection && muse_dash_test.HwaResourceManager.TryGetCachedHwaBmsChart(activeUid, difficulty, out var bmsChart, out string bmsDescription))
         {
             var bmsSpecs = BuildBmsExperimentNotes(bmsChart, activeUid);
             if (bmsSpecs.Count > 0)
             {
                 runtimeSpecs = BuildRuntimeExperimentNotes(bmsSpecs);
                 usedBmsSpecs = true;
-                ModLogger.Msg($"[ExperimentChart.Bms] BMS 차트 주입 사용: specs={runtimeSpecs.Count}, {bmsDescription}");
+                ModLogger.Msg($"[ExperimentChart.Bms] BMS 차트 주입 사용: difficulty={difficulty}, specs={runtimeSpecs.Count}, {bmsDescription}");
             }
             else
             {

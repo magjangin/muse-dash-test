@@ -15,7 +15,8 @@ namespace muse_dash_test
     {
         public static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
         private static readonly Dictionary<string, HwaManifest> cachedManifests = new Dictionary<string, HwaManifest>();
-        private static readonly Dictionary<string, BmsChart> cachedBmsCharts = new Dictionary<string, BmsChart>();
+        private static readonly Dictionary<string, BmsChartSet> cachedBmsCharts = new Dictionary<string, BmsChartSet>();
+        private static readonly Dictionary<string, int[]> hostMapsByUid = new Dictionary<string, int[]>(StringComparer.Ordinal);
         private static readonly List<string> virtualUids = new List<string>();
 
         // 커스텀으로 "주장된" 모든 uid 집합. 가상 uid(1999-N)와, 매니페스트가 숙주로 지정한
@@ -107,16 +108,16 @@ namespace muse_dash_test
                 manifest.SourcePath = Path.Combine(dir, "info.txt");
             }
 
-            BmsChart bmsChart = LoadHwaBmsChart(dir, manifest);
+            BmsChartSet bmsCharts = LoadHwaBmsChartSet(dir, manifest);
 
             cachedManifests[uid] = manifest;
-            if (bmsChart != null)
+            if (bmsCharts != null)
             {
                 lock (cachedBmsCharts)
                 {
-                    cachedBmsCharts[uid] = bmsChart;
+                    cachedBmsCharts[uid] = bmsCharts;
                 }
-                ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] BMS 로드 성공: {HwaChartDiagnostics.DescribeBmsChart(bmsChart)}");
+                ModLogger.Msg($"[HwaResourceManager] [{uid}] 채보 등록: {bmsCharts.Describe()}");
             }
             else
             {
