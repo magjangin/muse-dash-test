@@ -168,6 +168,9 @@ namespace muse_dash_test
             }
 
             string normalizedKey = NormalizeManifestKey(key);
+
+            // "난이도1 bms"는 "난이도1"을 포함하므로 레벨 숫자 줄보다 먼저 봐야 합니다.
+            if (TryApplyDifficultyBms(manifest, normalizedKey, value)) return;
             if (TryApplyBool(normalizedKey, value, v => manifest.ShowGhostNotes = v, "고스트노트보이기", "고스트보이기", "노트보이기", "ghostnote")) return;
             if (TryApplyBool(normalizedKey, value, v => manifest.FixDtToRecommended = v, "권장표", "권장dt", "dt보정", "recommendeddt", "fixdt")) return;
             if (TryApplyString(normalizedKey, value, v => manifest.Album = v, "가져올앨범", "앨범", "album")) return;
@@ -189,6 +192,24 @@ namespace muse_dash_test
             // 어떤 항목에도 걸리지 않은 줄은 오타일 가능성이 높습니다. 예전에는 조용히 버려서
             // "설정을 적었는데 반영이 안 된다"는 증상만 남았습니다.
             ModLogger.Warning($"[HwaResourceManager] info.txt에서 알 수 없는 설정 키를 건너뜁니다: '{key}' (값: '{value}')");
+        }
+
+        private static bool TryApplyDifficultyBms(HwaManifest manifest, string normalizedKey, string value)
+        {
+            for (int difficulty = 1; difficulty <= BmsChartSet.MaxDifficulty; difficulty++)
+            {
+                if (!ContainsAny(normalizedKey, $"난이도{difficulty}bms", $"난이도{difficulty}채보", $"difficulty{difficulty}bms", $"difficulty{difficulty}chart"))
+                {
+                    continue;
+                }
+
+                // 다른 난이도 줄과 같이 'null'은 적지 않은 것으로 봅니다.
+                string fileName = value.Trim();
+                manifest.DifficultyBmsFiles[difficulty] = fileName.Equals("null", StringComparison.OrdinalIgnoreCase) ? null : fileName;
+                return true;
+            }
+
+            return false;
         }
 
         private static bool TryApplyString(string normalizedKey, string value, Action<string> apply, params string[] tokens)
@@ -339,6 +360,7 @@ namespace muse_dash_test
                 + ", diff3=" + (manifest.Difficulty3.HasValue ? manifest.Difficulty3.Value.ToString() : "(null)")
                 + ", diff4=" + (manifest.Difficulty4.HasValue ? manifest.Difficulty4.Value.ToString() : "(null)")
                 + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString() : "(null)")
+                + ", diffBms=[" + string.Join(", ", Array.ConvertAll(manifest.DifficultyBmsFiles, file => file ?? "-")) + "]"
                 + ", delay=" + (manifest.Delay.HasValue ? manifest.Delay.Value.ToString("F7") : "(null)")
                 + ", offset=" + (manifest.Offset.HasValue ? manifest.Offset.Value.ToString("F7") : "(null)")
                 + ", showGhostNotes=" + (manifest.ShowGhostNotes.HasValue ? manifest.ShowGhostNotes.Value.ToString() : "(null)")

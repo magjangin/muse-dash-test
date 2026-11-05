@@ -78,7 +78,7 @@ flowchart TD
 
 `HwaManifestLoader`는 `info.txt`를 읽어 제목, 아티스트, 난이도, 원본 숙주 UID, 씬 번호, delay/offset 같은 메타데이터를 만듭니다.
 
-`HwaResourceManager.Bms.cs`는 곡 폴더에서 `.bms` 파일을 찾고 `BmsParser` 결과를 캐시에 저장합니다. 파일 변경 감시는 `HwaResourceManager.Watcher.cs`가 담당합니다.
+`HwaResourceManager.Bms.cs`는 곡 폴더에서 `.bms` 파일을 찾고 `BmsParser` 결과를 곡마다 `BmsChartSet`(난이도별 채보 + 기본 채보)으로 캐시에 저장합니다. 채보를 찾을 때는 항상 난이도를 함께 넘깁니다. 파일 변경 감시는 `HwaResourceManager.Watcher.cs`가 담당합니다.
 
 ### 가상 곡/앨범 주입
 

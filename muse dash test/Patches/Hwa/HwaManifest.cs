@@ -16,6 +16,13 @@ namespace muse_dash_test
         public int? Difficulty3;
         public int? Difficulty4;
         public int? Difficulty5;
+
+        /// <summary>
+        /// 난이도별 채보 파일 이름입니다. 칸 번호가 난이도 번호(1~5)이고 0번 칸은 쓰지 않습니다.
+        /// `hwa info.txt`의 '난이도1 bms: easy.bms' 같은 줄입니다. 비어 있는 난이도는 곡의 기본 채보를 씁니다.
+        /// </summary>
+        public readonly string[] DifficultyBmsFiles = new string[BmsChartSet.MaxDifficulty + 1];
+
         public double? Delay;
         public double? Offset;
 
@@ -31,5 +38,19 @@ namespace muse_dash_test
         /// `hwa info.txt`의 'dt를 권장 표로 고치기'입니다. 적지 않거나 비활성화면 WAV <c>_dt</c>를 그대로 씁니다.
         /// </summary>
         public bool? FixDtToRecommended;
+
+        /// <summary>이 난이도의 레벨 숫자입니다(`난이도N` 줄). 적지 않았거나 없는 번호면 null입니다.</summary>
+        public int? GetDifficultyLevel(int difficulty)
+        {
+            switch (difficulty)
+            {
+                case 1: return Difficulty1;
+                case 2: return Difficulty2;
+                case 3: return Difficulty3;
+                case 4: return Difficulty4;
+                case 5: return Difficulty5;
+                default: return null;
+            }
+        }
     }
 }

@@ -250,7 +250,7 @@ namespace muse_dash_test
 
         private static void AddBmsSceneCandidates(List<SceneCandidate> candidates, string uid)
         {
-            if (!HwaResourceManager.TryGetCachedHwaBmsChart(uid, out BmsChart chart) || chart?.Notes == null)
+            if (!HwaResourceManager.TryGetCachedHwaBmsChart(uid, CustomRecordStore.ResolveBattleDifficulty(), out BmsChart chart) || chart?.Notes == null)
             {
                 return;
             }

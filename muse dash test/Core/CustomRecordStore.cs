@@ -23,11 +23,11 @@ namespace muse_dash_test
             Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "record");
 
         /// <summary>
-        /// 현재 선택/플레이 중인 난이도를 해석합니다.
-        /// 기록 파일명의 키이므로, 저장(승리 시점)과 로드(패널)가 반드시 같은 출처를 쓰도록
-        /// 이 메서드 하나로 단일화합니다. 값을 못 구하면 1로 폴백합니다.
+        /// 이번 배틀에서 실제로 불러온 난이도입니다. 배틀 진입 후(채보 주입·보스·승리 기록)에 씁니다.
+        /// 게임이 배틀 씬을 준비할 때 <c>BattleHelper.GetNoteJsonName</c>의 결과로 채우는 값이라,
+        /// 곡 선택 화면에서 탭을 바꿔도 다음 배틀 전까지 바뀌지 않습니다. 값을 못 구하면 1로 폴백합니다.
         /// </summary>
-        public static int ResolveCurrentDifficulty()
+        public static int ResolveBattleDifficulty()
         {
             try
             {
@@ -36,9 +36,28 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                ModLogger.Warning($"[CustomRecordStore] 난이도 해석 실패, 1로 폴백: {ex.Message}");
+                ModLogger.Warning($"[CustomRecordStore] 배틀 난이도 해석 실패, 1로 폴백: {ex.Message}");
             }
             return 1;
+        }
+
+        /// <summary>
+        /// 곡 선택·준비 화면에서 지금 고른 난이도 탭입니다. 메뉴 패널의 기록 표시에 씁니다.
+        /// 게임이 다음 배틀에서 <c>GetNoteJsonName</c>으로 읽는 값과 같은 칸(<c>DBMusicTag.selectedDiffTglIndex</c>)입니다.
+        /// 값이 없으면 <see cref="ResolveBattleDifficulty"/>로 대신합니다.
+        /// </summary>
+        public static int ResolveSelectedDifficulty()
+        {
+            try
+            {
+                var musicTag = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag;
+                if (musicTag != null && musicTag.selectedDiffTglIndex > 0) return musicTag.selectedDiffTglIndex;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[CustomRecordStore] 선택 난이도 해석 실패, 배틀 난이도로 대신합니다: {ex.Message}");
+            }
+            return ResolveBattleDifficulty();
         }
 
         /// <summary>
@@ -164,7 +183,7 @@ namespace muse_dash_test
                 // 지문은 배틀 시작 때 고정한 값을 씁니다. 고정된 값이 없을 때만 지금 파일을 읽습니다.
                 // 계산에 실패해도(null) 기록 저장 자체는 막지 않습니다.
                 string fingerprint = CustomPlaySession.Current.TakeBattleChartFingerprint(uid)
-                    ?? ChartFingerprint.ForUid(uid)
+                    ?? ChartFingerprint.ForUid(uid, difficulty)
                     ?? ChartFingerprint.NoChart;
 
                 string recordKey = ResolveRecordKey(uid);
@@ -282,7 +301,7 @@ namespace muse_dash_test
         {
             if (record == null) return false;
 
-            string current = ChartFingerprint.ForUid(uid);
+            string current = ChartFingerprint.ForUid(uid, difficulty);
             if (current == null) return true; // 지문 계산 실패 → 판정 불가, 통과
 
             if (string.IsNullOrEmpty(record.chartFingerprint))

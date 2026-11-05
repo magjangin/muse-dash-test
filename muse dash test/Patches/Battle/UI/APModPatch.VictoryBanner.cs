@@ -136,7 +136,7 @@ namespace muse_dash_test.Patches
                 int score = ModReflection.GetInt(target, "Score");
                 int maxCombo = ModReflection.GetInt(target, "MaxCombo");
 
-                int difficulty = CustomRecordStore.ResolveCurrentDifficulty();
+                int difficulty = CustomRecordStore.ResolveBattleDifficulty();
 
                 var session = CustomPlaySession.Current;
                 CustomRecordStore.SaveResult(

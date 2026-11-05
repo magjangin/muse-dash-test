@@ -241,7 +241,7 @@ public class Boss_InitBossObject_Patch
         try
         {
             string uid = CustomPlaySession.Current.LastKnownMusicUid;
-            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart))
+            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, CustomRecordStore.ResolveBattleDifficulty(), out var chart))
             {
                 if (chart != null && chart.Notes != null)
                 {
@@ -285,7 +285,7 @@ public class Boss_InitBossObject_Patch
         try
         {
             string uid = CustomPlaySession.Current.LastKnownMusicUid;
-            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, out var chart))
+            if (HwaResourceManager.TryGetCachedHwaBmsChart(uid, CustomRecordStore.ResolveBattleDifficulty(), out var chart))
             {
                 if (chart != null)
                 {

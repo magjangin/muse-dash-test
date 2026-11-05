@@ -42,6 +42,41 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// info.txt에 적힌 채보 파일 이름을 곡 폴더 기준 전체 경로로 바꿉니다. 파일이 실제로 있는지는 보지 않습니다.
+        ///
+        /// <para>곡 폴더 안의 <c>.bms</c>만 받습니다. 곡은 남이 만든 폴더째로 받기도 하므로, info.txt 한 줄이
+        /// 폴더 밖 파일을 읽게 하지 않습니다. 파일 변경 감지도 곡 폴더 안의 <c>.bms</c>만 봅니다.</para>
+        /// </summary>
+        public static bool TryResolveInSongFolder(string songDir, string configuredName, out string fullPath)
+        {
+            fullPath = null;
+            if (string.IsNullOrWhiteSpace(songDir) || string.IsNullOrWhiteSpace(configuredName)) return false;
+
+            string name = configuredName.Trim();
+            if (Path.IsPathRooted(name)) return false;
+            if (!string.Equals(Path.GetExtension(name), ".bms", StringComparison.OrdinalIgnoreCase)) return false;
+
+            try
+            {
+                string root = Path.GetFullPath(songDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                string candidate = Path.GetFullPath(Path.Combine(root, name));
+                if (!candidate.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return false;
+
+                fullPath = candidate;
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 이름이 "temp"/"tmp" 그 자체이거나, 그 뒤에 글자가 아닌 문자가 이어질 때만 참입니다.
         /// (<c>temp</c>·<c>tmp_1</c>·<c>temp-backup</c>은 임시, <c>tempo</c>·<c>attempt</c>는 정상 채보)
         /// </summary>

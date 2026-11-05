@@ -264,6 +264,12 @@ namespace muse_dash_test
             {
                 if (!TryCloneMusicInfo(originalInfo, uid, out MusicInfo clonedInfo)) return;
 
+                // 복제본의 난이도 칸을 info.txt 값으로 덮기 전에, 숙주에 실제로 있는 차트 에셋을 기억합니다.
+                var host = new MusicInfoWrapper(originalInfo);
+                int[] hostMaps = BmsHostMaps.AvailableDifficulties(new[] { host.difficulty1, host.difficulty2, host.difficulty3, host.difficulty4, host.difficulty5 });
+                HwaResourceManager.RememberHostMaps(uid, hostMaps);
+                ModLogger.Msg($"[CustomTagRegistry] [{uid}] 숙주 {originalInfo.uid}에 있는 난이도: {string.Join(",", hostMaps)}");
+
                 ApplyVirtualSongMetadata(clonedInfo, uid, name, author, levelDesigner, diff1, diff2, diff3, diff4, diff5);
                 CleanPurchaseProperties(clonedInfo);
                 var musicExInfo = ModReflection.GetValue(clonedInfo, "m_MusicExInfo");
