@@ -18,12 +18,16 @@ namespace muse_dash_test
         private static int monitorGeneration;
         // 우리가 직접 주입한 커스텀 메뉴 BGM 클립만 추적합니다(게임 원본 클립은 절대 해제하지 않기 위해).
         private static AudioClip injectedMenuClip;
+        private static bool isCustomMenuBgmActive;
+
+        internal static bool IsCustomMenuBgmActive => isCustomMenuBgmActive || !string.IsNullOrEmpty(currentLoadingUid);
 
         public static void TriggerMenuBgmChange(string uid)
         {
             if (string.IsNullOrEmpty(uid) || !CustomContentIds.IsVirtualSong(uid))
             {
                 currentLoadingUid = null;
+                isCustomMenuBgmActive = false;
                 monitorGeneration++;
                 return;
             }
@@ -39,6 +43,7 @@ namespace muse_dash_test
             }
 
             currentLoadingUid = uid;
+            isCustomMenuBgmActive = true;
             // 이번 요청의 세대 번호를 코루틴에 넘겨 줍니다. uid만으로는 A→B→A처럼 같은 곡으로
             // 되돌아온 경우 낡은 코루틴이 자기가 낡았다는 걸 알 수 없습니다(아래 코루틴 주석 참고).
             int generation = ++monitorGeneration;
@@ -49,6 +54,7 @@ namespace muse_dash_test
         public static void StopMenuMonitoring(string reason)
         {
             currentLoadingUid = null;
+            isCustomMenuBgmActive = false;
             monitorGeneration++;
             ModLogger.Msg($"[MenuBGM.Monitor] 메뉴 BGM 모니터링 중지 요청: {reason}");
         }
@@ -61,6 +67,7 @@ namespace muse_dash_test
         public static void StopCustomMenuBgm(string reason)
         {
             currentLoadingUid = null;
+            isCustomMenuBgmActive = false;
             monitorGeneration++;
             try
             {
@@ -68,8 +75,10 @@ namespace muse_dash_test
                 if (src == null)
                 {
                     GameObject bgmGo = GameObject.Find("BGM");
-                    if (bgmGo == null) return;
-                    src = bgmGo.GetComponent<AudioSource>();
+                    if (bgmGo != null)
+                    {
+                        src = bgmGo.GetComponent<AudioSource>();
+                    }
                 }
 
                 if (src != null && injectedMenuClip != null && src.clip == injectedMenuClip)
@@ -78,11 +87,14 @@ namespace muse_dash_test
                     ModLogger.Msg($"[MenuBGM] 커스텀 메뉴 BGM 정지 ({reason}): 우리가 주입한 클립 재생 중단");
                 }
 
-                // 곡 선택/준비 화면 이탈 시 디스코드 프로필도 In Menu 상태로 즉시 복원
-                var discordManager = Il2CppPeroTools2.Commons.Singleton<Il2Cpp.DiscordManager>.instance;
-                if (discordManager != null && ModConfig.EnableDiscordRPC)
+                // 배틀 진입이 아닌 메뉴 이동일 때만 디스코드 프로필을 In Menu 상태로 복원합니다.
+                if (!HywStageManager.IsInStageStatic)
                 {
-                    discordManager.SetUpdateActivity(false, "In Menu");
+                    var discordManager = Il2CppPeroTools2.Commons.Singleton<Il2Cpp.DiscordManager>.instance;
+                    if (discordManager != null && ModConfig.EnableDiscordRPC)
+                    {
+                        discordManager.SetUpdateActivity(false, "In Menu");
+                    }
                 }
             }
             catch (Exception ex)
@@ -150,8 +162,8 @@ namespace muse_dash_test
                     yield break;
                 }
 
-                // 로드가 완료되었을 시점에도 유효성 검사 (사용자가 곡을 다시 변경했는지 여부)
-                if (generation != monitorGeneration || CustomPlaySession.Current.LastKnownMusicUid != uid)
+                // 로드가 완료되었을 시점에도 유효성 검사 (사용자가 곡을 다시 변경했거나 AudioSource가 파괴되었는지 여부)
+                if (generation != monitorGeneration || CustomPlaySession.Current.LastKnownMusicUid != uid || menuSource == null || menuSource.gameObject == null)
                 {
                     yield break;
                 }
@@ -179,6 +191,7 @@ namespace muse_dash_test
                     menuSource.loop = true;
                     menuSource.Play();
                     injectedMenuClip = customClip;
+                    isCustomMenuBgmActive = true;
 
                     // 직전에 우리가 주입했던 클립을 해제합니다. 위에서 menuSource.clip을 새 클립으로
                     // 갈아끼웠으므로 이 시점의 previousInjected는 어떤 AudioSource도 참조하지 않습니다.
@@ -191,6 +204,9 @@ namespace muse_dash_test
                         UnityEngine.Object.Destroy(previousInjected);
                         ModLogger.Verbose($"[MenuBGM] 이전 커스텀 클립 해제: {previousInjected.name}");
                     }
+
+                    // 이전 배틀에서 은퇴한 배틀 BGM 클립이 있다면 menuSource.clip 교체 직후 안전하게 정리합니다.
+                    HwaBattleMediaController.DestroyUnreferencedRetiredClips("custom menu BGM applied");
 
                     ModLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
                     ModLogger.Verbose($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
@@ -342,6 +358,9 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(AudioSource), "clip", MethodType.Setter)]
     public class AudioSource_SetClip_Patch
     {
+        private static Il2CppAssets.Scripts.UI.Panels.PnlStage cachedPnlStage;
+        private static Il2Cpp.PnlPreparation cachedPnlPreparation;
+
         public static bool Prefix(AudioSource __instance, ref AudioClip value)
         {
             try
@@ -358,8 +377,8 @@ namespace muse_dash_test
 
                     if (!inStageSelectionContext)
                     {
-                        // 곡 선택/준비 화면을 벗어나면 커스텀 BGM 재생을 정지하고 모니터링을 종료하여 게임이 자기 BGM을 회복하도록 합니다.
-                        if (!string.IsNullOrEmpty(CustomPlaySession.Current.SelectedMusicUid))
+                        // 곡 선택/준비 화면을 벗어나면 활성 상태인 커스텀 메뉴 BGM 재생만 정지하고 모니터링을 종료하여 게임이 자기 BGM을 회복하도록 합니다.
+                        if (HwaMenuBgmController.IsCustomMenuBgmActive)
                         {
                             ModLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 커스텀 BGM 정지 및 모니터링 종료: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
                             HwaMenuBgmController.StopCustomMenuBgm("곡 선택/준비 화면 이탈 감지");
@@ -389,6 +408,21 @@ namespace muse_dash_test
             return true;
         }
 
+        public static void Postfix(AudioSource __instance)
+        {
+            try
+            {
+                if (__instance != null && __instance.gameObject != null && __instance.gameObject.name == "BGM")
+                {
+                    HwaBattleMediaController.DestroyUnreferencedRetiredClips("BGM.set_clip Postfix");
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[MenuBGM.Patch] set_clip Postfix 무시된 예외: {ex.Message}");
+            }
+        }
+
         private static bool IsCustomOggClip(AudioClip clip)
         {
             if (clip == null || string.IsNullOrEmpty(clip.name))
@@ -403,18 +437,24 @@ namespace muse_dash_test
         /// 곡 선택(PnlStage) 또는 곡 준비(PnlPreparation) 패널이 현재 실제로 활성 상태인지 확인합니다.
         /// MD가 단일 씬 안에서 패널만 켜고 끄는 구조이므로, 이게 "곡 선택 컨텍스트에 있는지"의 유일하게 신뢰 가능한 신호입니다.
         /// </summary>
-        private static bool IsStageSelectionContextActive()
+        internal static bool IsStageSelectionContextActive()
         {
             try
             {
-                var pnlStage = UnityEngine.Object.FindObjectOfType<Il2CppAssets.Scripts.UI.Panels.PnlStage>();
-                if (pnlStage != null && pnlStage.gameObject != null && pnlStage.gameObject.activeInHierarchy)
+                if (cachedPnlStage == null)
+                {
+                    cachedPnlStage = UnityEngine.Object.FindObjectOfType<Il2CppAssets.Scripts.UI.Panels.PnlStage>();
+                }
+                if (cachedPnlStage != null && cachedPnlStage.gameObject != null && cachedPnlStage.gameObject.activeInHierarchy)
                 {
                     return true;
                 }
 
-                var pnlPreparation = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlPreparation>();
-                if (pnlPreparation != null && pnlPreparation.gameObject != null && pnlPreparation.gameObject.activeInHierarchy)
+                if (cachedPnlPreparation == null)
+                {
+                    cachedPnlPreparation = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlPreparation>();
+                }
+                if (cachedPnlPreparation != null && cachedPnlPreparation.gameObject != null && cachedPnlPreparation.gameObject.activeInHierarchy)
                 {
                     return true;
                 }

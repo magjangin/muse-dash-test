@@ -34,6 +34,7 @@ namespace muse_dash_test
 
         private sealed class CachedPanelBinding
         {
+            public GameObject Root;
             public readonly List<Text> TitleTexts = new List<Text>();
             public readonly List<Text> ArtistTexts = new List<Text>();
             public readonly List<Text> DesignerLabelTexts = new List<Text>();
@@ -41,6 +42,7 @@ namespace muse_dash_test
 
             public bool IsAlive()
             {
+                if (Root == null) return false;
                 if (TitleTexts.Count > 0 && TitleTexts[0] == null) return false;
                 if (ArtistTexts.Count > 0 && ArtistTexts[0] == null) return false;
                 return true;
@@ -48,13 +50,14 @@ namespace muse_dash_test
         }
 
         private static readonly Dictionary<int, CachedPanelBinding> BindingCache = new Dictionary<int, CachedPanelBinding>();
+        private static readonly List<int> StaleBindingKeys = new List<int>();
 
         /// <summary>
         /// 지정한 패널의 텍스트 멤버 및 자식 UI 컴포넌트들을 찾아서 커스텀 곡 정보로 오버라이드합니다.
         /// </summary>
         public static void ApplySongTitleOverride(string source, object pnlInstance, string resolvedUid)
         {
-            if (!EnableSongTitleExperiment || pnlInstance == null) return;
+            if (!EnableSongTitleExperiment || !PnlMusicDiagnostics.IsAlivePanelObject(pnlInstance)) return;
             if (string.IsNullOrEmpty(resolvedUid)) return;
 
             string title = ExperimentTitle;
@@ -102,7 +105,7 @@ namespace muse_dash_test
             try
             {
                 if (obj is GameObject go) return go;
-                if (obj is Component component) return component.gameObject;
+                if (obj is Component component) return component != null ? component.gameObject : null;
 
                 var memberGameObject = ModReflection.GetValue(obj, "gameObject", silent: true) as GameObject;
                 if (memberGameObject != null) return memberGameObject;
@@ -136,6 +139,7 @@ namespace muse_dash_test
 
                 if (target is Text unityText)
                 {
+                    if (unityText == null) return 0;
                     unityText.text = value;
                     return 1;
                 }
@@ -156,6 +160,7 @@ namespace muse_dash_test
 
             if (!BindingCache.TryGetValue(rootId, out var binding) || !binding.IsAlive())
             {
+                PruneDeadBindings();
                 binding = BuildBinding(root);
                 BindingCache[rootId] = binding;
             }
@@ -185,9 +190,27 @@ namespace muse_dash_test
             }
         }
 
+        private static void PruneDeadBindings()
+        {
+            if (BindingCache.Count == 0) return;
+            StaleBindingKeys.Clear();
+            foreach (var kvp in BindingCache)
+            {
+                if (kvp.Value == null || !kvp.Value.IsAlive())
+                {
+                    StaleBindingKeys.Add(kvp.Key);
+                }
+            }
+            for (int i = 0; i < StaleBindingKeys.Count; i++)
+            {
+                BindingCache.Remove(StaleBindingKeys[i]);
+            }
+            StaleBindingKeys.Clear();
+        }
+
         private static CachedPanelBinding BuildBinding(GameObject root)
         {
-            var binding = new CachedPanelBinding();
+            var binding = new CachedPanelBinding { Root = root };
             try
             {
                 var texts = root.GetComponentsInChildren<Text>(true);

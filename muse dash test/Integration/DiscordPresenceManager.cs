@@ -130,7 +130,8 @@ namespace muse_dash_test
         public static void SetResults(string title, int score, float accuracy, bool isFullCombo, bool isAllPerfect)
         {
             string statusText = isAllPerfect ? "ALL PERFECT!" : (isFullCombo ? "FULL COMBO!" : "CLEAR!");
-            string stateText = $"{title} [{statusText} | Acc: {accuracy:F2}%]";
+            float displayAcc = accuracy <= 1.0f ? accuracy * 100f : accuracy;
+            string stateText = $"{title} [{statusText} | Acc: {displayAcc:F2}%]";
             SendPresence(isPlaying: true, levelInfo: stateText);
         }
 

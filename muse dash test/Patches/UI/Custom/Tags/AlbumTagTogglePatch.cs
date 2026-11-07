@@ -16,16 +16,20 @@ namespace muse_dash_test
     public class AlbumTagToggle_Init_Patch
     {
         private static Texture2D cachedCustomTexture;
-        private static bool hasTriedLoading = false;
+        private static bool hasFailedLoading = false;
 
         public static Texture2D GetCustomTexture()
         {
-            if (hasTriedLoading)
+            if (cachedCustomTexture != null)
             {
                 return cachedCustomTexture;
             }
 
-            hasTriedLoading = true;
+            if (hasFailedLoading)
+            {
+                return null;
+            }
+
             try
             {
                 string gameDir = MelonLoader.Utils.MelonEnvironment.GameRootDirectory;
@@ -58,16 +62,19 @@ namespace muse_dash_test
                         // 해제하지 않으면 GetCustomTexture()를 부를 때마다 텍스처가 하나씩 샙니다.
                         // (MusicButtonCellPatch의 cover.png 로딩과 같은 처리입니다.)
                         UnityEngine.Object.Destroy(texture);
+                        hasFailedLoading = true;
                         ModLogger.Error($"[APMod.TagIcon] 물리 파일 '{pngPath}'를 Texture2D로 디코딩하는 데 실패했습니다.");
                     }
                 }
                 else
                 {
+                    hasFailedLoading = true;
                     ModLogger.Error($"[APMod.TagIcon] 로드할 파일 '{pngPath}'가 존재하지 않습니다.");
                 }
             }
             catch (Exception ex)
             {
+                hasFailedLoading = true;
                 ModLogger.Error($"[APMod.TagIcon] 물리 텍스처 로딩 및 생성 중 예외 발생: {ex}");
             }
 

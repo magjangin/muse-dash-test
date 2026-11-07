@@ -143,19 +143,17 @@ namespace muse_dash_test
                     injectedAudioSource = null;
                 }
 
-                // [중요] 여기서 injectedClip을 Destroy하면 안 됩니다.
+                // [중요] 여기서 injectedClip을 즉시 Destroy하면 안 됩니다.
                 // StopMedia는 승리 직후 OnShowVictory 동기 이벤트 안에서 호출되는데, 그 이벤트는
                 // 게임의 GameMusic.BattleEnd() 실행 도중 동기로 디스패치됩니다. 게임의 BGM AudioSource는
                 // 아직 이 클립을 참조 중이라, 여기서 파괴하면 BattleEnd가 복귀해 파괴된 클립을 건드려
                 // NullReferenceException으로 죽고(매 프레임 반복), 결과 화면으로 절대 넘어가지 못합니다.
-                // (v0.7.6에서 이 Destroy가 추가되며 결과창 회귀가 발생함.)
+                // 또한 ResetState() 시점에도 아직 새 클립이 로드되기 전이라 AudioManager.bgm.clip이
+                // 이전 클립을 가리키고 있으므로 그 자리에서 바로 파괴하면 재도전이 멈춥니다(b14b0a5).
                 //
-                // 배틀 클립은 여기뿐 아니라 이 모드 어디에서도 Destroy하지 않습니다.
-                // v0.8.1(ce217a9)은 여기 것만 빼고 ResetState()와 다음 배틀 주입 시점의 파괴는 남겼는데,
-                // 같은 날 b14b0a5가 결과창 멈춤을 막으려고 그 둘도 뺐습니다. 그런데 이 주석은 그 뒤로도
-                // 둘이 남아 있다고 적혀 있었고, a5fe2ce가 둘을 되살렸다가 바로 다음 커밋에서 다시 뺐습니다.
-                // ResetState()가 우리 참조를 끊으므로 곡마다 쌓이지는 않으며, 누수가 실측된 적도 없습니다.
-                // 다시 넣으려면 결과창 진입·일시정지 후 재시작·결과창 재도전을 실제로 밟아 확인하십시오.
+                // 대신 ResetState()에서는 클립을 retiredClips 목록으로만 옮기고, 다음 배틀 클립이나
+                // 메뉴 BGM이 AudioManager.bgm.clip을 실제로 교체한 직후에만 DestroyUnreferencedRetiredClips로
+                // 참조가 완전히 끊긴 은퇴 클립을 파괴하여 장시간(3시간+) 플레이 시 FMOD/오디오 스트림 누수를 막습니다.
 
                 GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
                 if (bgmGo != null)
@@ -168,21 +166,24 @@ namespace muse_dash_test
                     }
                 }
 
-                // 진단용: 씬에 남아있는 모든 AudioSource 로그 출력
-                AudioSource[] allSources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
-                if (allSources != null && allSources.Length > 0)
+                // 진단용: Verbose가 켜져 있을 때만 씬의 AudioSource 전체를 스캔합니다.
+                if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
                 {
-                    ModLogger.Msg($"[HwaBattleMediaController.Debug] 현재 씬의 AudioSource 진단 (총 {allSources.Length}개):");
-                    foreach (var src in allSources)
+                    AudioSource[] allSources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
+                    if (allSources != null && allSources.Length > 0)
                     {
-                        if (src == null || src.gameObject == null) continue;
-                        string clipName = src.clip != null ? src.clip.name : "(null)";
-                        ModLogger.Msg($"  - GameObject='{src.gameObject.name}', clip='{clipName}', isPlaying={src.isPlaying}, loop={src.loop}, volume={src.volume}");
+                        ModLogger.Verbose($"[HwaBattleMediaController.Debug] 현재 씬의 AudioSource 진단 (총 {allSources.Length}개):");
+                        foreach (var src in allSources)
+                        {
+                            if (src == null || src.gameObject == null) continue;
+                            string clipName = src.clip != null ? src.clip.name : "(null)";
+                            ModLogger.Verbose($"  - GameObject='{src.gameObject.name}', clip='{clipName}', isPlaying={src.isPlaying}, loop={src.loop}, volume={src.volume}");
+                        }
                     }
-                }
-                else
-                {
-                    ModLogger.Msg("[HwaBattleMediaController.Debug] 현재 씬에 AudioSource가 존재하지 않습니다.");
+                    else
+                    {
+                        ModLogger.Verbose("[HwaBattleMediaController.Debug] 현재 씬에 AudioSource가 존재하지 않습니다.");
+                    }
                 }
             }
             catch (Exception ex)

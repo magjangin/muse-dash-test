@@ -60,7 +60,10 @@ namespace muse_dash_test
             {
                 cachedBmsCharts.Clear();
             }
-            virtualUids.Clear();
+            lock (virtualUids)
+            {
+                virtualUids.Clear();
+            }
             customClaimedUids.Clear();
         }
 
@@ -124,7 +127,10 @@ namespace muse_dash_test
                 ModLogger.Warning($"[HwaResourceManager] [{uid}] BMS 로드 실패 또는 파일 없음");
             }
 
-            virtualUids.Add(uid);
+            lock (virtualUids)
+            {
+                virtualUids.Add(uid);
+            }
             customClaimedUids.Add(uid);
 
             // 매니페스트가 순정 슬롯을 숙주로 지정했다면(uid: 66-0 등) 그 uid도 커스텀으로 인식되게 등록.
@@ -173,7 +179,10 @@ namespace muse_dash_test
                     Difficulty1 = 2 + i,
                     Difficulty2 = 5 + i
                 };
-                virtualUids.Add(uid);
+                lock (virtualUids)
+                {
+                    virtualUids.Add(uid);
+                }
                 customClaimedUids.Add(uid);
             }
         }
@@ -337,7 +346,10 @@ namespace muse_dash_test
 
         public static List<string> GetVirtualUids()
         {
-            return new List<string>(virtualUids);
+            lock (virtualUids)
+            {
+                return new List<string>(virtualUids);
+            }
         }
     }
 }

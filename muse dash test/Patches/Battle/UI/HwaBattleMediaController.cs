@@ -1,6 +1,7 @@
 using MelonLoader;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -22,6 +23,10 @@ namespace muse_dash_test
         private static AudioSource injectedAudioSource;
         // 우리가 직접 주입한 커스텀 배틀 BGM 클립만 추적합니다(해제 대상 한정).
         private static AudioClip injectedClip;
+        // 이전 배틀에서 썼던 커스텀 클립들을 모아 두었다가, 어떤 AudioSource도 더 이상 참조하지 않을 때만 안전하게 Destroy합니다.
+        private static readonly List<AudioClip> retiredClips = new List<AudioClip>();
+        // 비디오 BGA 쿼드용 공유 머티리얼(매 배틀 new Material 생성으로 인한 네이티브 누수 방지).
+        private static Material sharedVideoMaterial;
 
         internal static AudioSource ActiveAudioSource => injectedAudioSource;
         internal static AudioClip ActiveAudioClip => injectedClip;
@@ -33,11 +38,77 @@ namespace muse_dash_test
             battleMediaInjectionStarted = false;
             injectedAudioSource = null;
             mediaGeneration++;
-            // 참조만 끊고 Destroy하지 않습니다. 이유는 Lifecycle.cs StopMedia의 [중요] 주석을 보십시오.
+            // 여기서 즉시 Destroy하면 아직 새 클립이 로드되기 전이라 AudioManager.bgm.clip이 파괴된 클립을 가리켜
+            // 재시작/결과창이 멈춥니다(b14b0a5 참고). 대신 은퇴 목록에 옮겨 두고 AudioManager.bgm.clip이 다른 클립으로
+            // 교체된 뒤에 DestroyUnreferencedRetiredClips에서 안전하게 해제합니다.
+            RetireClip(injectedClip);
             injectedClip = null;
             ProgressBarPatch.Reset();
             HwaSyncManager.ResetCache();
-            ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, ManagedHeap={currentMem / 1048576f:F2}MB)");
+            ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, 은퇴 대기={retiredClips.Count}개, ManagedHeap={currentMem / 1048576f:F2}MB)");
+        }
+
+        private static void RetireClip(AudioClip clip)
+        {
+            if (clip == null) return;
+            if (!retiredClips.Contains(clip))
+            {
+                retiredClips.Add(clip);
+            }
+        }
+
+        /// <summary>
+        /// 은퇴 목록(<see cref="retiredClips"/>)에 있는 이전 배틀 커스텀 클립 중,
+        /// 현재 활성 BGM <see cref="AudioSource"/>가 더 이상 물고 있지 않은 클립만 골라 안전하게 파괴합니다.
+        /// </summary>
+        public static void DestroyUnreferencedRetiredClips(string reason)
+        {
+            if (retiredClips.Count == 0) return;
+
+            try
+            {
+                AudioSource gameBgm = GameBgmSource.TryGet(out _);
+                AudioClip activeGameClip = gameBgm != null ? gameBgm.clip : null;
+                AudioClip activeInjectedSourceClip = injectedAudioSource != null ? injectedAudioSource.clip : null;
+
+                AudioClip activeFallbackClip = null;
+                GameObject fallbackGo = GameObject.Find("HwaBattleBgmSource");
+                if (fallbackGo != null)
+                {
+                    AudioSource fallbackSource = fallbackGo.GetComponent<AudioSource>();
+                    if (fallbackSource != null)
+                    {
+                        activeFallbackClip = fallbackSource.clip;
+                    }
+                }
+
+                for (int i = retiredClips.Count - 1; i >= 0; i--)
+                {
+                    AudioClip candidate = retiredClips[i];
+                    if (candidate == null)
+                    {
+                        retiredClips.RemoveAt(i);
+                        continue;
+                    }
+
+                    if (candidate == injectedClip ||
+                        candidate == activeGameClip ||
+                        candidate == activeInjectedSourceClip ||
+                        candidate == activeFallbackClip)
+                    {
+                        continue;
+                    }
+
+                    string candidateName = candidate.name;
+                    retiredClips.RemoveAt(i);
+                    UnityEngine.Object.Destroy(candidate);
+                    ModLogger.Verbose($"[HwaBattleMediaController.Memory] 은퇴한 배틀 BGM 클립 해제 완료 ({reason}): {candidateName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[HwaBattleMediaController.Memory] 은퇴 클립 정리 중 예외 ({reason}): {ex.Message}");
+            }
         }
 
         public static void StartBattleMediaInjection()
@@ -192,6 +263,7 @@ namespace muse_dash_test
 
                 string beforeState = DescribeAudioSource(targetSource);
 
+                RetireClip(injectedClip);
                 targetSource.clip = clip;
                 targetSource.loop = true;
                 targetSource.playOnAwake = false;
@@ -199,6 +271,7 @@ namespace muse_dash_test
                 targetSource.Play();
                 injectedAudioSource = targetSource;
                 injectedClip = clip;
+                DestroyUnreferencedRetiredClips("new battle BGM applied");
                 ProgressBarPatch.OnCustomAudioClipLoaded(clip.length);
 
                 long heapMem = GC.GetTotalMemory(false);
@@ -325,14 +398,10 @@ namespace muse_dash_test
                 quad.transform.localScale = new Vector3(width, height, 1f);
 
                 MeshRenderer renderer = quad.GetComponent<MeshRenderer>();
-                Shader shader = Shader.Find("Unlit/Texture")
-                             ?? Shader.Find("Sprites/Default")
-                             ?? Shader.Find("UI/Default");
-
-                if (shader != null)
+                Material videoMaterial = GetOrCreateSharedVideoMaterial();
+                if (videoMaterial != null)
                 {
-                    renderer.material = new Material(shader);
-                    ModLogger.Msg($"[HwaBattleMediaController.Video] '{shader.name}' 셰이더를 비디오 패널에 주입했습니다.");
+                    renderer.sharedMaterial = videoMaterial;
                 }
                 else
                 {
@@ -358,6 +427,30 @@ namespace muse_dash_test
             {
                 ModLogger.Error($"[HwaBattleMediaController.Video] 비디오 재생 중 오류 발생: {ex}");
             }
+        }
+
+        private static Material GetOrCreateSharedVideoMaterial()
+        {
+            if (sharedVideoMaterial != null)
+            {
+                return sharedVideoMaterial;
+            }
+
+            Shader shader = Shader.Find("Unlit/Texture")
+                         ?? Shader.Find("Sprites/Default")
+                         ?? Shader.Find("UI/Default");
+            if (shader == null)
+            {
+                return null;
+            }
+
+            sharedVideoMaterial = new Material(shader)
+            {
+                name = "HwaSharedVideoMaterial",
+                hideFlags = HideFlags.DontUnloadUnusedAsset
+            };
+            ModLogger.Msg($"[HwaBattleMediaController.Video] '{shader.name}' 셰이더 기반 공유 비디오 머티리얼을 생성했습니다.");
+            return sharedVideoMaterial;
         }
 
         private static IEnumerator MonitorVideoPlayback(VideoPlayer vp)

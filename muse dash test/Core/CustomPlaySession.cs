@@ -62,17 +62,9 @@ namespace muse_dash_test
 
             try
             {
+                // DiscordPresenceManager.UpdateForSelection 내부에서 중복 호출을 걸러 내며
+                // Singleton<Il2Cpp.DiscordManager>.instance.SetUpdateActivity를 호출합니다.
                 DiscordPresenceManager.UpdateForSelection(uid);
-
-                // 원본 게임의 DiscordManager에도 즉시 통보하여 곡 목록/선택 패널에서 곡을 넘길 때마다 디스코드에 바로 갱신
-                var discordManager = Il2CppPeroTools2.Commons.Singleton<Il2Cpp.DiscordManager>.instance;
-                // EnableDiscordRPC를 꺼 두면 원본 Discord 상태도 건드리지 않습니다(DiscordPresenceManager와 같은 기준).
-                if (discordManager != null && ModConfig.EnableDiscordRPC)
-                {
-                    DiscordPresenceManager.ResolveSongDetails(uid, out string title, out string artist);
-                    string info = $"{title} - {artist}";
-                    discordManager.SetUpdateActivity(true, info);
-                }
             }
             catch (Exception ex)
             {

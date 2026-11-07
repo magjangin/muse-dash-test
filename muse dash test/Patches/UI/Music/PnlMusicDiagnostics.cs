@@ -24,14 +24,39 @@ namespace muse_dash_test
             public string ClipReason;
         }
 
+        /// <summary>
+        /// object 타입으로 전달된 UnityEngine.Object가 네이티브 메모리에서 이미 파괴되었거나 비활성화되었는지 검사합니다.
+        /// (object == null 비교는 UnityEngine.Object.op_Equality 오버로드를 타지 않아 파괴된 Il2Cpp 객체가 통과하는 문제를 막습니다.)
+        /// </summary>
+        internal static bool IsAlivePanelObject(object obj)
+        {
+            if (obj == null) return false;
+            if (obj is UnityEngine.Object unityObj)
+            {
+                if (!unityObj) return false;
+                if (unityObj is Component comp)
+                {
+                    return comp.gameObject != null && comp.gameObject.activeInHierarchy;
+                }
+                if (unityObj is GameObject go)
+                {
+                    return go.activeInHierarchy;
+                }
+            }
+            return true;
+        }
+
         public static IEnumerator DelayedApplyPrepMusicInfo(object pnlInstance, string source, float delaySeconds)
         {
             yield return new WaitForSeconds(delaySeconds);
+            if (!IsAlivePanelObject(pnlInstance)) yield break;
             ApplyPrepMusicInfo(pnlInstance, source);
         }
 
         public static void ApplyPrepMusicInfo(object pnlInstance, string source = "PnlPreparation.Awake")
         {
+            if (!IsAlivePanelObject(pnlInstance)) return;
+
             try
             {
                 string lastKnownUid = CustomPlaySession.Current.LastKnownMusicUid;

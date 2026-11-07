@@ -43,8 +43,9 @@ namespace muse_dash_test.Patches.Battle.UI
                 string methodName = __originalMethod != null ? __originalMethod.Name : "(unknown)";
                 ModLogger.Msg($"🏆 [PnlVictory.{methodName}.Prefix] 호출됨! ActiveSelf={(__instance != null && __instance.gameObject != null ? __instance.gameObject.activeSelf.ToString() : "null")}");
 
-                // 결과 화면 진입 시 인게임 오버레이/판정바 강제 해제 보장
+                // 결과 화면 진입 시 인게임 오버레이/판정바 강제 해제 및 승리 화면 타임아웃 감시 완료 표시
                 HywStageManager.Instance?.MarkStageEnded();
+                Patches.VictoryFlowGuard.MarkCompleted();
             }
             catch (Exception ex)
             {

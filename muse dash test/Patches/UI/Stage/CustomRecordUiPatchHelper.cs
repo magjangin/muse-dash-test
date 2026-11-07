@@ -33,7 +33,7 @@ namespace muse_dash_test
         {
             try
             {
-                if (stage == null || musicInfo == null) return;
+                if (stage == null || stage.gameObject == null || !stage.gameObject.activeInHierarchy || musicInfo == null) return;
                 if (!CustomContentIds.IsVirtualSong(musicInfo.uid)) return;
 
                 int difficulty = CustomRecordStore.ResolveSelectedDifficulty();
@@ -73,7 +73,7 @@ namespace muse_dash_test
         {
             try
             {
-                if (prep == null) return;
+                if (prep == null || prep.gameObject == null || !prep.gameObject.activeInHierarchy) return;
                 string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 
@@ -120,6 +120,7 @@ namespace muse_dash_test
         public static System.Collections.IEnumerator DelayedApplyPrep(Il2Cpp.PnlPreparation prep, float delay)
         {
             yield return new WaitForSeconds(delay);
+            if (prep == null || prep.gameObject == null || !prep.gameObject.activeInHierarchy) yield break;
             ApplyCustomRecordToPnlPreparation(prep);
         }
 
@@ -127,7 +128,7 @@ namespace muse_dash_test
         {
             try
             {
-                if (pnlRecord == null) return;
+                if (pnlRecord == null || pnlRecord.gameObject == null) return;
                 string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 if (!CustomContentIds.IsVirtualSong(uid)) return;
 

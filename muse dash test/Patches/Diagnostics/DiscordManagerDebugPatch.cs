@@ -13,6 +13,8 @@ namespace muse_dash_test
     [HarmonyPatch]
     public static class DiscordManagerDebugPatch
     {
+        private static PnlBattle cachedPnlBattle;
+
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.InitDiscord))]
         [HarmonyPrefix]
         public static void InitDiscord_Prefix(DiscordManager __instance)
@@ -28,7 +30,7 @@ namespace muse_dash_test
             // EnableDiscordRPC=false여도 "In Menu" 등으로 인자가 덮였습니다.
             if (!ModConfig.EnableDiscordRPC) return;
 
-            bool isSelectionActive = IsStageSelectionContextActive();
+            bool isSelectionActive = AudioSource_SetClip_Patch.IsStageSelectionContextActive();
             bool isInBattle = IsInBattleStageContext();
 
             // 곡 선택 패널도 아니고 배틀 중도 아니면 (홈 메뉴 복귀 시) "In Menu"로 명시적 덮어쓰기 전송
@@ -36,26 +38,26 @@ namespace muse_dash_test
             {
                 levelInfo = "In Menu";
                 isPlaying = false;
-                ModLogger.Msg("[DiscordHook.SetUpdateActivity.Prefix] 홈 메뉴 복귀 감지 ➔ 'In Menu' (isPlaying=false) 명시적 갱신 전송");
+                ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] 홈 메뉴 복귀 감지 ➔ 'In Menu' (isPlaying=false) 명시적 갱신 전송");
                 return;
             }
 
             string currentUid = CustomPlaySession.Current.LastKnownMusicUid;
 
-            ModLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
-            ModLogger.Msg($"  - isPlaying (입력값): {isPlaying}");
-            ModLogger.Msg($"  - isSelectionActive (곡선택 패널): {isSelectionActive}");
-            ModLogger.Msg($"  - isInBattle (배틀 여부): {isInBattle}");
-            ModLogger.Msg($"  - levelInfo (원본 전달값): '{levelInfo ?? "(null)"}'");
-            ModLogger.Msg($"  - Current Selected UID: '{currentUid}'");
+            ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
+            ModLogger.Verbose($"  - isPlaying (입력값): {isPlaying}");
+            ModLogger.Verbose($"  - isSelectionActive (곡선택 패널): {isSelectionActive}");
+            ModLogger.Verbose($"  - isInBattle (배틀 여부): {isInBattle}");
+            ModLogger.Verbose($"  - levelInfo (원본 전달값): '{levelInfo ?? "(null)"}'");
+            ModLogger.Verbose($"  - Current Selected UID: '{currentUid}'");
 
             if (!string.IsNullOrEmpty(currentUid))
             {
                 DiscordPresenceManager.ResolveSongDetails(currentUid, out string title, out string artist);
-                ModLogger.Msg($"  - ResolveSongDetails 해석 결과: Title='{title}', Artist='{artist}'");
+                ModLogger.Verbose($"  - ResolveSongDetails 해석 결과: Title='{title}', Artist='{artist}'");
 
                 bool isCustom = CustomContentIds.IsVirtualSong(currentUid) || HwaResourceManager.IsRegisteredCustomHostUid(currentUid);
-                ModLogger.Msg($"  - IsCustomRelated: {isCustom}");
+                ModLogger.Verbose($"  - IsCustomRelated: {isCustom}");
 
                 if (isCustom && !string.IsNullOrEmpty(title))
                 {
@@ -65,17 +67,17 @@ namespace muse_dash_test
 
                     // isPlaying이 false면 게임 내부 C++ 코드에서 'In Menu'로 강제 덮어쓰므로 true로 전환
                     isPlaying = true;
-                    ModLogger.Msg($"  - [가로채기 성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 전환 (상태: {statusTag})");
+                    ModLogger.Verbose($"  - [가로채기 성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 전환 (상태: {statusTag})");
                 }
             }
-            ModLogger.Msg($"[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
+            ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.SetUpdateActivity))]
         [HarmonyPostfix]
         public static void SetUpdateActivity_Postfix(DiscordManager __instance, bool isPlaying, string levelInfo)
         {
-            ModLogger.Msg($"[DiscordHook.SetUpdateActivity.Postfix] SetUpdateActivity 처리 완료. 최종 levelInfo: '{levelInfo}'");
+            ModLogger.Verbose($"[DiscordHook.SetUpdateActivity.Postfix] SetUpdateActivity 처리 완료. 최종 levelInfo: '{levelInfo}'");
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.Destroy))]
@@ -86,41 +88,22 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 곡 선택 패널(PnlStage) 또는 곡 준비 패널(PnlPreparation)이 실제로 활성화되어 있는지 확인합니다.
-        /// </summary>
-        private static bool IsStageSelectionContextActive()
-        {
-            try
-            {
-                var pnlStage = UnityEngine.Object.FindObjectOfType<PnlStage>();
-                if (pnlStage != null && pnlStage.gameObject != null && pnlStage.gameObject.activeInHierarchy)
-                {
-                    return true;
-                }
-
-                var pnlPreparation = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlPreparation>();
-                if (pnlPreparation != null && pnlPreparation.gameObject != null && pnlPreparation.gameObject.activeInHierarchy)
-                {
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[DiscordHook.IsStageSelectionContextActive] 예외 발생: {ex.Message}");
-            }
-
-            return false;
-        }
-
-        /// <summary>
         /// 실제 인게임 배틀 화면(PnlBattle)이 활성화되어 있는지 확인합니다.
         /// </summary>
         private static bool IsInBattleStageContext()
         {
             try
             {
-                var pnlBattle = UnityEngine.Object.FindObjectOfType<PnlBattle>();
-                if (pnlBattle != null && pnlBattle.gameObject != null && pnlBattle.gameObject.activeInHierarchy)
+                if (HywStageManager.IsInStageStatic)
+                {
+                    return true;
+                }
+
+                if (cachedPnlBattle == null)
+                {
+                    cachedPnlBattle = UnityEngine.Object.FindObjectOfType<PnlBattle>();
+                }
+                if (cachedPnlBattle != null && cachedPnlBattle.gameObject != null && cachedPnlBattle.gameObject.activeInHierarchy)
                 {
                     return true;
                 }

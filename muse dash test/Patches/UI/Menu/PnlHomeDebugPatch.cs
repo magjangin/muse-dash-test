@@ -22,21 +22,30 @@ namespace muse_dash_test.Patches.UI.Menu
     {
         public static void LogPanelState(string eventName, GameObject sourceGo)
         {
+            if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+            {
+                return;
+            }
+
             try
             {
                 string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;
 
-                GameObject bgmGo = GameObject.Find("BGM");
-                AudioSource bgmSource = bgmGo != null ? bgmGo.GetComponent<AudioSource>() : null;
+                AudioSource bgmSource = GameBgmSource.TryGet(out _);
+                if (bgmSource == null)
+                {
+                    GameObject bgmGo = GameObject.Find("BGM");
+                    bgmSource = bgmGo != null ? bgmGo.GetComponent<AudioSource>() : null;
+                }
 
                 string clipName = bgmSource != null && bgmSource.clip != null ? bgmSource.clip.name : "(null)";
                 bool isPlaying = bgmSource != null && bgmSource.isPlaying;
                 float volume = bgmSource != null ? bgmSource.volume : 0f;
 
-                ModLogger.Msg($"🔍 [UI.PanelDebug] ===== {eventName} =====");
-                ModLogger.Msg($"  - Selected UID: {selectedUid ?? "(null)"} (VirtualSong: {CustomContentIds.IsVirtualSong(selectedUid)})");
-                ModLogger.Msg($"  - BGM State: clip='{clipName}', playing={isPlaying}, vol={volume:F2}");
-                ModLogger.Msg($"==============================================");
+                ModLogger.Verbose($"🔍 [UI.PanelDebug] ===== {eventName} =====");
+                ModLogger.Verbose($"  - Selected UID: {selectedUid ?? "(null)"} (VirtualSong: {CustomContentIds.IsVirtualSong(selectedUid)})");
+                ModLogger.Verbose($"  - BGM State: clip='{clipName}', playing={isPlaying}, vol={volume:F2}");
+                ModLogger.Verbose($"==============================================");
             }
             catch (Exception ex)
             {
