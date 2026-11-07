@@ -33,7 +33,7 @@ namespace muse_dash_test.Patches
     }
 
     // Intercept the transient Full Combo banner display and change it to ALL PERFECT if appropriate
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager), GameBindings.PnlVictory2dManager.OnShowVictory, new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager), nameof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager.OnShowVictory), new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class PnlVictory2dManager_OnShowVictory_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager __instance, Il2CppSystem.Object sender, Il2CppSystem.Object rev, Il2CppReferenceArray<Il2CppSystem.Object> pars)

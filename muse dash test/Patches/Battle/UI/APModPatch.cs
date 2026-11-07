@@ -1,4 +1,5 @@
-using MelonLoader;
+﻿using MelonLoader;
+using System.Runtime.CompilerServices;
 using System;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
@@ -21,7 +22,7 @@ namespace muse_dash_test.Patches
     }
 
     // Cache the TaskStageTarget instance during gameplay when score is updated
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.AddScore)]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.AddScore))]
     public class TaskStageTarget_AddScore_Patch
     {
         public static void Prefix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance)
@@ -90,7 +91,7 @@ namespace muse_dash_test.Patches
     }
 
     // Cache the TaskStageTarget instance when accuracy is requested
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.GetAccuracy)]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.GetAccuracy))]
     public class TaskStageTarget_GetAccuracy_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
@@ -114,22 +115,7 @@ namespace muse_dash_test.Patches
 
                 if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
                 {
-                    float rawGetTrueAccuracy = __instance.GetTrueAccuracy();
-                    float rawGetTrueAccuracyNew = __instance.GetTrueAccuracyNew();
-
-                    ModLogger.Verbose($"[APMod.Debug.Accuracy] " +
-                                    $"m_MusicCount={__instance.m_MusicCount}, " +
-                                    $"m_PerfectResult={__instance.m_PerfectResult}, " +
-                                    $"m_GreatResult={__instance.m_GreatResult}, " +
-                                    $"m_MissResult={__instance.m_MissResult}, " +
-                                    $"m_CoolResult={__instance.m_CoolResult}, " +
-                                    $"m_HitCount={__instance.m_HitCount}, " +
-                                    $"m_LongPressCount={__instance.m_LongPressCount}, " +
-                                    $"m_LongPressHitCount={__instance.m_LongPressHitCount}, " +
-                                    $"m_EnergyCount={__instance.m_EnergyCount}, " +
-                                    $"GetAccuracy()={rawGetAccuracy:F6}, " +
-                                    $"GetTrueAccuracy()={rawGetTrueAccuracy:F6}, " +
-                                    $"GetTrueAccuracyNew()={rawGetTrueAccuracyNew:F6}");
+                    LogVerboseAccuracyDetails(__instance, rawGetAccuracy);
                 }
             }
             catch (Exception ex)
@@ -137,9 +123,34 @@ namespace muse_dash_test.Patches
                 ModLogger.Error($"[APMod] GetAccuracy Postfix 예외 발생: {ex}");
             }
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void LogVerboseAccuracyDetails(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget target, float rawGetAccuracy)
+        {
+            try
+            {
+                float rawGetTrueAccuracy = target.GetTrueAccuracy();
+                float rawGetTrueAccuracyNew = target.GetTrueAccuracyNew();
+
+                ModLogger.Verbose($"[APMod.Debug.Accuracy] " +
+                                $"m_MusicCount={target.m_MusicCount}, " +
+                                $"m_PerfectResult={target.m_PerfectResult}, " +
+                                $"m_GreatResult={target.m_GreatResult}, " +
+                                $"m_MissResult={target.m_MissResult}, " +
+                                $"m_CoolResult={target.m_CoolResult}, " +
+                                $"m_HitCount={target.m_HitCount}, " +
+                                $"m_LongPressCount={target.m_LongPressCount}, " +
+                                $"m_LongPressHitCount={target.m_LongPressHitCount}, " +
+                                $"m_EnergyCount={target.m_EnergyCount}, " +
+                                $"GetAccuracy()={rawGetAccuracy:F6}, " +
+                                $"GetTrueAccuracy()={rawGetTrueAccuracy:F6}, " +
+                                $"GetTrueAccuracyNew()={rawGetTrueAccuracyNew:F6}");
+            }
+            catch { }
+        }
     }
 
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.GetTrueAccuracy)]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.GetTrueAccuracy))]
     public class TaskStageTarget_GetTrueAccuracy_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
@@ -158,7 +169,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.GetTrueAccuracyNew)]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.GetTrueAccuracyNew))]
     public class TaskStageTarget_GetTrueAccuracyNew_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, ref float __result)
@@ -178,7 +189,7 @@ namespace muse_dash_test.Patches
     }
 
     // Cache the TaskStageTarget instance when full combo is checked
-    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), GameBindings.TaskStageTarget.IsFullCombo)]
+    [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.IsFullCombo))]
     public class TaskStageTarget_IsFullCombo_Patch
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, bool __result)

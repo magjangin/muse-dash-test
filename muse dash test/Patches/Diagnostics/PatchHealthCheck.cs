@@ -182,9 +182,9 @@ namespace muse_dash_test
             }
         }
 
-        private static bool TryResolveDynamicTargetCount(Type patchClass, out int count, out string error)
+        internal static bool TryResolveDynamicTargets(Type patchClass, out List<MethodBase> targets, out string error)
         {
-            count = 0;
+            targets = new List<MethodBase>();
             error = null;
             try
             {
@@ -197,7 +197,7 @@ namespace muse_dash_test
                         || method.IsDefined(typeof(HarmonyTargetMethod), true))
                     {
                         var resolved = method.Invoke(null, null) as MethodBase;
-                        if (resolved != null) count++;
+                        if (resolved != null) targets.Add(resolved);
                     }
                     else if (string.Equals(method.Name, "TargetMethods", StringComparison.Ordinal)
                         || method.IsDefined(typeof(HarmonyTargetMethods), true))
@@ -206,12 +206,12 @@ namespace muse_dash_test
                         {
                             foreach (var item in enumerable)
                             {
-                                if (item is MethodBase) count++;
+                                if (item is MethodBase mb) targets.Add(mb);
                             }
                         }
                     }
                 }
-                return count > 0;
+                return targets.Count > 0;
             }
             catch (Exception ex)
             {
@@ -219,6 +219,13 @@ namespace muse_dash_test
                 error = $"{inner.GetType().Name}: {inner.Message}";
                 return false;
             }
+        }
+
+        private static bool TryResolveDynamicTargetCount(Type patchClass, out int count, out string error)
+        {
+            bool ok = TryResolveDynamicTargets(patchClass, out var list, out error);
+            count = list != null ? list.Count : 0;
+            return ok;
         }
 
         /// <summary>점검 대상 한 건. Harmony가 클래스/메서드 어트리뷰트를 합쳐 계산하는 그 대상입니다.</summary>

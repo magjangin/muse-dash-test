@@ -184,7 +184,7 @@ namespace muse_dash_test
     /// [1단계: 원천 조작] 곡 로딩 시점에 StageBattleComponent.InitTimeNodeOrder가 완료된 직후,
     /// 사전 생성된 틱별 판정 테이블(m_TimeNodeOrders)의 판정 파라미터를 Perfect로 일괄 조작합니다.
     /// </summary>
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppFormulaBase.StageBattleComponent), GameBindings.StageBattleComponent.InitTimeNodeOrder)]
+    [HarmonyLib.HarmonyPatch(typeof(Il2CppFormulaBase.StageBattleComponent), nameof(Il2CppFormulaBase.StageBattleComponent.InitTimeNodeOrder))]
     public class StageBattleComponent_InitTimeNodeOrder_ForcePerfect_Patch
     {
         public static void Postfix(Il2CppFormulaBase.StageBattleComponent __instance)
@@ -206,7 +206,7 @@ namespace muse_dash_test
     /// <summary>
     /// [2단계: 실시간 안전망] 터치 판정이 산출된 직후, 화면 표시·캐릭터 액션·집계로 흩어지기 전에 결과 값을 Perfect로 보정합니다.
     /// </summary>
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameTouchPlay), GameBindings.GameTouchPlay.TouchResult)]
+    [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameTouchPlay), nameof(Il2CppGameLogic.GameTouchPlay.TouchResult))]
     public class GameTouchPlay_TouchResult_ForcePerfect_Patch
     {
         public static void Prefix(int idx, ref byte resultCode)

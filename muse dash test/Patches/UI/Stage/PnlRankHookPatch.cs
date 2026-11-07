@@ -88,7 +88,7 @@ namespace muse_dash_test.Patches.UI.Stage
             if (instance == null) return 0;
             try
             {
-                PropertyInfo prop = typeof(PnlRank).GetProperty("m_Ranks", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                PropertyInfo prop = typeof(PnlRank).GetProperty(nameof(PnlRank.m_Ranks), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (prop != null)
                 {
                     object dictObj = prop.GetValue(instance, null);

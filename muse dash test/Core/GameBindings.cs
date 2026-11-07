@@ -8,7 +8,7 @@ namespace muse_dash_test
     /// 시작 시 <see cref="PatchHealthCheck"/>가 이 식별자들의 실제 해석 여부를 점검하고,
     /// 런타임 실패는 <see cref="FeatureGuard"/>가 기능 단위로 격리합니다.
     ///
-    /// 주의 — 여기 모은 것은 "컴파일러가 검증하지 못하는" raw 문자열뿐입니다.
+    /// 주의 — 패치 타깃 대부분은 컴파일 타임 검증이 가능한 nameof(...)로 전환되었습니다.
     /// typeof(...)나 nameof(...) 기반 패치 대상(예: nameof(MusicTagManager.InitDatas))은
     /// 빌드가 즉시 잡아주므로 더 안전하며, 이 파일에 중복으로 둘 필요가 없습니다.
     /// 향후 가능한 항목은 raw 문자열 대신 nameof(...)로 전환하는 것이 가장 강한 내성입니다.

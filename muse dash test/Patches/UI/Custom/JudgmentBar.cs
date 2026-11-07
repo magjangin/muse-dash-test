@@ -292,7 +292,7 @@ namespace muse_dash_test
     // 플레이어의 히트 판정 발생 시 오차ms 연동 훅
     // ==========================================
 
-    [HarmonyLib.HarmonyPatch(typeof(GameTouchPlay), GameBindings.GameTouchPlay.TouchResult)]
+    [HarmonyLib.HarmonyPatch(typeof(GameTouchPlay), nameof(GameTouchPlay.TouchResult))]
     public static class GameTouchPlay_TouchResult_Patch
     {
         public static void Postfix(GameTouchPlay __instance, int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill)

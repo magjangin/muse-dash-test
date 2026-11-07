@@ -2,6 +2,7 @@ using HarmonyLib;
 using MelonLoader;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -101,10 +102,56 @@ namespace muse_dash_test
         /// <summary>
         /// 다중 메서드 패치 클래스에서 일부 대상 메서드만 사라졌을 때, 여전히 존재하는 대상 메서드들에만
         /// 개별적으로 Prefix/Postfix/Transpiler/Finalizer를 겁니다.
+        /// 동적 타깃(TargetMethod/TargetMethods)과 정적 어트리뷰트 타깃을 모두 지원합니다.
         /// </summary>
         private static int ApplySurvivingMethodPatches(HarmonyLib.Harmony harmony, Type patchClass)
         {
             int patched = 0;
+
+            // 1) 동적 타깃(TargetMethod / TargetMethods)을 가진 클래스인 경우
+            if (PatchHealthCheck.HasDynamicTargets(patchClass))
+            {
+                if (!PatchHealthCheck.TryResolveDynamicTargets(patchClass, out List<MethodBase> dynamicTargets, out _) || dynamicTargets.Count == 0)
+                {
+                    return 0;
+                }
+
+                var patchMethods = patchClass.GetMethods(
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                    .Where(m => PatchHealthCheck.IsPatchMethod(m)).ToList();
+
+                foreach (var original in dynamicTargets)
+                {
+                    if (original == null) continue;
+                    try
+                    {
+                        var processor = harmony.CreateProcessor(original);
+                        bool anyAdded = false;
+                        foreach (var method in patchMethods)
+                        {
+                            var hm = new HarmonyMethod(method);
+                            if (method.Name == "Prefix" || method.IsDefined(typeof(HarmonyPrefix), true)) { processor.AddPrefix(hm); anyAdded = true; }
+                            else if (method.Name == "Postfix" || method.IsDefined(typeof(HarmonyPostfix), true)) { processor.AddPostfix(hm); anyAdded = true; }
+                            else if (method.Name == "Transpiler" || method.IsDefined(typeof(HarmonyTranspiler), true)) { processor.AddTranspiler(hm); anyAdded = true; }
+                            else if (method.Name == "Finalizer" || method.IsDefined(typeof(HarmonyFinalizer), true)) { processor.AddFinalizer(hm); anyAdded = true; }
+                        }
+
+                        if (anyAdded)
+                        {
+                            processor.Patch();
+                            patched++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLogger.Warning($"[PatchInstaller] '{patchClass.Name}' 동적 타깃({original.Name}) 개별 패치 실패: {ex.Message}");
+                    }
+                }
+
+                return patched;
+            }
+
+            // 2) 정적 어트리뷰트 기반 타깃인 경우
             var classAttrs = patchClass.GetCustomAttributes(typeof(HarmonyPatch), true);
             var classTarget = PatchHealthCheck.Merge(default, classAttrs);
 

@@ -152,7 +152,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(PnlBattle), GameBindings.PnlBattle.MusicProgressInit)]
+    [HarmonyPatch(typeof(PnlBattle), nameof(PnlBattle.MusicProgressInit))]
     public class PnlBattle_MusicProgressInit_Patch
     {
         public static void Postfix(PnlBattle __instance)
