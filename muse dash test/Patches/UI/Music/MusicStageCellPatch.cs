@@ -10,7 +10,7 @@ namespace muse_dash_test
     /// 커스텀 커버로 교체합니다. 인자(cellInfo.musicUid)가 셀별 곡 uid를 직접 들고 있으므로
     /// 인접 카드까지 각자 자기 곡의 커버가 정확히 적용됩니다(sprite 이름 매칭 불필요).
     /// </summary>
-    [HarmonyPatch(typeof(Il2Cpp.MusicStageCell), "SetCoverLogic")]
+    [HarmonyPatch(typeof(Il2Cpp.MusicStageCell), nameof(Il2Cpp.MusicStageCell.SetCoverLogic))]
     public class MusicStageCell_SetCoverLogic_Patch
     {
         public static void Postfix(Il2Cpp.MusicStageCell __instance, Il2Cpp.MusicStageCell.MusicStageCellInfo cellInfo)

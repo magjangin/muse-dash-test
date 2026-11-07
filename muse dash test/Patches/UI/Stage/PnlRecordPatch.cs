@@ -2,7 +2,7 @@ using MelonLoader;
 using System;
 using muse_dash_test;
 
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlRecord), "RefreshRecord")]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlRecord), nameof(Il2Cpp.PnlRecord.RefreshRecord))]
 public class PnlRecord_RefreshRecord_Patch
 {
     public static void Prefix(Il2Cpp.PnlRecord __instance)

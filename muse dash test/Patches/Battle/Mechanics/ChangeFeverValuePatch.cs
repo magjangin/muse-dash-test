@@ -5,7 +5,7 @@ namespace muse_dash_test
 {
     // === 피버 메커니즘 차단 패치 (설정 파일 연동) ===
 
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.Managers.AbstractFeverManager), "AddFever", new System.Type[] { typeof(int) })]
+    [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.Managers.AbstractFeverManager), nameof(Il2CppAssets.Scripts.GameCore.Managers.AbstractFeverManager.AddFever), new System.Type[] { typeof(int) })]
     public class AbstractFeverManager_AddFever_Patch
     {
         private static System.DateTime lastLogTime = System.DateTime.MinValue;

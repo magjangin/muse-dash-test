@@ -152,7 +152,7 @@ namespace muse_dash_test
     }
 
     // 곡을 고를 때마다 불리는 자리입니다(PnlStagePatch의 RefreshDiffUI 패치와 같은 대상, 역할만 분리).
-    [HarmonyPatch(typeof(PnlStage), "RefreshDiffUI", new Type[] { typeof(MusicInfo) })]
+    [HarmonyPatch(typeof(PnlStage), nameof(PnlStage.RefreshDiffUI), new Type[] { typeof(MusicInfo) })]
     public class PnlStage_RefreshDiffUI_HiddenGuidePatch
     {
         public static void Postfix(PnlStage __instance, MusicInfo musicInfo)

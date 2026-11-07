@@ -3,7 +3,7 @@ using System;
 using muse_dash_test;
 
 // Il2CppGameLogic.GameMusicScene.LoadScene(string sceneName) 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "LoadScene")]
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.LoadScene))]
 public class GameMusicScene_LoadScene_Patch
 {
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance, ref string sceneName)

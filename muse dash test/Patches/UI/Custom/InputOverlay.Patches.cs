@@ -7,7 +7,7 @@ namespace muse_dash_test
     // 키바인딩 수정 완료/취소 시 실시간 캐시 갱신 패치
     // ==========================================
 
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppUI.Panels.PnlInputs.PCInputModules.PnlInputKeyboard), "OnClickBtnCustomComplete", new Type[] { typeof(string) })]
+    [HarmonyLib.HarmonyPatch(typeof(Il2CppUI.Panels.PnlInputs.PCInputModules.PnlInputKeyboard), nameof(Il2CppUI.Panels.PnlInputs.PCInputModules.PnlInputKeyboard.OnClickBtnCustomComplete), new Type[] { typeof(string) })]
     public static class PnlInputKeyboard_OnClickBtnCustomComplete_Patch
     {
         public static void Postfix(string keyName)
@@ -17,7 +17,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(Il2CppUI.Panels.PnlInputs.PCInputModules.PnlInputKeyboard), "OnCancelCustomize")]
+    [HarmonyLib.HarmonyPatch(typeof(Il2CppUI.Panels.PnlInputs.PCInputModules.PnlInputKeyboard), nameof(Il2CppUI.Panels.PnlInputs.PCInputModules.PnlInputKeyboard.OnCancelCustomize))]
     public static class PnlInputKeyboard_OnCancelCustomize_Patch
     {
         public static void Postfix()

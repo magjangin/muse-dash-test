@@ -9,7 +9,7 @@ namespace muse_dash_test.Patches.UI.Menu
     /// <summary>
     /// 메인 메뉴(PnlMenu) 진입 시 BGM 상태 추적 패치 클래스입니다.
     /// </summary>
-    [HarmonyLib.HarmonyPatch(typeof(PnlMenu), "OnEnable")]
+    [HarmonyLib.HarmonyPatch(typeof(PnlMenu), nameof(PnlMenu.OnEnable))]
     public class PnlMenu_OnEnable_DebugPatch
     {
         public static void Postfix(PnlMenu __instance)

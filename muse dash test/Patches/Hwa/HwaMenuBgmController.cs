@@ -88,13 +88,10 @@ namespace muse_dash_test
                 }
 
                 // 배틀 진입이 아닌 메뉴 이동일 때만 디스코드 프로필을 In Menu 상태로 복원합니다.
+                // DiscordManager 직접 참조 대신 NoInlining 격리된 DiscordPresenceManager를 거칩니다.
                 if (!HywStageManager.IsInStageStatic)
                 {
-                    var discordManager = Il2CppPeroTools2.Commons.Singleton<Il2Cpp.DiscordManager>.instance;
-                    if (discordManager != null && ModConfig.EnableDiscordRPC)
-                    {
-                        discordManager.SetUpdateActivity(false, "In Menu");
-                    }
+                    DiscordPresenceManager.SetIdleState();
                 }
             }
             catch (Exception ex)
@@ -355,7 +352,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(AudioSource), "clip", MethodType.Setter)]
+    [HarmonyPatch(typeof(AudioSource), nameof(AudioSource.clip), MethodType.Setter)]
     public class AudioSource_SetClip_Patch
     {
         private static Il2CppAssets.Scripts.UI.Panels.PnlStage cachedPnlStage;

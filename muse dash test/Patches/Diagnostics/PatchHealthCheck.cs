@@ -1,6 +1,7 @@
 using HarmonyLib;
 using MelonLoader;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -73,7 +74,7 @@ namespace muse_dash_test
 
                 if (dynamicTargets.Count > 0)
                 {
-                    ModLogger.Msg($"[PatchHealth] 대상을 런타임에 정하는 패치 {dynamicTargets.Count}개는 정적 점검 대상이 아닙니다: {string.Join(", ", dynamicTargets)}");
+                    ModLogger.Msg($"[PatchHealth] 동적 대상 패치(TargetMethod/TargetMethods) 정상 확인: {string.Join(", ", dynamicTargets)}");
                 }
 
                 // 추가: MusicTagManager.InitAlbumTagInfo 패치가 깨졌는지 여부 감지 및 Init 메서드 덤프 로직
@@ -82,6 +83,54 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 ModLogger.Error($"[PatchHealth] 패치 점검 중 예외: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// <see cref="PatchInstaller"/>가 패치를 실제로 걸기 전에 대상 메서드들이 현재 게임 빌드에 존재하는지 확인합니다.
+        /// </summary>
+        internal static void InspectPatchClassTargets(
+            Type patchClass,
+            out int resolvableCount,
+            out List<string> missingTargets)
+        {
+            resolvableCount = 0;
+            missingTargets = new List<string>();
+
+            var classAttrs = patchClass.GetCustomAttributes(typeof(HarmonyPatch), true);
+            if (classAttrs == null || classAttrs.Length == 0) return;
+
+            if (HasDynamicTargets(patchClass))
+            {
+                if (TryResolveDynamicTargetCount(patchClass, out int dynCount, out string dynError) && dynCount > 0)
+                {
+                    resolvableCount = dynCount;
+                }
+                else
+                {
+                    missingTargets.Add($"{patchClass.Name} → {dynError ?? "TargetMethod/TargetMethods 결과 없음"}");
+                }
+                return;
+            }
+
+            PatchTarget classTarget = Merge(default(PatchTarget), classAttrs);
+            foreach (var target in EnumerateTargets(patchClass, classTarget))
+            {
+                string label = $"{patchClass.Name} → {target.Describe()}";
+                if (target.DeclaringType == null)
+                {
+                    missingTargets.Add(label);
+                    continue;
+                }
+
+                if (TargetExists(target.DeclaringType, target.MethodName, target.ArgumentTypes, target.MethodType))
+                {
+                    resolvableCount++;
+                }
+                else
+                {
+                    missingTargets.Add(label);
+                }
             }
         }
 
@@ -97,11 +146,18 @@ namespace muse_dash_test
             var classAttrs = type.GetCustomAttributes(typeof(HarmonyPatch), true);
             if (classAttrs == null || classAttrs.Length == 0) return;
 
-            // 대상을 런타임에 계산하는 패치(TargetMethod/TargetMethods)는 정적 점검이 불가능합니다.
-            // 조용히 빼면 "전부 정상"에 묻히므로, 못 봤다는 사실을 따로 남깁니다.
+            // 대상을 런타임에 계산하는 패치(TargetMethod/TargetMethods)도 직접 호출해 최소 1개 이상 해석되는지 점검합니다.
             if (HasDynamicTargets(type))
             {
-                dynamicTargets.Add(type.Name);
+                total++;
+                if (TryResolveDynamicTargetCount(type, out int dynCount, out string dynError) && dynCount > 0)
+                {
+                    dynamicTargets.Add($"{type.Name}({dynCount}개)");
+                }
+                else
+                {
+                    missing.Add($"{type.Name} → 동적 대상 해석 실패 ({dynError ?? "0개 반환"})");
+                }
                 return;
             }
 
@@ -126,8 +182,47 @@ namespace muse_dash_test
             }
         }
 
+        private static bool TryResolveDynamicTargetCount(Type patchClass, out int count, out string error)
+        {
+            count = 0;
+            error = null;
+            try
+            {
+                foreach (var method in patchClass.GetMethods(
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly))
+                {
+                    if (method.GetParameters().Length != 0) continue;
+
+                    if (string.Equals(method.Name, "TargetMethod", StringComparison.Ordinal)
+                        || method.IsDefined(typeof(HarmonyTargetMethod), true))
+                    {
+                        var resolved = method.Invoke(null, null) as MethodBase;
+                        if (resolved != null) count++;
+                    }
+                    else if (string.Equals(method.Name, "TargetMethods", StringComparison.Ordinal)
+                        || method.IsDefined(typeof(HarmonyTargetMethods), true))
+                    {
+                        if (method.Invoke(null, null) is IEnumerable enumerable)
+                        {
+                            foreach (var item in enumerable)
+                            {
+                                if (item is MethodBase) count++;
+                            }
+                        }
+                    }
+                }
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                var inner = ex is TargetInvocationException tie && tie.InnerException != null ? tie.InnerException : ex;
+                error = $"{inner.GetType().Name}: {inner.Message}";
+                return false;
+            }
+        }
+
         /// <summary>점검 대상 한 건. Harmony가 클래스/메서드 어트리뷰트를 합쳐 계산하는 그 대상입니다.</summary>
-        private struct PatchTarget
+        internal struct PatchTarget
         {
             public Type DeclaringType;
             public string MethodName;
@@ -171,23 +266,9 @@ namespace muse_dash_test
         /// 한 패치 클래스가 실제로 노리는 대상들을 열거합니다.
         ///
         /// <para><b>왜 클래스 레벨만 보면 안 되는가</b>: Harmony는 클래스 레벨 <c>[HarmonyPatch]</c>와
-        /// <b>각 패치 메서드에 붙은</b> <c>[HarmonyPatch]</c>를 합쳐 대상을 정합니다. 예전 점검 코드는
-        /// 클래스 레벨 어트리뷰트만 읽어서 두 방향으로 틀렸습니다.</para>
-        ///
-        /// <list type="number">
-        /// <item><description><b>오진</b>: <c>[HarmonyPatch(typeof(X))]</c> + 메서드마다
-        /// <c>[HarmonyPatch("M")]</c>를 쓰는 형태에서는 메서드명을 못 구해
-        /// <c>X.Normal 해석 실패</c>라는 없는 메서드 이름으로 경고를 냈습니다.
-        /// (2026-08-27 실측 로그: <c>PnlInputMobile_LifecyclePatch → PnlInputMobile.Normal</c>.
-        ///  실제로는 Awake/SetAutoFever/SetTouchReverse/SetLeftRight 전부 멀쩡했습니다.)</description></item>
-        /// <item><description><b>사각지대</b>: 맨 <c>[HarmonyPatch]</c> 클래스는 declaringType이 없다고
-        /// 통째로 건너뛰어 총계에도 안 잡혔습니다. 그래서 <c>MouseTouchBridgePatch</c>의 입력 후킹
-        /// 8개(<c>StandloneController.GetButton*</c>, <c>InputManager.*</c>, <c>HideCursor.Update</c>)처럼
-        /// <b>게임 업데이트에 가장 잘 깨지는 패치들이 점검에서 빠진 채 "전부 정상"으로 보였습니다.</b>
-        /// 실측 당시 119개를 셌지만 메서드 레벨 지정 47개가 통째로 빠져 있었습니다.</description></item>
-        /// </list>
+        /// <b>각 패치 메서드를 붙은</b> <c>[HarmonyPatch]</c>를 합쳐 대상을 정합니다.</para>
         /// </summary>
-        private static IEnumerable<PatchTarget> EnumerateTargets(Type patchClass, PatchTarget classTarget)
+        internal static IEnumerable<PatchTarget> EnumerateTargets(Type patchClass, PatchTarget classTarget)
         {
             bool foundPatchMethod = false;
 
@@ -229,15 +310,12 @@ namespace muse_dash_test
         }
 
         /// <summary>대상을 런타임에 계산하는 패치(TargetMethod/TargetMethods)인지 확인합니다.</summary>
-        private static bool HasDynamicTargets(Type patchClass)
+        internal static bool HasDynamicTargets(Type patchClass)
         {
             foreach (var method in patchClass.GetMethods(
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
-                if (string.Equals(method.Name, "TargetMethod", StringComparison.Ordinal)
-                    || string.Equals(method.Name, "TargetMethods", StringComparison.Ordinal)
-                    || method.IsDefined(typeof(HarmonyTargetMethod), true)
-                    || method.IsDefined(typeof(HarmonyTargetMethods), true))
+                if (IsDynamicTargetSelector(method))
                 {
                     return true;
                 }
@@ -246,8 +324,16 @@ namespace muse_dash_test
             return false;
         }
 
+        internal static bool IsDynamicTargetSelector(MethodInfo method)
+        {
+            return string.Equals(method.Name, "TargetMethod", StringComparison.Ordinal)
+                || string.Equals(method.Name, "TargetMethods", StringComparison.Ordinal)
+                || method.IsDefined(typeof(HarmonyTargetMethod), true)
+                || method.IsDefined(typeof(HarmonyTargetMethods), true);
+        }
+
         /// <summary>여러 [HarmonyPatch] 어트리뷰트를 기준 대상 위에 순서대로 덮어씁니다.</summary>
-        private static PatchTarget Merge(PatchTarget baseTarget, object[] attrs)
+        internal static PatchTarget Merge(PatchTarget baseTarget, object[] attrs)
         {
             PatchTarget result = baseTarget;
 
@@ -330,29 +416,35 @@ namespace muse_dash_test
             }
         }
 
-        private static bool TargetExists(Type declaringType, string methodName, Type[] argumentTypes, MethodType methodType)
+        internal static MethodBase ResolveTargetMethod(Type declaringType, string methodName, Type[] argumentTypes, MethodType methodType)
         {
             try
             {
+                if (declaringType == null) return null;
                 switch (methodType)
                 {
                     case MethodType.Constructor:
-                        return AccessTools.Constructor(declaringType, argumentTypes) != null;
+                        return AccessTools.Constructor(declaringType, argumentTypes);
                     case MethodType.Getter:
-                        return !string.IsNullOrEmpty(methodName) && AccessTools.PropertyGetter(declaringType, methodName) != null;
+                        return !string.IsNullOrEmpty(methodName) ? AccessTools.PropertyGetter(declaringType, methodName) : null;
                     case MethodType.Setter:
-                        return !string.IsNullOrEmpty(methodName) && AccessTools.PropertySetter(declaringType, methodName) != null;
+                        return !string.IsNullOrEmpty(methodName) ? AccessTools.PropertySetter(declaringType, methodName) : null;
                     default:
-                        if (string.IsNullOrEmpty(methodName)) return false;
-                        return (argumentTypes != null
+                        if (string.IsNullOrEmpty(methodName)) return null;
+                        return argumentTypes != null
                             ? AccessTools.Method(declaringType, methodName, argumentTypes)
-                            : AccessTools.Method(declaringType, methodName)) != null;
+                            : AccessTools.Method(declaringType, methodName);
                 }
             }
             catch
             {
-                return false;
+                return null;
             }
+        }
+
+        private static bool TargetExists(Type declaringType, string methodName, Type[] argumentTypes, MethodType methodType)
+        {
+            return ResolveTargetMethod(declaringType, methodName, argumentTypes, methodType) != null;
         }
     }
 }

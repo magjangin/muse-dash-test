@@ -3,7 +3,7 @@ using System;
 using muse_dash_test;
 
 // MusicButtonAreaTitle.RefreshTxt 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.MusicButtonAreaTitle), "RefreshTxt", new Type[] { typeof(string), typeof(bool) })]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.MusicButtonAreaTitle), nameof(Il2Cpp.MusicButtonAreaTitle.RefreshTxt), new Type[] { typeof(string), typeof(bool) })]
 public class MusicButtonAreaTitle_RefreshTxt_Patch
 {
     public static void Prefix(Il2Cpp.MusicButtonAreaTitle __instance, ref string title, ref bool isSpecialFont)

@@ -4,7 +4,7 @@ using System.Reflection;
 using muse_dash_test;
 
 // Il2Cpp.PnlPreparation OnEnable 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "OnEnable")]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), nameof(Il2Cpp.PnlPreparation.OnEnable))]
 public class PnlPreparation_OnEnable_Patch
 {
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
@@ -34,7 +34,7 @@ public class PnlPreparation_OnEnable_Patch
 }
 
 // Il2Cpp.PnlPreparation.OnDownloadBestReport 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "OnDownloadBestReport")]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), nameof(Il2Cpp.PnlPreparation.OnDownloadBestReport))]
 public class PnlPreparation_OnDownloadBestReport_Patch
 {
     public static void Prefix(Il2Cpp.PnlPreparation __instance)
@@ -152,7 +152,7 @@ public class PnlPreparation_OnDownloadBestReport_Patch
 }
 
 // Il2Cpp.PnlPreparation RefreshUi 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "RefreshUi")]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), nameof(Il2Cpp.PnlPreparation.RefreshUi))]
 public class PnlPreparation_RefreshUi_Patch
 {
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
@@ -174,7 +174,7 @@ public class PnlPreparation_RefreshUi_Patch
 }
 
 // Il2Cpp.PnlPreparation.GameStart 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "GameStart")]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), nameof(Il2Cpp.PnlPreparation.GameStart))]
 public class PnlPreparation_GameStart_Patch
 {
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
@@ -191,7 +191,7 @@ public class PnlPreparation_GameStart_Patch
 }
 
 // Il2Cpp.PnlPreparation.OnBattleStart 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), "OnBattleStart")]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), nameof(Il2Cpp.PnlPreparation.OnBattleStart))]
 public class PnlPreparation_OnBattleStart_Patch
 {
     public static void Postfix(Il2Cpp.PnlPreparation __instance)

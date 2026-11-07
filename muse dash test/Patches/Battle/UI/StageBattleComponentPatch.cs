@@ -10,7 +10,7 @@ namespace muse_dash_test
     //  호출하는 곳이 없어 지웠다. StageBattleComponent의 필드·프로퍼티를 리플렉션으로 전부 훑는 진단이라
     //  CHECKLIST의 "IL2CPP 객체를 리플렉션으로 깊게 훑는 진단" 항목에 해당한다. 필요하면 커밋 e896584의
     //  이 파일에서 되살릴 수 있다.)
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "LoadMusicData")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.LoadMusicData))]
     public class StageBattleComponent_LoadMusicData_Patch
     {
         public static void Postfix(StageBattleComponent __instance)
@@ -28,7 +28,7 @@ namespace muse_dash_test
 
     // 숙주 곡에 없는 난이도를 고르면 게임이 없는 차트 에셋을 불러오다 멈춥니다(BmsHostMaps 참고).
     // 숙주 차트는 틀로만 쓰므로 있는 난이도의 에셋을 대신 불러오게 하고, 난이도 번호 자체는 그대로 둡니다.
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "GetMusicDataFromStageInfo")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.GetMusicDataFromStageInfo))]
     public class StageBattleComponent_GetMusicDataFromStageInfo_Patch
     {
         public static void Prefix()
@@ -64,7 +64,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "InitData")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.InitData))]
     public class StageBattleComponent_InitData_Patch
     {
         public static void Postfix(StageBattleComponent __instance)
@@ -74,7 +74,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Load")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.Load))]
     public class StageBattleComponent_Load_Patch
     {
         public static void Postfix(StageBattleComponent __instance)
@@ -106,7 +106,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Pause")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.Pause))]
     public class StageBattleComponent_Pause_Patch
     {
         public static void Postfix(StageBattleComponent __instance, bool pauseCorountine)
@@ -116,7 +116,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Resume")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.Resume))]
     public class StageBattleComponent_Resume_Patch
     {
         public static void Postfix(StageBattleComponent __instance, bool isExit)
@@ -126,7 +126,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "End")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.End))]
     public class StageBattleComponent_End_Patch
     {
         public static void Postfix(StageBattleComponent __instance)
@@ -137,7 +137,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Exit")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.Exit))]
     public class StageBattleComponent_Exit_Patch
     {
         public static void Postfix(StageBattleComponent __instance)
@@ -153,7 +153,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "Release")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.Release))]
     public class StageBattleComponent_Release_Patch
     {
         public static void Postfix(StageBattleComponent __instance)
@@ -168,7 +168,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), "GameRestart")]
+    [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.GameRestart))]
     public class StageBattleComponent_GameRestart_Patch
     {
         public static void Postfix(StageBattleComponent __instance)

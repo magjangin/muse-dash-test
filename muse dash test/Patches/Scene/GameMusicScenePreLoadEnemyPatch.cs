@@ -5,7 +5,7 @@ using muse_dash_test;
 // Il2CppGameLogic.GameMusicScene.PreLoadEnemy() 후킹 — 노트 오브젝트 풀(preloads/objCtrls) 빌드 전후 상태 진단.
 // StageBattleComponent.IsIgnoreCurrentNoteChecking 및 GameMusicScene.IsIgnoreCurrentNoteChecking 패치를 통해
 // musicList와 런타임 오브젝트가 처음부터 BMS 원본 정체 그대로 생성되므로, 인플레이스 변형/복구 루프 없이 상태만 검증합니다.
-[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "PreLoadEnemy")]
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.PreLoadEnemy))]
 public class GameMusicScene_PreLoadEnemy_Patch
 {
     private static bool EnableDebugLogs => true;

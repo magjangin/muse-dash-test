@@ -9,7 +9,7 @@ namespace muse_dash_test
     // forceAutoPlay는 모드 로드 직후 항상 false이므로 오토는 꺼진 상태로 시작하며,
     // 게임 도중 config.txt의 '오토플레이' 값을 저장하면 그때부터 그 값이 적용됩니다.
 
-    [HarmonyLib.HarmonyPatch(typeof(DBSkill), "SetAutoPlay")]
+    [HarmonyLib.HarmonyPatch(typeof(DBSkill), nameof(DBSkill.SetAutoPlay))]
     public class DBSkill_SetAutoPlay_Patch
     {
         public static void Prefix(DBSkill __instance, ref bool enable)

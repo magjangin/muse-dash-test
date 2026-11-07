@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using System;
 using muse_dash_test;
 
@@ -30,7 +30,7 @@ internal static class SceneFlowLog
     }
 }
 
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), "ChangeScene", new Type[] { typeof(int) })]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), nameof(Il2Cpp.SceneChangeController.ChangeScene), new Type[] { typeof(int) })]
 public class SceneChangeController_ChangeScene_Patch
 {
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
@@ -52,7 +52,7 @@ public class SceneChangeController_ChangeScene_Patch
     }
 }
 
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), "ChangeNote", new Type[] { typeof(int) })]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), nameof(Il2Cpp.SceneChangeController.ChangeNote), new Type[] { typeof(int) })]
 public class SceneChangeController_ChangeNote_Patch
 {
     public static bool Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
@@ -80,7 +80,7 @@ public class SceneChangeController_ChangeNote_Patch
     }
 }
 
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), "SceneAnimationReset", new Type[] { typeof(int) })]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), nameof(Il2Cpp.SceneChangeController.SceneAnimationReset), new Type[] { typeof(int) })]
 public class SceneChangeController_SceneAnimationReset_Patch
 {
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)

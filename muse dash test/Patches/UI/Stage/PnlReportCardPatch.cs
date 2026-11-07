@@ -8,7 +8,7 @@ using Il2CppAssets.Scripts.UI.Panels;
 /// 곡 선택 화면 및 준비 화면에서 최고 기록 리포트 카드(PnlReportCard)를 갱신할 때
 /// 가상 곡(커스텀 채보)의 정보(곡명, 커버, 난이도 별점, 스코어/정확도 기록 등)를 주입하는 패치 클래스입니다.
 /// </summary>
-[HarmonyLib.HarmonyPatch(typeof(PnlReportCard), "RefreshBestRecord")]
+[HarmonyLib.HarmonyPatch(typeof(PnlReportCard), nameof(PnlReportCard.RefreshBestRecord))]
 public class PnlReportCard_RefreshBestRecord_Patch
 {
     public static bool Prefix(PnlReportCard __instance)

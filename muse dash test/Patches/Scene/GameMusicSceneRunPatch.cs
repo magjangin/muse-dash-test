@@ -3,7 +3,7 @@ using muse_dash_test;
 using System;
 
 // Il2CppGameLogic.GameMusicScene.Run() 후킹 — 씬 슬롯 컬렉션과 musicList 상태를 관찰용으로 덤프한다.
-[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "Run")]
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.Run))]
 public class GameMusicScene_Run_Patch
 {
     // 배틀 중 30프레임마다 반복되는 관찰용 덤프입니다. 여기가 하드코딩 true라

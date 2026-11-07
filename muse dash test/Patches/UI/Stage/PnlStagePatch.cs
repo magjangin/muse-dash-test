@@ -8,7 +8,7 @@ using Il2CppAssets.Scripts.PeroTools.Commons;
 using muse_dash_test;
 
 // PnlStage.OnEnable 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "OnEnable")]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnEnable))]
 public class PnlStage_OnEnable_Patch
 {
     public static void Prefix(PnlStage __instance)
@@ -46,7 +46,7 @@ public class PnlStage_OnEnable_Patch
 }
 
 // PnlStage.ChangeMusic(int) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "ChangeMusic", new Type[] { typeof(int) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.ChangeMusic), new Type[] { typeof(int) })]
 public class PnlStage_ChangeMusic_Patch
 {
     // 선택 곡의 제목·아티스트·팩 이름 현지화 조회가 이 안에서 일어납니다
@@ -72,7 +72,7 @@ public class PnlStage_ChangeMusic_Patch
 }
 
 // PnlStage.ChangeFinalMusic(int) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "ChangeFinalMusic", new Type[] { typeof(int) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.ChangeFinalMusic), new Type[] { typeof(int) })]
 public class PnlStage_ChangeFinalMusic_Patch
 {
     public static void Postfix(PnlStage __instance, int i)
@@ -86,7 +86,7 @@ public class PnlStage_ChangeFinalMusic_Patch
 }
 
 // PnlStage.RefreshTagTitle 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshTagTitle")]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.RefreshTagTitle))]
 public class PnlStage_RefreshTagTitle_Patch
 {
     public static void Postfix(PnlStage __instance)
@@ -101,7 +101,7 @@ public class PnlStage_RefreshTagTitle_Patch
 }
 
 // PnlStage.OnAddCollection(MusicInfo) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "OnAddCollection", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnAddCollection), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnAddCollection_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
@@ -124,7 +124,7 @@ public class PnlStage_OnAddCollection_Patch
 }
 
 // PnlStage.OnRemoveCollection(MusicInfo) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "OnRemoveCollection", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnRemoveCollection), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnRemoveCollection_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
@@ -147,7 +147,7 @@ public class PnlStage_OnRemoveCollection_Patch
 }
 
 // PnlStage.OnHideMusic(MusicInfo) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "OnHideMusic", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnHideMusic), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnHideMusic_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
@@ -170,7 +170,7 @@ public class PnlStage_OnHideMusic_Patch
 }
 
 // PnlStage.OnRemoveHideMusic(MusicInfo) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "OnRemoveHideMusic", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnRemoveHideMusic), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnRemoveHideMusic_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
@@ -193,7 +193,7 @@ public class PnlStage_OnRemoveHideMusic_Patch
 }
 
 // PnlStage.SetLikeAndHideTglState(MusicInfo, bool) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "SetLikeAndHideTglState", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo), typeof(bool) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.SetLikeAndHideTglState), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo), typeof(bool) })]
 public class PnlStage_SetLikeAndHideTglState_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo, bool isUnlock)
@@ -216,7 +216,7 @@ public class PnlStage_SetLikeAndHideTglState_Patch
 }
 
 // PnlStage.SetAchievementPercent(MusicInfo) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "SetAchievementPercent", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.SetAchievementPercent), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_SetAchievementPercent_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
@@ -242,7 +242,7 @@ public class PnlStage_SetAchievementPercent_Patch
 }
 
 // PnlStage.RefreshDiffUI(MusicInfo) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshDiffUI", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.RefreshDiffUI), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_RefreshDiffUI_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
@@ -335,7 +335,7 @@ public class PnlStage_RefreshDiffUI_Patch
 }
 
 // PnlStage.RefreshBg(MusicInfo, bool) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "RefreshBg", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo), typeof(bool) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.RefreshBg), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo), typeof(bool) })]
 public class PnlStage_RefreshBg_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo, bool hideText)
@@ -358,7 +358,7 @@ public class PnlStage_RefreshBg_Patch
 }
 
 // PnlStage.IsContainOffPlan(MusicInfo) 후킹
-[HarmonyLib.HarmonyPatch(typeof(PnlStage), "IsContainOffPlan", new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
+[HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.IsContainOffPlan), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_IsContainOffPlan_Patch
 {
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)

@@ -5,7 +5,7 @@ using System.Reflection;
 using muse_dash_test;
 
 // DBStageInfo.SetRuntimeMusicData 하모니 패치
-[HarmonyLib.HarmonyPatch(typeof(DBStageInfo), "SetRuntimeMusicData")]
+[HarmonyLib.HarmonyPatch(typeof(DBStageInfo), nameof(DBStageInfo.SetRuntimeMusicData))]
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
 {
     private const double BaseDt = 1.47;

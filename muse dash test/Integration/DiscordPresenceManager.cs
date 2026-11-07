@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using MelonLoader;
 using Il2CppAssets.Scripts.Database;
 using Il2CppPeroTools2.Commons;
@@ -22,8 +23,7 @@ namespace muse_dash_test
 
             try
             {
-                var discordManager = Singleton<Il2Cpp.DiscordManager>.instance;
-                if (discordManager != null)
+                if (IsDiscordManagerInstanceAvailable())
                 {
                     isInitialized = true;
                     ModLogger.Msg("[DiscordRPC] 내장 Il2Cpp.DiscordManager 연동 활성화 성공!");
@@ -40,6 +40,12 @@ namespace muse_dash_test
             {
                 ModLogger.Warning($"[DiscordRPC] 초기화 경고: {ex.Message}");
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool IsDiscordManagerInstanceAvailable()
+        {
+            return Singleton<Il2Cpp.DiscordManager>.instance != null;
         }
 
         // 매 프레임 부르는 Update()는 두지 않습니다. 게임 내장 DiscordManager가 자체 틱/콜백을 관리하므로
@@ -75,26 +81,28 @@ namespace muse_dash_test
             {
                 try
                 {
-                    var dbTag = GlobalDataBase.dbMusicTag;
-                    if (dbTag != null)
-                    {
-                        var musicInfo = dbTag.GetMusicInfoFromAll(uid);
-                        if (musicInfo != null)
-                        {
-                            if (string.IsNullOrWhiteSpace(title)) title = musicInfo.name;
-                            if (string.IsNullOrWhiteSpace(artist)) artist = musicInfo.author;
-                        }
-                    }
+                    TryReadSongDetailsFromDb(uid, ref title, ref artist);
                 }
                 catch
                 {
-                    // DB 접근 실패 시 무시
+                    // DB 접근 또는 게임 업데이트로 인한 JIT 실패 시 무시하고 폴백 사용
                 }
             }
 
             // 3순위: 폴백
             if (string.IsNullOrWhiteSpace(title)) title = $"곡 {uid}";
             if (string.IsNullOrWhiteSpace(artist)) artist = "Muse Dash";
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void TryReadSongDetailsFromDb(string uid, ref string title, ref string artist)
+        {
+            var dbTag = GlobalDataBase.dbMusicTag;
+            if (dbTag == null) return;
+            var musicInfo = dbTag.GetMusicInfoFromAll(uid);
+            if (musicInfo == null) return;
+            if (string.IsNullOrWhiteSpace(title)) title = musicInfo.name;
+            if (string.IsNullOrWhiteSpace(artist)) artist = musicInfo.author;
         }
 
         public static void UpdateForSelection(string uid)
@@ -159,18 +167,29 @@ namespace muse_dash_test
 
             try
             {
-                var discordManager = Singleton<Il2Cpp.DiscordManager>.instance;
-                if (discordManager != null)
+                if (TryInvokeSetUpdateActivity(isPlaying, levelInfo))
                 {
                     lastSentIsPlaying = isPlaying;
                     lastSentLevelInfo = levelInfo;
-                    discordManager.SetUpdateActivity(isPlaying, levelInfo);
                 }
             }
             catch (Exception ex)
             {
                 ModLogger.Error($"[DiscordRPC] SetUpdateActivity 호출 실패: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 게임 업데이트로 <c>DiscordManager.SetUpdateActivity</c> 시그니처가 바뀌더라도
+        /// 호출부 <see cref="SendPresence"/>의 try/catch가 JIT <c>MissingMethodException</c>을 잡을 수 있도록 분리합니다.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool TryInvokeSetUpdateActivity(bool isPlaying, string levelInfo)
+        {
+            var discordManager = Singleton<Il2Cpp.DiscordManager>.instance;
+            if (discordManager == null) return false;
+            discordManager.SetUpdateActivity(isPlaying, levelInfo);
+            return true;
         }
     }
 }

@@ -19,7 +19,7 @@ using System.Collections.Generic;
 ///   2) `GameMusicScene.PreLoad`가 각 노트를 BMS 원본 `prefab_name` 그대로 단일 프리팹으로 인스턴스화합니다.
 /// 따라서 `musicList`를 인플레이스로 변형·복구할 필요가 완전히 사라집니다.
 /// </summary>
-[HarmonyLib.HarmonyPatch(typeof(Il2CppFormulaBase.StageBattleComponent), "IsIgnoreCurrentNoteChecking",
+[HarmonyLib.HarmonyPatch(typeof(Il2CppFormulaBase.StageBattleComponent), nameof(Il2CppFormulaBase.StageBattleComponent.IsIgnoreCurrentNoteChecking),
     new Type[] { typeof(string) })]
 public class StageBattleComponent_IsIgnoreCurrentNoteChecking_Patch
 {
@@ -35,7 +35,7 @@ public class StageBattleComponent_IsIgnoreCurrentNoteChecking_Patch
     }
 }
 
-[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "IsIgnoreCurrentNoteChecking",
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.IsIgnoreCurrentNoteChecking),
     new Type[] { typeof(int), typeof(string) })]
 public class GameMusicScene_IsIgnoreCurrentNoteChecking_Patch
 {
@@ -51,7 +51,7 @@ public class GameMusicScene_IsIgnoreCurrentNoteChecking_Patch
     }
 }
 
-[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "InitTimer",
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.InitTimer),
     new Type[] { typeof(Il2CppSystem.Decimal) })]
 public class GameMusicScene_InitTimer_Patch
 {
@@ -142,7 +142,7 @@ public class GameMusicScene_InitTimer_Patch
     }
 }
 
-[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), "InitSceneEvents")]
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.InitSceneEvents))]
 public class GameMusicScene_InitSceneEvents_Patch
 {
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance)

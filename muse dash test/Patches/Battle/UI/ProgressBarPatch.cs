@@ -1,4 +1,6 @@
 using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI.Panels;
@@ -46,31 +48,37 @@ namespace muse_dash_test
         {
             try
             {
-                var db = GlobalDataBase.s_StageInfo;
-                var list = db != null ? db.musicList : null;
-                if (list == null || list.Count <= 1) return 0f;
-
-                float maxEndTick = 0f;
-                for (int i = 1; i < list.Count; i++)
-                {
-                    var note = list[i];
-                    if (note == null) continue;
-
-                    float tick = (float)note.tick;
-                    float len = note.configData != null ? (float)note.configData.length : 0f;
-                    float end = tick + Mathf.Max(0f, len);
-                    if (end > maxEndTick)
-                    {
-                        maxEndTick = end;
-                    }
-                }
-
-                return maxEndTick > 0f ? (maxEndTick + 2.0f) : 0f;
+                return ReadChartDurationFromStageInfo();
             }
             catch (Exception)
             {
                 return 0f;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static float ReadChartDurationFromStageInfo()
+        {
+            var db = GlobalDataBase.s_StageInfo;
+            var list = db != null ? db.musicList : null;
+            if (list == null || list.Count <= 1) return 0f;
+
+            float maxEndTick = 0f;
+            for (int i = 1; i < list.Count; i++)
+            {
+                var note = list[i];
+                if (note == null) continue;
+
+                float tick = (float)note.tick;
+                float len = note.configData != null ? (float)note.configData.length : 0f;
+                float end = tick + Mathf.Max(0f, len);
+                if (end > maxEndTick)
+                {
+                    maxEndTick = end;
+                }
+            }
+
+            return maxEndTick > 0f ? (maxEndTick + 2.0f) : 0f;
         }
 
         public static float GetEffectiveDuration()
@@ -105,11 +113,13 @@ namespace muse_dash_test
             }
             else
             {
-                var stage = StageBattleComponent.instance;
-                if (stage != null && stage.isInGame)
+                try
                 {
-                    elapsed = stage.timeFromMusicStart;
-                    hasElapsed = true;
+                    hasElapsed = TryReadStageBattleElapsed(out elapsed);
+                }
+                catch (Exception)
+                {
+                    hasElapsed = false;
                 }
             }
 
@@ -117,6 +127,19 @@ namespace muse_dash_test
 
             ratio = Mathf.Clamp01(elapsed / duration);
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool TryReadStageBattleElapsed(out float elapsed)
+        {
+            elapsed = 0f;
+            var stage = StageBattleComponent.instance;
+            if (stage != null && stage.isInGame)
+            {
+                elapsed = stage.timeFromMusicStart;
+                return true;
+            }
+            return false;
         }
 
         public static void UpdateProgress(Slider sld)
@@ -168,9 +191,35 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(PnlBattle), nameof(PnlBattle._MusicProgressInit_b__48_1), new Type[] { typeof(float) })]
+    /// <summary>
+    /// <c>PnlBattle.MusicProgressInit</c> 내부의 DOTween DOSetter 람다(<c>_MusicProgressInit_b__48_1(float)</c>)를 후킹합니다.
+    /// 컴파일러 생성 람다 이름의 메서드 순번(48)은 게임 업데이트로 <c>PnlBattle</c>에 메서드가 추가/삭제되면
+    /// 바뀔 수 있으므로, 고정 이름이 없을 때 <c>_MusicProgressInit_b__*</c> 패턴 + <c>void(float)</c> 시그니처로 동적 탐색합니다.
+    /// </summary>
+    [HarmonyPatch]
     public class PnlBattle_MusicProgressSetter_Patch
     {
+        public static MethodBase TargetMethod()
+        {
+            var exact = AccessTools.Method(typeof(PnlBattle), nameof(PnlBattle._MusicProgressInit_b__48_1), new Type[] { typeof(float) });
+            if (exact != null) return exact;
+
+            foreach (var m in typeof(PnlBattle).GetMethods(
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (!m.Name.StartsWith("_MusicProgressInit_b__", StringComparison.Ordinal)) continue;
+                if (m.ReturnType != typeof(void)) continue;
+                var ps = m.GetParameters();
+                if (ps.Length == 1 && ps[0].ParameterType == typeof(float))
+                {
+                    ModLogger.Msg($"[ProgressBarPatch] 게임 업데이트 폴백으로 진행바 람다 메서드를 해석했습니다: {m.Name}");
+                    return m;
+                }
+            }
+
+            return null;
+        }
+
         public static void Prefix(ref float value)
         {
             try

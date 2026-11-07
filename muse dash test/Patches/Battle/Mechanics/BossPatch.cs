@@ -4,7 +4,7 @@ using System.Linq;
 using muse_dash_test;
 
 // Il2Cpp.Boss 후킹: Play(string key, bool playAnimator = true) 및 SetBoss()
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "Play", new Type[] { typeof(string), typeof(bool) })]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), nameof(Il2Cpp.Boss.Play), new Type[] { typeof(string), typeof(bool) })]
 public class Boss_Play_Patch
 {
     public static bool Prefix(Il2Cpp.Boss __instance, string key, bool playAnimator)
@@ -208,7 +208,7 @@ public class Boss_Play_Patch
     }
 }
 
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "InitBossObject", new Type[] { typeof(string), typeof(int), typeof(bool) })]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), nameof(Il2Cpp.Boss.InitBossObject), new Type[] { typeof(string), typeof(int), typeof(bool) })]
 public class Boss_InitBossObject_Patch
 {
     /*
@@ -398,7 +398,7 @@ public class Boss_InitBossObject_Patch
 // 진단용 로깅 패치: SceneBossChange 호출 흐름만 추적합니다.
 // (idx 재작성 기믹은 사용되지 않아 제거했으며, 필요 시 Prefix에서 ref idx를 조정해 복원할 수 있습니다.)
 // 배틀 도중 씬이 바뀔 때마다(공식곡 포함) 불리므로 Verbose에만 남깁니다. 보려면 LogLevel=Verbose.
-[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), "SceneBossChange", new Type[] { typeof(int) })]
+[HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), nameof(Il2Cpp.Boss.SceneBossChange), new Type[] { typeof(int) })]
 public class Boss_SceneBossChange_Patch
 {
     public static void Prefix(Il2Cpp.Boss __instance, int idx)
