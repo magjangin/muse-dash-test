@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -96,14 +96,15 @@ namespace muse_dash_test
 
                     if (TryParseMetadata(trimmedLine, out string metaKey, out string metaValue))
                     {
-                        metadata[metaKey] = metaValue;
+                        string normalizedMetaValue = TextNormalizer.NormalizeEnglishContractions(metaValue);
+                        metadata[metaKey] = normalizedMetaValue;
                         if (string.Equals(metaKey, "TITLE", StringComparison.OrdinalIgnoreCase))
                         {
-                            chart.Title = metaValue;
+                            chart.Title = normalizedMetaValue;
                         }
                         else if (string.Equals(metaKey, "ARTIST", StringComparison.OrdinalIgnoreCase))
                         {
-                            chart.Artist = metaValue;
+                            chart.Artist = normalizedMetaValue;
                         }
                         continue;
                     }

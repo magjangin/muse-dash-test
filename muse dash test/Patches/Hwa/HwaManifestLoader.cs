@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using System.IO;
 
@@ -215,7 +215,7 @@ namespace muse_dash_test
         private static bool TryApplyString(string normalizedKey, string value, Action<string> apply, params string[] tokens)
         {
             if (!ContainsAny(normalizedKey, tokens)) return false;
-            apply(value);
+            apply(TextNormalizer.NormalizeEnglishContractions(value));
             return true;
         }
 
