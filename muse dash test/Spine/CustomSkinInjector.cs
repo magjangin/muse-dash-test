@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using MelonLoader;
@@ -116,6 +116,30 @@ namespace muse_dash_test
             {
                 ModLogger.Error($"[CustomSkinInjector] {baseName} 예외: " + ex);
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// 캐시된 모든 Spine SkeletonDataAsset 및 관련 네이티브 리소스를 파괴하고 캐시를 초기화합니다.
+        /// </summary>
+        public static void ClearCache()
+        {
+            try
+            {
+                foreach (var kvp in Cache)
+                {
+                    var asset = kvp.Value;
+                    if (asset != null)
+                    {
+                        UnityEngine.Object.Destroy(asset);
+                    }
+                }
+                Cache.Clear();
+                ModLogger.Verbose("[CustomSkinInjector] Spine 스킨 캐시 및 네이티브 에셋을 전면 초기화했습니다.");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[CustomSkinInjector] 스킨 캐시 초기화 중 예외: {ex.Message}");
             }
         }
 

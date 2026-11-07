@@ -1,4 +1,4 @@
-# 코드 파일별 레퍼런스
+﻿# 코드 파일별 레퍼런스
 
 이 문서는 `muse dash test` 프로젝트의 C# 파일별 역할, 주요 클래스·메서드, 상호 작용 흐름을 정리한 코드 레퍼런스입니다.
 
@@ -303,10 +303,59 @@ BMS 파일 내용의 SHA-256 앞 16자리로 "지금 그 슬롯의 채보"를 �
 
 ---
 
-## 8. 문서와 소스 코드의 동기화 상태
+## 8. 진단·패치 설치기 및 헬스체크 (Diagnostics)
 
-이 문서는 파일이 늘어날 때마다 손으로 갱신하므로 **전체 목록이 아닙니다.** 새 파일이 생기면 여기에 절을 더하고, 파일이 사라지면 절을 지우세요(위 노트 색 진단처럼 "삭제됨"으로 남기는 것도 방법입니다).
+### 📂 [Patches/Diagnostics/PatchInstaller.cs](../../muse%20dash%20test/Patches/Diagnostics/PatchInstaller.cs) [v0.12.1]
+MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든 Harmony 패치를 수동 검증 및 선별 적용하는 클래스입니다.
+* **사전 JIT 컴파일 검증 (`TryFindUncompilablePatchMethod`)**: 게임 업데이트로 필드나 메서드가 사라져 런타임 JIT 에러(`MissingMethodException`)를 유발하는 패치를 사전에 감지하고, 해당 패치 클래스만 안전하게 격리(`skipped`)하여 게임 전체 크래시를 방지합니다.
+* **다중 패치 부분 적용 (`ApplySurvivingMethodPatches`)**: 한 패치 클래스 내에 여러 타깃 메서드가 있을 때, 일부 메서드가 게임 업데이트로 변경되거나 삭제되더라도 존재하는 정상 대상에만 개별 `Prefix`/`Postfix`/`Transpiler`/`Finalizer`를 적용하여 나머지 기능을 살립니다. 동적 타깃(`TargetMethods`/`TargetMethod`)과 정적 어트리뷰트 타깃을 모두 지원합니다.
 
-* 현재 문서는 체력바 UI 모듈(`HywHpTextMod`), 배경 영상/BGM(`HwaBattleMediaController`), 가상 앨범 시스템(`CustomTagRegistry`), 오토플레이/피버 제어, 올 퍼펙트 배너·폰트 캐싱(`APModPatch`), 세이브 데이터 정화(`SaveDataManagerPatch`)를 반영합니다.
-* 커스텀 기록 저장 및 UI 연동 모듈(`CustomRecordStore`, `CustomRecordUiPatchHelper`, `PnlReportCardPatch`)과 각 패널 훅도 기재되어 있습니다.
-* **전용 절이 아직 없는 곳**: `Patches/Scene/*`(씬 전환·배경 교체 — [SCENE_BACKGROUND_SWAP.md](../experiments/SCENE_BACKGROUND_SWAP.md) 참고), `Patches/Sandbox/*`([OFFLINE_CUSTOM_SANDBOX_GUIDE.md](../guides/OFFLINE_CUSTOM_SANDBOX_GUIDE.md)), `Integration/DiscordPresenceManager.cs`([DISCORD_RICH_PRESENCE.md](../guides/DISCORD_RICH_PRESENCE.md)), `Patches/Hwa/HwaResourceManager*`·`HwaSyncManager`, `Patches/Diagnostics/PatchInstaller.cs`·`OffsetHookPatches.cs`, `Core/ModConfig.cs`·`CustomPlaySession.cs`·`PlayRecordMerge.cs`·`UnlockAllMasterGuard.cs` 등.
+### 📂 [Patches/Diagnostics/PatchHealthCheck.cs](../../muse%20dash%20test/Patches/Diagnostics/PatchHealthCheck.cs) [v0.12.1]
+게임 로드 시점에 모든 패치 대상 클래스 및 메서드의 실제 바인딩 가능 여부를 전수 검사하는 건전성 진단기입니다.
+* **`InspectPatchClassTargets`**: 패치 클래스별 정상 해석 타깃 수와 누락된 타깃 목록을 집계합니다.
+* **`TryResolveDynamicTargets`**: `TargetMethod` 또는 `TargetMethods`를 사용하는 런타임 동적 타깃 패치도 리플렉션을 통해 안전하게 실제 대상 `MethodBase` 목록을 추출해 유효성을 점검합니다.
+
+---
+
+## 9. 외부 연동 및 진행바 제어
+
+### 📂 [Integration/DiscordPresenceManager.cs](../../muse%20dash%20test/Integration/DiscordPresenceManager.cs) [v0.12.1]
+게임 내장 `Il2Cpp.DiscordManager`를 가로채어 현재 선택 곡 및 인게임 플레이 상태를 디스코드 프로필(Rich Presence)에 실시간으로 반영합니다.
+* **JIT 경계 격리 (`[MethodImpl(MethodImplOptions.NoInlining)]`)**: 게임 업데이트 시 Discord SDK나 내부 메서드 시그니처가 변경되더라도 상위 `try-catch`에서 예외를 100% 흡수할 수 있도록 호출부를 NoInlining 헬퍼(`TryInvokeSetUpdateActivity`, `IsDiscordManagerInstanceAvailable`, `TryReadSongDetailsFromDb`)로 분리했습니다.
+* **이벤트 기반 갱신**: 매 프레임 폴링하지 않고, 곡 선택(`UpdateForSelection`), 배틀 진입(`UpdateForPlaying`), 배틀 종료 시점에만 이벤트를 전송합니다.
+
+### 📂 [Patches/Battle/UI/ProgressBarPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/ProgressBarPatch.cs) [v0.12.1]
+커스텀 곡 플레이 시 호스트 원본 곡 길이가 아닌 실제 커스텀 차트 및 음원 길이에 맞춰 인게임 진행바(Slider)를 정확히 동기화합니다.
+* **람다 동적 폴백 (`PnlBattle_MusicProgressSetter_Patch`)**: `PnlBattle.MusicProgressInit` 내부의 컴파일러 생성 DOTween DOSetter 람다(`_MusicProgressInit_b__48_1`) 번호가 게임 업데이트로 바뀔 때를 대비하여, 고정 이름 조회 실패 시 `_MusicProgressInit_b__*` 패턴과 `void(float)` 시그니처를 동적으로 탐색하여 바인딩합니다.
+* **JIT 격리**: `ReadChartDurationFromStageInfo`, `TryReadStageBattleElapsed`에 `NoInlining`을 적용해 Il2Cpp 바인딩 변경 시 런타임 크래시를 방지합니다.
+
+---
+
+## 10. 리소스 매니저 및 런타임 세션
+
+### 📂 [Patches/Hwa/HwaResourceManager.cs](../../muse%20dash%20test/Patches/Hwa/HwaResourceManager.cs) [v0.12.0~v0.12.1]
+`hwa/` 루트 폴더 내의 곡 디렉터리를 스캔하여 가상 곡 UID(`1999-N`)로 매핑하고, 매니페스트(`info.txt`)와 다중 난이도별 BMS 채보 세트(`BmsChartSet`)를 총괄 관리하는 핵심 매니저입니다.
+* **다중 난이도 채보 (`BmsChartSet`)**: `info.txt`의 `난이도N bms: <파일명>` 설정을 파싱하여 각 난이도 슬롯별로 독립된 차트를 로드하고, 지정이 없는 슬롯은 기본 채보로 폴백합니다.
+* **BMS 파일 감시자 (`Watcher`)**: 백그라운드 파일 변경을 감지해 핫리로드 대기열에 넣고, 안정화 지연 후 차트를 실시간 재로드합니다.
+* **전체 캐시 회수 (`ClearCaches`)**: 매니페스트, BMS 차트, 가상 곡 목록뿐만 아니라 `CoverImageManager`의 텍스처와 `ChartFingerprint` 해시 캐시까지 일괄 정리하여 메모리 누수를 방지합니다.
+
+### 📂 [Core/CustomPlaySession.cs](../../muse%20dash%20test/Core/CustomPlaySession.cs)
+현재 선택되거나 플레이 중인 곡의 세션 상태(선택 곡 UID, 실험 차트 적용 여부, 원본 곡 정보, 난이도별 채보 등)를 보관하는 싱글톤 세션 컨테이너입니다.
+* `ShouldApplyExperimentChart`: 현재 곡이 커스텀 곡인지 여부를 판단하는 단일 관문 역할을 수행합니다.
+
+### 📂 [Core/ModConfig.cs](../../muse%20dash%20test/Core/ModConfig.cs)
+`UserData/MelonPreferences.cfg`와 연동하여 13가지 모드 기능의 개별 온/오프 상태와 진단 로그 레벨을 관리합니다.
+
+---
+
+## 11. 문서와 소스 코드의 동기화 상태
+
+이 문서는 모드의 실제 아키텍처와 지속적으로 동기화됩니다.
+
+* 현재 문서는 체력바 UI 모듈(`HywHpTextMod`), 배경 영상/BGM(`HwaBattleMediaController`), 가상 앨범 시스템(`CustomTagRegistry`), 오토플레이/피버 제어, 올 퍼펙트 배너·폰트 캐싱(`APModPatch`), 세이브 데이터 정화(`SaveDataManagerPatch`), 커스텀 기록 저장 및 UI 연동 모듈(`CustomRecordStore`, `CustomRecordUiPatchHelper`, `PnlReportCardPatch`)을 완벽히 반영합니다.
+* **v0.12.0~v0.12.1 최신 추가 반영**:
+  * 패치 설치 및 JIT 사전 진단 모듈 (`PatchInstaller.cs`, `PatchHealthCheck.cs`)
+  * Discord Rich Presence 연동 및 JIT 격리 (`DiscordPresenceManager.cs`)
+  * 진행바 람다 동적 폴백 및 타임라인 동기화 (`ProgressBarPatch.cs`)
+  * 다중 난이도 BMS 채보 및 리소스 수명 주기 관리 (`HwaResourceManager.cs`)
+  * 전역 세션 및 기능 토글 모듈 (`CustomPlaySession.cs`, `ModConfig.cs`)

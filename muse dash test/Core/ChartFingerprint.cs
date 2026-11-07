@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -107,6 +107,17 @@ namespace muse_dash_test
             {
                 ModLogger.Warning($"[ChartFingerprint] 파일 지문 계산 실패(판정을 건너뜁니다): path={path}, {ex.Message}");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// 메모리에 캐시된 모든 파일 지문(해시) 기록을 초기화합니다.
+        /// </summary>
+        public static void ClearCache()
+        {
+            lock (Cache)
+            {
+                Cache.Clear();
             }
         }
     }

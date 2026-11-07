@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using UnityEngine;
 using UnityEngine.Video;
@@ -117,11 +117,26 @@ namespace muse_dash_test
                 Camera mainCam = Camera.main;
                 if (mainCam != null)
                 {
-                    VideoPlayer vp = mainCam.GetComponentInChildren<VideoPlayer>();
-                    if (vp != null)
+                    Transform existingQuad = mainCam.transform.Find("VideoBackgroundQuad");
+                    if (existingQuad != null && existingQuad.gameObject != null)
                     {
-                        vp.Stop();
-                        ModLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 완전히 멈췄습니다.");
+                        VideoPlayer vp = existingQuad.GetComponent<VideoPlayer>();
+                        if (vp != null)
+                        {
+                            vp.Stop();
+                            vp.targetMaterialRenderer = null;
+                        }
+                        UnityEngine.Object.Destroy(existingQuad.gameObject);
+                        ModLogger.Msg("[HwaBattleMediaController] 배경 비디오 쿼드 오브젝트를 정상 파괴하고 리소스를 반환했습니다.");
+                    }
+                    else
+                    {
+                        VideoPlayer vp = mainCam.GetComponentInChildren<VideoPlayer>();
+                        if (vp != null)
+                        {
+                            vp.Stop();
+                            ModLogger.Msg("[HwaBattleMediaController] 배경 비디오 재생을 완전히 멈췄습니다.");
+                        }
                     }
                 }
 

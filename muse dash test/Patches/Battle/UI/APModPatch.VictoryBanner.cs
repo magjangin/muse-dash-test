@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
@@ -32,7 +32,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    // Intercept the transient Full Combo banner display and change it to ALL PERFECT if appropriate
+    // Intercepts the transient Full Combo banner and replaces it with ALL PERFECT when appropriate.
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager), nameof(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager.OnShowVictory), new Type[] { typeof(Il2CppSystem.Object), typeof(Il2CppSystem.Object), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
     public class PnlVictory2dManager_OnShowVictory_Patch
     {
@@ -213,7 +213,7 @@ namespace muse_dash_test.Patches
             customTextComp.text = "ALL PERFECT !";
             customTextComp.fontSize = 110;
             customTextComp.alignment = TextAnchor.MiddleCenter;
-            // Harmonious vibrant gold/yellow color
+            // Applies vibrant gold/yellow styling matching the original game aesthetic.
             customTextComp.color = new Color(1f, 0.85f, 0f, 1f);
 
             // 3D 입체감을 위한 그림자
@@ -221,7 +221,7 @@ namespace muse_dash_test.Patches
             shadow.effectColor = new Color(0f, 0f, 0f, 0.8f);
             shadow.effectDistance = new Vector2(6f, -6f);
 
-            // Muse Dash 스타일의 두꺼운 검정 외곽선
+            // Adds thick black outline effect matching Muse Dash UI styling.
             var outline = apGo.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 1f);
             outline.effectDistance = new Vector2(4f, -4f);

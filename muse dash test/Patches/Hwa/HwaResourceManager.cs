@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -65,6 +65,8 @@ namespace muse_dash_test
                 virtualUids.Clear();
             }
             customClaimedUids.Clear();
+            CoverImageManager.ClearCache();
+            ChartFingerprint.ClearCache();
         }
 
         /// <summary>

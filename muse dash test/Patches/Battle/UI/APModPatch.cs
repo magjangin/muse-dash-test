@@ -21,7 +21,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    // Cache the TaskStageTarget instance during gameplay when score is updated
+    // Caches the TaskStageTarget instance during gameplay when the score updates.
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.AddScore))]
     public class TaskStageTarget_AddScore_Patch
     {
@@ -36,7 +36,7 @@ namespace muse_dash_test.Patches
                     ModLogger.Msg($"[APMod] AddScore를 통해 TaskStageTarget 캐싱 완료. Pointer={__instance.Pointer}");
                 }
 
-                // Cache the premium stylized gameplay font from the HUD
+                // Caches the stylized gameplay font from the HUD.
                 if (VictoryDataCache.PremiumFont == null && !VictoryDataCache.AttemptedFontCache)
                 {
                     var battleInstance = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
@@ -44,7 +44,7 @@ namespace muse_dash_test.Patches
                     {
                         var scoreValue = battleInstance.currentComps.scoreValue;
                         
-                        // Prevent querying every hit when UI objects are not initialized yet
+                        // Avoid querying on every hit when UI components are not yet initialized.
                         if (scoreValue.text == null && scoreValue.djmaxText == null && scoreValue.arkNightText == null)
                         {
                             return;
@@ -90,7 +90,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    // Cache the TaskStageTarget instance when accuracy is requested
+    // Caches the TaskStageTarget instance when accuracy is requested.
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.GetAccuracy))]
     public class TaskStageTarget_GetAccuracy_Patch
     {
@@ -188,7 +188,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    // Cache the TaskStageTarget instance when full combo is checked
+    // Caches the TaskStageTarget instance when full combo status is verified.
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.IsFullCombo))]
     public class TaskStageTarget_IsFullCombo_Patch
     {

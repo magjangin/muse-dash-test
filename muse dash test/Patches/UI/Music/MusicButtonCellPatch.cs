@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using HarmonyLib;
 using Il2CppAssets.Scripts.UI.Panels.PnlMusicTag;
 using Il2CppAssets.Scripts.Database;
@@ -275,6 +275,33 @@ namespace muse_dash_test
                 }
             }
         }
+
+        /// <summary>
+        /// 커버 이미지 캐시(LRU)와 실패 목록을 모두 비우고, 생성된 모든 Sprite 및 Texture2D 네이티브 리소스를 파괴합니다.
+        /// </summary>
+        public static void ClearCache()
+        {
+            try
+            {
+                while (lruList.First != null)
+                {
+                    var entry = lruList.First.Value;
+                    lruList.RemoveFirst();
+                    if (entry == null) continue;
+
+                    if (entry.Sprite != null) UnityEngine.Object.Destroy(entry.Sprite);
+                    if (entry.Texture != null) UnityEngine.Object.Destroy(entry.Texture);
+                }
+                cache.Clear();
+                missing.Clear();
+                MusicCellImageDiagnostics.Reset();
+                ModLogger.Verbose("[Cover.LRU] 커버 이미지 캐시 및 네이티브 텍스처 리소스를 전면 초기화했습니다.");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[Cover.LRU] 캐시 초기화 중 예외: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>
@@ -284,6 +311,7 @@ namespace muse_dash_test
     {
         // UID당 1회만 로깅해 스크롤 중 로그 폭발을 방지합니다.
         private static readonly HashSet<string> loggedUids = new HashSet<string>();
+        public static void Reset() => loggedUids.Clear();
 
         public static void LogCellImagesOnce(MusicButtonCell cell, string uid)
         {
