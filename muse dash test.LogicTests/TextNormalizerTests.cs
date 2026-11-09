@@ -42,11 +42,27 @@ namespace muse_dash_test.LogicTests
             Assert.Equal("Let's", TextNormalizer.NormalizeEnglishContractions("Let '  s"));
         }
 
+        public static void Normalize_FixesUpperCaseContractions()
+        {
+            Assert.Equal("YOU'RE", TextNormalizer.NormalizeEnglishContractions("YOU ' RE"));
+            Assert.Equal("DON'T", TextNormalizer.NormalizeEnglishContractions("DON ' T"));
+            Assert.Equal("IT'S", TextNormalizer.NormalizeEnglishContractions("IT ' S"));
+            Assert.Equal("WE'LL", TextNormalizer.NormalizeEnglishContractions("WE ' LL"));
+            Assert.Equal("THEY'VE", TextNormalizer.NormalizeEnglishContractions("THEY ' VE"));
+        }
+
         public static void Normalize_PreservesAlreadyCorrectContractions()
         {
             Assert.Equal("you're not here", TextNormalizer.NormalizeEnglishContractions("you're not here"));
             Assert.Equal("don't stop the music", TextNormalizer.NormalizeEnglishContractions("don't stop the music"));
             Assert.Equal("it's fine", TextNormalizer.NormalizeEnglishContractions("it's fine"));
+        }
+
+        public static void Normalize_FastPathWithoutApostropheReturnsExactInstance()
+        {
+            string plainText = "070101_road_nor_1.wav";
+            string result = TextNormalizer.NormalizeEnglishContractions(plainText);
+            Assert.True(object.ReferenceEquals(plainText, result));
         }
 
         public static void Normalize_PreservesQuotedWords()

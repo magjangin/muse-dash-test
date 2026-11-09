@@ -27,11 +27,13 @@ namespace muse_dash_test
     public static class ProgressBarPatch
     {
         private static float cachedChartDuration;
+        private static bool hasComputedChartDuration;
         private static float customAudioDuration;
 
         public static void Reset()
         {
             cachedChartDuration = 0f;
+            hasComputedChartDuration = false;
             customAudioDuration = 0f;
         }
 
@@ -83,9 +85,10 @@ namespace muse_dash_test
 
         public static float GetEffectiveDuration()
         {
-            if (cachedChartDuration <= 0f)
+            if (!hasComputedChartDuration)
             {
                 cachedChartDuration = ComputeCustomChartDuration();
+                hasComputedChartDuration = true;
             }
 
             if (customAudioDuration > 1f && cachedChartDuration > 1f)
@@ -192,8 +195,8 @@ namespace muse_dash_test
     }
 
     /// <summary>
-    /// <c>PnlBattle.MusicProgressInit</c> 내부의 DOTween DOSetter 람다(<c>_MusicProgressInit_b__48_1(float)</c>)를 후킹합니다.
-    /// 컴파일러 생성 람다 이름의 메서드 순번(48)은 게임 업데이트로 <c>PnlBattle</c>에 메서드가 추가/삭제되면
+    /// <c>PnlBattle.MusicProgressInit</c> 내부의 DOTween DOSetter 메서드(<c>_MusicProgressInit_b__48_1(float)</c>)를 후킹합니다.
+    /// 컴파일러 생성 세터 메서드 이름의 순번(48)은 게임 업데이트로 <c>PnlBattle</c>에 메서드가 추가/삭제되면
     /// 바뀔 수 있으므로, 고정 이름이 없을 때 <c>_MusicProgressInit_b__*</c> 패턴 + <c>void(float)</c> 시그니처로 동적 탐색합니다.
     /// </summary>
     [HarmonyPatch]
@@ -212,7 +215,7 @@ namespace muse_dash_test
                 var ps = m.GetParameters();
                 if (ps.Length == 1 && ps[0].ParameterType == typeof(float))
                 {
-                    ModLogger.Msg($"[ProgressBarPatch] 게임 업데이트 폴백으로 진행바 람다 메서드를 해석했습니다: {m.Name}");
+                    ModLogger.Msg($"[ProgressBarPatch] 게임 업데이트 폴백으로 진행바 세터 메서드를 해석했습니다: {m.Name}");
                     return m;
                 }
             }

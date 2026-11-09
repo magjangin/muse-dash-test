@@ -1,4 +1,4 @@
-﻿# 코드 파일별 레퍼런스
+# 코드 파일별 레퍼런스
 
 이 문서는 `muse dash test` 프로젝트의 C# 파일별 역할, 주요 클래스·메서드, 상호 작용 흐름을 정리한 코드 레퍼런스입니다.
 
@@ -326,7 +326,7 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 
 ### 📂 [Patches/Battle/UI/ProgressBarPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/ProgressBarPatch.cs) [v0.12.1]
 커스텀 곡 플레이 시 호스트 원본 곡 길이가 아닌 실제 커스텀 차트 및 음원 길이에 맞춰 인게임 진행바(Slider)를 정확히 동기화합니다.
-* **람다 동적 폴백 (`PnlBattle_MusicProgressSetter_Patch`)**: `PnlBattle.MusicProgressInit` 내부의 컴파일러 생성 DOTween DOSetter 람다(`_MusicProgressInit_b__48_1`) 번호가 게임 업데이트로 바뀔 때를 대비하여, 고정 이름 조회 실패 시 `_MusicProgressInit_b__*` 패턴과 `void(float)` 시그니처를 동적으로 탐색하여 바인딩합니다.
+* **세터 메서드 동적 폴백 (`PnlBattle_MusicProgressSetter_Patch`)**: `PnlBattle.MusicProgressInit` 내부의 컴파일러 생성 DOTween DOSetter 메서드(`_MusicProgressInit_b__48_1`) 번호가 게임 업데이트로 바뀔 때를 대비하여, 고정 이름 조회 실패 시 `_MusicProgressInit_b__*` 패턴과 `void(float)` 시그니처를 동적으로 탐색하여 바인딩합니다.
 * **JIT 격리**: `ReadChartDurationFromStageInfo`, `TryReadStageBattleElapsed`에 `NoInlining`을 적용해 Il2Cpp 바인딩 변경 시 런타임 크래시를 방지합니다.
 
 ---
@@ -356,6 +356,6 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 * **v0.12.0~v0.12.1 최신 추가 반영**:
   * 패치 설치 및 JIT 사전 진단 모듈 (`PatchInstaller.cs`, `PatchHealthCheck.cs`)
   * Discord Rich Presence 연동 및 JIT 격리 (`DiscordPresenceManager.cs`)
-  * 진행바 람다 동적 폴백 및 타임라인 동기화 (`ProgressBarPatch.cs`)
+  * 진행바 세터 메서드 동적 폴백 및 타임라인 동기화 (`ProgressBarPatch.cs`)
   * 다중 난이도 BMS 채보 및 리소스 수명 주기 관리 (`HwaResourceManager.cs`)
   * 전역 세션 및 기능 토글 모듈 (`CustomPlaySession.cs`, `ModConfig.cs`)

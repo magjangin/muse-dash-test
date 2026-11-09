@@ -1,4 +1,4 @@
-﻿# muse-dash-custom-chart 🎵
+# muse-dash-custom-chart 🎵
 
 > **뮤즈대시(Muse Dash)를 네이티브 훅(Native Detour) 없이 관리형 Harmony 계층만으로 다뤄, 실시간 커스텀 차트와 보스 연출을 구현한 최초의 모드입니다. (첫 배포 버전)**
 >
@@ -74,7 +74,7 @@
 * **Game Update Resilience & JIT Boundary Isolation (게임 업데이트 내성 및 JIT 경계 격리) [v0.12.1]** ✅
   * 전체 패치 타깃을 컴파일 검증형 `nameof(...)`로 전면 승격하여 게임 빌드 갱신 시 오타나 시그니처 변경을 빌드 타임에 감지합니다.
   * **다중 패치 부분 적용**: 패치 클래스 내 일부 대상이 게임 업데이트로 사라져도 살아남은 정상 대상만 개별 적용(`ApplySurvivingMethodPatches`)하여 모드 전체 무력화를 방지합니다 (동적 타깃 지원).
-  * **진행바 람다 동적 폴백**: 컴파일러 생성 람다(`_MusicProgressInit_b__*`) 번호 변경에 대응하는 2단계 동적 리플렉션 탐색 훅을 탑재했습니다.
+  * **진행바 세터 메서드 동적 폴백**: 컴파일러 생성 세터 메서드(`_MusicProgressInit_b__*`) 번호 변경에 대응하는 2단계 동적 리플렉션 탐색 훅을 탑재했습니다.
   * **JIT 경계 격리 (NoInlining)**: Il2Cpp 및 외부 SDK 호출부를 `NoInlining`으로 분리하여 누락 시에도 JIT 크래시 없이 상위 예외 처리가 작동하도록 격리했습니다.
 
 * **Native Resource Lifecycle Management (장시간 플레이 네이티브 리소스 누수 방지) [v0.12.1]** ✅
@@ -112,7 +112,7 @@
 | **Discord Rich Presence (디스코드 프로필 곡명/상태 실시간 연동)** | ✅ 완료 ([상세 문서](docs/guides/DISCORD_RICH_PRESENCE.md)) |
 | **UMPC 하드웨어 자동 감지 및 전역 로그 레벨 렉 최적화** | ✅ 완료 (v0.10.0, [상세 문서](docs/guides/LOGGING_AND_TROUBLESHOOTING.md)) |
 | **난이도별 독립 BMS 채보(info.txt) 및 난이도별 플레이 기록 분리** | ✅ 완료 (v0.12.0) |
-| **게임 업데이트 내성 강화 (nameof 전면 전환, 다중 패치 부분 적용, 람다 동적 폴백, JIT 격리)** | ✅ 완료 (v0.12.1) |
+| **게임 업데이트 내성 강화 (nameof 전면 전환, 다중 패치 부분 적용, 세터 메서드 동적 폴백, JIT 격리)** | ✅ 완료 (v0.12.1) |
 | **장시간 플레이 네이티브 리소스 누수 방지 (BGA 비디오 쿼드, 커버 LRU, 은퇴 클립 안전 해제)** | ✅ 완료 (v0.12.1) |
 
 

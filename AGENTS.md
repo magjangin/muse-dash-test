@@ -11,7 +11,7 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-11-07 (BMS 메타데이터 및 info.txt 영문 축약형 공백 자동 교정 유틸리티 TextNormalizer 도입, 로직 단위 테스트 144개 통과)
+마지막 갱신: 2026-11-09 (람다 문구 전면 정제, TextNormalizer 따옴표 미포함 Fast-Path 가드 및 대문자 축약형 지원, ProgressBarPatch 매 프레임 풀스캔 방지, HwaMenuBgmController 씬 스캔 스로틀링, 단위 테스트 146개 통과)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB). 의사코드가 필요하면 `H:\source\repos\rea-hwa\tools\pe_slice.py --dll "H:/muse dash hwa/GameAssembly.dll" --rva <RVA> --out <조각.dll>`로 함수만 잘라 REA `open_binary`(`provider_id: "ghidra"`) → `procedure_pseudo_code`로 봅니다(`GameAssembly.dll` 통째로 열면 시간 초과).

@@ -289,7 +289,7 @@ CustomTagInfo.tag_name = Dictionary<언어코드, 번역된이름>
 | 배틀 수명주기 | `StageBattleComponent.Load/LoadMusicData/InitData/Pause/Resume/End/Exit/Release/GameRestart`, `StageBattleComponent.InitTimeNodeOrder()`(강제 퍼펙트 사전 테이블 조작) | `Patches/Battle/UI/StageBattleComponentPatch.cs`, `ForcePerfectPatch.cs` | 🟡 | |
 | 배틀 수명주기 | `GameMusicScene.LoadScene/InitSceneEvents/InitTimer/PreLoadEnemy/Run` | `Patches/Scene/GameMusicScene*.cs` | 🟡 | |
 | 씬 전환 노트 보호 | `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`, `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)` — 커스텀 곡에서 `true`로 답해 `LoadMusicData`/`PreLoad`가 노트 `noteData`·`configData.note_uid`를 씬 번호로 덮어쓰지 못하게 함 | `Patches/Scene/GameMusicSceneInitPatch.cs` | 🟡 | |
-| 배틀 UI | `PnlBattle.GameStart()`(고스트 알파 캐시 초기화), `PnlBattle.MusicProgressInit()`(관찰만), `PnlBattle._MusicProgressInit_b__48_1(float)`(진행바 트윈 세터, **컴파일러 생성 람다 이름**), `StageBattleComponent.GetTimeProgress()` — 진행바를 커스텀 곡 길이 기준으로 | `PnlBattleGameStartPatch.cs`, `ProgressBarPatch.cs` | 🔴 | |
+| 배틀 UI | `PnlBattle.GameStart()`(고스트 알파 캐시 초기화), `PnlBattle.MusicProgressInit()`(관찰만), `PnlBattle._MusicProgressInit_b__48_1(float)`(진행바 트윈 세터, **컴파일러 생성 메서드 이름**), `StageBattleComponent.GetTimeProgress()` — 진행바를 커스텀 곡 길이 기준으로 | `PnlBattleGameStartPatch.cs`, `ProgressBarPatch.cs` | 🔴 | |
 | 씬 전환 노트 | `SceneChangeController.ChangeScene/ChangeNote/SceneAnimationReset(int)` — 커스텀 곡에서 `ChangeNote` 원본 차단 | `Patches/Scene/SceneFlowPatch.cs` | 🟡 | |
 | 보스 | `Boss.Play(string, bool)`(`swap:` 키 처리, 원본 차단), `Boss.InitBossObject(string, int, bool)`, `Boss.SceneBossChange(int)` | `Patches/Battle/Mechanics/BossPatch.cs` | 🟡 | |
 | 판정 | `GameTouchPlay.TouchResult(...)` ×2(강제 퍼펙트, 판정바) | `ForcePerfectPatch.cs`, `JudgmentBar.cs` | 🟡 | |

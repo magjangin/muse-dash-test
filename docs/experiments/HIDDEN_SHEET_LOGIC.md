@@ -63,7 +63,7 @@
    - `diffIndex`와 `changedIndex`가 **둘 다 -1**이면 건너뜁니다.
    - `musicInfo = DBMusicTag.GetMusicInfoFromAll(uid)`
    - `resultMapName = string.Format("{0}{1}", musicInfo.mapName, changedIndex)` → 예: `xxx_map` + `4`
-   - `extraCondition` = 클로저 람다 `<>c__DisplayClass41_0.<InitHideBmsInfoDic>b__2`
+   - `extraCondition` = `<>c__DisplayClass41_0.<InitHideBmsInfoDic>b__2`
    - `new HideBmsInfo(uid, diffIndex, changedIndex, resultMapName, extraCondition)`를 사전에 넣습니다.
 4. 날짜 이벤트 두 곡을 코드에서 직접 추가합니다.
 
@@ -72,8 +72,7 @@
 | `4-5` | 2 (Hard) | 4 | `goodtek_map4` | `b__41_0`: `m_GameInTime`이 **4월 1일** |
 | `8-3` | -1 (무관) | 4 | `sweet_witch_girl_map4` | `b__41_1`: `m_GameInTime`이 **11월 1일** |
 
-**람다가 핵심 판정입니다.** `b__2`의 본문은 `return __4__this.IsInvokeHideBms(pair.Key);`가 전부입니다. 클로저가 붙잡은 `pair`(`KeyValuePair<string, HideMusicInfo>`)의 키로 그 곡이 이미 발동됐는지 묻습니다.
-이름 있는 메서드만 보면 이 조건이 안 보입니다(커스텀 태그 실험에서도 서버 태그가 `MusicTagManager.InitDefaultInfo`의 람다 `b__3`에서 db에 들어갔습니다).
+`b__2`의 본문은 `return __4__this.IsInvokeHideBms(pair.Key);`입니다. 순회 대상 곡의 키로 해당 곡이 이미 발동됐는지 판정합니다.
 
 ---
 
@@ -195,4 +194,4 @@ uid 문자열 해시로 갈라지는 switch입니다. 읽은 분기:
 - 커스텀 곡이 숨겨진 채보를 가지려면 `m_ConfigHideMusic` 매핑에 행이 있어야 합니다. `m_HideBmsInfos`는 한 번 만들어지면 다시 안 만들어지므로, 넣으려면 `InitHideBmsInfoDic` **이전**에 `DBConfigHideMusic`에 행을 넣거나, 이후에 `m_HideBmsInfos`에 직접 넣어야 합니다 **(추정, 미실험)**.
 - 교체 차트 이름은 `musicInfo.mapName + changedIndex`입니다. 우리 모드의 가상 곡은 숙주 차트 에셋을 틀로 쓰므로(AGENTS.md 3절, `GetMusicDataFromStageInfo` Prefix), `_map4`가 숙주에 없으면 같은 대체 처리가 필요합니다.
 - `HideBmsCheck`가 `selectedDifficulty`를 4로 바꾸므로, 난이도별 BMS(`BmsChartSet`)와 기록 키도 4번 난이도로 갑니다.
-- 처음에 막히면 이름 있는 메서드만 보지 말고 클로저 람다(`__c__DisplayClassNN_0`, `_Method_b__N`)도 보십시오.
+- 판정 조건이 상위 메서드에 명시되지 않는 경우 컴파일러 생성 클래스(`__c__DisplayClassNN_0`) 내부 호출 경로도 함께 확인해야 합니다.
