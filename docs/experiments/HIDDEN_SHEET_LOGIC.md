@@ -164,7 +164,10 @@ musicInfo.AddMaskValue($"difficulty{diffIndex}", musicInfo.difficulty4);
 musicInfo.SetDifficulty(diffIndex, 4);
 if (handleType == 1) musicInfo.AddMaskValue($"levelDesigner{diffIndex}", musicInfo.levelDesigner4);
 if (invokeType == 1) EventManager.Invoke("UI/OnSpecialsMusic", ...);
-if (!forceSet) → DBConfigLocalHideMusicTip.GetHideTipsByMusicUid(uid)로 안내 표시
+if (!forceSet)
+{
+    // DBConfigLocalHideMusicTip 조회 후 PnlSpecialsBmsAsk 팝업 호출 (7절 참고)
+}
 ```
 
 지정 난이도 칸의 표시 레벨과 (선택적으로) 채보 제작자를 숨겨진 채보 값으로 가립니다. `AddMaskValue`라서 원본 필드를 고치지 않고 마스크로 덮습니다.
@@ -192,7 +195,92 @@ uid 문자열 해시로 갈라지는 switch입니다. 읽은 분기:
 
 ---
 
-## 7. 커스텀 곡에 쓸 때 참고
+
+---
+
+## 7. 히든 해금 안내 팝업(`ShowSpecialsBmsPopUp`)과 모페모페(`35-4`) 이스터에그
+
+플레이어가 히든 채보 조건을 만족했을 때 화면에 나타나는 안내 팝업창 시스템의 내부 구조입니다.
+
+```mermaid
+sequenceDiagram
+    participant Player as 플레이어 (자켓 롱프레스 / 탭 연타 등)
+    participant SSM as SpecialSongManager
+    participant TipDB as DBConfigLocalHideMusicTip
+    participant PTM as PnlTipsManager
+    participant PopUp as ShowSpecialsBmsPopUp (PnlSpecialsBmsAsk)
+
+    Player->>SSM: 히든 조건 만족 (invokeType 트리거)
+    SSM->>SSM: InvokeHideBms(musicInfo, forceSet: false)
+    SSM->>TipDB: GetHideTipsByMusicUid(musicInfo.uid)
+    TipDB-->>SSM: string tipContent 반환
+    SSM->>PTM: instance.GetMessageBox("PnlSpecialsBmsAsk")
+    PTM-->>SSM: GameObject / AbstractMessageBox
+    SSM->>PopUp: Show(tipContent, musicInfo)
+    alt musicInfo.uid == "35-4" (모페모페 mopemope)
+        PopUp->>PopUp: txtContent.color = Color.red (피빛 빨강 이스터에그!)
+    else 일반 히든 곡
+        PopUp->>PopUp: txtContent.color = m_DefTextColor
+    end
+    PopUp->>Player: 팝업창 활성화 및 안내 메시지 노출
+```
+
+### 1) `ShowSpecialsBmsPopUp` 컴포넌트 구조
+
+- **프리팹**: `PnlSpecialsBmsAsk` (UI 팝업 박스)
+- **상속**: `AbstractMessageBox`
+- **주요 필드**:
+  - `0x68` (`104`): `txtContent` (Text / TextMeshProUGUI)
+  - `0xE9` (`233`): `byte` 초기화 플래그
+  - `0xF0` (`240`): `m_DefTextColor` (`UnityEngine.Color`, 기본 텍스트 색상)
+
+### 2) `Show(string info, MusicInfo musicInfo)` 로직 및 모페모페(`35-4`) 이스터에그
+
+`ShowSpecialsBmsPopUp.txt` ISIL 판독 결과:
+
+```csharp
+public override void Show(string info, MusicInfo musicInfo)
+{
+    // 1. 안내 메시지 텍스트 세팅
+    base.MessageBoxText = info;
+
+    // 2. 모페모페(35-4) 전용 하드코딩 이스터에그 검사
+    if (musicInfo != null && musicInfo.uid == "35-4")
+    {
+        // 모페모페의 기괴하고 그로테스크한 악곡 분위기에 맞춰 글자색을 핏빛 빨간색으로 강제 변경
+        this.txtContent.color = Color.red;
+    }
+    else
+    {
+        // 일반 곡은 프리팹 원본의 기본 텍스트 색상 적용
+        this.txtContent.color = this.m_DefTextColor;
+    }
+
+    // 3. 팝업창 활성화 및 표시
+    base.Show();
+}
+```
+
+> [!NOTE]
+> `35-4` (`mopemope`)는 꽃이 피어나는 귀여운 애니메이션 뒤에 급변하는 공포·그로테스크 연출로 유명한 악곡입니다. 제작진은 이 연출을 극대화하기 위해 히든 팝업 텍스트 렌더링 코드 자체에 `if (musicInfo.uid == "35-4")` 분기를 하드코딩하여 **빨간색 글씨(`Color.red`)**로 팝업을 띄우도록 특별 대우해 두었습니다.
+
+### 3) 히든 안내 메시지 데이터 (`DBConfigLocalHideMusicTip`)
+
+실제 게임 에셋 번들(`config_korean_assets_hidemusictip_korean`)에 등록된 주요 곡들의 안내 문구 예시:
+
+| 곡 uid | 곡 제목 (참고) | 발동 유형 | 인게임 노출 안내 메시지 (`tipContent`) |
+|---|---|---|---|
+| `10-6` | Lights of Muse | LongPress (커버) | 자켓을 꾹 눌러 숨겨진 난이도를 해금하세요. |
+| `35-4` | mopemope (모페모페) | MultiClick | 꽃을 연속으로 터치하여 난이도를 해금하세요. *(빨간색 글씨로 출력!)* |
+| `43-71` | XODUS | DifficultySwitch | 상하로 빠르게 전환하여 난이도를 해금하세요. |
+| `60-4` | Cthugha | MultiClick | 난이도를 반복해서 터치하여 해금하세요. |
+| `86-0` | Rotaeno 콜라보 곡 | LongPress (커버) | 자켓을 길게 눌러 특수 연출 패널(`PnlRotaenoSpecial`) 진입 |
+
+`DBConfigLocalHideMusicTip`은 클라이언트 현지화 텍스트 테이블이며, `GetHideTipsByMusicUid(uid)`는 곡 uid를 키로 조회하여 해당 언어의 팁 문자열을 반환합니다. 등록되지 않은 곡이거나 빈 문자열이면 팝업 없이 곧바로 발동 처리만 완료됩니다.
+
+---
+
+## 8. 커스텀 곡에 쓸 때 참고
 
 - 커스텀 곡이 숨겨진 채보를 가지려면 `m_ConfigHideMusic` 매핑에 행이 있어야 합니다. `m_HideBmsInfos`는 한 번 만들어지면 다시 안 만들어지므로, 넣으려면 `InitHideBmsInfoDic` **이전**에 `DBConfigHideMusic`에 행을 넣거나, 이후에 `m_HideBmsInfos`에 직접 넣어야 합니다 **(추정, 미실험)**.
 - 교체 차트 이름은 `musicInfo.mapName + changedIndex`입니다. 우리 모드의 가상 곡은 숙주 차트 에셋을 틀로 쓰므로(AGENTS.md 3절, `GetMusicDataFromStageInfo` Prefix), `_map4`가 숙주에 없으면 같은 대체 처리가 필요합니다.

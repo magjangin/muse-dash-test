@@ -41,6 +41,10 @@ MelonLoader 모드 진입점 클래스입니다.
 ### 📂 [Bms/BmsParser.cs](../../muse%20dash%20test/Bms/BmsParser.cs)
 인게임 차트에 쓰이는 BMS(Be-Music Source) 형태의 노트를 해석하고 분석하기 위한 파서 모듈입니다. BMS 데이터 포맷 규격을 디코딩하여 곡 분석 작업을 보조합니다.
 
+### 📂 [Utils/TextNormalizer.cs](../../muse%20dash%20test/Utils/TextNormalizer.cs) [v0.12.1]
+* 외부 BMS 차트 메타데이터(`#TITLE`, `#ARTIST`)나 사용자 작성 `info.txt`에서 인코딩 깨짐이나 오타로 인해 발생하는 영문 축약형의 비정상적 공백 분리(`you'   re`, `don ' t`, `it ’ s`, `I ` m` 등)를 표준 축약형(`you're`, `don't`, `it's`, `I'm`)으로 자동 교정하는 정규화 유틸리티입니다.
+* 따옴표(`'`, `’`, `` ` ``, `´`) 미포함 문자열에 대한 Fast-Path 조기 탈출 가드와 대문자 축약형(`DON'T`, `YOU'RE`) 보존 로직이 탑재되어 안전하고 신속하게 텍스트를 정제합니다.
+
 ### 📂 [Core/FeatureGuard.cs](../../muse%20dash%20test/Core/FeatureGuard.cs) [NEW]
 * 한 기능에서 발생한 예외가 모드 전체나 MelonLoader 라이프사이클을 크래시하지 않도록 돕는 기능 격리(Feature Isolation) 유틸리티입니다.
 * **로그 스로틀링(Log Throttling)**: 동일한 에러 발생 시 반복 로깅을 방지하여 디버그 로그 비대화를 제어합니다.
@@ -151,8 +155,8 @@ PC 환경에서 마우스 클릭 및 터치스크린 입력을 가로채어 모�
 ### 📂 [UI/StageBattleComponentPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/StageBattleComponentPatch.cs)
 * **`StageBattleComponent.Pause` & `Resume`**: 인게임 정지/재개 이벤트 후킹 시, 부착된 비디오 플레이어도 동반 일시정지 및 플레이 복귀가 가능하게 제어해 비디오 싱크를 정확히 보정합니다.
 
-### 📂 [UI/ProgressBarPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/ProgressBarPatch.cs)
-* **`PnlBattle.MusicProgressInit` 후킹**: 진행바(`sldProgress`) 슬라이더의 존재 여부를 감지해 로그로 남기는 관찰 전용 모듈입니다. (현재는 진행바를 숨기거나 바꾸는 제어 동작은 하지 않습니다.)
+### 📂 [UI/ProgressBarPatch.cs](../../muse%20dash%20test/Patches/Battle/UI/ProgressBarPatch.cs) [v0.12.1]
+* **`PnlBattle.MusicProgressInit` 및 진행바 동기화**: 커스텀 곡 플레이 시 호스트 원본 곡 길이가 아닌 실제 커스텀 차트 및 음원 총 길이에 맞춰 인게임 진행바(`sldProgress`)를 정확히 동기화합니다. DOTween 세터 메서드 동적 폴백과 타임라인 보정을 포함합니다. (상세는 9절 참조)
 
 ### 📂 [Battle/UI/HwaBattleMediaController.cs](../../muse%20dash%20test/Patches/Battle/UI/HwaBattleMediaController.cs) & [Lifecycle.cs](../../muse%20dash%20test/Patches/Battle/UI/HwaBattleMediaController.Lifecycle.cs) [NEW]
 커스텀 BGM(오디오) 및 BGA(비디오)의 플레이어 재생 상태를 유기적으로 동기화 및 관리하는 오디오/비디오 컨트롤러입니다. 배틀 진입 시 카메라 아래에 `VideoBackgroundQuad`(3D Quad)를 만들고 `VideoPlayer`를 붙여 커스텀 MP4를 배경으로 재생하며, 결과 화면(Victory) 전환 시 미디어를 강제 정지시킵니다.
