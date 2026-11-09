@@ -17,7 +17,7 @@
 | --- | --- | --- |
 | 1 | `muse dash test/MainMod.cs` | MelonLoader 진입점, 초기화, 프레임 업데이트, 씬 전환 처리 |
 | 2 | `muse dash test/Core/FeatureGuard.cs` | 기능별 예외 격리, 로그 스로틀링, 자동 비활성화 |
-| 3 | `muse dash test/Core/GameBindings.cs` | 게임 업데이트에 취약한 raw 문자열 식별자 모음 |
+| 3 | `muse dash test/Core/GameBindings.cs` | `nameof`를 쓸 수 없는 리플렉션 호출용 raw 문자열(현재 1개). 패치 대상은 각 `[HarmonyPatch]`의 `nameof(...)`에 있음 |
 | 4 | `muse dash test/Patches/Diagnostics/PatchHealthCheck.cs` | 시작 시 Harmony 패치 대상 생존 여부 점검 |
 | 5 | `muse dash test/Patches/Hwa/HwaResourceManager.cs` | `hwa/` 곡 폴더 탐색, manifest/BMS 캐시, 커스텀 UID 판정 |
 | 6 | `muse dash test/Patches/Hwa/HwaManifestLoader.cs` | `info.txt` 파싱 |
@@ -70,7 +70,7 @@ flowchart TD
 
 게임 멤버를 만지는 코드에 폴백을 붙일 때는 멤버 접근을 **별도 메서드로 분리**해야 폴백이 실제로 돕니다. 같은 메서드에 두면 멤버가 사라졌을 때 메서드 전체가 JIT에 실패해 폴백까지 같이 죽습니다(`GameBgmSource` 참고).
 
-`GameBindings`는 컴파일러가 검증하지 못하는 문자열 메서드명을 모으는 곳입니다. 새 raw 문자열 패치 대상이 생기면 가능한 한 여기에 추가합니다.
+패치 대상은 `typeof(...)` + `nameof(...)`로 적습니다. 게임 업데이트로 이름이 바뀌면 빌드가 먼저 깨집니다. `GameBindings`에는 `nameof`를 쓸 수 없는 리플렉션 호출용 이름만 둡니다(예전의 패치용 상수 20개는 쓰는 곳이 없어 2026-11-10에 지웠습니다).
 
 ### 커스텀 곡 로딩
 
@@ -129,7 +129,7 @@ flowchart TD
 게임 업데이트 뒤 문제가 생기면 아래 순서로 봅니다.
 
 1. `Latest.log`에서 `[PatchInstaller]`, `[PatchHealth]` 경고 확인 (`[PatchInstaller] ... 패치를 걸지 않았습니다` 뒤의 예외 메시지가 사라진 멤버 이름입니다)
-2. 깨진 메서드명이 있으면 `GameBindings.cs` 또는 해당 `[HarmonyPatch]` 문자열 확인
+2. 깨진 메서드명이 있으면 해당 패치 클래스의 `[HarmonyPatch(typeof(...), nameof(...))]` 확인 (새 인터롭 어셈블리로 빌드하면 바뀐 이름은 컴파일 오류로 드러납니다)
 3. 커스텀 곡이 안 보이면 `CustomTagRegistry`와 `MusicTagManager.InitAlbumTagInfo` 패치 확인
 4. 곡은 보이는데 차트가 순정이면 `CustomPlaySession.ShouldApplyExperimentChart` 확인
 5. 차트 주입 로그가 없으면 `DBStageInfo.SetRuntimeMusicData` 패치 확인
@@ -145,8 +145,8 @@ flowchart TD
 핵심 흐름은 MainMod 초기화 -> HwaResourceManager가 hwa 폴더와 info.txt/BMS를 읽음 -> CustomTagRegistry가 1999-* 가상 곡/앨범을 게임 DB에 주입 -> UI 패치가 선택 상태를 CustomPlaySession에 저장 -> DBStageInfo.SetRuntimeMusicData 패치가 BMS 기반 MusicData를 주입 -> 배틀 중 BGM/BGA/보스/정확도/기록 패치가 보조한다.
 
 순정 세이브와 원본 DB 객체를 오염시키면 안 된다.
-FeatureGuard, PatchHealthCheck, GameBindings 구조는 유지한다.
-새 Harmony 대상 문자열이나 게임 내부 raw 문자열은 가능한 GameBindings로 모은다.
+FeatureGuard, PatchHealthCheck, PatchInstaller 구조는 유지한다.
+새 Harmony 대상은 typeof/nameof로 적고, nameof를 쓸 수 없는 raw 문자열만 GameBindings에 모은다.
 커스텀 차트 적용 여부는 CustomPlaySession.Current.ShouldApplyExperimentChart를 우선 확인한다.
 커스텀 곡 UID 규칙은 CustomContentIds를 따른다.
 빌드 검증은 dotnet build "muse dash test\muse dash test.csproj" --configuration Debug 로 한다.
@@ -158,7 +158,7 @@ FeatureGuard, PatchHealthCheck, GameBindings 구조는 유지한다.
 
 - 순정 곡/앨범/세이브를 직접 바꾸는 코드는 피하고, 가상 UID 또는 복제 객체에만 적용합니다.
 - 매 프레임 실행되는 코드는 `FeatureGuard`와 캐시를 사용해 예외/리플렉션/탐색 비용을 줄입니다.
-- 게임 업데이트에 취약한 문자열은 흩뿌리지 말고 `GameBindings`나 가까운 상수로 모읍니다.
+- 패치 대상은 `nameof(...)`로 적습니다. `nameof`를 쓸 수 없는 문자열(리플렉션 멤버 이름 등)은 흩뿌리지 말고 `GameBindings`나 가까운 상수로 모읍니다.
 - 진단 코드는 가능하면 `Diagnostics` 파일 또는 명확한 디버그 플래그 뒤에 둡니다.
 - 새 기능은 “패치 진입점”, “상태 판정”, “Unity 적용”, “로그/진단” 책임을 가능한 분리합니다.
 - 빌드가 통과해도 게임 런타임 동작은 별개이므로, 핵심 흐름 로그까지 확인합니다.

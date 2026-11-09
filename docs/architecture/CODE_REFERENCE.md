@@ -67,9 +67,9 @@ MelonLoader 모드 진입점 클래스입니다.
 * **마우스 승격 차단 (`ShouldIgnoreMouse`)**: 터치 중 Windows가 첫 손가락을 마우스로도 승격시켜 보내므로, 두 경로를 다 받으면 한 번의 터치가 두 번 판정됩니다. 접점이 있는 동안과 그 직후 0.25초 마우스를 무시합니다. 승격이 터치보다 한두 프레임 늦게 도착하기 때문에 유예가 필요합니다.
 * 프레임당 1회만 실제 조회하고 이후에는 캐시를 반환합니다.
 
-### 📂 [Core/GameBindings.cs](../../muse%20dash%20test/Core/GameBindings.cs) [NEW]
-* 게임 버전 업데이트 시 종속될 수 있는 모든 문자열 식별자(메서드명, 클래스명 등)를 모아놓은 단일 소스(Single Source of Truth)입니다.
-* 패치 대상 문자열을 한곳에 관리하여 차후 게임 버전 갱신에 유연하게 대응할 수 있도록 아키텍처적 안정성을 강화합니다.
+### 📂 [Core/GameBindings.cs](../../muse%20dash%20test/Core/GameBindings.cs)
+* `nameof`를 쓸 수 없는 리플렉션 호출용 raw 문자열을 모아 두는 곳입니다. 지금은 `Il2CppCollection.AddMaskValue` 하나뿐입니다.
+* Harmony 패치 대상은 여기에 없습니다. 전부 각 패치 클래스의 `typeof(...)` + `nameof(...)`로 옮겨, 이름이 바뀌면 빌드가 먼저 깨집니다(쓰이지 않던 패치용 상수 20개는 2026-11-10에 삭제).
 
 ---
 

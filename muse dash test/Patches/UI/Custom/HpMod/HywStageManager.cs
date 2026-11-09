@@ -29,14 +29,19 @@ namespace muse_dash_test
         /// </summary>
         public void MarkStageEnded()
         {
-            if (isInStage)
-            {
-                isInStage = false;
-                IsInStageStatic = false;
-                targetTextComponent = null;
-                lastText = "";
-                ModLogger.Msg("[HywHpTextMod] 스테이지 종료 감지 (이벤트 트리거).");
-            }
+            LeaveStage("[HywHpTextMod] 스테이지 종료 감지 (이벤트 트리거).");
+        }
+
+        /// <summary>스테이지 안이었다면 종료 상태로 바꾸고 캐시를 비웁니다. 이미 밖이면 아무것도 하지 않습니다.</summary>
+        private void LeaveStage(string logMessage)
+        {
+            if (!isInStage) return;
+
+            isInStage = false;
+            IsInStageStatic = false;
+            targetTextComponent = null;
+            lastText = "";
+            ModLogger.Msg(logMessage);
         }
 
         public void CheckForStageAndModify()
@@ -48,19 +53,11 @@ namespace muse_dash_test
 
                 if (!isBattleActive)
                 {
-                    if (isInStage)
-                    {
-                        // 스테이지 종료
-                        isInStage = false;
-                        IsInStageStatic = false;
-                        targetTextComponent = null;
-                        lastText = "";
-                        ModLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
-                    }
+                    LeaveStage("[HywHpTextMod] 스테이지 종료 감지.");
                     return;
                 }
 
-                // 🚀 성능 최적화: 이미 체력바 텍스트 컴포넌트가 정상 확보되었고 현재 씬에서 활성화 상태이면
+                // 이미 체력바 텍스트 컴포넌트를 확보했고 현재 씬에서 활성 상태이면
                 // 매 주기 무거운 GameObject.Find 16개 씬 전체 순회 검색을 건너뜁니다.
                 if (isInStage && targetTextComponent != null && targetTextComponent.gameObject != null && targetTextComponent.gameObject.activeInHierarchy)
                 {
@@ -106,15 +103,7 @@ namespace muse_dash_test
                 }
                 else
                 {
-                    if (isInStage)
-                    {
-                        // 스테이지 종료
-                        isInStage = false;
-                        IsInStageStatic = false;
-                        targetTextComponent = null;
-                        lastText = "";
-                        ModLogger.Msg("[HywHpTextMod] 스테이지 종료 감지.");
-                    }
+                    LeaveStage("[HywHpTextMod] 스테이지 종료 감지.");
                 }
             }
             catch (System.Exception ex)

@@ -107,7 +107,7 @@ namespace muse_dash_test
             // 3. Skeleton mapping for special gameplay notes & audios
             string lowerName = nameWithoutExt.ToLowerInvariant();
 
-            // Check UID xx structure (zzxxyy)
+            // UID의 xx 자리(zzxxyy 구조)를 확인합니다
             bool typeResolvedFromUid = false;
             if (info.Uid != null && info.Uid.Length == 6)
             {

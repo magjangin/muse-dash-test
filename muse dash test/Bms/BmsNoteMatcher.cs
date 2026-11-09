@@ -65,7 +65,7 @@ namespace muse_dash_test
             foreach (var kvp in notesByChannel)
             {
                 int channel = kvp.Key;
-                // BmsParser already returns notes in tick order, and channel grouping preserves that order.
+                // BmsParser가 이미 틱 순서로 노트를 돌려주고, 채널별 그룹화도 그 순서를 유지합니다.
                 var sortedNotesInLane = kvp.Value;
 
                 // 각 레인별 실시간 홀드/샌드백 매칭 상태 추적 슬롯

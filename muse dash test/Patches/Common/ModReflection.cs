@@ -187,17 +187,6 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// 컴파일 타임 빌드 사양 차이 및 런타임 난독화 접두사를 극복하기 위해 다각적 패턴으로 멤버를 스캔하고 반환합니다.
-        /// <para>- 패턴 1: 정확히 일치하는 프로퍼티 명칭</para>
-        /// <para>- 패턴 2: 정확히 일치하는 필드 명칭</para>
-        /// <para>- 패턴 3: C# 컴파일러 자동 생성 백킹 필드 패턴 (_[name]_k__BackingField)</para>
-        /// <para>- 패턴 4: Unity/PeroTools 등에서 사용되는 m_ 접두사 패턴 (m_name, m_Name 등)</para>
-        /// <para>- 패턴 5: 대소문자 구분을 무시한 폴백 완화 매칭</para>
-        /// </summary>
-        /// <param name="type">대상 클래스의 시스템 타입(Type)</param>
-        /// <param name="memberName">스캔할 멤버의 영문 기준 명칭</param>
-        /// <returns>검색에 성공한 PropertyInfo 또는 FieldInfo 인스턴스. 부재 시 null을 반환합니다.</returns>
-        /// <summary>
         /// 'text' 멤버를 가질 수 없는 Unity 핵심 타입들의 FullName 접두사 목록.
         /// 이 타입들에 대한 'text' 조회를 즉시 차단해 불필요한 리플렉션 스캔을 막습니다.
         /// </summary>
@@ -233,6 +222,17 @@ namespace muse_dash_test
             return false;
         }
 
+        /// <summary>
+        /// 컴파일 타임 빌드 사양 차이 및 런타임 난독화 접두사를 극복하기 위해 다각적 패턴으로 멤버를 스캔하고 반환합니다.
+        /// <para>- 패턴 1: 정확히 일치하는 프로퍼티 명칭</para>
+        /// <para>- 패턴 2: 정확히 일치하는 필드 명칭</para>
+        /// <para>- 패턴 3: C# 컴파일러 자동 생성 백킹 필드 패턴 (_[name]_k__BackingField)</para>
+        /// <para>- 패턴 4: Unity/PeroTools 등에서 사용되는 m_ 접두사 패턴 (m_name, m_Name 등)</para>
+        /// <para>- 패턴 5: 대소문자 구분을 무시한 폴백 완화 매칭</para>
+        /// </summary>
+        /// <param name="type">대상 클래스의 시스템 타입(Type)</param>
+        /// <param name="memberName">스캔할 멤버의 영문 기준 명칭</param>
+        /// <returns>검색에 성공한 PropertyInfo 또는 FieldInfo 인스턴스. 부재 시 null을 반환합니다.</returns>
         private static MemberInfo ResolveMember(Type type, string memberName)
         {
             const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;

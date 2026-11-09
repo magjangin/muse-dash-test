@@ -306,28 +306,30 @@ namespace muse_dash_test
                 }
 
                 // Miss(0) 또는 타격/판정 정보가 유효하지 않은 경우 무시
-                if (resultCode == 0 || tno == null || tno.md == null) return;
+                if (resultCode == 0 || tno == null) return;
 
                 // 롱노트 누르고 있는 도중(isLongPressing), 롱노트 뗄 때(isLongPressEnd), 연타 도중(isMuling) 틱은 제외 (버그 방지)
                 if (tno.isLongPressing || tno.isLongPressEnd || tno.isMuling) return;
 
-                if (GameGlobal.gGameMusic != null)
-                {
-                    var music = GameGlobal.gGameMusic;
-                    var md = tno.md;
+                var music = GameGlobal.gGameMusic;
+                if (music == null) return;
 
-                    float lastMusicTick = music.m_LastMusicTick;
+                // tno.md는 값 타입(MusicData)이라 읽을 때마다 구조체 전체가 새 박스로 복사됩니다.
+                // 타격마다 도는 훅이므로 한 번만 읽습니다. 박싱 getter는 null을 돌려주지 못해서,
+                // 예전에 있던 `tno.md == null` 검사는 박스 하나를 더 만들 뿐 늘 거짓이었습니다(CHECKLIST 참고).
+                var md = tno.md;
 
-                    // Il2CppSystem.Decimal의 명시적 float 캐스트를 우선 사용하여 매 노트 타격마다
-                    // md.tick.ToString() 문자열 할당이 발생하는 것을 방지합니다.
-                    float tickVal = (float)md.tick;
+                float lastMusicTick = music.m_LastMusicTick;
 
-                    // 오차(초 단위) 계산: (lastMusicTick / 1000f) - tickVal
-                    float gap = (lastMusicTick / 1000f) - tickVal;
+                // Il2CppSystem.Decimal의 명시적 float 캐스트를 우선 사용하여 매 노트 타격마다
+                // md.tick.ToString() 문자열 할당이 발생하는 것을 방지합니다.
+                float tickVal = (float)md.tick;
 
-                    // 판정바 모듈에 등록
-                    JudgmentBar.RegisterHit(gap, resultCode);
-                }
+                // 오차(초 단위) 계산: (lastMusicTick / 1000f) - tickVal
+                float gap = (lastMusicTick / 1000f) - tickVal;
+
+                // 판정바 모듈에 등록
+                JudgmentBar.RegisterHit(gap, resultCode);
             }
             catch (Exception ex)
             {

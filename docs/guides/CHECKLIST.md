@@ -142,6 +142,13 @@
       MelonLoader는 폴더 안의 `.dll`을 전부 로드합니다. 이름만 다른 같은 모드가 두 개 있으면
       Harmony 패치와 가상 곡 등록이 중복됩니다.
 
+- [ ] **커밋 전 `git diff --stat`에서 한 파일이 통째로 바뀐 것으로 나오지 않는가?**
+      몇 줄만 고쳤는데 수백 줄 변경으로 찍히면 줄바꿈이 깨진 것입니다. `git ls-files --eol`에서
+      그 파일이 `i/-text`로 나오는지 보십시오.
+      (2026-11-09: `HwaMenuBgmController.cs`와 `HIDDEN_SHEET_LOGIC.md`가 `CR CR LF`로 커밋돼 git이
+      바이너리로 취급했습니다. diff는 963줄 변경으로 나와 실제로 바뀐 몇 줄을 읽을 수 없었고,
+      같은 커밋에 든 스캔 제한 버그가 리뷰에서 가려졌습니다. 다음 날 CRLF로 되돌렸습니다.)
+
 - [ ] **`AssemblyName`에 공백을 넣지 않았는가?**
       **GitHub는 릴리즈 첨부 파일 이름의 공백을 점으로 자동 변환합니다.** `gh release upload`의
       `#표시이름` 문법으로도 못 막습니다(v0.10.1에서 실측). `AssemblyName`이

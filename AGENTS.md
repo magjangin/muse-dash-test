@@ -11,7 +11,7 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-11-09 (히든 채보 팝업 ShowSpecialsBmsPopUp·mopemope 빨간 글씨 이스터에그 ISIL 분석 문서화, 낡은 문서 감사 및 교정, 람다 문구 전면 정제, TextNormalizer 따옴표 미포함 Fast-Path 가드 및 대문자 축약형 지원, ProgressBarPatch 매 프레임 풀스캔 방지, HwaMenuBgmController 씬 스캔 스로틀링, 단위 테스트 146개 통과)
+마지막 갱신: 2026-11-10 (코드 검토: 곡 선택 화면 판정의 준비 패널 탐색 굶김 수정, BGM 세터 패치를 AudioManager.bgm 참조 비교로 전환, 판정바 훅·BGA 탐색 할당 절감, 죽은 GameBindings 상수 20개 삭제, CR CR LF 줄바꿈 복구 — 시작 스모크 테스트만 했고 커스텀 곡 미리듣기·배틀 진입 실기 확인은 남음, [CODE_REVIEW_2026-11-10.md](docs/architecture/CODE_REVIEW_2026-11-10.md) / 이전: 2026-11-09 히든 채보 팝업 ShowSpecialsBmsPopUp·mopemope 빨간 글씨 이스터에그 ISIL 분석 문서화, 낡은 문서 감사 및 교정, 람다 문구 전면 정제, TextNormalizer 따옴표 미포함 Fast-Path 가드 및 대문자 축약형 지원, ProgressBarPatch 매 프레임 풀스캔 방지, HwaMenuBgmController 씬 스캔 스로틀링, 단위 테스트 146개 통과)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB). 의사코드가 필요하면 `H:\source\repos\rea-hwa\tools\pe_slice.py --dll "H:/muse dash hwa/GameAssembly.dll" --rva <RVA> --out <조각.dll>`로 함수만 잘라 REA `open_binary`(`provider_id: "ghidra"`) → `procedure_pseudo_code`로 봅니다(`GameAssembly.dll` 통째로 열면 시간 초과).
@@ -37,5 +37,6 @@
    - 노트 속도를 dt만 바꿔 내려는 것: 애니메이션은 uid `yy`가 정하므로 렌더가 깨집니다([NOTE_SPEED_DT.md](docs/experiments/NOTE_SPEED_DT.md)).
    - 속도 2·3 프리팹 끝자리를 `_1`로 두는 것: 게임에 그 이름의 프리팹이 없어 노트가 안 보입니다.
    - `HwaSyncManager`에서 `sldProgress.value`를 기준으로 스트리밍 Ogg `bgmSource.time`을 역으로 시크한 것: 호스트 곡 길이로 도는 진행바 때문에 0.5초마다 오디오 디코더 재탐색 히치와 노트 밀림을 유발했습니다.
+   - 패널 두 개의 씬 스캔을 `lastScanFrame` 하나로 따로따로 제한한 것(`IsStageSelectionContextActive`): 앞 스캔이 값을 올린 직후라 뒤 스캔 조건이 늘 거짓이 되어 `PnlPreparation`을 찾지 않았습니다. 제한 판정은 한 번만 합니다.
    - 홀드 머리·꼬리를 동시치기 짝(`isDouble`)에 넣은 것: 짝마다 `BaseEnemyObjectController.OnControllerAttacked` NRE가 났습니다. 홀드 꼬리 어긋남의 원인은 짝이 아니라 막대 길이 기준과 `_dt`의 차이였습니다([HOLD_BAR_LENGTH_DT.md](docs/experiments/HOLD_BAR_LENGTH_DT.md)).
 6. **빌드·배포**: `dotnet build`(또는 `build.bat`) → `H:\muse dash hwa\Mods\muse-dash-custom-chart.dll`로 자동 배포. `[AutoDeploy] Successfully deployed` 줄과 `ls -la "H:/muse dash hwa/Mods/"`로 확인합니다.

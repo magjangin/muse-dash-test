@@ -21,7 +21,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    // Caches the TaskStageTarget instance during gameplay when the score updates.
+    // 플레이 중 점수가 갱신될 때 TaskStageTarget 인스턴스를 캐싱합니다.
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.AddScore))]
     public class TaskStageTarget_AddScore_Patch
     {
@@ -36,7 +36,7 @@ namespace muse_dash_test.Patches
                     ModLogger.Msg($"[APMod] AddScore를 통해 TaskStageTarget 캐싱 완료. Pointer={__instance.Pointer}");
                 }
 
-                // Caches the stylized gameplay font from the HUD.
+                // HUD에서 게임플레이용 꾸밈 폰트를 캐싱합니다.
                 if (VictoryDataCache.PremiumFont == null && !VictoryDataCache.AttemptedFontCache)
                 {
                     var battleInstance = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
@@ -44,7 +44,7 @@ namespace muse_dash_test.Patches
                     {
                         var scoreValue = battleInstance.currentComps.scoreValue;
                         
-                        // Avoid querying on every hit when UI components are not yet initialized.
+                        // UI 컴포넌트가 아직 초기화되지 않았으면 타격마다 조회하지 않고 다음 기회로 미룹니다.
                         if (scoreValue.text == null && scoreValue.djmaxText == null && scoreValue.arkNightText == null)
                         {
                             return;
@@ -90,7 +90,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    // Caches the TaskStageTarget instance when accuracy is requested.
+    // 정확도를 물어볼 때 TaskStageTarget 인스턴스를 캐싱하고, 커스텀 곡이면 정확도를 덮어씁니다.
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.GetAccuracy))]
     public class TaskStageTarget_GetAccuracy_Patch
     {
@@ -188,7 +188,7 @@ namespace muse_dash_test.Patches
         }
     }
 
-    // Caches the TaskStageTarget instance when full combo status is verified.
+    // 풀콤보 여부를 확인할 때 TaskStageTarget 인스턴스를 캐싱합니다.
     [HarmonyPatch(typeof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget), nameof(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget.IsFullCombo))]
     public class TaskStageTarget_IsFullCombo_Patch
     {

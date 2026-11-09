@@ -1,86 +1,20 @@
 namespace muse_dash_test
 {
     /// <summary>
-    /// 게임 버전에 종속된 "raw 문자열 식별자"의 단일 소스(Single Source of Truth)입니다.
+    /// 컴파일러가 검증하지 못하는 게임 쪽 "raw 문자열 식별자"를 모아 두는 곳입니다.
     ///
-    /// 게임이 업데이트되어 패치가 깨지면 가장 먼저 이 파일을 확인/수정하세요.
-    /// 흩어져 있던 메서드명 문자열을 한곳에 모아, 업데이트 시 수정 지점을 하나로 만듭니다.
-    /// 시작 시 <see cref="PatchHealthCheck"/>가 이 식별자들의 실제 해석 여부를 점검하고,
-    /// 런타임 실패는 <see cref="FeatureGuard"/>가 기능 단위로 격리합니다.
+    /// <para><b>패치 대상은 여기에 없습니다.</b> Harmony 패치 대상은 전부 <c>typeof(...)</c> + <c>nameof(...)</c>로
+    /// 옮겨서, 게임 업데이트로 이름이 바뀌면 빌드가 먼저 깨집니다. 예전에 이 파일에 있던 패치용 상수 20개
+    /// (<c>TaskStageTarget.AddScore</c> 등)는 그 뒤로 쓰는 곳이 없었고, <see cref="PatchHealthCheck"/>도 이 파일이 아니라
+    /// 패치 클래스의 어트리뷰트를 직접 읽습니다. 쓰이지 않는 상수는 "업데이트 때 여기부터 고치라"는 잘못된 길잡이가
+    /// 되므로 2026-11-10에 지웠습니다.</para>
     ///
-    /// 주의 — 패치 타깃 대부분은 컴파일 타임 검증이 가능한 nameof(...)로 전환되었습니다.
-    /// typeof(...)나 nameof(...) 기반 패치 대상(예: nameof(MusicTagManager.InitDatas))은
-    /// 빌드가 즉시 잡아주므로 더 안전하며, 이 파일에 중복으로 둘 필요가 없습니다.
-    /// 향후 가능한 항목은 raw 문자열 대신 nameof(...)로 전환하는 것이 가장 강한 내성입니다.
+    /// <para>남은 것은 <c>nameof</c>를 쓸 수 없는 리플렉션 호출용 이름뿐입니다. 게임이 업데이트되어 패치가 깨졌을 때는
+    /// 시작 로그의 <c>[PatchHealthCheck]</c>·<c>[PatchInstaller]</c> 줄을 먼저 보십시오. 런타임 실패는
+    /// <see cref="FeatureGuard"/>가 기능 단위로 격리합니다.</para>
     /// </summary>
     public static class GameBindings
     {
-        /// <summary>Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget — 점수/정확도/풀콤보 판정.</summary>
-        public static class TaskStageTarget
-        {
-            public const string AddScore = "AddScore";
-            public const string GetAccuracy = "GetAccuracy";
-            public const string GetTrueAccuracy = "GetTrueAccuracy";
-            public const string GetTrueAccuracyNew = "GetTrueAccuracyNew";
-            public const string IsFullCombo = "IsFullCombo";
-        }
-
-        /// <summary>Il2CppGameLogic.GameTouchPlay — 터치 판정 산출 지점(화면 표시·애니메이션·집계의 상류).</summary>
-        public static class GameTouchPlay
-        {
-            /// <summary>TouchResult(int idx, byte resultCode, uint actionType, TimeNodeOrder tno, bool isSkill, bool isElfinSkill).</summary>
-            public const string TouchResult = "TouchResult";
-        }
-
-        /// <summary>Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager — 인게임 풀콤보/승리 2D 배너.</summary>
-        public static class PnlVictory2dManager
-        {
-            public const string OnShowVictory = "OnShowVictory";
-        }
-
-        /// <summary>Il2Cpp.PnlBattle — 인게임 배틀 패널.</summary>
-        public static class PnlBattle
-        {
-            public const string MusicProgressInit = "MusicProgressInit";
-            public const string GameStart = "GameStart";
-        }
-
-        /// <summary>Il2CppFormulaBase.StageBattleComponent — 인게임 스테이지 배틀 컴포넌트.</summary>
-        public static class StageBattleComponent
-        {
-            public const string InitTimeNodeOrder = "InitTimeNodeOrder";
-        }
-
-        /// <summary>Il2Cpp.SetSelectedMusicNameTxt — 선택 곡명 텍스트. (Awake/OnEnable은 Unity 메시지로 비교적 안정적)</summary>
-        public static class SetSelectedMusicNameTxt
-        {
-            public const string Awake = "Awake";
-            public const string OnEnable = "OnEnable";
-        }
-
-        /// <summary>Il2Cpp.ChangeHealthValue — 체력 변화 이벤트 핸들러.</summary>
-        public static class ChangeHealthValue
-        {
-            public const string OnGameStart = "OnGameStart";
-            public const string OnHpRateChange = "OnHpRateChange";
-            public const string OnHpDeduct = "OnHpDeduct";
-            public const string OnHpAdd = "OnHpAdd";
-        }
-
-        /// <summary>Il2Cpp.AlbumTagToggle — 커스텀 앨범 태그 토글 UI.</summary>
-        public static class AlbumTagToggle
-        {
-            public const string Init = "Init";
-            public const string SetIconAsync = "SetIconAsync";
-            public const string SetStateIcon = "SetStateIcon";
-        }
-
-        /// <summary>MusicTagManager — 태그/곡 목록 관리.</summary>
-        public static class MusicTagManager
-        {
-            public const string RefreshStageDisplayMusics = "RefreshStageDisplayMusics";
-        }
-
         /// <summary>Il2Cpp 컬렉션 마스크 래퍼(<see cref="Il2CppWrapperBase"/>에서 리플렉션 호출).</summary>
         public static class Il2CppCollection
         {

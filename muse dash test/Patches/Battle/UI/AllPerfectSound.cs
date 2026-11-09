@@ -65,6 +65,34 @@ namespace muse_dash_test.Patches
             return VictoryDataCache.ActiveTarget != null;
         }
 
+        /// <summary>
+        /// <c>PlayOneShot</c> 두 오버로드의 Prefix가 함께 쓰는 판정입니다. 원본 재생을 그대로 둘지(true) 막을지(false) 돌려줍니다.
+        ///
+        /// <para>오버로드마다 본문을 따로 두었을 때 한쪽에만 <c>EnableAllPerfectSound</c> 검사가 빠져,
+        /// 설정을 꺼도 절반만 꺼진 적이 있습니다. 게이트는 여기 한 곳에만 둡니다.</para>
+        /// </summary>
+        /// <param name="clip">게임이 재생하려는 효과음 클립.</param>
+        /// <param name="hookLabel">예외 로그에서 어느 오버로드였는지 구분하는 이름.</param>
+        internal static bool ShouldPlayOneShot(AudioClip clip, string hookLabel)
+        {
+            // 아래 두 줄은 게임 전역 효과음마다 실행됩니다. 가장 싼 검사부터 둡니다.
+            if (!ModConfig.EnableAllPerfectSound) return true;
+            if (!IsResultContextActive()) return true;   // 이번 배틀 첫 타격 전이면 여기서 끝
+            try
+            {
+                if (!IsFullComboClip(clip)) return true; // FC 효과음이 아니면 통과
+                if (!IsAllPerfect()) return true;        // AP가 아니면 FC 효과음 그대로
+
+                ModLogger.Msg($"[APSound] ★AP★ 풀콤보 효과음('{clip.name}') 재생을 뮤트합니다.");
+                return false; // AP일 때 FC 효과음 차단
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[APSound] {hookLabel} 뮤트 중 예외: {ex}");
+                return true;
+            }
+        }
+
         /// <summary>현재 결과가 ALL PERFECT(풀콤보 + Great 0 + Miss 0)인지 판정합니다.</summary>
         public static bool IsAllPerfect()
         {
@@ -90,22 +118,7 @@ namespace muse_dash_test.Patches
     {
         public static bool Prefix(AudioClip clip)
         {
-            // 아래 두 줄은 게임 전역 효과음마다 실행됩니다. 가장 싼 검사부터 둡니다.
-            if (!ModConfig.EnableAllPerfectSound) return true;
-            if (!AllPerfectSound.IsResultContextActive()) return true;   // 이번 배틀 첫 타격 전이면 여기서 끝
-            try
-            {
-                if (!AllPerfectSound.IsFullComboClip(clip)) return true; // FC 효과음이 아니면 통과
-                if (!AllPerfectSound.IsAllPerfect()) return true;        // AP가 아니면 FC 효과음 그대로
-
-                ModLogger.Msg($"[APSound] ★AP★ 풀콤보 효과음('{clip.name}') 재생을 뮤트합니다.");
-                return false; // AP일 때 FC 효과음 차단
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[APSound] PlayOneShot 뮤트 중 예외: {ex}");
-                return true;
-            }
+            return AllPerfectSound.ShouldPlayOneShot(clip, "PlayOneShot");
         }
     }
 
@@ -115,23 +128,7 @@ namespace muse_dash_test.Patches
     {
         public static bool Prefix(AudioClip clip)
         {
-            // 볼륨 인자 있는 오버로드와 동일한 순서/게이트를 씁니다.
-            // (이 오버로드에는 EnableAllPerfectSound 검사가 빠져 있어, 설정을 꺼도 절반만 꺼졌습니다.)
-            if (!ModConfig.EnableAllPerfectSound) return true;
-            if (!AllPerfectSound.IsResultContextActive()) return true;
-            try
-            {
-                if (!AllPerfectSound.IsFullComboClip(clip)) return true;
-                if (!AllPerfectSound.IsAllPerfect()) return true;
-
-                ModLogger.Msg($"[APSound] ★AP★ 풀콤보 효과음('{clip.name}') 재생을 뮤트합니다.");
-                return false;
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[APSound] PlayOneShot(novol) 뮤트 중 예외: {ex}");
-                return true;
-            }
+            return AllPerfectSound.ShouldPlayOneShot(clip, "PlayOneShot(novol)");
         }
     }
 }

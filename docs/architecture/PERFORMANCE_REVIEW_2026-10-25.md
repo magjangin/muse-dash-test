@@ -42,7 +42,7 @@
 
 ### 2.3 작은 것들 (낮음)
 
-- `AudioSource.clip` setter Prefix([HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs))가 클립을 넣을 때마다 `gameObject.name == "BGM"`으로 거릅니다. 이름 문자열 마샬링이 매번 생기고, 이름으로 고르는 방식이라 [CHECKLIST](../guides/CHECKLIST.md)의 "이름으로 고르지 말 것"에도 걸립니다. [GameBgmSource.cs](../../muse%20dash%20test/Core/GameBgmSource.cs)의 게임 참조와 비교하면 둘 다 풀립니다.
+- ✅ 2026-11-10 해결([CODE_REVIEW_2026-11-10.md](CODE_REVIEW_2026-11-10.md) 1.2). `AudioSource.clip` setter Prefix([HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs))가 클립을 넣을 때마다 `gameObject.name == "BGM"`으로 거릅니다. 이름 문자열 마샬링이 매번 생기고, 이름으로 고르는 방식이라 [CHECKLIST](../guides/CHECKLIST.md)의 "이름으로 고르지 말 것"에도 걸립니다. [GameBgmSource.cs](../../muse%20dash%20test/Core/GameBgmSource.cs)의 게임 참조와 비교하면 둘 다 풀립니다.
 - 판정바 훅이 타격마다 `tno.md`(큰 `MusicData` 구조체)를 통째로 꺼내 `tick` 하나만 씁니다. 판정바를 `GameGlobal.gTouch.tickTime` 기준으로 바꾸면 함께 정리됩니다([JUDGMENT_BAR_TIMING.md](../experiments/JUDGMENT_BAR_TIMING.md)).
 
 ## 3. 문제없다고 본 것

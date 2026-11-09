@@ -19,7 +19,8 @@ namespace muse_dash_test
             if (!ModConfig.EnableSpineSkin) return;
 
             var name = __instance.gameObject.name;
-            if (name.ToLowerInvariant().Contains("battle"))
+            // Awake는 노트·캐릭터 컨트롤러가 생길 때마다 불립니다. 소문자 사본을 만들지 않고 비교합니다.
+            if (name != null && name.IndexOf("battle", System.StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 ModLogger.Msg($"[SkinNameProbe] 배틀 오브젝트 이름 = \"{name}\"");
             }
