@@ -11,7 +11,7 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-11-10 (코드 검토: 곡 선택 화면 판정의 준비 패널 탐색 굶김 수정, BGM 세터 패치를 AudioManager.bgm 참조 비교로 전환, 판정바 훅·BGA 탐색 할당 절감, 죽은 GameBindings 상수 20개 삭제, CR CR LF 줄바꿈 복구 — 시작 스모크 테스트만 했고 커스텀 곡 미리듣기·배틀 진입 실기 확인은 남음, [CODE_REVIEW_2026-11-10.md](docs/architecture/CODE_REVIEW_2026-11-10.md) / 이전: 2026-11-09 히든 채보 팝업 ShowSpecialsBmsPopUp·mopemope 빨간 글씨 이스터에그 ISIL 분석 문서화, 낡은 문서 감사 및 교정, 람다 문구 전면 정제, TextNormalizer 따옴표 미포함 Fast-Path 가드 및 대문자 축약형 지원, ProgressBarPatch 매 프레임 풀스캔 방지, HwaMenuBgmController 씬 스캔 스로틀링, 단위 테스트 146개 통과)
+마지막 갱신: 2026-11-10 (v0.12.2 릴리즈: 커스텀 차트 연타 씬 전환 시 보스 비활성화/증발 버그 수정, 씬 재로드 후 파괴된 패널 캐시로 인한 커스텀 메뉴 BGM 취소 및 원곡 덮어쓰기 복구, 단위 테스트 146개 통과 및 실기 검증 완료)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB). 의사코드가 필요하면 `H:\source\repos\rea-hwa\tools\pe_slice.py --dll "H:/muse dash hwa/GameAssembly.dll" --rva <RVA> --out <조각.dll>`로 함수만 잘라 REA `open_binary`(`provider_id: "ghidra"`) → `procedure_pseudo_code`로 봅니다(`GameAssembly.dll` 통째로 열면 시간 초과).
