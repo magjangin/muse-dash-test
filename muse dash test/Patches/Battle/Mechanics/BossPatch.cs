@@ -395,21 +395,35 @@ public class Boss_InitBossObject_Patch
     }
 }
 
-// 진단용 로깅 패치: SceneBossChange 호출 흐름만 추적합니다.
-// (idx 재작성 기믹은 사용되지 않아 제거했으며, 필요 시 Prefix에서 ref idx를 조정해 복원할 수 있습니다.)
-// 배틀 도중 씬이 바뀔 때마다(공식곡 포함) 불리므로 Verbose에만 남깁니다. 보려면 LogLevel=Verbose.
+// 씬 전환 시 보스 교체 제어 패치:
+// 커스텀 차트에서는 단순 배경 씬 전환 노트를 마구 넣어도 현재 보스를 끄거나 교체하지 않고 유지합니다.
+// (공식곡 및 dynamicSwap 도중에는 원래 동작 허용)
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.Boss), nameof(Il2Cpp.Boss.SceneBossChange), new Type[] { typeof(int) })]
 public class Boss_SceneBossChange_Patch
 {
-    public static void Prefix(Il2Cpp.Boss __instance, int idx)
+    public static bool Prefix(Il2Cpp.Boss __instance, int idx)
     {
         try
         {
-            ModLogger.Verbose($"Il2Cpp.Boss.SceneBossChange 호출: idx={idx}, instance={__instance}");
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+            {
+                ModLogger.Verbose($"Il2Cpp.Boss.SceneBossChange 호출: idx={idx}, instance={__instance}");
+                return true;
+            }
+
+            if (CustomPlaySession.Current.IsDynamicBossSwap)
+            {
+                ModLogger.Verbose($"Il2Cpp.Boss.SceneBossChange (DynamicSwap) 호출: idx={idx}, instance={__instance}");
+                return true;
+            }
+
+            ModLogger.Verbose($"[Boss.SceneBossChange] 커스텀 차트 씬 전환 무시 (보스 유지): idx={idx}, curBossIndex={__instance?.m_CurBossIndex}");
+            return false;
         }
         catch (Exception ex)
         {
             ModLogger.Error($"Boss.SceneBossChange Prefix 예외: {ex}");
+            return true;
         }
     }
 
