@@ -125,6 +125,7 @@ namespace muse_dash_test
             FeatureGuard.Run("Scene.ResetJudgmentBar", JudgmentBar.ResetCache);
             FeatureGuard.Run("Scene.ResetHitPoint", ExperimentHitPointInstaller.Reset);
             FeatureGuard.Run("Scene.ResetVictoryCache", Patches.VictoryDataCache.ResetSession);
+            FeatureGuard.Run("Scene.ResetMenuBgmCache", HwaMenuBgmController.ResetSceneCache);
             // 오프셋 훅이 들고 있는 폴백 UID 캐시를 버립니다. 씬이 바뀌면 곡도 바뀔 수 있습니다.
             FeatureGuard.Run("Scene.ResetOffsetUidCache", OffsetHookPatches.ResetUidCache);
             // 전역 오프셋 진단. Verbose일 때만 값을 읽고, 바뀌지 않았으면 아무것도 하지 않습니다.

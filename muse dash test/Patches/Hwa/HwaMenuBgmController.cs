@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using System;
 using System.Collections;
 using HarmonyLib;
@@ -21,6 +21,7 @@ namespace muse_dash_test
         private static bool isCustomMenuBgmActive;
 
         internal static bool IsCustomMenuBgmActive => isCustomMenuBgmActive || !string.IsNullOrEmpty(currentLoadingUid);
+        internal static string CurrentLoadingUid => currentLoadingUid;
 
         public static void TriggerMenuBgmChange(string uid)
         {
@@ -57,6 +58,12 @@ namespace muse_dash_test
             isCustomMenuBgmActive = false;
             monitorGeneration++;
             ModLogger.Msg($"[MenuBGM.Monitor] 메뉴 BGM 모니터링 중지 요청: {reason}");
+        }
+
+        /// <summary>씬이 새로 로드될 때(예: 배틀 종료 후 UISystem_PC 재진입) 파괴된 이전 패널 참조 캐시를 비웁니다.</summary>
+        public static void ResetSceneCache()
+        {
+            AudioSource_SetClip_Patch.ResetCache();
         }
 
         /// <summary>
@@ -416,7 +423,8 @@ namespace muse_dash_test
                     if (!inStageSelectionContext)
                     {
                         // 곡 선택/준비 화면을 벗어나면 활성 상태인 커스텀 메뉴 BGM 재생만 정지하고 모니터링을 종료하여 게임이 자기 BGM을 회복하도록 합니다.
-                        if (HwaMenuBgmController.IsCustomMenuBgmActive)
+                        // 단, 가상 곡 로딩이 방금 시작된 도중(CurrentLoadingUid 활성)에는 패널 활성화 전환 지연일 수 있으므로 취소하지 않습니다.
+                        if (HwaMenuBgmController.IsCustomMenuBgmActive && string.IsNullOrEmpty(HwaMenuBgmController.CurrentLoadingUid))
                         {
                             ModLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 커스텀 BGM 정지 및 모니터링 종료: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
                             HwaMenuBgmController.StopCustomMenuBgm("곡 선택/준비 화면 이탈 감지");
@@ -424,10 +432,9 @@ namespace muse_dash_test
                         }
                     }
 
-                    // 클립 대입 차단은 곡 선택/준비 화면 안에서만 적용합니다. 메인 메뉴·캐릭터/엘핀
-                    // 선택 등으로 빠져나온 뒤에도 차단하면, 게임이 자기 BGM을 되찾지 못해 커스텀 곡
-                    // 미리듣기가 계속 재생되는 버그가 생깁니다.
-                    if (inStageSelectionContext && CustomContentIds.IsVirtualSong(selectedUid))
+                    // 클립 대입 차단은 곡 선택/준비 화면 안이거나 가상 곡 로딩 중일 때 적용합니다.
+                    bool isVirtualLoading = !string.IsNullOrEmpty(HwaMenuBgmController.CurrentLoadingUid) && CustomContentIds.IsVirtualSong(HwaMenuBgmController.CurrentLoadingUid);
+                    if ((inStageSelectionContext || isVirtualLoading) && CustomContentIds.IsVirtualSong(selectedUid))
                     {
                         bool isCustomClip = IsCustomOggClip(value);
                         if (!isCustomClip)
@@ -471,6 +478,45 @@ namespace muse_dash_test
             return clip.name.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase);
         }
 
+        public static void ResetCache()
+        {
+            cachedPnlStage = null;
+            cachedPnlPreparation = null;
+            lastCheckFrame = -1;
+            lastCheckResult = false;
+            lastScanFrame = -1;
+            gameBgmPointer = IntPtr.Zero;
+            gameBgmPointerFrame = -1;
+        }
+
+        private static bool IsAlive<T>(T comp) where T : UnityEngine.Component
+        {
+            if (comp == null) return false;
+            try
+            {
+                if (comp.Pointer == IntPtr.Zero) return false;
+                var go = comp.gameObject;
+                return go != null && go.Pointer != IntPtr.Zero;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool IsAliveAndActive<T>(T comp) where T : UnityEngine.Component
+        {
+            if (!IsAlive(comp)) return false;
+            try
+            {
+                return comp.gameObject.activeInHierarchy;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         /// <summary>
         /// 곡 선택(PnlStage) 또는 곡 준비(PnlPreparation) 패널이 현재 실제로 활성 상태인지 확인합니다.
         /// MD가 단일 씬 안에서 패널만 켜고 끄는 구조이므로, 이게 "곡 선택 컨텍스트에 있는지"의 유일하게 신뢰 가능한 신호입니다.
@@ -485,9 +531,19 @@ namespace muse_dash_test
                     return lastCheckResult;
                 }
 
-                // 기존 캐시가 살아있으면 activeInHierarchy만 가볍게 확인
-                bool stageActive = cachedPnlStage != null && cachedPnlStage.gameObject != null && cachedPnlStage.gameObject.activeInHierarchy;
-                bool prepActive = cachedPnlPreparation != null && cachedPnlPreparation.gameObject != null && cachedPnlPreparation.gameObject.activeInHierarchy;
+                // 씬 언로드로 파괴된 이전 C# 래퍼 참조는 null로 정리
+                if (cachedPnlStage != null && !IsAlive(cachedPnlStage))
+                {
+                    cachedPnlStage = null;
+                }
+                if (cachedPnlPreparation != null && !IsAlive(cachedPnlPreparation))
+                {
+                    cachedPnlPreparation = null;
+                }
+
+                // 기존 캐시가 살아있으면 activeInHierarchy 확인
+                bool stageActive = IsAliveAndActive(cachedPnlStage);
+                bool prepActive = IsAliveAndActive(cachedPnlPreparation);
 
                 if (stageActive || prepActive)
                 {
@@ -496,35 +552,27 @@ namespace muse_dash_test
                     return true;
                 }
 
-                // 캐시가 null일 때만 씬 스캔하되, 씬 전체 스캔은 최소 30프레임 간격으로 제한하여 프레임 드랍 차단.
-                // 스캔 허용 여부는 두 패널이 함께 쓰는 값이라 한 번만 판정합니다. 패널마다 따로 판정하면
-                // 앞 블록이 lastScanFrame을 지금 프레임으로 올린 직후라 뒤 블록의 간격 조건(0 >= 30)이 늘 거짓이 되어,
-                // PnlStage를 못 찾는 동안에는 PnlPreparation을 영영 찾지 않았습니다(2026-11-10 코드 검토에서 발견).
+                // 둘 다 비활성이거나 파괴되었을 때, 최소 30프레임 간격으로 씬 재스캔
                 bool scanAllowed = lastScanFrame < 0 || currentFrame - lastScanFrame >= ScanIntervalFrames;
-                if (scanAllowed && (cachedPnlStage == null || cachedPnlPreparation == null))
+                if (scanAllowed)
                 {
                     lastScanFrame = currentFrame;
 
                     if (cachedPnlStage == null)
                     {
                         cachedPnlStage = UnityEngine.Object.FindObjectOfType<Il2CppAssets.Scripts.UI.Panels.PnlStage>();
-                        if (cachedPnlStage != null && cachedPnlStage.gameObject != null && cachedPnlStage.gameObject.activeInHierarchy)
-                        {
-                            lastCheckFrame = currentFrame;
-                            lastCheckResult = true;
-                            return true;
-                        }
                     }
 
                     if (cachedPnlPreparation == null)
                     {
                         cachedPnlPreparation = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlPreparation>();
-                        if (cachedPnlPreparation != null && cachedPnlPreparation.gameObject != null && cachedPnlPreparation.gameObject.activeInHierarchy)
-                        {
-                            lastCheckFrame = currentFrame;
-                            lastCheckResult = true;
-                            return true;
-                        }
+                    }
+
+                    if (IsAliveAndActive(cachedPnlStage) || IsAliveAndActive(cachedPnlPreparation))
+                    {
+                        lastCheckFrame = currentFrame;
+                        lastCheckResult = true;
+                        return true;
                     }
                 }
 
