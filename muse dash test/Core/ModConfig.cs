@@ -26,6 +26,7 @@ namespace muse_dash_test
         public static MelonPreferences_Entry<bool> SpineSkinEntry { get; private set; }
         public static MelonPreferences_Entry<bool> MobileTouchEntry { get; private set; }
         public static MelonPreferences_Entry<bool> VerboseLogEntry { get; private set; }
+        public static MelonPreferences_Entry<bool> ForceChristmasEntry { get; private set; }
         public static MelonPreferences_Entry<string> LogLevelEntry { get; private set; }
 
         public static bool EnableCustomChart => CustomChartEntry?.Value ?? true;
@@ -42,6 +43,12 @@ namespace muse_dash_test
         public static bool EnableSpineSkin => SpineSkinEntry?.Value ?? true;
         public static bool EnableMobileTouch => MobileTouchEntry?.Value ?? true;
         public static bool EnableVerboseLog => VerboseLogEntry?.Value ?? false;
+
+        /// <summary>
+        /// 컴퓨터 날짜와 상관없이 게임을 12월 24·25일로 여기게 합니다(크리스마스 배경·보스·로딩 등, <see cref="ChristmasFestival"/>).
+        /// 실기 확인용이라 기본은 꺼짐입니다.
+        /// </summary>
+        public static bool ForceChristmas => ForceChristmasEntry?.Value ?? false;
 
         private static readonly Dictionary<string, Func<bool>> FeatureMap = new Dictionary<string, Func<bool>>(StringComparer.OrdinalIgnoreCase);
 
@@ -65,6 +72,7 @@ namespace muse_dash_test
             SpineSkinEntry = Category.CreateEntry("EnableSpineSkin", true, description: "Spine 커스텀 스킨 텍스처/아틀라스 주입 활성화");
             MobileTouchEntry = Category.CreateEntry("EnableMobileTouch", true, description: "모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화");
             VerboseLogEntry = Category.CreateEntry("EnableVerboseLog", false, description: "진단 로그 상세 출력 활성화 (개발/디버깅용, 평소에는 꺼두세요)");
+            ForceChristmasEntry = Category.CreateEntry("ForceChristmas", false, description: "날짜와 상관없이 크리스마스(12월 24·25일) 연출 켜기: 5번 씬 크리스마스 배경·보스 등 (테스트용, 평소에는 꺼두세요)");
             LogLevelEntry = Category.CreateEntry("LogLevel", "Auto", description: "로그 출력 수준 ('Auto', 'Silent', 'Error', 'Warning', 'Info', 'Verbose'). Auto 설정 시 UMPC(ROG Ally, Steam Deck 등)에서는 자동으로 Error(치명적 오류만) 레벨로 작동하여 불필요한 로그 출력이 완전히 차단(음소거)됩니다.");
 
             ConfigureLogLevel();

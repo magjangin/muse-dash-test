@@ -72,6 +72,9 @@ offset: -0.05123             // 판정 오프셋 (초 단위, 최대 소수점 7
 
 // 권장 표로 dt를 덮어써서 정상적으로 하게 해줍니다.
 dt를 권장 표로 고치기 = 활성화
+
+// 5번 씬을 날짜와 상관없이 크리스마스 배경·보스로 바꿉니다(씬번호 5 또는 곡 중간 5번 전환일 때만).
+크리스마스 배경 = 활성화
 ```
 
 ### 🔍 매개변수 상세 설명
@@ -92,6 +95,7 @@ dt를 권장 표로 고치기 = 활성화
 | **커스텀 곡 고스트 노트 보이기** | `ghostnote` | 활성화/비활성화 | 고스트 노트(UID `xx=17`)가 판정선 근처에서 사라지지 않게 합니다. `활성화`/`비활성화` 외에 `true`/`false`, `on`/`off`, `켜기`/`끄기`, `1`/`0`도 됩니다. **적지 않으면** 공식곡용 전역 설정(`config.txt`의 `공식곡에서도 고스트 노트 보이기`)을 그대로 따릅니다. |
 | *(아래 "씬번호와 배경" 참고)* | | | |
 | **dt를 권장 표로 고치기** (키에 `권장표`·`권장dt`·`dt보정`이 들어간 줄) | `fixdt`, `recommendeddt` | 활성화/비활성화 | 켜면 WAV `_dt`를 무시하고 노트 계열·속도별 권장 dt로 덮어씁니다. 적지 않거나 끄면 WAV `_dt`를 그대로 쓰고, 허용 범위를 벗어난 값만 로그로 경고합니다. 권장표와 허용 범위는 [DT_RECOMMENDED_TABLE.md](DT_RECOMMENDED_TABLE.md) |
+| **크리스마스 배경** (키에 `크리스마스`가 들어간 줄) | `christmas`, `xmas` | 활성화/비활성화 | 켜면 날짜와 상관없이 이 곡의 5번 씬을 `scene_05_christmas`로, 5번 보스(`0501_boss`)를 크리스마스 보스로 바꿉니다. **크리스마스 판은 5번 씬에만 있으므로** `씬번호: 5`이거나 곡 중간에 `000405`로 5번 씬에 들어갈 때만 보입니다. 적지 않거나 끄면 게임 날짜 판정(12월 24·25일)을 그대로 따릅니다. 아래 "크리스마스 배경" 참고 |
 
 ### 🎚️ 난이도별 채보
 
@@ -153,12 +157,23 @@ dt를 권장 표로 고치기 = 활성화
 
 **만우절 배경과 새가 된 적**: 컴퓨터 날짜가 **4월 1일**이면 `BattleHelper.isFool`이 참이 되어(ISIL 확인) 게임이 `_fool` 판 배경 번들(`gamescene_NN_fool_*`)과 `FoolEnemyController`를 씁니다. 적이 새로 바뀌는 것이 이 판입니다. 번들은 01~12 모두 있습니다. 어느 함수가 `_fool` 판으로 바꾸는지는 아직 따라가지 않았습니다.
 
-**크리스마스 배경은 번호가 따로 없습니다.** 게임의 `GameMusicScene.SceneFestival("scene_05")`이 아래 중 하나일 때만 `scene_05_christmas`로 바꿉니다(ISIL 확인).
+**크리스마스 배경은 번호가 따로 없습니다.** 게임의 `GameMusicScene.SceneFestival("scene_05")`이 아래 중 하나일 때만 `scene_05_christmas`로 바꿉니다(ISIL 확인, 2026-11-11 재확인).
 
-- 컴퓨터 날짜가 12월 24일 또는 25일
+- 컴퓨터 날짜가 12월 24일 또는 25일 (`BattleHelper.isChristmas`를 거치지 않고 `DateTime.Now`를 직접 봅니다)
 - 지금 곡 uid가 `43-68`, `0-47`, `38-1` 중 하나
 
-커스텀 곡(uid `1999-*`)은 날짜 조건으로만 나옵니다. 그 밖에 `_cy`, `_fool`(만우절), `dave`, `touhou_black` 번들도 있지만 `씬번호`(정수)로는 고를 수 없습니다(`씬번호`는 `scene_NN` 이름만 만듭니다).
+`LoadScene`은 처음 씬과 곡 중간 전환 목록의 씬마다 이 함수를 부르므로, 곡 중간에 5번 씬으로 넘어가도 크리스마스 판이 됩니다. 보스도 같은 구조입니다. `Boss.BossFestival("0501_boss")`이 `BattleHelper.isChristmas`이거나 uid가 `0-47`/`38-1`이면 `0501_boss_christmas`를 돌려줍니다.
+
+커스텀 곡(uid `1999-*`)은 게임 판정만으로는 날짜 조건으로만 나옵니다. 모드가 두 가지 길을 더합니다(`ChristmasFestivalPatch.cs`).
+
+| 방법 | 범위 | 바꾸는 것 |
+| --- | --- | --- |
+| `info.txt`의 `크리스마스 배경 = 활성화` | 그 커스텀 곡만 | 5번 씬 배경, 5번 보스 |
+| MelonPreferences `ForceChristmas = true` (`UserData/MelonPreferences.cfg`의 `[muse-dash-custom-chart-features]`) | 공식 곡을 포함한 게임 전체 | 위 둘 + `BattleHelper.isChristmas`를 쓰는 곳 전부(`GameInit.SpecialLogic`, `ItemManager.ChristmasItemLogic`, `MainManager.InitLoading`) |
+
+`ForceChristmas`는 12월 24일 전에 크리스마스 연출을 실기로 확인하려고 만든 테스트용 설정이라 기본은 꺼짐입니다. 곡 옵션이 `isChristmas`를 건드리지 않는 것은, 아이템·로딩 화면처럼 곡과 무관한 곳까지 바뀌기 때문입니다.
+
+그 밖에 `_cy`, `_fool`(만우절), `dave`, `touhou_black` 번들도 있지만 `씬번호`(정수)로는 고를 수 없습니다(`씬번호`는 `scene_NN` 이름만 만듭니다).
 
 ---
 
