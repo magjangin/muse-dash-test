@@ -31,7 +31,7 @@ namespace muse_dash_test.LogicTests
 
         public static void SetPaths_UseBaseNameForAllThreeFiles()
         {
-            string dir = Path.Combine("song", NoteSkinRules.FolderName);
+            string dir = Path.Combine("skin test", "0411_road");
             NoteSkinRules.GetSetPaths(dir, "0411_road", out string png, out string atlas, out string json);
             Assert.Equal(Path.Combine(dir, "0411_road.png"), png);
             Assert.Equal(Path.Combine(dir, "0411_road.atlas"), atlas);

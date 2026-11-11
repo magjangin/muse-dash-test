@@ -7,9 +7,9 @@ namespace muse_dash_test
     /// <summary>
     /// 노트 스킨 주입의 규칙 중 게임에 의존하지 않는 부분입니다. 로직 테스트(<c>NoteSkinRulesTests</c>)로 검증합니다.
     ///
-    /// <para><b>파일 배치</b>: 곡 폴더의 <c>note skin/</c>에 Spine 3.8 에디터가 내보낸 세트를 그대로 둡니다.
+    /// <para><b>파일 배치</b>: 게임 루트 <c>skin test/{세트 이름}/</c>에 Spine 3.8 에디터가 내보낸 세트를 둡니다(캐릭터 스킨과 같은 규칙).
     /// 세트 이름은 <b>바꿀 원본 스켈레톤 이름</b>입니다. 원본 에셋 이름이 <c>0411_road_SkeletonData</c>면
-    /// <c>note skin/0411_road.json</c>·<c>.atlas</c>·<c>.png</c>입니다. 에디터에서 원본 <c>.skel</c>을 가져와 고쳤다면
+    /// <c>skin test/0411_road/0411_road.json</c>·<c>.atlas</c>·<c>.png</c>입니다. 에디터에서 원본 <c>.skel</c>을 가져와 고쳤다면
     /// 스켈레톤 이름이 이미 원본과 같으므로 내보낸 파일을 그대로 넣으면 됩니다.</para>
     ///
     /// <para>프리팹 이름이 아니라 스켈레톤 이름으로 고르는 이유: 한 스켈레톤을 여러 프리팹(속도 1·2·3, 위·아래)이
@@ -18,9 +18,6 @@ namespace muse_dash_test
     /// </summary>
     public static class NoteSkinRules
     {
-        /// <summary>곡 폴더 안에서 노트 스킨 세트를 두는 하위 폴더 이름입니다.</summary>
-        public const string FolderName = "note skin";
-
         private const string SkeletonDataSuffix = "_SkeletonData";
 
         /// <summary>

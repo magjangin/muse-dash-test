@@ -36,6 +36,17 @@ namespace muse_dash_test
 
         private static readonly Dictionary<string, SkeletonDataAsset> Cache = new Dictionary<string, SkeletonDataAsset>();
 
+        /// <summary>이 주입기가 만들어 캐릭터에 씌운 에셋인지. 노트 스킨 주입기가 같은 오브젝트를 다시 바꾸지 않게 합니다.</summary>
+        public static bool IsCachedAsset(SkeletonDataAsset asset)
+        {
+            if (asset == null) return false;
+            foreach (var cached in Cache.Values)
+            {
+                if (cached != null && cached.Pointer == asset.Pointer) return true;
+            }
+            return false;
+        }
+
         public static SkeletonDataAsset GetOrBuild(string baseName)
         {
             // Unity Object의 == 오버로드 때문에, 네이티브 오브젝트가 파괴되면(씬 전환 중 회수 등)

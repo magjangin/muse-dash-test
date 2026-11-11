@@ -9,7 +9,8 @@ using UnityEngine;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 커스텀 곡의 노트 스켈레톤을 곡 폴더 <c>note skin/</c>의 세트로 바꿉니다(규칙은 <see cref="NoteSkinRules"/>).
+    /// 노트 스켈레톤을 게임 루트 <c>skin test/{원본 스켈레톤 이름}/</c>의 세트로 바꿉니다(규칙은 <see cref="NoteSkinRules"/>).
+    /// 캐릭터 스킨과 같은 폴더 규칙(<see cref="CustomSkinInjector.GetSetDirectory"/>)입니다.
     ///
     /// <para><b>언제</b>: <c>SpineActionController.Init</c> Postfix에서만 합니다. 노트는 풀에서 다시 쓰지 않고
     /// 노트마다 인스턴스가 따로라 한 번 바꾸면 끝까지 그 스킨입니다. <c>OnControllerStart</c>에서 다시 하지 않는 이유는
@@ -17,15 +18,15 @@ namespace muse_dash_test
     ///
     /// <para><b>무엇을 지키나</b>
     /// <list type="bullet">
-    /// <item>커스텀 곡에서만 돕니다. 공식 곡과 <c>0-0</c> 폴백은 폴더가 없으므로 아무것도 하지 않습니다.</item>
+    /// <item><b>공식 곡·커스텀 곡 모두</b>에 적용됩니다(실험 단계라 공식 곡에서 바로 확인하려는 것). 세트 폴더가 없으면 아무것도 하지 않습니다.</item>
+    /// <item>캐릭터 주입기가 이미 바꾼 스켈레톤은 건드리지 않습니다.</item>
     /// <item><c>scale</c>은 원본 에셋 값을 그대로 씁니다(씬 05 노트는 0.005, 캐릭터 주입기의 0.01과 다름).</item>
     /// <item>프리팹의 <c>actionData</c>·<c>m_FeverActionData</c>가 부르는 애니메이션이 새 스켈레톤에 하나라도 없으면
     ///   <b>주입을 건너뜁니다</b>. 멈추거나 안 보이는 노트보다 원본 노트가 낫습니다.</item>
     /// <item>주입 뒤 <c>InitSkField</c>를 다시 불러 <c>m_Bones</c>가 새 스켈레톤의 본을 가리키게 합니다.</item>
     /// </list></para>
     ///
-    /// <para><b>비용</b>: <c>Init</c>은 곡 로딩 중 노트 수만큼 불립니다. 곡 폴더 판정은 프레임마다 한 번,
-    /// 세트 파일 확인은 세트마다 몇 초에 한 번만 하고, 계약 검사 결과도 (에셋, 애니메이션 이름 목록)별로 보관합니다.
+    /// <para><b>비용</b>: <c>Init</c>은 곡 로딩 중 노트 수만큼 불립니다. 세트 파일 확인은 세트마다 몇 초에 한 번만 하고, 계약 검사 결과도 (에셋, 애니메이션 이름 목록)별로 보관합니다.
     /// 그래도 노트마다 <c>Initialize(true)</c>는 피할 수 없으니 바뀐 노트 수를 로그로 남겨 로딩 시간과 견줘 봅니다.</para>
     /// </summary>
     internal static class NoteSkinInjector
@@ -50,9 +51,6 @@ namespace muse_dash_test
         private static readonly Dictionary<string, List<string>> ContractVerdicts = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         private static readonly HashSet<string> WarnedContracts = new HashSet<string>(StringComparer.Ordinal);
 
-        private static int cachedFrame = -1;
-        private static string cachedSkinDir;
-        private static string lastLoggedSkinDir;
         private static int injectedCount;
 
         public static void TryInject(SpineActionController sac)
@@ -62,20 +60,18 @@ namespace muse_dash_test
 
             try
             {
-                string skinDir = ResolveSkinDirectory();
-                if (skinDir == null) return;
-
                 var ska = sac.skeletonAnimation;
                 if (ska == null) return;
 
                 var original = ska.skeletonDataAsset;
                 if (original == null) return;
                 if (OwnAssets.Contains(original.Pointer)) return;
+                if (CustomSkinInjector.IsCachedAsset(original)) return;
 
                 string baseName = NoteSkinRules.BaseNameFromAssetName(original.name);
                 if (baseName == null) return;
 
-                var custom = GetOrBuild(skinDir, baseName, original.scale);
+                var custom = GetOrBuild(CustomSkinInjector.GetSetDirectory(baseName), baseName, original.scale);
                 if (custom == null) return;
 
                 var skeletonData = custom.GetSkeletonData(true);
@@ -112,38 +108,6 @@ namespace muse_dash_test
             {
                 ModLogger.Warning($"[NoteSkin] 주입 예외: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// 지금 곡의 <c>note skin</c> 폴더입니다. 커스텀 곡이 아니거나 폴더가 없으면 null입니다. 프레임마다 한 번만 판정합니다.
-        /// </summary>
-        private static string ResolveSkinDirectory()
-        {
-            int frame = Time.frameCount;
-            if (frame == cachedFrame) return cachedSkinDir;
-
-            cachedFrame = frame;
-            cachedSkinDir = null;
-
-            var session = CustomPlaySession.Current;
-            if (!session.ShouldApplyExperimentChart) return null;
-
-            string uid = session.LastKnownMusicUid;
-            if (string.IsNullOrEmpty(uid) || !CustomContentIds.IsVirtualSong(uid)) return null;
-            if (!HwaResourceManager.TryGetSongDirectory(uid, out string songDir) || string.IsNullOrEmpty(songDir)) return null;
-
-            string skinDir = Path.Combine(songDir, NoteSkinRules.FolderName);
-            if (!Directory.Exists(skinDir)) return null;
-
-            cachedSkinDir = skinDir;
-            if (!string.Equals(lastLoggedSkinDir, skinDir, StringComparison.OrdinalIgnoreCase))
-            {
-                lastLoggedSkinDir = skinDir;
-                injectedCount = 0;
-                ModLogger.Msg($"[NoteSkin] 노트 스킨 폴더 사용: {skinDir}");
-            }
-
-            return skinDir;
         }
 
         private static SkeletonDataAsset GetOrBuild(string skinDir, string baseName, float scale)

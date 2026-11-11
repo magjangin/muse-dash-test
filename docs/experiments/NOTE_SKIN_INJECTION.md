@@ -85,10 +85,13 @@
 처음 스케치와 달라진 점을 먼저 적습니다.
 
 - **세트는 프리팹이 아니라 원본 스켈레톤 이름으로 고릅니다.** `ska.skeletonDataAsset.name`(`0411_road_SkeletonData`)에서 꼬리를 뗀
-  `0411_road`가 곡 폴더 `note skin/0411_road.json·.atlas·.png`입니다(`NoteSkinRules`). 게임이 들고 있는 에셋 참조라
+  `0411_road`가 게임 루트 `skin test/0411_road/0411_road.json·.atlas·.png`입니다(`NoteSkinRules`, 캐릭터 스킨과 같은 폴더 규칙). 게임이 들고 있는 에셋 참조라
   이름 부분 일치도, `m_MusicData` 의존도 없습니다. 에디터에서 원본을 가져와 고치면 내보낸 이름이 그대로 맞습니다.
   한 스켈레톤을 쓰는 프리팹(속도 1·2·3 등)이 함께 바뀌고, 계약 검사는 프리팹마다 따로 합니다.
-- 하위 폴더 없이 `note skin/`에 평평하게 둡니다. 에디터 내보내기 폴더를 그대로 복사할 수 있게 하려는 것입니다.
+- **공식 곡에도 적용합니다.** 처음엔 커스텀 곡 폴더 `note skin/`에서만 읽었으나, 실험 단계에서는 공식 곡으로 바로 보는 편이
+  빠르다는 판단으로 같은 날 `skin test/`로 옮겼습니다. 곡별 적용은 실측 뒤 다시 정합니다.
+  `gamescene_04` 번들에 `0411_road_SkeletonData`·`0411_air_SkeletonData`(scale 0.005)가 있는 것을 UnityPy로 확인했습니다.
+- 캐릭터 주입기가 이미 바꾼 스켈레톤(`CustomSkinInjector.IsCachedAsset`)은 건드리지 않습니다.
 - 주입은 `Init` Postfix에서만 합니다. `OnControllerStart`에서 `Initialize(true)`를 부르면 재생 중 상태가 지워집니다.
 - 캐릭터·보스도 `Init`을 지나므로, 같은 규칙으로 그 스켈레톤 이름의 세트를 두면 바뀝니다(계약 검사는 똑같이 적용).
 
