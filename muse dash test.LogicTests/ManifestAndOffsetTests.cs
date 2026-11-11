@@ -27,6 +27,28 @@ namespace muse_dash_test.LogicTests
             }
         }
 
+        public static void ChristmasSceneOptionParsesWithoutStealingOtherKeys()
+        {
+            foreach (string alias in new[] { "크리스마스 배경", "크리스마스", "christmas scene", "xmas" })
+            {
+                var manifest = new HwaManifest();
+                Assert.True(HwaManifestLoader.TryParseManifestLine($"{alias} = 활성화", out var key, out var value));
+                HwaManifestLoader.ApplyManifestValue(manifest, key, value);
+                Assert.Equal(true, manifest.ChristmasScene);
+                Assert.Equal(null, manifest.Scene);
+            }
+
+            var off = new HwaManifest();
+            HwaManifestLoader.ApplyManifestValue(off, "크리스마스 배경", "비활성화");
+            Assert.Equal(false, off.ChristmasScene);
+
+            var other = new HwaManifest();
+            HwaManifestLoader.ApplyManifestValue(other, "씬번호", "5");
+            HwaManifestLoader.ApplyManifestValue(other, "커스텀 곡 고스트 노트 보이기", "활성화");
+            Assert.Equal(null, other.ChristmasScene);
+            Assert.Equal(5, other.Scene);
+        }
+
         public static void CommentsAndInvalidLinesRemainIgnored()
         {
             foreach (string line in new[] { "", "// offset: 1", "제목", "= 값", "offset=" })

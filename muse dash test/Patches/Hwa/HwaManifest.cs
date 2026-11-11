@@ -39,6 +39,13 @@ namespace muse_dash_test
         /// </summary>
         public bool? FixDtToRecommended;
 
+        /// <summary>
+        /// 날짜와 상관없이 이 곡의 5번 씬(`scene_05`)을 크리스마스 판(`scene_05_christmas`)으로, 5번 보스를
+        /// 크리스마스 보스로 바꿀지. `hwa info.txt`의 '크리스마스 배경'입니다. 적지 않거나 비활성화면 게임의
+        /// 날짜 판정(12월 24·25일)을 그대로 따릅니다. 크리스마스 판은 5번 씬에만 있습니다.
+        /// </summary>
+        public bool? ChristmasScene;
+
         /// <summary>이 난이도의 레벨 숫자입니다(`난이도N` 줄). 적지 않았거나 없는 번호면 null입니다.</summary>
         public int? GetDifficultyLevel(int difficulty)
         {
