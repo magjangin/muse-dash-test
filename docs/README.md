@@ -55,7 +55,7 @@
 | [ARKNIGHTS_SCENE_INTRO.md](experiments/ARKNIGHTS_SCENE_INTRO.md) | 명일방주 곡의 `OPERATION 0-2` 인트로 카드 로직(곡 uid → 작전 번호 표, 앨범으로 켜짐), 커스텀 곡에서의 예상 동작 (조사만) |
 | [CHARACTER_SKILL_LOGIC.md](experiments/CHARACTER_SKILL_LOGIC.md) | 캐릭터·엘핀 스킬이 `BattleProperty`에 넣는 값 전체 표, 어린 악마 마리쟈 체력 감소 경로 |
 | [JUDGMENT_BAR_TIMING.md](experiments/JUDGMENT_BAR_TIMING.md) | 판정바 오차 계산을 REA로 게임 판정 로직과 대조한 점검 기록(시계는 같음, 읽는 시점·색 기준 차이) |
-| [NOTE_SKIN_INJECTION.md](experiments/NOTE_SKIN_INJECTION.md) | 노트 Spine 스킨 교체 가능성: 노트 생성 경로(`PreloadGameObject` → `Init`), 프리팹별 액션 계약(애니메이션 이름) 표, 원본 에셋 형식(바이너리 `.skel`, scale 0.005, 공용 아틀라스), `skin test/{스켈레톤 이름}/` 주입 구현 (2026-11-11 씬 04 실기 확인) |
+| [NOTE_SKIN_INJECTION.md](experiments/NOTE_SKIN_INJECTION.md) | 노트 Spine 스킨 교체 가능성: 노트 생성 경로(`PreloadGameObject` → `Init`), 프리팹별 액션 계약(애니메이션 이름) 표, 원본 에셋 형식(바이너리 `.skel`, scale 0.005, 공용 아틀라스), `skin test/note/{스켈레톤 이름}/` 주입 구현 (2026-11-11 씬 04 실기 확인) |
 | [NOTE_COLOR_TINTING.md](experiments/NOTE_COLOR_TINTING.md) | 노트 종류별 색조(Tint) 변조 가능성 실측 (참고용 코드, 현재 모드에는 포함되지 않음) |
 | [HIDDEN_SHEET_LOGIC.md](experiments/HIDDEN_SHEET_LOGIC.md) | 숨겨진 채보 발동 방식(자켓 길게 누르기·연타·난이도 전환 순서·날짜), 안내 팝업/팁 시스템(mopemope 빨간 글씨 이스터에그 포함) 및 플레이 시 _map4 교체 경로 ISIL 판독 (조사만) |
 | [CHARACTER_SKILL_IDEAS.md](experiments/CHARACTER_SKILL_IDEAS.md) | 불량소녀 린·라봇-233 횟수 999, 유메 톱니 부수기 아이디어와 ISIL·실측 기록 (보류, 코드는 로컬 브랜치에만) |

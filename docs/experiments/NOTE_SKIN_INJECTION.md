@@ -86,7 +86,7 @@
 처음 스케치와 달라진 점을 먼저 적습니다.
 
 - **세트는 프리팹이 아니라 원본 스켈레톤 이름으로 고릅니다.** `ska.skeletonDataAsset.name`(`0411_road_SkeletonData`)에서 꼬리를 뗀
-  `0411_road`가 게임 루트 `skin test/0411_road/0411_road.json·.atlas·.png`입니다(`NoteSkinRules`, 캐릭터 스킨과 같은 폴더 규칙). 게임이 들고 있는 에셋 참조라
+  `0411_road`가 게임 루트 `skin test/note/0411_road/0411_road.json·.atlas·.png`입니다(`NoteSkinRules`, 폴더 규칙은 `SkinFolderRules`. 처음엔 캐릭터와 같은 `skin test/{세트}/`였으나 노트 세트가 늘어 같은 날 `note/`·`character/`로 나눴고, 옛 배치도 읽습니다). 게임이 들고 있는 에셋 참조라
   이름 부분 일치도, `m_MusicData` 의존도 없습니다. 에디터에서 원본을 가져와 고치면 내보낸 이름이 그대로 맞습니다.
   한 스켈레톤을 쓰는 프리팹(속도 1·2·3 등)이 함께 바뀌고, 계약 검사는 프리팹마다 따로 합니다.
 - **공식 곡에도 적용합니다.** 처음엔 커스텀 곡 폴더 `note skin/`에서만 읽었으나, 실험 단계에서는 공식 곡으로 바로 보는 편이

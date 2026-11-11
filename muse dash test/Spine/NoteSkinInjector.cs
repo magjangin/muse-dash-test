@@ -9,8 +9,8 @@ using UnityEngine;
 namespace muse_dash_test
 {
     /// <summary>
-    /// 노트 스켈레톤을 게임 루트 <c>skin test/{원본 스켈레톤 이름}/</c>의 세트로 바꿉니다(규칙은 <see cref="NoteSkinRules"/>).
-    /// 캐릭터 스킨과 같은 폴더 규칙(<see cref="CustomSkinInjector.GetSetDirectory"/>)입니다.
+    /// 노트 스켈레톤을 게임 루트 <c>skin test/note/{원본 스켈레톤 이름}/</c>의 세트로 바꿉니다(규칙은 <see cref="NoteSkinRules"/>).
+    /// 폴더 고르기는 캐릭터 스킨과 같은 <see cref="SkinFolderRules"/>입니다(옛 배치 <c>skin test/{세트}/</c>도 읽습니다).
     ///
     /// <para><b>언제</b>: <c>SpineActionController.Init</c> Postfix에서만 합니다. 노트는 풀에서 다시 쓰지 않고
     /// 노트마다 인스턴스가 따로라 한 번 바꾸면 끝까지 그 스킨입니다. <c>OnControllerStart</c>에서 다시 하지 않는 이유는
@@ -44,7 +44,8 @@ namespace muse_dash_test
             public float CheckedAt;
         }
 
-        // 키: json 경로 + scale. 파일이 없으면 Asset이 null인 항목으로 "없음"을 기억합니다.
+        // 키: 세트 이름 + scale. 파일이 없으면 Asset이 null인 항목으로 "없음"을 기억합니다.
+        // 폴더(새 배치/옛 배치)는 다시 확인할 때만 고릅니다. 노트마다 File.Exists를 부르지 않으려는 것입니다.
         private static readonly Dictionary<string, SetEntry> Sets = new Dictionary<string, SetEntry>(StringComparer.OrdinalIgnoreCase);
 
         // 우리가 만든 에셋의 포인터. 이미 바꾼 노트를 다시 바꾸지 않으려고 씁니다.
@@ -74,7 +75,7 @@ namespace muse_dash_test
                 string baseName = NoteSkinRules.BaseNameFromAssetName(original.name);
                 if (baseName == null) return;
 
-                var custom = GetOrBuild(CustomSkinInjector.GetSetDirectory(baseName), baseName, NoteSkinRules.RuntimeScale(original.scale));
+                var custom = GetOrBuild(baseName, NoteSkinRules.RuntimeScale(original.scale));
                 if (custom == null) return;
 
                 var skeletonData = custom.GetSkeletonData(true);
@@ -113,10 +114,9 @@ namespace muse_dash_test
             }
         }
 
-        private static SkeletonDataAsset GetOrBuild(string skinDir, string baseName, float scale)
+        private static SkeletonDataAsset GetOrBuild(string baseName, float scale)
         {
-            NoteSkinRules.GetSetPaths(skinDir, baseName, out string png, out string atlas, out string json);
-            string key = json + "|" + scale.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string key = baseName + "|" + scale.ToString(System.Globalization.CultureInfo.InvariantCulture);
             float now = Time.realtimeSinceStartup;
 
             if (Sets.TryGetValue(key, out var entry))
@@ -125,6 +125,10 @@ namespace muse_dash_test
                 if (fresh) return entry.Asset != null ? entry.Asset : null;
             }
 
+            string skinDir = CustomSkinInjector.GetSetDirectory(SkinKind.Note, baseName);
+            NoteSkinRules.GetSetPaths(skinDir, baseName, out string png, out string atlas, out string json);
+
+            // 폴더를 옮겨도 크기·수정시각은 그대로라 stamp가 같을 수 있습니다. 내용이 같으니 만든 에셋을 그대로 씁니다.
             long stamp = ReadStamp(png, atlas, json);
             if (entry != null && entry.Stamp == stamp && (stamp == 0 || entry.Failed || entry.Asset != null))
             {

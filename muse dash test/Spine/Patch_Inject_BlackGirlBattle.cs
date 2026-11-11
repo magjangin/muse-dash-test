@@ -11,7 +11,7 @@ namespace muse_dash_test
     // (원래 spine skin 모드에서 이식: 주입 기능만 가져옴)
     internal static class InjectHelper
     {
-        // GameObject 이름 -> skin test 폴더의 파일 베이스 이름({baseName}.png/.atlas/.json)
+        // GameObject 이름 -> skin test/character 폴더의 파일 베이스 이름({baseName}.png/.atlas/.json)
         private static readonly Dictionary<string, string> TargetToBaseName = new Dictionary<string, string>
         {
             { "black_girl_battle(Clone)", "char_3_black" },

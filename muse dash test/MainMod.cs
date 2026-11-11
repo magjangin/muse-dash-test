@@ -73,16 +73,18 @@ namespace muse_dash_test
                 EmbeddedResource.EnsureTagIcon(hwaTagImageFolderPath);
             }, maxConsecutiveFailures: 0);
 
-            // skin test 폴더 + 세트별 하위 폴더 생성 (커스텀 Spine 스킨 주입용 원본 파일 위치)
-            // 예: skin test/char_3_black/char_3_black.png/.atlas/.json 세트를 두면 black_girl_battle에 주입됨
+            // skin test 폴더 + 종류별(character/·note/) 폴더 생성 (커스텀 Spine 스킨 주입용 원본 파일 위치)
+            // 예: skin test/character/char_3_black/char_3_black.png/.atlas/.json 세트를 두면 black_girl_battle에 주입됨
+            //     skin test/note/0411_road/0411_road.png/.atlas/.json 세트를 두면 0411_road 스켈레톤 노트에 주입됨
             FeatureGuard.Run("Init.SpineSkinFolder", () =>
             {
                 CustomSkinInjector.EnsureSetFolders();
                 ModLogger.Msg($"skin test 폴더를 확인/생성했습니다: {CustomSkinInjector.SkinTestDirectory}");
                 foreach (var baseName in CustomSkinInjector.KnownBaseNames)
                 {
-                    ModLogger.Msg($"  - 세트 폴더: {CustomSkinInjector.GetSetDirectory(baseName)}");
+                    ModLogger.Msg($"  - 캐릭터 세트 폴더: {CustomSkinInjector.GetSetDirectory(SkinKind.Character, baseName)}");
                 }
+                ModLogger.Msg($"  - 노트 세트 폴더: {SkinFolderRules.KindDirectory(CustomSkinInjector.SkinTestDirectory, SkinKind.Note)}/{{원본 스켈레톤 이름}}");
             }, maxConsecutiveFailures: 0);
 
             // hwa 매니페스트 사전 로드

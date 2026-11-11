@@ -8,29 +8,48 @@ using UnityEngine;
 
 namespace muse_dash_test
 {
-    // "skin test" 폴더의 {baseName}.png/.atlas/.json 세트로부터
+    // "skin test/character" 폴더의 {baseName}.png/.atlas/.json 세트로부터
     // 커스텀 SkeletonDataAsset을 만들어서 baseName별로 캐싱한다.
     // (원래 spine skin 모드에서 이식: 진단용 코드는 제외하고 주입 기능만 가져옴)
     public static class CustomSkinInjector
     {
         // 커스텀 스킨 원본 파일을 두는 루트 폴더. 게임 루트의 "skin test".
-        // 실제 파일은 세트별 하위 폴더에 둔다: skin test/{baseName}/{baseName}.png/.atlas/.json
+        // 종류별로 나눠 둔다: skin test/character/{baseName}/, skin test/note/{baseName}/ (규칙은 SkinFolderRules)
         public static readonly string SkinTestDirectory =
             Path.Combine(MelonEnvironment.GameRootDirectory, "skin test");
 
-        // 모드가 자동 생성해줄 세트 목록. InjectHelper.TargetToBaseName의 값과 일치해야 한다.
+        // 모드가 자동 생성해줄 캐릭터 세트 목록. InjectHelper.TargetToBaseName의 값과 일치해야 한다.
         public static readonly string[] KnownBaseNames = { "char_3_black", "char_1_sleepy", "char_1_rock", "char_1_rampage", "char_3_violin" };
 
-        // 특정 세트의 원본 파일이 들어가는 하위 폴더 경로.
-        public static string GetSetDirectory(string baseName) => Path.Combine(SkinTestDirectory, baseName);
+        // 옛 배치(skin test/{baseName}/)에서 읽었다고 알린 세트. 세트마다 한 번만 알린다.
+        private static readonly HashSet<string> WarnedLegacy = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // skin test 루트 + 알려진 모든 세트 하위 폴더를 생성한다(이미 있으면 건너뜀).
+        /// <summary>
+        /// 실제로 읽을 세트 폴더입니다. 새 배치(<c>skin test/{character|note}/{세트}</c>)를 먼저 보고, 없으면 옛 배치(<c>skin test/{세트}</c>)를 봅니다.
+        /// 옛 배치를 쓰면 세트마다 한 번 옮기라고 알립니다.
+        /// </summary>
+        public static string GetSetDirectory(SkinKind kind, string baseName)
+        {
+            string dir = SkinFolderRules.ResolveSetDirectory(SkinTestDirectory, kind, baseName, File.Exists, out bool usedLegacy);
+            if (usedLegacy && WarnedLegacy.Add(kind + "|" + baseName))
+            {
+                ModLogger.Msg($"[CustomSkinInjector] {baseName}: 옛 위치({dir})에서 읽었습니다. " +
+                              $"{SkinFolderRules.PreferredSetDirectory(SkinTestDirectory, kind, baseName)}로 옮기면 정리됩니다.");
+            }
+            return dir;
+        }
+
+        // skin test 루트 + character/·note/ + 알려진 캐릭터 세트 하위 폴더를 생성한다(이미 있으면 건너뜀).
         public static void EnsureSetFolders()
         {
             Directory.CreateDirectory(SkinTestDirectory);
+            Directory.CreateDirectory(SkinFolderRules.KindDirectory(SkinTestDirectory, SkinKind.Character));
+            Directory.CreateDirectory(SkinFolderRules.KindDirectory(SkinTestDirectory, SkinKind.Note));
             foreach (var baseName in KnownBaseNames)
             {
-                Directory.CreateDirectory(GetSetDirectory(baseName));
+                // 옛 위치에 이미 세트가 있으면 새 빈 폴더를 만들지 않는다(같은 세트 폴더가 두 군데 보이면 헷갈린다).
+                if (Directory.Exists(SkinFolderRules.LegacySetDirectory(SkinTestDirectory, baseName))) continue;
+                Directory.CreateDirectory(SkinFolderRules.PreferredSetDirectory(SkinTestDirectory, SkinKind.Character, baseName));
             }
         }
 
@@ -54,7 +73,7 @@ namespace muse_dash_test
             if (Cache.TryGetValue(baseName, out var existing) && existing != null)
                 return existing;
 
-            var dir = GetSetDirectory(baseName);
+            var dir = GetSetDirectory(SkinKind.Character, baseName);
             var skeletonDataAsset = BuildAsset(
                 baseName,
                 Path.Combine(dir, baseName + ".png"),
