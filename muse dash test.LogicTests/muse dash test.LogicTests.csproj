@@ -27,5 +27,6 @@
     <Compile Include="..\muse dash test\Core\FileStampCache.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\AtomicFile.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\TextNormalizer.cs" Link="UnderTest\%(Filename)%(Extension)" />
+    <Compile Include="..\muse dash test\Spine\NoteSkinRules.cs" Link="UnderTest\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

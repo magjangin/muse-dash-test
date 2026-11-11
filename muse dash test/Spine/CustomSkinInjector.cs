@@ -43,20 +43,32 @@ namespace muse_dash_test
             if (Cache.TryGetValue(baseName, out var existing) && existing != null)
                 return existing;
 
+            var dir = GetSetDirectory(baseName);
+            var skeletonDataAsset = BuildAsset(
+                baseName,
+                Path.Combine(dir, baseName + ".png"),
+                Path.Combine(dir, baseName + ".atlas"),
+                Path.Combine(dir, baseName + ".json"),
+                0.01f);
+            if (skeletonDataAsset != null) Cache[baseName] = skeletonDataAsset;
+            return skeletonDataAsset;
+        }
+
+        /// <summary>
+        /// png·atlas·json 세 파일로 런타임 <see cref="SkeletonDataAsset"/>을 만듭니다. 캐시하지 않으므로 호출자가 보관합니다.
+        /// 파일이 없거나 만들지 못하면 null입니다. 캐릭터 스킨(scale 0.01)과 노트 스킨(원본 에셋의 scale)이 같이 씁니다.
+        /// </summary>
+        public static SkeletonDataAsset BuildAsset(string label, string pngPath, string atlasPath, string jsonPath, float scale)
+        {
             try
             {
-                var dir = GetSetDirectory(baseName);
-                var pngPath = Path.Combine(dir, baseName + ".png");
-                var atlasPath = Path.Combine(dir, baseName + ".atlas");
-                var jsonPath = Path.Combine(dir, baseName + ".json");
-
                 if (!File.Exists(pngPath) || !File.Exists(atlasPath) || !File.Exists(jsonPath))
                 {
-                    ModLogger.Msg($"[CustomSkinInjector] {baseName} 파일이 없습니다: {dir}");
+                    ModLogger.Msg($"[CustomSkinInjector] {label} 파일이 없습니다: {Path.GetDirectoryName(jsonPath)}");
                     return null;
                 }
 
-                if (CheckObfuscatedJson(jsonPath, baseName, out string warningMsg))
+                if (CheckObfuscatedJson(jsonPath, label, out string warningMsg))
                 {
                     string banner = string.Format(
                         "\n================================================================================\n" +
@@ -69,14 +81,14 @@ namespace muse_dash_test
                         "  💡 안내: 해당 .json 파일이 암호화/난독화되어 있거나, .skel 바이너리를 확장자만\n" +
                         "     .json으로 변경한 파일입니다. 순정 Spine 파서 로드가 불가능합니다.\n" +
                         "================================================================================\n",
-                        baseName, jsonPath, warningMsg);
+                        label, jsonPath, warningMsg);
 
                     ModLogger.Error(banner);
                 }
 
                 var pngBytes = File.ReadAllBytes(pngPath);
                 var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                texture.name = baseName;
+                texture.name = label;
                 ImageConversion.LoadImage(texture, pngBytes);
                 texture.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
@@ -94,10 +106,10 @@ namespace muse_dash_test
                 var skeletonTextAsset = new TextAsset(jsonText);
                 skeletonTextAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-                var skeletonDataAsset = SkeletonDataAsset.CreateRuntimeInstance(skeletonTextAsset, atlasAsset, true, 0.01f);
+                var skeletonDataAsset = SkeletonDataAsset.CreateRuntimeInstance(skeletonTextAsset, atlasAsset, true, scale);
                 if (skeletonDataAsset == null || skeletonDataAsset.GetSkeletonData(true) == null)
                 {
-                    ModLogger.Msg($"[CustomSkinInjector] {baseName} 스켈레톤 데이터 생성 실패");
+                    ModLogger.Msg($"[CustomSkinInjector] {label} 스켈레톤 데이터 생성 실패");
                     UnityEngine.Object.Destroy(texture);
                     UnityEngine.Object.Destroy(atlasTextAsset);
                     if (atlasAsset != null) UnityEngine.Object.Destroy(atlasAsset);
@@ -107,14 +119,12 @@ namespace muse_dash_test
                 }
 
                 skeletonDataAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
-
-                Cache[baseName] = skeletonDataAsset;
-                ModLogger.Msg($"[CustomSkinInjector] {baseName} 커스텀 SkeletonDataAsset 생성 완료");
+                ModLogger.Msg($"[CustomSkinInjector] {label} 커스텀 SkeletonDataAsset 생성 완료 (scale {scale})");
                 return skeletonDataAsset;
             }
             catch (Exception ex)
             {
-                ModLogger.Error($"[CustomSkinInjector] {baseName} 예외: " + ex);
+                ModLogger.Error($"[CustomSkinInjector] {label} 예외: " + ex);
                 return null;
             }
         }

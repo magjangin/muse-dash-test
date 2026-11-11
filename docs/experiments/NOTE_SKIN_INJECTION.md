@@ -1,6 +1,6 @@
 # 노트 스킨 주입 가능성 조사
 
-> 조사만 한 문서입니다(2026-11-11). 코드는 바꾸지 않았고 인게임 실측도 아직 없습니다.
+> 조사(2026-11-11) 뒤 같은 날 `feature/note-skin` 브랜치에 구현했습니다(4절). 인게임 실측은 아직 없습니다(5절).
 > 근거는 ISIL(`GameMusicScene.PreloadGameObject`, `SpineActionController.Init`)과
 > `gamescene_05` 번들을 UnityPy로 연 결과입니다. 다른 씬 번들과 공통 번들(하트·음표 등)은 열어 보지 않았습니다.
 
@@ -80,7 +80,22 @@
 - 바이너리 `.skel`을 런타임에 읽으려면 바이트 `TextAsset`이 필요한데, Unity 2019.4에는 `byte[]` 생성자가 없습니다. **커스텀 스킨은 Spine 3.8 에디터에서 JSON으로 내보내는 것을 전제로 합니다.** 원본을 바탕으로 고치려면 에디터로 `.skel`을 가져와야 합니다(가져오기 가능 여부는 미확인).
 - 롱노트는 이 방식으로 바꿀 수 없습니다. 텍스처를 바꾸는 별도 경로가 필요합니다.
 
-## 4. 구현 스케치 (아직 코드 없음)
+## 4. 구현 (2026-11-11, 실기 미확인)
+
+처음 스케치와 달라진 점을 먼저 적습니다.
+
+- **세트는 프리팹이 아니라 원본 스켈레톤 이름으로 고릅니다.** `ska.skeletonDataAsset.name`(`0411_road_SkeletonData`)에서 꼬리를 뗀
+  `0411_road`가 곡 폴더 `note skin/0411_road.json·.atlas·.png`입니다(`NoteSkinRules`). 게임이 들고 있는 에셋 참조라
+  이름 부분 일치도, `m_MusicData` 의존도 없습니다. 에디터에서 원본을 가져와 고치면 내보낸 이름이 그대로 맞습니다.
+  한 스켈레톤을 쓰는 프리팹(속도 1·2·3 등)이 함께 바뀌고, 계약 검사는 프리팹마다 따로 합니다.
+- 하위 폴더 없이 `note skin/`에 평평하게 둡니다. 에디터 내보내기 폴더를 그대로 복사할 수 있게 하려는 것입니다.
+- 주입은 `Init` Postfix에서만 합니다. `OnControllerStart`에서 `Initialize(true)`를 부르면 재생 중 상태가 지워집니다.
+- 캐릭터·보스도 `Init`을 지나므로, 같은 규칙으로 그 스켈레톤 이름의 세트를 두면 바뀝니다(계약 검사는 똑같이 적용).
+
+코드: `Spine/NoteSkinInjector.cs`(주입), `Spine/NoteSkinRules.cs`(이름·계약 규칙, `NoteSkinRulesTests`),
+`CustomSkinInjector.BuildAsset`(캐릭터 주입기와 공유하는 세트 빌더, scale 인자). 아래는 처음 스케치입니다.
+
+### 처음 스케치
 
 1. `InjectHelper.TryInject`에 노트 경로 추가: `m_MusicData.noteData.prefab_name`(없으면 이름 앞부분) → 곡 폴더의 `note skin/{prefab_name 또는 uid}/` 세트를 찾습니다.
    커스텀 곡(`CustomPlaySession.Current.ShouldApplyExperimentChart`)에서만 켭니다. 공식 곡은 건드리지 않습니다.

@@ -64,6 +64,10 @@ namespace muse_dash_test
         {
             InjectHelper.TryInject(__instance);
 
+            // 커스텀 곡의 노트 스킨(곡 폴더 note skin/). 같은 메서드에 패치 클래스를 따로 붙이지 않고 여기에 얹습니다.
+            // OnControllerStart 쪽에는 넣지 않습니다(재생 중 Initialize가 상태를 지움). NoteSkinInjector 주석 참고.
+            NoteSkinInjector.TryInject(__instance);
+
             // 액션 계약서 프로브(읽기 전용). 주입 직후라 커스텀 스켈레톤의 애니메이션 목록이 잡힙니다.
             // 아래 OnControllerStart 쪽에도 같은 호출이 있지만, 이름 단위로 1회만 덤프하므로 중복되지 않습니다.
             SpineActionContract.DumpSupply(__instance);
