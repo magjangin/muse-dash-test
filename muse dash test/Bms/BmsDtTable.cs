@@ -30,6 +30,13 @@ namespace muse_dash_test
         private static readonly double[] HoldDt = { 1.47, 1.26, 1.10 };
         private static readonly double[] BossProjectileDt = { 0.8, 0.76, 0.6 };
 
+        // 5번 씬 발사체2·3(xx=07/08)만 비행 애니메이션이 7~8프레임 깁니다(2026-11-11, 게임 번들 프리팹 전수 조사):
+        //   다른 씬 in_boss_2_23 / 20 / 17  →  5번 씬 in_boss_2_31 / 28 / 24 (속도 1 / 2 / 3).
+        // 위 표에 그 프레임 차이(1프레임 = 1/30초)를 더한 값입니다. 속도 1의 1.07은 summertime(5번 씬)에서 실기 확인,
+        // 속도 2·3은 계산값입니다. 0.8을 그대로 쓰면 판정이 노트보다 약 0.27초 먼저 옵니다.
+        // 발사체1(xx=06)은 5번 씬도 21 / 18 / 15로 다른 씬(20 / 18 / 15)과 거의 같아 따로 두지 않습니다.
+        private static readonly double[] Scene05ProjectileDt = { 1.07, 1.03, 0.83 };
+
         // 일반 계열에서 차터가 권장표를 벗어나 고를 수 있는 범위(사용자 지정, 2026-10-25).
         // 속도 1은 범위 없이 1.48 고정입니다.
         private static readonly double[] NormalMin = { 1.48, 1.18, 0.98 };
@@ -81,8 +88,11 @@ namespace muse_dash_test
             return int.TryParse(uid.Substring(4, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out yy) && yy >= 1 && yy <= 18;
         }
 
-        /// <summary>권장 dt. 권장표에 없는 계열이면 false.</summary>
-        public static bool TryGetRecommended(DtFamily family, int speed, out double dt)
+        /// <summary>
+        /// 권장 dt. 권장표에 없는 계열이면 false.
+        /// <paramref name="uid"/>를 주면 씬마다 다른 값(5번 씬 발사체2·3)을 고릅니다. 없으면 기본 표입니다.
+        /// </summary>
+        public static bool TryGetRecommended(DtFamily family, int speed, out double dt, string uid = null)
         {
             dt = -1.0;
             if (family == DtFamily.FixedEvent)
@@ -91,7 +101,7 @@ namespace muse_dash_test
                 return true;
             }
 
-            double[] table = TableFor(family);
+            double[] table = TableFor(family, uid);
             if (table == null || speed < 1 || speed > 3) return false;
 
             dt = table[speed - 1];
@@ -103,11 +113,11 @@ namespace muse_dash_test
         /// 속도 3 = 0.98~1.28), 홀드·보스 발사체·고정 이벤트는 권장값 그대로만 허용합니다.
         /// 권장표에 없는 계열이나 dt를 적지 않은 노트(음수)는 판정하지 않고 true입니다.
         /// </summary>
-        public static bool IsAllowed(DtFamily family, int speed, double dt, out string expected)
+        public static bool IsAllowed(DtFamily family, int speed, double dt, out string expected, string uid = null)
         {
             expected = null;
             if (dt < 0.0) return true;
-            if (!TryGetRecommended(family, speed, out double recommended)) return true;
+            if (!TryGetRecommended(family, speed, out double recommended, uid)) return true;
 
             if (family == DtFamily.Normal)
             {
@@ -133,16 +143,21 @@ namespace muse_dash_test
             }
         }
 
-        private static double[] TableFor(DtFamily family)
+        private static double[] TableFor(DtFamily family, string uid)
         {
             switch (family)
             {
                 case DtFamily.Normal: return NormalDt;
                 case DtFamily.Hold: return HoldDt;
-                case DtFamily.BossProjectile: return BossProjectileDt;
+                case DtFamily.BossProjectile: return IsScene05LongProjectile(uid) ? Scene05ProjectileDt : BossProjectileDt;
                 default: return null;
             }
         }
+
+        /// <summary>5번 씬 발사체2·3(<c>0507yy</c>, <c>0508yy</c>)인지. 비행 애니메이션이 다른 씬보다 깁니다.</summary>
+        private static bool IsScene05LongProjectile(string uid)
+            => uid != null && uid.Length >= 4
+               && (uid.StartsWith("0507", StringComparison.Ordinal) || uid.StartsWith("0508", StringComparison.Ordinal));
 
         private static string Format(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     }

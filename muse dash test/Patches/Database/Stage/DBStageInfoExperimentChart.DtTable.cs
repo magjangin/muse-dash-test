@@ -28,13 +28,13 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
             if (fix)
             {
-                if (!BmsDtTable.TryGetRecommended(family, speed, out double recommended)) continue;
+                if (!BmsDtTable.TryGetRecommended(family, speed, out double recommended, spec.Uid)) continue;
                 if (System.Math.Abs(spec.Dt - recommended) > 0.0005) changed++;
                 spec.Dt = recommended;
                 continue;
             }
 
-            if (BmsDtTable.IsAllowed(family, speed, spec.Dt, out string expected)) continue;
+            if (BmsDtTable.IsAllowed(family, speed, spec.Dt, out string expected, spec.Uid)) continue;
 
             string key = $"uid={spec.Uid}, {BmsDtTable.Describe(family)} 속도 {speed}, _dt{spec.Dt:0.###} (허용 {expected})";
             offenders.TryGetValue(key, out int count);

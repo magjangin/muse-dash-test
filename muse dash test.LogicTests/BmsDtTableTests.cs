@@ -68,5 +68,29 @@ namespace muse_dash_test.LogicTests
                 Assert.Equal(expected[speed - 1], dt);
             }
         }
+
+        // 5번 씬 발사체2·3은 비행 애니메이션이 7~8프레임 길어(in_boss_2_31/28/24) 0.8을 쓰면 판정이 노트보다 먼저 옵니다.
+        // 2026-11-11 summertime에서 속도 1을 1.07로 실기 확인했습니다. 권장표로 덮어쓸 때 다시 0.8이 되면 안 됩니다.
+        public static void Scene05LongProjectilesUseTheirOwnRow()
+        {
+            foreach (string uid in new[] { "050701", "050704", "050801", "050804" })
+            {
+                Assert.True(BmsDtTable.TryGetRecommended(DtFamily.BossProjectile, 1, out double dt, uid));
+                Assert.Equal(1.07, dt);
+                Assert.True(BmsDtTable.IsAllowed(DtFamily.BossProjectile, 1, 1.07, out _, uid));
+                Assert.False(BmsDtTable.IsAllowed(DtFamily.BossProjectile, 1, 0.8, out _, uid));
+            }
+
+            Assert.True(BmsDtTable.TryGetRecommended(DtFamily.BossProjectile, 2, out double s2, "050702"));
+            Assert.Equal(1.03, s2);
+            Assert.True(BmsDtTable.TryGetRecommended(DtFamily.BossProjectile, 3, out double s3, "050806"));
+            Assert.Equal(0.83, s3);
+
+            // 5번 씬 발사체1과 다른 씬 발사체2는 기본 표 그대로입니다.
+            Assert.True(BmsDtTable.TryGetRecommended(DtFamily.BossProjectile, 1, out double p1, "050601"));
+            Assert.Equal(0.8, p1);
+            Assert.True(BmsDtTable.TryGetRecommended(DtFamily.BossProjectile, 1, out double other, "010701"));
+            Assert.Equal(0.8, other);
+        }
     }
 }
