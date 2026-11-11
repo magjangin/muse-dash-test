@@ -60,7 +60,7 @@ namespace muse_dash_test
                 Path.Combine(dir, baseName + ".png"),
                 Path.Combine(dir, baseName + ".atlas"),
                 Path.Combine(dir, baseName + ".json"),
-                0.01f);
+                0.01f); // 원본 캐릭터 0.005의 2배. 스킨 파일 좌표가 원본의 절반이라는 관행(NoteSkinRules.HalfImportFactor)과 짝입니다.
             if (skeletonDataAsset != null) Cache[baseName] = skeletonDataAsset;
             return skeletonDataAsset;
         }

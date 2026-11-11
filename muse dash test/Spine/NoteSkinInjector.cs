@@ -20,7 +20,8 @@ namespace muse_dash_test
     /// <list type="bullet">
     /// <item><b>공식 곡·커스텀 곡 모두</b>에 적용됩니다(실험 단계라 공식 곡에서 바로 확인하려는 것). 세트 폴더가 없으면 아무것도 하지 않습니다.</item>
     /// <item>캐릭터 주입기가 이미 바꾼 스켈레톤은 건드리지 않습니다.</item>
-    /// <item><c>scale</c>은 원본 에셋 값을 그대로 씁니다(씬 05 노트는 0.005, 캐릭터 주입기의 0.01과 다름).</item>
+    /// <item><c>scale</c>은 원본 에셋 값 × 2입니다(<see cref="NoteSkinRules.RuntimeScale"/>). 스킨 파일 좌표가 원본의 절반이라는
+    ///   커스텀 캐릭터 스킨의 관행(0.005 원본에 0.01 고정)을 따릅니다.</item>
     /// <item>프리팹의 <c>actionData</c>·<c>m_FeverActionData</c>가 부르는 애니메이션이 새 스켈레톤에 하나라도 없으면
     ///   <b>주입을 건너뜁니다</b>. 멈추거나 안 보이는 노트보다 원본 노트가 낫습니다.</item>
     /// <item>주입 뒤 <c>InitSkField</c>를 다시 불러 <c>m_Bones</c>가 새 스켈레톤의 본을 가리키게 합니다.</item>
@@ -73,7 +74,7 @@ namespace muse_dash_test
                 string baseName = NoteSkinRules.BaseNameFromAssetName(original.name);
                 if (baseName == null) return;
 
-                var custom = GetOrBuild(CustomSkinInjector.GetSetDirectory(baseName), baseName, original.scale);
+                var custom = GetOrBuild(CustomSkinInjector.GetSetDirectory(baseName), baseName, NoteSkinRules.RuntimeScale(original.scale));
                 if (custom == null) return;
 
                 var skeletonData = custom.GetSkeletonData(true);

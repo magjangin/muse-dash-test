@@ -21,6 +21,17 @@ namespace muse_dash_test
         private const string SkeletonDataSuffix = "_SkeletonData";
 
         /// <summary>
+        /// 스킨 파일 좌표가 원본의 몇 분의 1인지에 대한 관행값입니다. 커스텀 캐릭터 스킨과 같은 관행을 따릅니다.
+        /// <para>원본 <c>.skel</c>을 Spine 에디터로 가져오는 작업 흐름에서 좌표가 정확히 절반이 됩니다
+        /// (2026-11-11 실측: 원본 <c>0411_road.skel</c>의 뼈대 위치 대비 스킨 JSON이 모든 뼈대에서 ½).
+        /// 캐릭터 주입기는 원본 0.005의 2배인 0.01로 고정해 이것을 맞춰 왔으므로, 노트도 원본 배율에 2를 곱합니다.</para>
+        /// </summary>
+        public const float HalfImportFactor = 2f;
+
+        /// <summary>커스텀 스킨을 만들 때 쓸 배율입니다. 원본 에셋 배율 × <see cref="HalfImportFactor"/> (씬 04·05 노트: 0.005 → 0.01).</summary>
+        public static float RuntimeScale(float originalScale) => originalScale * HalfImportFactor;
+
+        /// <summary>
         /// 원본 <c>SkeletonDataAsset</c> 이름에서 세트 이름을 얻습니다. <c>0411_road_SkeletonData</c> → <c>0411_road</c>.
         /// 꼬리가 없으면 이름 그대로입니다. 비어 있으면 null입니다.
         /// </summary>

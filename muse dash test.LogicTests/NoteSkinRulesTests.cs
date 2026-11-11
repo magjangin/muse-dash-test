@@ -60,6 +60,13 @@ namespace muse_dash_test.LogicTests
             Assert.Equal("page", NoteSkinRules.AtlasTextureName("﻿page.png\n", "fb"));
         }
 
+        public static void RuntimeScale_DoublesOriginalLikeCharacterSkins()
+        {
+            // 커스텀 캐릭터 스킨은 원본 0.005에 0.01 고정으로 맞춰 왔습니다. 노트도 같은 관행이어야 같은 작업 흐름의 스킨이 원래 크기로 나옵니다.
+            Assert.Equal(0.01f, NoteSkinRules.RuntimeScale(0.005f));
+            Assert.Equal(0.02f, NoteSkinRules.RuntimeScale(0.01f));
+        }
+
         public static void MissingAnimations_ListsOnlyAbsentNamesOnceInOrder()
         {
             var have = new HashSet<string> { "in_nor_44", "out_g" };
