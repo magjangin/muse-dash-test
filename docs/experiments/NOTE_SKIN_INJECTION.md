@@ -92,6 +92,11 @@
   빠르다는 판단으로 같은 날 `skin test/`로 옮겼습니다. 곡별 적용은 실측 뒤 다시 정합니다.
   `gamescene_04` 번들에 `0411_road_SkeletonData`·`0411_air_SkeletonData`(scale 0.005)가 있는 것을 UnityPy로 확인했습니다.
 - 캐릭터 주입기가 이미 바꾼 스켈레톤(`CustomSkinInjector.IsCachedAsset`)은 건드리지 않습니다.
+- **첫 실측(2026-11-11, 씬 04 공식 곡 `0-18`)**: 세트는 제대로 찾았으나 아틀라스 생성이
+  `Could not find matching atlas page in the texture array`로 실패했습니다. `SpineAtlasAsset.CreateRuntimeInstance`는
+  아틀라스 페이지 줄(`0411_road.png`)을 `Texture2D.name`으로 찾는데, 텍스처 이름을 로그용 `note:0411_road`로 줬기 때문입니다.
+  이제 텍스처 이름은 아틀라스 첫 페이지 줄에서 얻습니다(`NoteSkinRules.AtlasTextureName`). 만들기에 실패한 세트는
+  같은 파일로 다시 시도하지 않습니다(노트마다 예외 로그가 쌓이지 않게).
 - 주입은 `Init` Postfix에서만 합니다. `OnControllerStart`에서 `Initialize(true)`를 부르면 재생 중 상태가 지워집니다.
 - 캐릭터·보스도 `Init`을 지나므로, 같은 규칙으로 그 스켈레톤 이름의 세트를 두면 바뀝니다(계약 검사는 똑같이 적용).
 

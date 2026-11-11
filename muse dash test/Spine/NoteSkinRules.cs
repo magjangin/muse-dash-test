@@ -42,6 +42,32 @@ namespace muse_dash_test
             return name;
         }
 
+        /// <summary>
+        /// 아틀라스 첫 페이지의 텍스처 이름(확장자 제외)입니다. 첫 번째 비어 있지 않은 줄이 페이지 파일 이름입니다.
+        /// <c>SpineAtlasAsset.CreateRuntimeInstance</c>는 페이지를 <c>Texture2D.name</c>으로 찾으므로, 텍스처 이름을 이 값으로 맞춰야 합니다.
+        /// 다르면 "Could not find matching atlas page in the texture array"로 실패합니다(2026-11-11 실측: 이름을 <c>note:0411_road</c>로 줘서 실패).
+        /// 페이지 줄을 찾지 못하면 <paramref name="fallback"/>입니다.
+        /// </summary>
+        public static string AtlasTextureName(string atlasText, string fallback)
+        {
+            if (string.IsNullOrEmpty(atlasText)) return fallback;
+
+            using (var reader = new StringReader(atlasText))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string trimmed = line.Trim().TrimStart((char)0xFEFF);
+                    if (trimmed.Length == 0) continue;
+                    if (trimmed.IndexOf(':') >= 0) return fallback; // 페이지 이름 없이 속성 줄부터 나오면 형식이 다릅니다.
+                    string name = Path.GetFileNameWithoutExtension(trimmed);
+                    return string.IsNullOrEmpty(name) ? fallback : name;
+                }
+            }
+
+            return fallback;
+        }
+
         /// <summary>세트 파일 세 개의 경로입니다(존재 여부는 보지 않습니다).</summary>
         public static void GetSetPaths(string skinDir, string baseName, out string png, out string atlas, out string json)
         {

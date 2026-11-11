@@ -38,6 +38,28 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(Path.Combine(dir, "0411_road.json"), json);
         }
 
+        public static void AtlasTextureName_UsesFirstPageLineWithoutExtension()
+        {
+            // Spine 3.8 에디터가 내보낸 아틀라스는 빈 줄로 시작합니다(0411_road.atlas 실물과 같은 모양).
+            string atlas = "\n0411_road.png\nsize: 162,144\nformat: RGBA8888\nfilter: Linear,Linear\nrepeat: none\n0411/images_road/fire1\n  rotate: false\n";
+            Assert.Equal("0411_road", NoteSkinRules.AtlasTextureName(atlas, "fallback"));
+            Assert.Equal("char_1_rock", NoteSkinRules.AtlasTextureName("\r\nchar_1_rock.png\r\nsize: 1621,528\r\n", "x"));
+        }
+
+        public static void AtlasTextureName_FollowsPageLineEvenIfPngFileWasRenamed()
+        {
+            // 파일 이름만 바꾸고 아틀라스 첫 줄을 안 고쳤다면 페이지 이름이 맞아야 아틀라스가 만들어집니다.
+            Assert.Equal("old_name", NoteSkinRules.AtlasTextureName("old_name.png\nsize: 2,2\n", "new_name"));
+        }
+
+        public static void AtlasTextureName_FallsBackWhenNoPageLine()
+        {
+            Assert.Equal("fb", NoteSkinRules.AtlasTextureName(null, "fb"));
+            Assert.Equal("fb", NoteSkinRules.AtlasTextureName("\n\n", "fb"));
+            Assert.Equal("fb", NoteSkinRules.AtlasTextureName("size: 2,2\n", "fb"));
+            Assert.Equal("page", NoteSkinRules.AtlasTextureName("﻿page.png\n", "fb"));
+        }
+
         public static void MissingAnimations_ListsOnlyAbsentNamesOnceInOrder()
         {
             var have = new HashSet<string> { "in_nor_44", "out_g" };

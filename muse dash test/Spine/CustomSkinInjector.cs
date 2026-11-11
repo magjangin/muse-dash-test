@@ -97,13 +97,15 @@ namespace muse_dash_test
                     ModLogger.Error(banner);
                 }
 
+                var atlasText = File.ReadAllText(atlasPath);
+
                 var pngBytes = File.ReadAllBytes(pngPath);
                 var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                texture.name = label;
+                // 아틀라스 페이지는 텍스처 이름으로 찾으므로 페이지 줄(0411_road.png → 0411_road)에 맞춥니다.
+                texture.name = NoteSkinRules.AtlasTextureName(atlasText, Path.GetFileNameWithoutExtension(pngPath));
                 ImageConversion.LoadImage(texture, pngBytes);
                 texture.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-                var atlasText = File.ReadAllText(atlasPath);
                 var atlasTextAsset = new TextAsset(atlasText);
                 atlasTextAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 

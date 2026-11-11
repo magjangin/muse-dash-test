@@ -38,6 +38,8 @@ namespace muse_dash_test
         {
             public SkeletonDataAsset Asset;
             public long Stamp;
+            /// <summary>파일은 있었지만 만들지 못했음. 같은 파일로 다시 만들지 않습니다(노트마다 예외 로그가 쌓이지 않게).</summary>
+            public bool Failed;
             public float CheckedAt;
         }
 
@@ -123,7 +125,7 @@ namespace muse_dash_test
             }
 
             long stamp = ReadStamp(png, atlas, json);
-            if (entry != null && entry.Stamp == stamp && (stamp == 0 || entry.Asset != null))
+            if (entry != null && entry.Stamp == stamp && (stamp == 0 || entry.Failed || entry.Asset != null))
             {
                 entry.CheckedAt = now;
                 return entry.Asset;
@@ -146,7 +148,7 @@ namespace muse_dash_test
                 if (asset != null) OwnAssets.Add(asset.Pointer);
             }
 
-            Sets[key] = new SetEntry { Asset = asset, Stamp = stamp, CheckedAt = now };
+            Sets[key] = new SetEntry { Asset = asset, Stamp = stamp, CheckedAt = now, Failed = stamp != 0 && asset == null };
             return asset;
         }
 
