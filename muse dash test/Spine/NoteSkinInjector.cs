@@ -18,7 +18,9 @@ namespace muse_dash_test
     ///
     /// <para><b>무엇을 지키나</b>
     /// <list type="bullet">
-    /// <item><b>공식 곡·커스텀 곡 모두</b>에 적용됩니다(실험 단계라 공식 곡에서 바로 확인하려는 것). 세트 폴더가 없으면 아무것도 하지 않습니다.</item>
+    /// <item><b>크리스마스 곡에만</b> 적용됩니다: info.txt에 '크리스마스 … = 활성화'(<see cref="HwaManifest.ChristmasScene"/>)를 둔 커스텀 곡,
+    ///   또는 <see cref="ModConfig.ForceChristmas"/>를 켠 때. 판정은 크리스마스 배경·보스와 같은 <see cref="ChristmasFestival.ShouldForceForCurrentSong"/>입니다.
+    ///   그 밖의 곡(공식 곡 포함)은 원본 노트 그대로입니다. 세트 폴더가 없어도 아무것도 하지 않습니다.</item>
     /// <item>캐릭터 주입기가 이미 바꾼 스켈레톤은 건드리지 않습니다.</item>
     /// <item><c>scale</c>은 원본 에셋 값 × 2입니다(<see cref="NoteSkinRules.RuntimeScale"/>). 스킨 파일 좌표가 원본의 절반이라는
     ///   커스텀 캐릭터 스킨의 관행(0.005 원본에 0.01 고정)을 따릅니다.</item>
@@ -57,6 +59,12 @@ namespace muse_dash_test
 
         private static int injectedCount;
 
+        // 지금 곡이 크리스마스 곡인지. Init은 노트 수만큼 불리므로 RevalidateSeconds 동안 판정을 재사용합니다.
+        // 노트 Init은 곡 로딩 중에만 몰려 오고, 곡을 바꾸려면 그보다 훨씬 오래 걸리므로 이전 곡 판정이 섞이지 않습니다.
+        private static bool christmasGate;
+        private static float christmasGateCheckedAt = float.NegativeInfinity;
+        private static string lastGateLog;
+
         public static void TryInject(SpineActionController sac)
         {
             if (!ModConfig.EnableSpineSkin) return;
@@ -64,6 +72,8 @@ namespace muse_dash_test
 
             try
             {
+                if (!IsChristmasSong()) return;
+
                 var ska = sac.skeletonAnimation;
                 if (ska == null) return;
 
@@ -112,6 +122,27 @@ namespace muse_dash_test
             {
                 ModLogger.Warning($"[NoteSkin] 주입 예외: {ex.Message}");
             }
+        }
+
+        /// <summary>노트 스킨을 씌울 곡인지(크리스마스 곡). 판정 결과가 바뀔 때만 로그를 남깁니다.</summary>
+        private static bool IsChristmasSong()
+        {
+            float now = Time.realtimeSinceStartup;
+            if (now - christmasGateCheckedAt < RevalidateSeconds) return christmasGate;
+
+            christmasGate = ChristmasFestival.ShouldForceForCurrentSong(out string reason);
+            christmasGateCheckedAt = now;
+
+            string log = christmasGate
+                ? $"[NoteSkin] 크리스마스 곡이라 노트 스킨을 씌웁니다 ({reason})"
+                : "[NoteSkin] 크리스마스 곡이 아니라 노트 스킨을 쓰지 않습니다";
+            if (log != lastGateLog)
+            {
+                lastGateLog = log;
+                ModLogger.Msg(log);
+            }
+
+            return christmasGate;
         }
 
         private static SkeletonDataAsset GetOrBuild(string baseName, float scale)

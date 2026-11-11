@@ -68,7 +68,9 @@ H:\muse dash hwa\skin test\
 | 캐릭터 | `char_3_black`, `char_1_sleepy`, `char_1_rock`, `char_1_rampage`, `char_3_violin` (코드에 고정) | 해당 캐릭터의 배틀 오브젝트와 고스트(그림자 제외) |
 | 노트 | **원본 스켈레톤 이름**. 게임의 `0411_road_SkeletonData`면 `0411_road` | 그 스켈레톤을 쓰는 모든 노트 프리팹(속도 1·2·3 등) |
 
-- 노트 스킨은 지금 **공식 곡·커스텀 곡 모두**에 적용됩니다(실험 단계, `feature/note-skin`).
+- 노트 스킨은 **크리스마스 곡에만** 적용됩니다: `info.txt`에 `크리스마스 … = 활성화`(또는 `true`)를 둔 커스텀 곡, 또는 MelonPreferences `ForceChristmas`를 켠 때.
+  그 밖의 곡(공식 곡 포함)은 원본 노트입니다. 로그 `[NoteSkin] 크리스마스 곡이라 노트 스킨을 씌웁니다`로 확인합니다(2026-11-11 변경, 그전엔 모든 곡).
+  캐릭터 스킨은 이 조건과 상관없이 모든 곡에 적용됩니다.
 - 켜고 끄기는 MelonPreferences의 `EnableSpineSkin` 하나입니다.
 - 게임 실행 중에 노트 스킨 파일을 고치면 다음 곡을 로딩할 때 다시 읽습니다. 캐릭터 스킨은 게임을 다시 켜야 합니다.
 

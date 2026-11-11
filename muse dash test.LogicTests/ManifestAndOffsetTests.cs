@@ -29,7 +29,7 @@ namespace muse_dash_test.LogicTests
 
         public static void ChristmasSceneOptionParsesWithoutStealingOtherKeys()
         {
-            foreach (string alias in new[] { "크리스마스 배경", "크리스마스", "christmas scene", "xmas" })
+            foreach (string alias in new[] { "크리스마스 배경", "크리스마스", "크리스마스 활성화", "christmas scene", "xmas" })
             {
                 var manifest = new HwaManifest();
                 Assert.True(HwaManifestLoader.TryParseManifestLine($"{alias} = 활성화", out var key, out var value));
@@ -37,6 +37,12 @@ namespace muse_dash_test.LogicTests
                 Assert.Equal(true, manifest.ChristmasScene);
                 Assert.Equal(null, manifest.Scene);
             }
+
+            // 실제 사용 중인 info.txt 줄(2026-11-11): 값이 true여도 켜집니다. 노트 스킨도 이 값으로 곡을 고릅니다.
+            var userLine = new HwaManifest();
+            Assert.True(HwaManifestLoader.TryParseManifestLine("크리스마스 활성화 = true", out var userKey, out var userValue));
+            HwaManifestLoader.ApplyManifestValue(userLine, userKey, userValue);
+            Assert.Equal(true, userLine.ChristmasScene);
 
             var off = new HwaManifest();
             HwaManifestLoader.ApplyManifestValue(off, "크리스마스 배경", "비활성화");

@@ -168,8 +168,8 @@ dt를 권장 표로 고치기 = 활성화
 
 | 방법 | 범위 | 바꾸는 것 |
 | --- | --- | --- |
-| `info.txt`의 `크리스마스 배경 = 활성화` | 그 커스텀 곡만 | 5번 씬 배경, 5번 보스 |
-| MelonPreferences `ForceChristmas = true` (`UserData/MelonPreferences.cfg`의 `[muse-dash-custom-chart-features]`) | 공식 곡을 포함한 게임 전체 | 위 둘 + `BattleHelper.isChristmas`를 쓰는 곳 전부(`GameInit.SpecialLogic`, `ItemManager.ChristmasItemLogic`, `MainManager.InitLoading`) |
+| `info.txt`의 `크리스마스 배경 = 활성화` | 그 커스텀 곡만 | 5번 씬 배경, 5번 보스, 노트 스킨(`skin test/note/`) |
+| MelonPreferences `ForceChristmas = true` (`UserData/MelonPreferences.cfg`의 `[muse-dash-custom-chart-features]`) | 공식 곡을 포함한 게임 전체 | 위 셋 + `BattleHelper.isChristmas`를 쓰는 곳 전부(`GameInit.SpecialLogic`, `ItemManager.ChristmasItemLogic`, `MainManager.InitLoading`) |
 
 `ForceChristmas`는 12월 24일 전에 크리스마스 연출을 실기로 확인하려고 만든 테스트용 설정이라 기본은 꺼짐입니다. 곡 옵션이 `isChristmas`를 건드리지 않는 것은, 아이템·로딩 화면처럼 곡과 무관한 곳까지 바뀌기 때문입니다.
 
@@ -246,7 +246,7 @@ BMS 차트 프로그램(BMSE 등)에서 `#WAVxx` 영역에 지정할 파일명�
 > 제작법과 **배율 관행**은 [CUSTOM_SKIN_GUIDE.md](CUSTOM_SKIN_GUIDE.md)가 기준 문서입니다. 아래는 요약입니다.
 
 - **위치**: 게임 루트의 `skin test/note/{이름}/` 폴더. 캐릭터 스킨은 `skin test/character/{이름}/`입니다(옛 배치 `skin test/{이름}/`도 읽음).
-  지금은 실험 단계라 **공식 곡·커스텀 곡 모두**에 적용됩니다. 곡 폴더 단위 적용은 아직 없습니다.
+  **크리스마스를 켠 곡에만** 적용됩니다(`크리스마스 배경 = 활성화`, 아래 "크리스마스 배경" 표). 공식 곡과 크리스마스를 켜지 않은 곡은 원본 노트입니다.
 - **파일**: Spine 3.8 에디터에서 **JSON**으로 내보낸 `{이름}.json`·`{이름}.atlas`·`{이름}.png` 세 개. 바이너리 `.skel`은 읽지 못합니다.
 - **이름**: **바꿀 원본 스켈레톤 이름**과 같아야 합니다. 게임의 `0411_road_SkeletonData`(씬 04 번들)를 바꾸려면
   `skin test/note/0411_road/0411_road.*`입니다. 원본을 에디터로 가져와 고쳤다면 스켈레톤 이름이 이미 같으니 내보낸 파일을 그대로 넣으면 됩니다.
