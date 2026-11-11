@@ -1,6 +1,7 @@
 # 노트 스킨 주입 가능성 조사
 
-> 조사(2026-11-11) 뒤 같은 날 `feature/note-skin` 브랜치에 구현했습니다(4절). 인게임 실측은 아직 없습니다(5절).
+> 조사(2026-11-11) 뒤 같은 날 `feature/note-skin` 브랜치에 구현했고, 씬 04 공식 곡(`0-18`)에서 `0411_road`·`0411_air` 스킨이
+> 원래 크기로 나오는 것을 실기 확인했습니다. 제작법과 배율 관행은 [CUSTOM_SKIN_GUIDE.md](../guides/CUSTOM_SKIN_GUIDE.md).
 > 근거는 ISIL(`GameMusicScene.PreloadGameObject`, `SpineActionController.Init`)과
 > `gamescene_05` 번들을 UnityPy로 연 결과입니다. 다른 씬 번들과 공통 번들(하트·음표 등)은 열어 보지 않았습니다.
 

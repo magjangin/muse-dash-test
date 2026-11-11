@@ -11,7 +11,7 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-11-10 (v0.12.2 릴리즈: 커스텀 차트 연타 씬 전환 시 보스 비활성화/증발 버그 수정, 씬 재로드 후 파괴된 패널 캐시로 인한 커스텀 메뉴 BGM 취소 및 원곡 덮어쓰기 복구, 단위 테스트 146개 통과 및 실기 검증 완료)
+마지막 갱신: 2026-11-11 (`feature/note-skin`: 노트 Spine 스킨 주입 구현, 씬 04 공식 곡에서 실기 확인. 스킨 배율 관행 문서화. 직전 릴리즈는 v0.12.2)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB). 의사코드가 필요하면 `H:\source\repos\rea-hwa\tools\pe_slice.py --dll "H:/muse dash hwa/GameAssembly.dll" --rva <RVA> --out <조각.dll>`로 함수만 잘라 REA `open_binary`(`provider_id: "ghidra"`) → `procedure_pseudo_code`로 봅니다(`GameAssembly.dll` 통째로 열면 시간 초과).
@@ -24,8 +24,9 @@
    - 커스텀 곡 정확도는 `AccuracyCalculator`가 덮어씁니다: (PERFECT + GREAT/2 + 기어 통과 + 하트 `m_EnergyCount` + 음표 `m_MusicCount`) / 전체.
    - 씬 배경 스왑은 `StageBattleComponent.IsIgnoreCurrentNoteChecking(string)`과 `GameMusicScene.IsIgnoreCurrentNoteChecking(int, string)`을 `true`로 패치하여 `LoadMusicData`가 배경 목록(`curSceneChangeType`)만 등록하고 노트 정체(`noteData`/`configData.note_uid`)는 덮어쓰지 못하게 차단합니다(`musicList` 무변형 유지, [SCENE_BACKGROUND_SWAP.md](docs/experiments/SCENE_BACKGROUND_SWAP.md)).
    - 강제 퍼펙트는 판정표(`m_TimeNodeOrders`)의 `result`만 그레이트·쿨에서 퍼펙트로 올리고 `isPerfectNode`는 건드리지 않습니다. 게임은 이 값을 "정확한 시각" 표시로 쓰고, 홀드 꼬리에서는 `LongPressController.OnControllerHit` → `TouchEndResult`가 `isPerfectNode`/`isRight` 칸에서 홀드를 끝냅니다. 게임의 퍼펙트 계열 스킬도 같은 방식입니다(`BlackSkill`은 `BattleProperty.hitRangeAddValue`로 범위만 넓히고 `TimeNodeOrderFactory.RangeFixed`가 칸 생성 전에 반영, `RampageSkill` 등은 `TouchResult`에서 결과 값만 변경).
+   - 커스텀 Spine 스킨(캐릭터·노트)은 **스킨 파일 좌표가 원본의 ½이고 모드가 원본 `scale` × 2로 읽는** 짝으로 맞춥니다. 게임 원본은 캐릭터·노트 모두 0.005이고 캐릭터 주입기는 0.01 고정, 노트는 `NoteSkinRules.RuntimeScale`입니다. 원본 `.skel`을 Spine으로 가져오는 사용자 작업 흐름에서 좌표가 ½이 되기 때문입니다. 노트 스킨은 `skin test/{원본 스켈레톤 이름}/`에서 원본 `SkeletonDataAsset` 이름(`0411_road_SkeletonData` → `0411_road`)으로 고르고, 프리팹 `actionData`가 부르는 애니메이션이 하나라도 없으면 그 노트는 건너뜁니다([CUSTOM_SKIN_GUIDE.md](docs/guides/CUSTOM_SKIN_GUIDE.md)). 브랜치 단계라 공식 곡에도 적용됩니다.
    - 프레임 드랍 직후 늦게 스폰된 Spine 노트는 엔진의 `FixSpineAnim`이 `Animator`만 앞당기고 `SkeletonAnimation`을 빠뜨려 오른쪽에 뒤처지므로, `SpineActionController.PlayByKey`("in")에서 `currentAnimationTime = timeFromMusicStart - showTick`으로 즉시 보정합니다(`NoteAnimationSyncPatch.cs`).
-4. **핵심 훅**: `DBStageInfo.SetRuntimeMusicData`(BMS → `MusicData` 주입, `DBStageInfoExperimentChart*.cs`), `StageBattleComponent.GetMusicDataFromStageInfo`(숙주에 없는 난이도의 차트 에셋 대체, `StageBattleComponentPatch.cs`), `StageBattleComponent.IsIgnoreCurrentNoteChecking` / `GameMusicScene.IsIgnoreCurrentNoteChecking`(씬 스왑 노트 무변형 보호), `SpineActionController.PlayByKey`(고스트 알파 고정 + 스폰 지연 위치 보정), `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` / `MusicInfo.GetLocal`(제목), `TaskStageTarget.GetAccuracy*`(정확도), `GameTouchPlay.TouchResult` / `StageBattleComponent.InitTimeNodeOrder`(강제 퍼펙트).
+4. **핵심 훅**: `DBStageInfo.SetRuntimeMusicData`(BMS → `MusicData` 주입, `DBStageInfoExperimentChart*.cs`), `StageBattleComponent.GetMusicDataFromStageInfo`(숙주에 없는 난이도의 차트 에셋 대체, `StageBattleComponentPatch.cs`), `StageBattleComponent.IsIgnoreCurrentNoteChecking` / `GameMusicScene.IsIgnoreCurrentNoteChecking`(씬 스왑 노트 무변형 보호), `SpineActionController.PlayByKey`(고스트 알파 고정 + 스폰 지연 위치 보정), `SpineActionController.Init` Postfix(캐릭터·노트 스킨 주입, `Patch_Inject_BlackGirlBattle.cs` → `NoteSkinInjector`; 노트는 `OnControllerStart`에서 다시 주입하지 않음), `DBConfigLocalALBUM.GetLocalAlbumInfoByIndex` / `MusicInfo.GetLocal`(제목), `TaskStageTarget.GetAccuracy*`(정확도), `GameTouchPlay.TouchResult` / `StageBattleComponent.InitTimeNodeOrder`(강제 퍼펙트).
 5. **막다른 길**
    - 메뉴 기록을 `selectedDifficulty`로 읽은 것: 지난 배틀의 값이 남아, 탭을 바꿔도 다른 난이도 기록이 보였습니다. 곡마다 난이도 하나만 쓸 때는 드러나지 않았습니다.
    - 숙주 `0-4`·`0-0`으로 Master 시작: `difficulty3`이 `"0"`이라 차트 에셋이 없어 `GetMusicDataFromStageInfo`에서 NRE가 나고 보라색 화면에서 멈췄습니다. 재시작 후 첫 시작의 "인터넷 연결 없음" 안내창과 헷갈리기 쉬우니 화면을 먼저 보십시오.
@@ -38,5 +39,7 @@
    - 속도 2·3 프리팹 끝자리를 `_1`로 두는 것: 게임에 그 이름의 프리팹이 없어 노트가 안 보입니다.
    - `HwaSyncManager`에서 `sldProgress.value`를 기준으로 스트리밍 Ogg `bgmSource.time`을 역으로 시크한 것: 호스트 곡 길이로 도는 진행바 때문에 0.5초마다 오디오 디코더 재탐색 히치와 노트 밀림을 유발했습니다.
    - 패널 두 개의 씬 스캔을 `lastScanFrame` 하나로 따로따로 제한한 것(`IsStageSelectionContextActive`): 앞 스캔이 값을 올린 직후라 뒤 스캔 조건이 늘 거짓이 되어 `PnlPreparation`을 찾지 않았습니다. 제한 판정은 한 번만 합니다.
+   - 노트 스킨을 원본 배율(0.005) 그대로 읽은 것: 노트가 반 크기로 나왔습니다. 스킨 JSON 뼈대 위치가 원본의 정확히 ½이었고, 캐릭터 주입기의 0.01 고정이 같은 현상을 가려 왔습니다.
+   - 런타임 아틀라스의 `Texture2D.name`을 로그용 라벨(`note:0411_road`)로 준 것: `SpineAtlasAsset.CreateRuntimeInstance`가 페이지 줄 이름으로 텍스처를 찾아 `Could not find matching atlas page`로 실패했습니다. 아틀라스 첫 페이지 줄에서 이름을 얻습니다.
    - 홀드 머리·꼬리를 동시치기 짝(`isDouble`)에 넣은 것: 짝마다 `BaseEnemyObjectController.OnControllerAttacked` NRE가 났습니다. 홀드 꼬리 어긋남의 원인은 짝이 아니라 막대 길이 기준과 `_dt`의 차이였습니다([HOLD_BAR_LENGTH_DT.md](docs/experiments/HOLD_BAR_LENGTH_DT.md)).
 6. **빌드·배포**: `dotnet build`(또는 `build.bat`) → `H:\muse dash hwa\Mods\muse-dash-custom-chart.dll`로 자동 배포. `[AutoDeploy] Successfully deployed` 줄과 `ls -la "H:/muse dash hwa/Mods/"`로 확인합니다.
