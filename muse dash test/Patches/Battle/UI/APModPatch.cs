@@ -53,22 +53,22 @@ namespace muse_dash_test.Patches
                         VictoryDataCache.AttemptedFontCache = true;
                         Font font = null;
                         
-                        ModLogger.Msg($"[APMod.Debug.Font] HUD 폰트 캐싱 시도 시작 - textObj={scoreValue.text != null}, djmaxTextObj={scoreValue.djmaxText != null}, arkNightTextObj={scoreValue.arkNightText != null}");
+                        ModLogger.Verbose($"[APMod.Debug.Font] HUD 폰트 캐싱 시도 시작 - textObj={scoreValue.text != null}, djmaxTextObj={scoreValue.djmaxText != null}, arkNightTextObj={scoreValue.arkNightText != null}");
                         
                         if (scoreValue.text != null) 
                         {
                             font = scoreValue.text.font;
-                            if (font != null) ModLogger.Msg($"[APMod.Debug.Font] 일반 폰트 획득 완료: '{font.name}'");
+                            if (font != null) ModLogger.Verbose($"[APMod.Debug.Font] 일반 폰트 획득 완료: '{font.name}'");
                         }
                         if (font == null && scoreValue.djmaxText != null) 
                         {
                             font = scoreValue.djmaxText.font;
-                            if (font != null) ModLogger.Msg($"[APMod.Debug.Font] DJMAX 폰트 획득 완료: '{font.name}'");
+                            if (font != null) ModLogger.Verbose($"[APMod.Debug.Font] DJMAX 폰트 획득 완료: '{font.name}'");
                         }
                         if (font == null && scoreValue.arkNightText != null) 
                         {
                             font = scoreValue.arkNightText.font;
-                            if (font != null) ModLogger.Msg($"[APMod.Debug.Font] 아크나이츠 폰트 획득 완료: '{font.name}'");
+                            if (font != null) ModLogger.Verbose($"[APMod.Debug.Font] 아크나이츠 폰트 획득 완료: '{font.name}'");
                         }
 
                         if (font != null)

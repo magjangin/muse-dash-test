@@ -274,7 +274,7 @@ namespace muse_dash_test
                 var parseTimer = Stopwatch.StartNew();
                 var chart = BmsParser.ParseFile(path);
                 parseTimer.Stop();
-                ModLogger.Msg($"[HwaResourceManager.Bms] BMS 파싱 완료: elapsed={parseTimer.ElapsedMilliseconds}ms, {HwaChartDiagnostics.DescribeBmsChart(chart)}");
+                ModLogger.Verbose($"[HwaResourceManager.Bms] BMS 파싱 완료: elapsed={parseTimer.ElapsedMilliseconds}ms, {HwaChartDiagnostics.DescribeBmsChart(chart)}");
                 HwaChartDiagnostics.LogBmsWavMappingSummary(chart);
                 return chart;
             }

@@ -59,7 +59,7 @@ namespace muse_dash_test
                         ? __args[0].ToString() 
                         : "none";
 
-                    ModLogger.Msg($"[MenuBGM.Patch] 가상 곡 활성화 중 AudioManager.{methodName} 차단! (selectedUid={selectedUid}, arg={argInfo})");
+                    ModLogger.Verbose($"[MenuBGM.Patch] 가상 곡 활성화 중 AudioManager.{methodName} 차단! (selectedUid={selectedUid}, arg={argInfo})");
 
                     EnsureCustomBgmPlaying();
                     return false;

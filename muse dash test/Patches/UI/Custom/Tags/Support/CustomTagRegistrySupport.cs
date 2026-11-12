@@ -268,7 +268,7 @@ namespace muse_dash_test
                 var host = new MusicInfoWrapper(originalInfo);
                 int[] hostMaps = BmsHostMaps.AvailableDifficulties(new[] { host.difficulty1, host.difficulty2, host.difficulty3, host.difficulty4, host.difficulty5 });
                 HwaResourceManager.RememberHostMaps(uid, hostMaps);
-                ModLogger.Msg($"[CustomTagRegistry] [{uid}] 숙주 {originalInfo.uid}에 있는 난이도: {string.Join(",", hostMaps)}");
+                ModLogger.Verbose($"[CustomTagRegistry] [{uid}] 숙주 {originalInfo.uid}에 있는 난이도: {string.Join(",", hostMaps)}");
 
                 ApplyVirtualSongMetadata(clonedInfo, uid, name, author, levelDesigner, diff1, diff2, diff3, diff4, diff5);
                 CleanPurchaseProperties(clonedInfo);

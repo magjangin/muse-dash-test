@@ -20,7 +20,23 @@ namespace muse_dash_test
         private static AudioClip injectedMenuClip;
         private static bool isCustomMenuBgmActive;
         private static object activeMenuBgmCoroutine;
-        private static readonly System.Collections.Generic.List<AudioClip> retiredMenuClips = new System.Collections.Generic.List<AudioClip>();
+        private static readonly System.Collections.Generic.List<RetiredClip> retiredMenuClips = new System.Collections.Generic.List<RetiredClip>();
+
+        /// <summary>
+        /// 밀려난 스트리밍 클립을 이 시간(실시간 초)이 지나기 전에는 파괴하지 않습니다.
+        /// <para>메뉴 미리듣기는 스트리밍으로 읽습니다. 예전에 스트리밍 클립을 교체 직후 바로 <c>Destroy</c>했더니
+        /// FMOD 비동기 스트리머가 아직 읽고 있던 버퍼를 놓쳐 휠을 빠르게 돌릴 때 0xc0000005로 죽었습니다(8351e5c).
+        /// 그때는 풀 디코딩으로 바꿔 피했지만, 곡을 넘길 때마다 메인 스레드가 곡 길이에 비례해 멈췄습니다
+        /// (2026-11-12 실측 134~184초 곡에서 316~450ms. <c>DownloadHandlerAudioClip.compressed</c>는 효과가 없었습니다).
+        /// 스트리밍 클립은 디코딩 버퍼만 들고 있어 몇 초 더 살려 둬도 메모리 부담이 작습니다.</para>
+        /// </summary>
+        private const float RetireGraceSeconds = 3f;
+
+        private struct RetiredClip
+        {
+            public AudioClip Clip;
+            public float RetiredAt;
+        }
 
         internal static bool IsCustomMenuBgmActive => isCustomMenuBgmActive || !string.IsNullOrEmpty(currentLoadingUid);
         internal static string CurrentLoadingUid => currentLoadingUid;
@@ -28,10 +44,20 @@ namespace muse_dash_test
         private static void RetireMenuClip(AudioClip clip)
         {
             if (clip == null) return;
-            if (!retiredMenuClips.Contains(clip))
+            foreach (var retired in retiredMenuClips)
             {
-                retiredMenuClips.Add(clip);
+                if (retired.Clip == clip) return;
             }
+
+            retiredMenuClips.Add(new RetiredClip { Clip = clip, RetiredAt = Time.realtimeSinceStartup });
+            // 다른 곳에서 정리를 부르지 않아도(곡을 고른 채 그대로 두거나 화면을 떠난 경우) 유예가 끝나면 해제되게 합니다.
+            MelonCoroutines.Start(SweepRetiredClipsAfterGrace());
+        }
+
+        private static IEnumerator SweepRetiredClipsAfterGrace()
+        {
+            yield return new WaitForSeconds(RetireGraceSeconds + 0.5f);
+            DestroyUnreferencedRetiredClips("retire grace elapsed");
         }
 
         public static void DestroyUnreferencedRetiredClips(string reason)
@@ -43,9 +69,10 @@ namespace muse_dash_test
                 ? activeSource.clip.Pointer
                 : IntPtr.Zero;
 
+            float now = Time.realtimeSinceStartup;
             for (int i = retiredMenuClips.Count - 1; i >= 0; i--)
             {
-                AudioClip candidate = retiredMenuClips[i];
+                AudioClip candidate = retiredMenuClips[i].Clip;
                 if (candidate == null)
                 {
                     retiredMenuClips.RemoveAt(i);
@@ -53,6 +80,12 @@ namespace muse_dash_test
                 }
 
                 if (activeClipPtr != IntPtr.Zero && candidate.Pointer == activeClipPtr)
+                {
+                    continue;
+                }
+
+                // 스트리머가 아직 이 클립의 버퍼를 읽고 있을 수 있습니다(RetireGraceSeconds 참고).
+                if (now - retiredMenuClips[i].RetiredAt < RetireGraceSeconds)
                 {
                     continue;
                 }
@@ -108,7 +141,7 @@ namespace muse_dash_test
             // 이번 요청의 세대 번호를 코루틴에 넘겨 줍니다. uid만으로는 A→B→A처럼 같은 곡으로
             // 되돌아온 경우 낡은 코루틴이 자기가 낡았다는 걸 알 수 없습니다(아래 코루틴 주석 참고).
             int generation = ++monitorGeneration;
-            ModLogger.Msg($"[MenuBGM] BGM 변경 트리거: uid={uid}, generation={generation}");
+            ModLogger.Verbose($"[MenuBGM] BGM 변경 트리거: uid={uid}, generation={generation}");
             activeMenuBgmCoroutine = MelonCoroutines.Start(LoadAndPlayCustomMenuBgm(uid, generation));
         }
 
@@ -233,10 +266,16 @@ namespace muse_dash_test
             try
             {
                 DownloadHandlerAudioClip handler = new DownloadHandlerAudioClip(uri, AudioType.OGGVORBIS);
-                // 메뉴 BGM 미리듣기는 용량이 작으므로 스트리밍 대신 풀 디코딩 로드하여 FMOD 비동기 백그라운드 스트리머 충돌(0xc0000005)을 방지합니다.
-                handler.streamAudio = false;
+                // 배틀 BGM과 같이 스트리밍으로 읽습니다. 풀 디코딩(streamAudio = false)은 GetContent가 곡 전체를
+                // PCM으로 풀며 메인 스레드를 316~450ms 막아, 휠을 돌리다 멈칫할 때마다 렉이 났습니다.
+                // 스트리밍 클립을 바로 파괴하면 크래시가 나므로 해제는 RetireGraceSeconds 뒤로 미룹니다.
+                handler.streamAudio = true;
                 request.downloadHandler = handler;
+                // 휠을 빠르게 돌릴 때의 렉이 이 로드/디코드 때문인지 재기 위한 계측입니다.
+                // load는 요청~완료까지의 벽시계 시간(여러 프레임), getContent는 메인 스레드에서 막히는 시간입니다.
+                var loadTimer = System.Diagnostics.Stopwatch.StartNew();
                 yield return request.SendWebRequest();
+                loadTimer.Stop();
 
                 if (!string.IsNullOrWhiteSpace(request.error))
                 {
@@ -251,6 +290,7 @@ namespace muse_dash_test
                 }
 
                 AudioClip customClip = null;
+                var getContentTimer = System.Diagnostics.Stopwatch.StartNew();
                 try
                 {
                     customClip = DownloadHandlerAudioClip.GetContent(request);
@@ -259,6 +299,8 @@ namespace muse_dash_test
                 {
                     ModLogger.Error($"[MenuBGM] AudioClip 변환 실패: {ex.Message}");
                 }
+
+                getContentTimer.Stop();
 
                 if (customClip != null)
                 {
@@ -286,7 +328,7 @@ namespace muse_dash_test
                     // 이전 배틀에서 은퇴한 배틀 BGM 클립이 있다면 menuSource.clip 교체 직후 안전하게 정리합니다.
                     HwaBattleMediaController.DestroyUnreferencedRetiredClips("custom menu BGM applied");
 
-                    ModLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}");
+                    ModLogger.Msg($"[MenuBGM] 커스텀 곡 BGM 주입 완료! uid={uid}, clip={customClip.name}, length={customClip.length}s, loadState={customClip.loadState}, loadType={customClip.loadType}, load={loadTimer.ElapsedMilliseconds}ms, getContent={getContentTimer.ElapsedMilliseconds}ms");
                     ModLogger.Verbose($"[MenuBGM] 주입 후 AudioSource 상태: isPlaying={menuSource.isPlaying}, volume={menuSource.volume} (이전: {prevVolume}), mute={menuSource.mute} (이전: {prevMute}), spatialBlend={menuSource.spatialBlend}");
 
                     // 후속 볼륨 페이드아웃이나 변경 현상 감시를 위해 실시간 모니터러 작동
@@ -403,14 +445,14 @@ namespace muse_dash_test
 
         private static IEnumerator MonitorAudioSource(AudioSource source, string uid, string clipName, int generation)
         {
-            ModLogger.Msg($"[MenuBGM.Monitor] 모니터링 시작: GO={source.gameObject.name}, targetClip={clipName}");
+            ModLogger.Verbose($"[MenuBGM.Monitor] 모니터링 시작: GO={source.gameObject.name}, targetClip={clipName}");
             int i = 0;
             while (true)
             {
                 yield return new WaitForSeconds(5.0f);
                 if (generation != monitorGeneration)
                 {
-                    ModLogger.Msg("[MenuBGM.Monitor] 모니터링 세대가 변경되어 종료합니다.");
+                    ModLogger.Verbose("[MenuBGM.Monitor] 모니터링 세대가 변경되어 종료합니다.");
                     yield break;
                 }
 
@@ -423,7 +465,7 @@ namespace muse_dash_test
                 string currentClip = source.clip != null ? source.clip.name : "(null)";
                 if (currentClip != clipName || CustomPlaySession.Current.LastKnownMusicUid != uid)
                 {
-                    ModLogger.Msg($"[MenuBGM.Monitor] 대상 클립 또는 선택 곡이 변경되어 모니터링을 종료합니다. (현재 클립: {currentClip})");
+                    ModLogger.Verbose($"[MenuBGM.Monitor] 대상 클립 또는 선택 곡이 변경되어 모니터링을 종료합니다. (현재 클립: {currentClip})");
                     yield break;
                 }
 

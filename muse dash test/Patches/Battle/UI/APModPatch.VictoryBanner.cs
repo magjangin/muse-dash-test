@@ -158,7 +158,7 @@ namespace muse_dash_test.Patches
         {
             if (VictoryDataCache.ActiveTarget == null)
             {
-                ModLogger.Msg("[APMod.Debug.Victory] [주의] VictoryDataCache.ActiveTarget가 null입니다! 콤보 판정을 가져올 수 없습니다.");
+                ModLogger.Verbose("[APMod.Debug.Victory] [주의] VictoryDataCache.ActiveTarget가 null입니다! 콤보 판정을 가져올 수 없습니다.");
                 return false;
             }
 
@@ -167,7 +167,7 @@ namespace muse_dash_test.Patches
             int missCount = VictoryDataCache.ActiveTarget.m_MissResult;
             float accuracy = VictoryDataCache.ActiveTarget.GetAccuracy();
 
-            ModLogger.Msg($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
+            ModLogger.Verbose($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
 
             return isFullCombo && greatCount == 0 && missCount == 0;
         }
@@ -181,14 +181,14 @@ namespace muse_dash_test.Patches
                 var child = fcTransform.GetChild(i);
                 if (child == null) continue;
 
-                ModLogger.Msg($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
+                ModLogger.Verbose($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
                 if (child.name != "CustomAPText")
                 {
                     child.gameObject.SetActive(false);
                     hiddenCount++;
                 }
             }
-            ModLogger.Msg($"[APMod.Debug.Victory] 기존 FULL COMBO 관련 오브젝트 총 {hiddenCount}개 숨김 처리 완료.");
+            ModLogger.Verbose($"[APMod.Debug.Victory] 기존 FULL COMBO 관련 오브젝트 총 {hiddenCount}개 숨김 처리 완료.");
 
             var customApTransform = fcTransform.Find("CustomAPText");
             if (customApTransform != null)
@@ -242,11 +242,11 @@ namespace muse_dash_test.Patches
             Font targetFont = VictoryDataCache.PremiumFont;
             if (targetFont != null)
             {
-                ModLogger.Msg($"[APMod.Debug.Victory] 캐싱해 둔 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
+                ModLogger.Verbose($"[APMod.Debug.Victory] 캐싱해 둔 HUD 메인 시그니처 폰트 적용: '{targetFont.name}'");
                 return targetFont;
             }
 
-            ModLogger.Msg("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
+            ModLogger.Verbose("[APMod.Debug.Victory] 캐싱된 HUD 폰트가 null 상태입니다. PnlVictory에서 조회를 시도합니다.");
             var victoryPanel = GameObject.FindObjectOfType<Il2Cpp.PnlVictory>();
             if (victoryPanel != null)
             {
@@ -257,7 +257,7 @@ namespace muse_dash_test.Patches
                 if (targetFont != null)
                 {
                     VictoryDataCache.PremiumFont = targetFont; // 다음 호출 시 FindObjectOfType 회피용 캐싱
-                    ModLogger.Msg($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 및 캐싱 성공: '{targetFont.name}'");
+                    ModLogger.Verbose($"[APMod.Debug.Victory] PnlVictory의 accuracyTxt에서 폰트 추출 및 캐싱 성공: '{targetFont.name}'");
                     return targetFont;
                 }
             }

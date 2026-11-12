@@ -61,8 +61,8 @@ namespace muse_dash_test
         /// BMS 차트의 WAV 매핑 샘플과 보스 스왑 후보를 남깁니다.
         /// 샘플 열거는 Verbose 전용입니다. 곡마다 12줄씩 쌓여 시작 로그를 덮어 버리는 데다,
         /// <see cref="BmsBossSwapPlanner.ResolveWavInfo"/>가 노트마다 실제 조회를 돌기 때문에
-        /// 출력하지 않을 때는 루프 자체를 건너뜁니다. 보스 스왑 후보는 차트를 바꾸는 '결정'이라
-        /// 열거가 아니므로 Info로 남깁니다.
+        /// 출력하지 않을 때는 루프 자체를 건너뜁니다. 보스 스왑 후보도 곡마다 최대 5줄씩 시작 로그를
+        /// 채워서 Verbose로 내렸습니다(개수는 <c>BMS 파싱 완료</c> 줄의 bossSwapCandidates로 확인).
         /// </summary>
         internal static void LogBmsWavMappingSummary(BmsChart chart)
         {
@@ -105,7 +105,7 @@ namespace muse_dash_test
             for (int i = 0; i < swapEvents.Count && i < 5; i++)
             {
                 var evt = swapEvents[i];
-                ModLogger.Msg($"[HwaResourceManager.Bms] 보스 스왑 후보 #{i + 1}: outTick={evt.OutNote?.Tick}, inTick={evt.InNote?.Tick}, delay={evt.DelaySeconds:0.###}s, action={evt.BossAction}");
+                ModLogger.Verbose($"[HwaResourceManager.Bms] 보스 스왑 후보 #{i + 1}: outTick={evt.OutNote?.Tick}, inTick={evt.InNote?.Tick}, delay={evt.DelaySeconds:0.###}s, action={evt.BossAction}");
             }
         }
     }

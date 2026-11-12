@@ -151,7 +151,7 @@ namespace muse_dash_test
                 }
 
                 skeletonDataAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
-                ModLogger.Msg($"[CustomSkinInjector] {label} 커스텀 SkeletonDataAsset 생성 완료 (scale {scale})");
+                ModLogger.Verbose($"[CustomSkinInjector] {label} 커스텀 SkeletonDataAsset 생성 완료 (scale {scale})");
                 return skeletonDataAsset;
             }
             catch (Exception ex)

@@ -102,6 +102,8 @@ H:\muse dash hwa\skin test\
 
 ## 4. 로그로 확인하기
 
+`생성 완료` 줄은 스킨마다 한 줄이라 `LogLevel = "Verbose"`에서만 나옵니다. `노트 스킨 주입 N개째` 줄은 기본 수준(Info)에서도 나옵니다.
+
 ```text
 [CustomSkinInjector] note:0411_road 커스텀 SkeletonDataAsset 생성 완료 (scale 0.01)
 [NoteSkin] 노트 스킨 주입 1개째 (0411_road, 041102_road_nor_2)

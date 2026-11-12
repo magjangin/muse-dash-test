@@ -206,7 +206,7 @@ new BossRule
 확인할 점:
 
 - `LogLevel = "Verbose"`에서 `[SongTitleOverride] 화면 텍스트 적용(WRITE)` 로그가 찍히는지
-- `info.txt`가 읽혔는지(`[HwaResourceManager] manifest 파싱 완료` 로그와 알 수 없는 키 경고)
+- `info.txt`가 읽혔는지(Info에서는 곡마다 `[HwaResourceManager] [uid] 채보 등록:` 한 줄과 알 수 없는 키 경고, 읽은 값 전체는 `LogLevel = "Verbose"`의 `manifest 파싱 완료` 줄)
 - 텍스트가 다른 자식 오브젝트명으로 숨어 있는지
 
 곡 선택 화면과 준비 화면은 서로 다른 UI 구조를 쓸 수 있습니다. 한 화면에서는 바뀌고 다른 화면에서는 안 바뀌면 그 화면의 텍스트 오브젝트 후보 이름을 추가해야 할 수 있습니다.

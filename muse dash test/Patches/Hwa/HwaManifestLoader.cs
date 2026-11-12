@@ -62,7 +62,7 @@ namespace muse_dash_test
                     return null;
                 }
 
-                ModLogger.Msg($"[HwaResourceManager] manifest 파싱 완료: {DescribeManifest(manifest)}");
+                ModLogger.Verbose($"[HwaResourceManager] manifest 파싱 완료: {DescribeManifest(manifest)}");
 
                 return manifest;
             }

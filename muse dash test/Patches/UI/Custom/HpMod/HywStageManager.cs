@@ -161,13 +161,13 @@ namespace muse_dash_test
                 Canvas parentCanvas = textComponent.GetComponentInParent<Canvas>();
                 if (parentCanvas != null)
                 {
-                    ModLogger.Msg($"[HywHpTextMod.Debug] 체력바 텍스트 렌더링 상태 상세 분석:");
-                    ModLogger.Msg($"  - Parent Canvas: {parentCanvas.name}");
-                    ModLogger.Msg($"  - Render Mode: {parentCanvas.renderMode}");
-                    ModLogger.Msg($"  - Sorting Layer Name: {parentCanvas.sortingLayerName}");
-                    ModLogger.Msg($"  - Sorting Order: {parentCanvas.sortingOrder}");
-                    ModLogger.Msg($"  - Local Position: {textComponent.transform.localPosition}");
-                    ModLogger.Msg($"  - World Position: {textComponent.transform.position}");
+                    ModLogger.Verbose($"[HywHpTextMod.Debug] 체력바 텍스트 렌더링 상태 상세 분석:");
+                    ModLogger.Verbose($"  - Parent Canvas: {parentCanvas.name}");
+                    ModLogger.Verbose($"  - Render Mode: {parentCanvas.renderMode}");
+                    ModLogger.Verbose($"  - Sorting Layer Name: {parentCanvas.sortingLayerName}");
+                    ModLogger.Verbose($"  - Sorting Order: {parentCanvas.sortingOrder}");
+                    ModLogger.Verbose($"  - Local Position: {textComponent.transform.localPosition}");
+                    ModLogger.Verbose($"  - World Position: {textComponent.transform.position}");
                 }
                 else
                 {
