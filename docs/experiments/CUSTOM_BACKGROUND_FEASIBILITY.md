@@ -31,6 +31,62 @@ SceneChangeController.SceneAnimationReset → Animator.Rebind + SceneSubControl.
 
 `SceneSubControl.Init`은 씬 아래의 `Animator`·`SkeletonAnimation`·`ParticleSystem`·`DOTweenAnimation`·`SceneScrollableControl`을 모아 일시정지·"배경 정지" 설정(`SetFreeze`)·보스 등장 이벤트(`Battle/OnBossIn`/`OnBossOut`)에 씁니다. 원래 자리에 그림만 바꿔 넣으면 이 처리가 그대로 따라옵니다.
 
+### 1-1. 의사코드 검증 (REA/Ghidra, 2026-11-12)
+
+`pe_slice.py`로 함수만 잘라 Ghidra로 디컴파일했습니다. 필드 이름은 `cpp2il_out`의 `[FieldOffset]`(`ilspycmd -t Assets.Scripts.UI.GameMain.SceneSubControl`)으로 맞췄습니다.
+
+`SceneSubControl.UpdateAllData` (RVA `0x1E58950`):
+
+```c
+// +0x18 m_SceneIdx: 이름이 "scene_touhou_black"이면 8, 아니면 Regex("\d+")로 이름에서 숫자
+this->m_SceneScrollableControl (+0x78) = transform.GetComponentInChildren<SceneScrollableControl>(true);
+this->m_Animators          (+0x58) = transform.GetComponentsInChildren<Animator>(true).ToList();
+this->m_SkeletonAnimations (+0x60) = transform.GetComponentsInChildren<SkeletonAnimation>(true).ToList();
+this->m_ParticleSystems    (+0x68) = transform.GetComponentsInChildren<ParticleSystem>(true).ToList();
+this->m_DoTweenAnimations  (+0x70) = transform.GetComponentsInChildren<DOTweenAnimation>(true);
+foreach (x in m_Animators / m_SkeletonAnimations / m_ParticleSystems) {
+    ctrl = x.gameObject.GetComponent<Addtive…Controller>();
+    if (ctrl == null) ctrl = x.gameObject.AddComponent<Addtive…Controller>();
+    ctrl->sceneSubControl (+0x18) = this;      // 일시정지·배경 정지 대상으로 등록
+}
+```
+
+`GameMusicScene.InitSceneObject` (RVA `0x1E5F7E0`):
+
+```c
+if (동방 곡) name = TouhouLogic.ReplaceBadAppleScene(name);
+this->sceneObj (+0xA0) = StageBattleComponent.instance.CreatePrefabAndCache(name);
+if (sceneObj == null) { Debug.Log("Scene " + name + " has no prefabs."); return; }
+sceneObj.name = sceneObj.name.Replace("(Clone)", "");
+sceneObj.transform.SetParent(<게임 씬 루트>);
+sub = sceneObj.GetComponent<SceneSubControl>();
+if (sub) { sub.Init(); this->SceneSubCtrls (+0xC0).Add(sub.m_SceneIdx, sub); }
+sceneObj.SetActive(isActive); …
+```
+
+**코드는 렌더러 종류를 따지지 않습니다.** 스프라이트든 Spine이든 프리팹에 들어 있는 대로 복제하고, `SkeletonAnimation`도 Animator와 똑같이 모아 일시정지 대상으로 등록합니다. 그래서 "배경이 스프라이트냐 Spine이냐"는 코드가 아니라 **프리팹 데이터**가 정하고, 씬마다 다릅니다.
+
+### 1-2. 전 씬 전수 집계 (번들 데이터)
+
+`gamescene_*.bundle` 30개 전부에서 `scene*` 루트 아래의 `SpriteRenderer`와 `SkeletonAnimation`을 셌습니다(`_cy`·`_fool`·`common` 번들에는 씬 루트가 없음).
+
+| 씬 | SpriteRenderer | Spine | 배경 Spine |
+| --- | --- | --- | --- |
+| scene_01 | 1714 | 0 | |
+| scene_02 | 4183 | 0 | |
+| **scene_03** | 220 | **35** | `s03_fire`, `s03_ghost`, `s03_ghost_cy1/2` |
+| scene_04 | 330 | 0 | |
+| scene_05 / _christmas | 64 / 81 | 0 | |
+| scene_06 | 774 | 0 | |
+| **scene_07** | 256 | **4** | `sky wheel` (관람차) |
+| **scene_08** | 821 | **2** | `s08_moon` |
+| scene_09 | 512 | 0 | |
+| scene_10_miku / _rin_len | 295 / 300 | 0 | |
+| scene_11 | 296 | 0 | |
+| **scene_12** | 258 | **19** | 새·고양이·찻잔·훠궈·명일방주 불꽃 등 (5절) |
+
+배경의 바탕은 모든 씬이 스프라이트이고, Spine은 일부 씬(03·07·08·12)의 **움직이는 소품**에만 섞여 있습니다. 게임 번들의 그림은 PNG 파일이 아니라 스프라이트 아틀라스 텍스처이며, PNG는 커스텀 그림을 넣을 때 쓰자는 입력 형식입니다.
+
 ## 2. scene_10의 특이점: 빈 껍데기 + 변형 2개
 
 번들 안의 `scene_10` 프리팹은 **자식이 없고 `CryptonSceneHandler`만 붙은 껍데기**입니다. 실제 무대는 두 변형에 있습니다.
