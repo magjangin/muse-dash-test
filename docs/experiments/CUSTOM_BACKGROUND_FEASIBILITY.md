@@ -58,7 +58,9 @@ scene_10_miku (SceneSubControl, SceneScrollableControl[m_DefaultStepPerSecond=8]
 └─ par_star (ParticleSystem)
 ```
 
-배경 그림은 **전부 `SpriteRenderer`**입니다. Spine(`SkeletonAnimation`)은 노트·보스에만 있습니다. `rin_len` 변형은 같은 뼈대에 스프라이트만 `_rin`·`_rin_len` 판(`s10_track_rin_len`, `s10_stage_rin`, `s10_star_rin`, 야광봉 Y/O 색 등)으로 바꾼 구성입니다.
+배경 그림은 **전부 `SpriteRenderer`**입니다. Spine(`SkeletonAnimation`)은 노트·보스에만 있습니다.
+
+> **검증 (2026-11-12):** `gamescene_10_assets_all`과 `gamescene_10_fool_assets_all` 번들의 Spine 컴포넌트 전체를 붙은 오브젝트의 전체 경로로 뽑았습니다. 루트가 전부 노트 프리팹(`10xxyy`)이거나 보스(`1001`)였고, **`scene_10*` 아래에는 0개**였습니다. `CryptonEggControl`/`SceneEggAbstractController`도 런타임에 다른 에셋을 불러오지 않습니다(ISIL에 `LoadFromName`·`Instantiate` 없음). 보컬로이드 캐릭터(`s10_miku`·`s10_kaito`·`s10_rin` 등)는 한 장짜리 스프라이트이고, 부모 `Animator`(`Miku`, `Kaito`, `kagamine`)가 위치·크기만 흔듭니다. 같은 번들 사본(`H:\유튜브 곡 모음\…\gamescene\`, SHA1이 게임 폴더와 같음)에서 스프라이트를 PNG로 뽑아 확인했습니다. `s10_bg`는 16×16짜리 단색 조각을 늘려 쓰는 그림이라, 바꿀 때는 크기(스케일)를 함께 맞춰야 합니다. `rin_len` 변형은 같은 뼈대에 스프라이트만 `_rin`·`_rin_len` 판(`s10_track_rin_len`, `s10_stage_rin`, `s10_star_rin`, 야광봉 Y/O 색 등)으로 바꾼 구성입니다.
 
 ### 3-1. 스크롤: 신형 `Scrollable` 방식 (구형 Animator 방식이 아님)
 
