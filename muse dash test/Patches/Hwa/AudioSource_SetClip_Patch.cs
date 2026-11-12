@@ -85,8 +85,15 @@ namespace muse_dash_test
                         bool isCustomClip = IsCustomOggClip(value);
                         if (!isCustomClip)
                         {
-                            __instance.Stop();
+                            // [중요] 비커스텀 클립 대입 시 __instance.Stop()을 절대 호출하면 안 됩니다!
+                            // __instance는 현재 커스텀 BGM이 돌고 있는 AudioSource이므로, Stop()을 부르면
+                            // 재생 중이던 커스텀 BGM이 꺼져버립니다. 클립 대입만 차단(return false)하고
+                            // 현재 커스텀 클립이 계속 재생되도록 보장합니다.
                             ModLogger.Msg($"[MenuBGM.Patch] 가상 곡 활성화 중 허용되지 않은 클립 대입 차단! (selectedUid={selectedUid}, 요청 클립: {clipNameForLog})");
+                            if (__instance != null && __instance.clip != null && !__instance.isPlaying)
+                            {
+                                __instance.Play();
+                            }
                             return false;
                         }
                     }
@@ -163,6 +170,33 @@ namespace muse_dash_test
             }
         }
 
+        private static T FindSceneComponent<T>() where T : UnityEngine.Component
+        {
+            try
+            {
+                T comp = UnityEngine.Object.FindObjectOfType<T>();
+                if (comp != null) return comp;
+
+                // 비활성 상태인 오브젝트도 검색 (PnlPreparation 등이 비활성화 상태로 씬에 상주할 때)
+                var all = Resources.FindObjectsOfTypeAll<T>();
+                if (all != null)
+                {
+                    for (int i = 0; i < all.Length; i++)
+                    {
+                        var candidate = all[i];
+                        if (candidate != null && candidate.gameObject != null && candidate.gameObject.scene.isLoaded)
+                        {
+                            return candidate;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return null;
+        }
+
         /// <summary>
         /// 곡 선택(PnlStage) 또는 곡 준비(PnlPreparation) 패널이 현재 실제로 활성 상태인지 확인합니다.
         /// MD가 단일 씬 안에서 패널만 켜고 끄는 구조이므로, 이게 "곡 선택 컨텍스트에 있는지"의 유일하게 신뢰 가능한 신호입니다.
@@ -198,20 +232,23 @@ namespace muse_dash_test
                     return true;
                 }
 
-                // 둘 다 비활성이거나 파괴되었을 때, 최소 30프레임 간격으로 씬 재스캔
-                bool scanAllowed = lastScanFrame < 0 || currentFrame - lastScanFrame >= ScanIntervalFrames;
+                // 둘 다 비활성이거나 파괴되었을 때 스캔
+                // 단, 직전 프레임까지 활성이었다가 방금 꺼진 경우(PnlStage ↔ PnlPreparation 전환 순간)에는
+                // 30프레임 스로틀링을 즉시 우회하여 대상 패널 활성화를 즉시 감지합니다.
+                bool justDeactivated = lastCheckResult;
+                bool scanAllowed = justDeactivated || lastScanFrame < 0 || currentFrame - lastScanFrame >= ScanIntervalFrames;
                 if (scanAllowed)
                 {
                     lastScanFrame = currentFrame;
 
                     if (cachedPnlStage == null)
                     {
-                        cachedPnlStage = UnityEngine.Object.FindObjectOfType<Il2CppAssets.Scripts.UI.Panels.PnlStage>();
+                        cachedPnlStage = FindSceneComponent<Il2CppAssets.Scripts.UI.Panels.PnlStage>();
                     }
 
                     if (cachedPnlPreparation == null)
                     {
-                        cachedPnlPreparation = UnityEngine.Object.FindObjectOfType<Il2Cpp.PnlPreparation>();
+                        cachedPnlPreparation = FindSceneComponent<Il2Cpp.PnlPreparation>();
                     }
 
                     if (IsAliveAndActive(cachedPnlStage) || IsAliveAndActive(cachedPnlPreparation))
