@@ -34,22 +34,28 @@ namespace muse_dash_test
         /// <summary>지금 곡에서 크리스마스 배경·보스를 강제로 쓸지. 판정 근거를 <paramref name="reason"/>에 남깁니다.</summary>
         internal static bool ShouldForceForCurrentSong(out string reason)
         {
-            if (ModConfig.ForceChristmas)
-            {
-                reason = "ForceChristmas 설정";
-                return true;
-            }
-
             reason = null;
             try
             {
-                if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return false;
-
-                string uid = CustomPlaySession.Current.LastKnownMusicUid;
-                HwaManifest manifest = HwaResourceManager.GetManifest(uid);
-                if (manifest?.ChristmasScene == true)
+                // 1) 커스텀 곡 문맥인 경우: info.txt의 '크리스마스' 설정이 켜진 곡만 적용합니다.
+                //    전역 ForceChristmas 설정이 켜져 있더라도 다른 커스텀 곡에 무차별 누출되지 않도록 차단합니다.
+                if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
-                    reason = $"info.txt 크리스마스 배경 (uid={uid})";
+                    string uid = CustomPlaySession.Current.LastKnownMusicUid;
+                    HwaManifest manifest = HwaResourceManager.GetManifest(uid);
+                    if (manifest?.ChristmasScene == true)
+                    {
+                        reason = $"info.txt 크리스마스 활성화 (uid={uid})";
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                // 2) 공식 곡 문맥일 때만 전역 ForceChristmas 설정을 참조합니다.
+                if (ModConfig.ForceChristmas)
+                {
+                    reason = "ForceChristmas 전역 설정 (공식 곡)";
                     return true;
                 }
             }
@@ -102,7 +108,8 @@ namespace muse_dash_test
         {
             try
             {
-                if (bossFestivalName != ChristmasFestival.Boss05 || __result != ChristmasFestival.Boss05) return;
+                if ((bossFestivalName != ChristmasFestival.Boss05 && bossFestivalName != ChristmasFestival.Boss05Christmas)
+                    || (__result != ChristmasFestival.Boss05 && __result != ChristmasFestival.Boss05Christmas)) return;
                 if (!ChristmasFestival.ShouldForceForCurrentSong(out string reason)) return;
 
                 __result = ChristmasFestival.Boss05Christmas;

@@ -59,8 +59,9 @@ namespace muse_dash_test
 
         private static int injectedCount;
 
-        // 지금 곡이 크리스마스 곡인지. Init은 노트 수만큼 불리므로 RevalidateSeconds 동안 판정을 재사용합니다.
-        // 노트 Init은 곡 로딩 중에만 몰려 오고, 곡을 바꾸려면 그보다 훨씬 오래 걸리므로 이전 곡 판정이 섞이지 않습니다.
+        // 지금 곡이 크리스마스 곡인지. Init은 노트 수만큼 불리므로 같은 곡 내에서는 RevalidateSeconds 동안 판정을 재사용합니다.
+        // 단, 곡(UID)이 달라진 경우에는 캐시를 즉시 무효화하여 다른 곡으로 판정이 누출되는 것을 방지합니다.
+        private static string lastCheckedUid;
         private static bool christmasGate;
         private static float christmasGateCheckedAt = float.NegativeInfinity;
         private static string lastGateLog;
@@ -127,9 +128,14 @@ namespace muse_dash_test
         /// <summary>노트 스킨을 씌울 곡인지(크리스마스 곡). 판정 결과가 바뀔 때만 로그를 남깁니다.</summary>
         private static bool IsChristmasSong()
         {
+            string currentUid = CustomPlaySession.Current.LastKnownMusicUid;
             float now = Time.realtimeSinceStartup;
-            if (now - christmasGateCheckedAt < RevalidateSeconds) return christmasGate;
+            if (string.Equals(currentUid, lastCheckedUid, StringComparison.Ordinal) && now - christmasGateCheckedAt < RevalidateSeconds)
+            {
+                return christmasGate;
+            }
 
+            lastCheckedUid = currentUid;
             christmasGate = ChristmasFestival.ShouldForceForCurrentSong(out string reason);
             christmasGateCheckedAt = now;
 

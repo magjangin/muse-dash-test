@@ -24,6 +24,11 @@ public class Boss_Play_Patch
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int newScene))
                 {
                     string newName = parts[1];
+                    if (ChristmasFestival.ShouldForceForCurrentSong(out _) && (newName == ChristmasFestival.Boss05 || newScene == 5))
+                    {
+                        newName = ChristmasFestival.Boss05Christmas;
+                        newScene = 5;
+                    }
 
                     // 교체 전후 상태를 디버그 로그용으로 남깁니다 (VerboseLog 활성화 시에만).
                     if (ModConfig.EnableVerboseLog)
@@ -225,13 +230,8 @@ public class Boss_InitBossObject_Patch
     public class BossRule { public string OrigName; public int? OrigScene; public bool? OrigIsLast; public string NewName; public int NewScene; }
 
     // 간단한 매핑 규칙: (원래이름, 원래씬, 원래IsLast) -> (변경이름, 변경씬)
-    // 편집 예시: 모든 보스 호출("*")을 0401_boss, scene 4로 리디렉션합니다.
-    // 기본: 모든 보스 호출을 확인한 정답 보스(0401_boss, scene 4)로 리디렉션합니다.
-    // 편집하려면 이 배열만 수정하세요.
-    private static readonly BossRule[] BossRewriteRules = new[]
-    {
-        new BossRule { OrigName = "*", OrigScene = null, OrigIsLast = null, NewName = "0701_boss", NewScene = 7 },
-    };
+    // 기본값은 빈 배열입니다 (기본적으로 씬/차트가 요청한 보스를 유지하며, 하드코딩된 특정 보스로 강제 변경하지 않습니다).
+    private static readonly BossRule[] BossRewriteRules = Array.Empty<BossRule>();
 
     private static bool TryGetFirstBmsBoss(out string bossName, out int bossScene)
     {
@@ -299,13 +299,20 @@ public class Boss_InitBossObject_Patch
                             {
                                 if (ev?.InWav != null && !string.IsNullOrWhiteSpace(ev.InWav.BossName) && ev.InWav.BossScene >= 0)
                                 {
+                                    string bossName = ev.InWav.BossName;
                                     int sceneId = ev.InWav.BossScene;
+                                    if (ChristmasFestival.ShouldForceForCurrentSong(out _) && (bossName == ChristmasFestival.Boss05 || sceneId == 5))
+                                    {
+                                        bossName = ChristmasFestival.Boss05Christmas;
+                                        sceneId = 5;
+                                    }
+
                                     if (s_PrewarmedScenes.Add(sceneId))
                                     {
                                         if (boss.m_BossObjects == null || !boss.m_BossObjects.ContainsKey(sceneId))
                                         {
-                                            ModLogger.Msg($"[DynamicSwap] BMS 보스 사전 로드(Pre-warm): name={ev.InWav.BossName}, scene={sceneId}");
-                                            boss.InitBossObject(ev.InWav.BossName, sceneId, false);
+                                            ModLogger.Msg($"[DynamicSwap] BMS 보스 사전 로드(Pre-warm): name={bossName}, scene={sceneId}");
+                                            boss.InitBossObject(bossName, sceneId, false);
                                             if (boss.m_CurBossObject != null)
                                             {
                                                 boss.m_CurBossObject.SetActive(false);
@@ -345,6 +352,35 @@ public class Boss_InitBossObject_Patch
             {
                 // 배틀 도중 swap마다 도는 자리라 Verbose입니다(바로 위 '호출' 줄이 이미 Info로 남습니다).
                 ModLogger.Verbose("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
+                return;
+            }
+
+            // 크리스마스 곡인 경우: 5번 보스(0501_boss) 또는 이미 크리스마스 보스로 지정된 경우 크리스마스 보스로 강제 고정
+            bool isChristmasSong = ChristmasFestival.ShouldForceForCurrentSong(out string christmasReason);
+            if (isChristmasSong && (name == ChristmasFestival.Boss05 || name == ChristmasFestival.Boss05Christmas || scene == 5))
+            {
+                // BMS 차트에서 첫 보스를 확인하되, 5번 씬 보스(0501_boss)라면 반드시 크리스마스 보스(0501_boss_christmas)로 매핑
+                if (TryGetFirstBmsBoss(out string xmasBmsBossName, out int xmasBmsBossScene))
+                {
+                    PrewarmBmsBosses(__instance);
+                    if (xmasBmsBossName == ChristmasFestival.Boss05 || xmasBmsBossScene == 5)
+                    {
+                        name = ChristmasFestival.Boss05Christmas;
+                        scene = 5;
+                    }
+                    else
+                    {
+                        name = xmasBmsBossName;
+                        scene = xmasBmsBossScene;
+                    }
+                }
+                else
+                {
+                    name = ChristmasFestival.Boss05Christmas;
+                    scene = 5;
+                }
+
+                ModLogger.Msg($"[ChristmasFestival] Il2Cpp.Boss.InitBossObject: 크리스마스 보스 확정 -> name={name}, scene={scene} ({christmasReason})");
                 return;
             }
 
