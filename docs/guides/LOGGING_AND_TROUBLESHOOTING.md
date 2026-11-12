@@ -32,10 +32,11 @@ Il2Cpp.Boss.InitBossObject: ... 적용 -> name=..., scene=...   (보스가 있�
 | `실험 노트 추가` | **Verbose** | 노트 하나가 실제 `MusicData`로 들어갔습니다(노트마다 한 줄이라 Verbose에만 남깁니다). |
 | `실험 차트 적용 완료` | Info | 원본 리스트를 실험 리스트로 재구성했습니다. |
 | `PnlPreparation.OnEnable: 곡 이름=…` 등 (`LogCompact`) | **Verbose** | 준비 화면에서 읽은 곡 정보입니다. 예전 문서의 `PnlStage.ChangeFinalMusic` 로그는 지금 없습니다. |
-| `Boss.InitBossObject 호출` | Info | 실제 보스 오브젝트 초기화가 시작됐습니다. |
+| `Boss.InitBossObject 호출` | **Verbose** | 실제 보스 오브젝트 초기화가 시작됐습니다(배틀 중 보스 교체마다 찍혀 Verbose로 내렸습니다). |
 | `Boss.InitBossObject: … 동적 보스 매핑 적용` | Info | BMS의 첫 `in` 노트로 보스 이름/씬이 정해졌습니다. |
 | `Boss.InitBossObject: Static 폴백 변경 적용` | Info | BMS에 `in` 노트가 없어 `BossRewriteRules`가 매칭됐습니다. |
-| `Boss.InitBossObject: 변경 건너뜀` | Info | 커스텀 차트를 적용하지 않는 판(공식곡 등)이라 손대지 않았습니다. |
+| `Boss.InitBossObject: 변경 건너뜀` | **Verbose** | 커스텀 차트를 적용하지 않는 판(공식곡 등)이라 손대지 않았습니다. |
+| `Boss.InitBossObject 완료` | Info | 보스 이름/씬 결정이 끝났습니다(적용 경로에서만 찍힙니다). |
 
 ## 노트가 안 보일 때
 
@@ -176,7 +177,7 @@ Il2Cpp.Boss.InitBossObject: BMS 첫 'in' 노트를 통한 동적 보스 매핑 �
 Il2Cpp.Boss.InitBossObject: Static 폴백 변경 적용 -> name=0701_boss, scene=7
 ```
 
-`… 적용` 로그가 없고 `변경 건너뜀`만 있으면 커스텀 차트가 적용되지 않은 판입니다. 둘 다 없으면 규칙 조건이 안 맞은 것입니다.
+`호출`·`변경 건너뜀`은 `LogLevel = "Verbose"`에서만 나옵니다. Info에서 `… 적용`·`완료`가 없으면 Verbose로 바꿔 보십시오. `변경 건너뜀`만 있으면 커스텀 차트가 적용되지 않은 판이고, 둘 다 없으면 규칙 조건이 안 맞은 것입니다.
 
 확인할 점 (`BossRewriteRules`를 쓰는 경우):
 
@@ -298,7 +299,7 @@ LogLevel = "Auto" # "Auto", "Silent", "Error", "Warning", "Info", "Verbose"
 | `SpineActionContract.DumpEnabled` (`Spine/Patch_SpineActionContract.cs`) | `false` | `true`로 바꾸고 다시 빌드하면 배틀 캐릭터의 액션·애니메이션 목록을 `spine contract/` 폴더에 txt로 덤프합니다. 꺼져 있으면 폴더도 만들지 않습니다. |
 | `GameMusicScene_InitTimer_Patch` / `GameMusicScene_PreLoadEnemy_Patch`의 `EnableDebugLogs` | `true`(하드코딩) | 씬 변형·풀 빌드 진단 로그(Info)입니다. 로그 수준으로 끌 수 없습니다. |
 
-> `DumpMusicList`는 스위치가 아니라 함수입니다. 공식곡을 로드할 때마다 원본 차트의 미등록 노트를 훑어 `[OfficialSceneContext]` 로그를 Info로 남깁니다(README의 "특수 기믹 곡 스캔" 조사용). 이전 문서가 안내하던 `DumpStageBattleComponentProperties`/`DumpStageInfo`는 코드에서 제거되었습니다. 노트 상세 덤프(`StageBattleMusicDataDump`)는 호출하는 곳 없이 남아 있다가 지웠습니다. `StageBattleComponent`를 리플렉션으로 전부 훑는 진단이라 [CHECKLIST.md](CHECKLIST.md)의 "깊게 훑는 진단" 항목에 걸리기도 합니다. 꼭 필요하면 커밋 `e896584`의 `StageBattleComponentPatch.cs`에서 되살리되, 기본값 off로 두십시오.
+> `DumpMusicList`는 스위치가 아니라 함수입니다. 공식곡을 로드할 때마다 원본 차트의 미등록 노트를 훑습니다(README의 "특수 기믹 곡 스캔" 조사용). Info에는 미등록 노트가 있을 때만 `서치 완료` 요약 한 줄이 남고, 고유 타입별 상세 줄은 Verbose입니다. 이전 문서가 안내하던 `DumpStageBattleComponentProperties`/`DumpStageInfo`는 코드에서 제거되었습니다. 노트 상세 덤프(`StageBattleMusicDataDump`)는 호출하는 곳 없이 남아 있다가 지웠습니다. `StageBattleComponent`를 리플렉션으로 전부 훑는 진단이라 [CHECKLIST.md](CHECKLIST.md)의 "깊게 훑는 진단" 항목에 걸리기도 합니다. 꼭 필요하면 커밋 `e896584`의 `StageBattleComponentPatch.cs`에서 되살리되, 기본값 off로 두십시오.
 
 ## 빌드가 실패할 때
 

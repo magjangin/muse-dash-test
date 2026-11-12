@@ -46,7 +46,7 @@ namespace muse_dash_test
             activeGroundKeys.Clear();
             keyNameCache.Clear();
             stylesDirty = true;
-            ModLogger.Msg("[InputOverlay] 키 바인딩 및 스타일 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
+            ModLogger.Verbose("[InputOverlay] 키 바인딩 및 스타일 캐시가 초기화되었습니다. 다음 프레임에 재로드합니다.");
         }
 
         /// <summary>

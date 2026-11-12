@@ -236,7 +236,7 @@ namespace muse_dash_test
                 cache[uid] = entry;
 
                 sprite = spr;
-                ModLogger.Msg($"[Cover] cover.png 로드 성공 uid='{uid}' {tex.width}x{tex.height} (캐시={cache.Count}/{MaxCacheEntries}) path={coverPath}");
+                ModLogger.Verbose($"[Cover] cover.png 로드 성공 uid='{uid}' {tex.width}x{tex.height} (캐시={cache.Count}/{MaxCacheEntries}) path={coverPath}");
                 return true;
             }
             catch (Exception ex)

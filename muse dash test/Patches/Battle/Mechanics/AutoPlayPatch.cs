@@ -17,10 +17,18 @@ namespace muse_dash_test
             if (!ModConfig.EnableAutoPlay) return;
             try
             {
-                ModLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay Prefix 호출 감지: 원래 인자 enable={enable}, 강제 설정값={InputOverlay.forceAutoPlay}");
                 // 설정 파일에 적힌 오토플레이 강제 값으로 덮어씌웁니다.
+                // 게임이 배틀마다 여러 번 부르므로, 값을 실제로 바꾼 경우만 Info로 남깁니다.
+                bool original = enable;
                 enable = InputOverlay.forceAutoPlay;
-                ModLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay 강제 조작 적용 완료: enable -> {enable}");
+                if (original != enable)
+                {
+                    ModLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay 인자 덮어씀: {original} -> {enable}");
+                }
+                else
+                {
+                    ModLogger.Verbose($"[AutoPlayPatch] DBSkill.SetAutoPlay 호출: enable={enable} (설정값과 같아 그대로)");
+                }
             }
             catch (Exception ex)
             {
@@ -32,7 +40,7 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg($"[AutoPlayPatch] DBSkill.SetAutoPlay Postfix 최종 설정 적용 완료: enable={enable}, instance={__instance}");
+                ModLogger.Verbose($"[AutoPlayPatch] DBSkill.SetAutoPlay Postfix 최종 설정 적용 완료: enable={enable}, instance={__instance}");
             }
             catch (Exception ex)
             {

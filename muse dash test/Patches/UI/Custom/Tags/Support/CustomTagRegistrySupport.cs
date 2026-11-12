@@ -375,7 +375,7 @@ namespace muse_dash_test
             if (!allMusicDict.ContainsKey(uid))
             {
                 allMusicDict.Add(uid, clonedInfo);
-                ModLogger.Msg($"[CustomTagRegistry] [성공] m_AllMusicInfo 맵에 '{uid}' 신규 주입 완료!");
+                ModLogger.Verbose($"[CustomTagRegistry] [성공] m_AllMusicInfo 맵에 '{uid}' 신규 주입 완료!");
             }
             else
             {
@@ -386,9 +386,9 @@ namespace muse_dash_test
             var checkInfo = GlobalDataBase.dbMusicTag.GetMusicInfoFromAll(uid);
             if (checkInfo != null && checkInfo.uid == uid)
             {
-                ModLogger.Msg($"[CustomTagRegistry] [대성공] GetMusicInfoFromAll('{uid}') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
+                ModLogger.Verbose($"[CustomTagRegistry] [대성공] GetMusicInfoFromAll('{uid}') 검증 성공! 반환된 곡 이름: '{checkInfo.name}'");
                 musicList.Add(uid);
-                ModLogger.Msg($"[CustomTagRegistry] [성공] 커스텀 태그 노출 목록에 '{uid}' 추가 완료!");
+                ModLogger.Verbose($"[CustomTagRegistry] [성공] 커스텀 태그 노출 목록에 '{uid}' 추가 완료!");
             }
             else
             {

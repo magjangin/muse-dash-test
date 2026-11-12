@@ -254,7 +254,7 @@ Il2Cpp.Boss.InitBossObject: Static 폴백 변경 적용 -> name=0701_boss, scene
 Il2Cpp.Boss.InitBossObject 완료: name=0401_boss, scene=4, isLast=True
 ```
 
-공식곡(또는 커스텀 차트가 적용되지 않은 판)에서는 `호출` 줄 다음에 `Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (...)`이 찍히고 값은 그대로입니다.
+공식곡(또는 커스텀 차트가 적용되지 않은 판)에서는 `호출` 줄 다음에 `Il2Cpp.Boss.InitBossObject: 변경 건너뜀 (...)`이 찍히고 값은 그대로입니다. `호출`·`변경 건너뜀` 두 줄은 2026-11-12부터 `LogLevel = "Verbose"`에서만 나옵니다.
 
 보스 액션 트리거가 추가되면 노트 로그에도 보입니다.
 

@@ -340,17 +340,17 @@ public class Boss_InitBossObject_Patch
     {
         try
         {
-            ModLogger.Msg($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
+            ModLogger.Verbose($"Il2Cpp.Boss.InitBossObject 호출: name={name}, scene={scene}, isLast={isLast}, instance={__instance}");
 
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
             {
-                ModLogger.Msg($"Il2Cpp.Boss.InitBossObject: 변경 건너뜀 ({CustomPlaySession.Current.DescribeApplyDecision()})");
+                ModLogger.Verbose($"Il2Cpp.Boss.InitBossObject: 변경 건너뜀 ({CustomPlaySession.Current.DescribeApplyDecision()})");
                 return;
             }
 
             if (CustomPlaySession.Current.IsDynamicBossSwap)
             {
-                // 배틀 도중 swap마다 도는 자리라 Verbose입니다(바로 위 '호출' 줄이 이미 Info로 남습니다).
+                // 배틀 도중 swap마다 도는 자리라 Verbose입니다(바로 위 '호출' 줄도 같은 이유로 Verbose입니다).
                 ModLogger.Verbose("[DynamicSwap] 실시간 보스 교체 중이므로 리디렉션 패스를 건너뜁니다.");
                 return;
             }

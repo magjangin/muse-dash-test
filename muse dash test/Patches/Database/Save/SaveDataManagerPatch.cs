@@ -26,7 +26,7 @@ namespace muse_dash_test
             {
                 if (__instance == null) return;
 
-                ModLogger.Msg($"[SaveDataManagerPatch] DataManager.Save() 호출 감지 - 오염 방지를 위한 정밀 클렌징을 개시합니다. (persistentDataPath={Application.persistentDataPath})");
+                ModLogger.Verbose($"[SaveDataManagerPatch] DataManager.Save() 호출 감지 - 오염 방지를 위한 정밀 클렌징을 개시합니다. (persistentDataPath={Application.persistentDataPath})");
 
                 var datas = __instance.datas;
                 if (datas == null)
@@ -142,7 +142,7 @@ namespace muse_dash_test
                     }
                 }
 
-                ModLogger.Msg("[SaveDataManagerPatch] 세이브 데이터 정밀 정화 완료. 깨끗한 상태로 안전하게 저장을 계속 진행합니다.");
+                ModLogger.Verbose("[SaveDataManagerPatch] 세이브 데이터 정밀 정화 완료. 깨끗한 상태로 안전하게 저장을 계속 진행합니다.");
             }
             catch (System.Exception ex)
             {

@@ -43,10 +43,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         if (musicList == null || musicList.Count == 0) return;
 
+        // 공식 곡을 고를 때마다 도는 진단입니다. 고유 타입마다 한 줄씩 나가는 상세 열거는 Verbose이고,
+        // Info에는 미등록 노트가 있을 때만 요약 한 줄을 남깁니다. 상세 줄은 필드마다 IL2CPP를 다시 읽으므로
+        // 꺼져 있으면 아예 읽지 않습니다.
+        bool verbose = ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
         var loggedUids = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
         int newNoteTotalCount = 0;
 
-        ModLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트(UID & NoteType) 서치 시작 (total={musicList.Count}) ★");
+        ModLogger.Verbose($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트(UID & NoteType) 서치 시작 (total={musicList.Count}) ★");
 
         for (int i = 0; i < musicList.Count; i++)
         {
@@ -75,9 +79,8 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 string key = $"{uid}_type{noteTypeVal}";
 
                 // 콘솔 중복 출력을 방지하며 고유한 신규 노트 타입/UID만 상세 출력
-                if (!loggedUids.Contains(key))
+                if (loggedUids.Add(key) && verbose)
                 {
-                    loggedUids.Add(key);
 
                     string ibmsId = SafeLogValue(() => note.noteData.ibms_id);
                     string prefab = SafeLogValue(() => note.noteData.prefab_name);
@@ -89,7 +92,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                     string dt = SafeLogValue(() => note.dt);
                     string showTick = SafeLogValue(() => note.showTick);
 
-                    ModLogger.Msg(
+                    ModLogger.Verbose(
                         $"[OfficialSceneContext] ★신규/미등록 노트 감지★ index={i}, objId={note.objId}, tick={tick}, dt={dt}, showTick={showTick}, " +
                         $"uid={uid}, ibms_id={ibmsId}, type={noteTypeVal}, scene={scene}, pathway={pathway}, " +
                         $"prefab={prefab}, key_audio={keyAudio}, boss_action={bossAction}"
@@ -98,7 +101,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             }
         }
 
-        ModLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
+        if (newNoteTotalCount > 0)
+        {
+            ModLogger.Msg($"[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트={newNoteTotalCount}개, 고유 타입={loggedUids.Count}개 ★");
+        }
+        else
+        {
+            ModLogger.Verbose("[OfficialSceneContext] ★ 원본 차트 신규/미등록 노트 서치 완료: 감지 노트=0개 ★");
+        }
     }
 
     public static void DumpSortedBmsBossContext(Il2CppSystem.Collections.Generic.List<MusicData> musicList, int startIndex)

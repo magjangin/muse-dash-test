@@ -72,7 +72,7 @@ namespace muse_dash_test
                         // 단, 가상 곡 로딩이 방금 시작된 도중(CurrentLoadingUid 활성)에는 패널 활성화 전환 지연일 수 있으므로 취소하지 않습니다.
                         if (HwaMenuBgmController.IsCustomMenuBgmActive && string.IsNullOrEmpty(HwaMenuBgmController.CurrentLoadingUid))
                         {
-                            ModLogger.Msg($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 커스텀 BGM 정지 및 모니터링 종료: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
+                            ModLogger.Verbose($"[MenuBGM.Patch] 곡 선택 화면을 벗어남을 감지, 커스텀 BGM 정지 및 모니터링 종료: selectedUid={CustomPlaySession.Current.SelectedMusicUid}");
                             HwaMenuBgmController.StopCustomMenuBgm("곡 선택/준비 화면 이탈 감지");
                             HwaMenuBgmController.StopMenuMonitoring("곡 선택/준비 화면 이탈 감지");
                         }
@@ -89,7 +89,7 @@ namespace muse_dash_test
                             // __instance는 현재 커스텀 BGM이 돌고 있는 AudioSource이므로, Stop()을 부르면
                             // 재생 중이던 커스텀 BGM이 꺼져버립니다. 클립 대입만 차단(return false)하고
                             // 현재 커스텀 클립이 계속 재생되도록 보장합니다.
-                            ModLogger.Msg($"[MenuBGM.Patch] 가상 곡 활성화 중 허용되지 않은 클립 대입 차단! (selectedUid={selectedUid}, 요청 클립: {clipNameForLog})");
+                            ModLogger.Verbose($"[MenuBGM.Patch] 가상 곡 활성화 중 허용되지 않은 클립 대입 차단! (selectedUid={selectedUid}, 요청 클립: {clipNameForLog})");
                             if (__instance != null && __instance.clip != null && !__instance.isPlaying)
                             {
                                 __instance.Play();
