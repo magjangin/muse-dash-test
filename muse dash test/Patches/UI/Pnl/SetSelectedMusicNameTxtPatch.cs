@@ -24,7 +24,7 @@ namespace muse_dash_test
                         uid,
                         out string title,
                         out string artist,
-                        out _, out _, out _, out _, out _, out _, out _))
+                        out _, out _, out _, out _, out _, out _))
                 {
                     return;
                 }

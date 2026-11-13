@@ -31,6 +31,9 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         #region Cursor & Controller Override Patches
 
+        private static bool loggedHideCursorError;
+        private static bool loggedControllerTypeError;
+
         /// <summary>
         /// 모바일 터치 모드 활성화 시 마우스 커서가 숨겨지지 않도록 항상 표시 상태를 유지합니다.
         /// </summary>
@@ -38,11 +41,22 @@ namespace muse_dash_test.Patches.Battle.Mechanics
         [HarmonyPrefix]
         public static bool HideCursor_Update_Prefix()
         {
-            if (ModConfig.EnableMobileTouch && InputOverlay.enableMobileTouch)
+            try
             {
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
-                return false;
+                if (ModConfig.EnableMobileTouch && InputOverlay.enableMobileTouch)
+                {
+                    Cursor.visible = true;
+                    Cursor.lockState = CursorLockMode.None;
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!loggedHideCursorError)
+                {
+                    loggedHideCursorError = true;
+                    ModLogger.Error($"[MouseTouchBridgePatch] HideCursor.Update Prefix 예외: {ex}");
+                }
             }
             return true;
         }
@@ -54,10 +68,21 @@ namespace muse_dash_test.Patches.Battle.Mechanics
         [HarmonyPrefix]
         public static bool InputManager_ControllerType_Prefix(ref InputController __result)
         {
-            if (ModConfig.EnableMobileTouch && InputOverlay.enableMobileTouch)
+            try
             {
-                __result = InputController.Mouse;
-                return false;
+                if (ModConfig.EnableMobileTouch && InputOverlay.enableMobileTouch)
+                {
+                    __result = InputController.Mouse;
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!loggedControllerTypeError)
+                {
+                    loggedControllerTypeError = true;
+                    ModLogger.Error($"[MouseTouchBridgePatch] InputManager.controllerType Prefix 예외: {ex}");
+                }
             }
             return true;
         }

@@ -55,7 +55,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
             uid,
             out string manifestTitle,
             out string manifestArtist,
-            out _, out _, out _, out _, out _, out _, out _);
+            out _, out _, out _, out _, out _, out _);
 
         if (foundInManifest)
         {

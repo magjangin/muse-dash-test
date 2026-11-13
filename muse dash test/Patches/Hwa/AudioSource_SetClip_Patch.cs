@@ -10,6 +10,7 @@ namespace muse_dash_test
     {
         private static Il2CppAssets.Scripts.UI.Panels.PnlStage cachedPnlStage;
         private static Il2Cpp.PnlPreparation cachedPnlPreparation;
+        private static Il2CppAssets.Scripts.UI.Panels.PnlMenu cachedPnlMenu;
         private static bool isMenuPanelActive = false;
         private static bool lastScanResult = false;
         private static int lastScanFrame = -1;
@@ -135,6 +136,7 @@ namespace muse_dash_test
         {
             cachedPnlStage = null;
             cachedPnlPreparation = null;
+            cachedPnlMenu = null;
             isMenuPanelActive = false;
             lastScanResult = false;
             lastScanFrame = -1;
@@ -145,6 +147,15 @@ namespace muse_dash_test
         internal static void SetMenuPanelActive(bool active)
         {
             isMenuPanelActive = active;
+        }
+
+        internal static void RegisterMenuPanel(Il2CppAssets.Scripts.UI.Panels.PnlMenu panel)
+        {
+            if (panel != null)
+            {
+                cachedPnlMenu = panel;
+            }
+            isMenuPanelActive = true;
         }
 
         internal static void RegisterStagePanel(Il2CppAssets.Scripts.UI.Panels.PnlStage panel)
@@ -228,12 +239,6 @@ namespace muse_dash_test
         {
             try
             {
-                if (isMenuPanelActive)
-                {
-                    lastScanResult = false;
-                    return false;
-                }
-
                 // 씬 언로드로 파괴된 이전 C# 래퍼 참조는 null로 정리
                 if (cachedPnlStage != null && !IsAlive(cachedPnlStage))
                 {
@@ -243,10 +248,40 @@ namespace muse_dash_test
                 {
                     cachedPnlPreparation = null;
                 }
+                if (cachedPnlMenu != null && !IsAlive(cachedPnlMenu))
+                {
+                    cachedPnlMenu = null;
+                }
 
                 // 기존 캐시가 살아있으면 activeInHierarchy 확인 (같은 프레임 안에서도 패널 전환 즉시 반영)
                 bool stageActive = IsAliveAndActive(cachedPnlStage);
                 bool prepActive = IsAliveAndActive(cachedPnlPreparation);
+
+                if (isMenuPanelActive)
+                {
+                    if (cachedPnlMenu == null && (stageActive || prepActive))
+                    {
+                        int frame = Time.frameCount;
+                        if (lastScanFrame < 0 || frame - lastScanFrame >= ScanIntervalFrames)
+                        {
+                            lastScanFrame = frame;
+                            cachedPnlMenu = FindSceneComponent<Il2CppAssets.Scripts.UI.Panels.PnlMenu>();
+                        }
+                    }
+
+                    // PnlMenu.OnEnable 후 PnlStage/PnlPreparation OnEnable 패치가 누락돼 플래그가 남아 있더라도,
+                    // PnlMenu가 실제로 비활성화된 상태라면 자동으로 플래그를 해제해 곡 선택 컨텍스트를 복구합니다.
+                    if (cachedPnlMenu != null && !IsAliveAndActive(cachedPnlMenu))
+                    {
+                        isMenuPanelActive = false;
+                        ModLogger.Verbose("[MenuBGM.Patch] PnlMenu 비활성 감지로 isMenuPanelActive 자동 복구");
+                    }
+                    else
+                    {
+                        lastScanResult = false;
+                        return false;
+                    }
+                }
 
                 if (stageActive || prepActive)
                 {

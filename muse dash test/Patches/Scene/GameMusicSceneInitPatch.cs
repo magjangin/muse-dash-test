@@ -23,15 +23,29 @@ using System.Collections.Generic;
     new Type[] { typeof(string) })]
 public class StageBattleComponent_IsIgnoreCurrentNoteChecking_Patch
 {
+    private static bool loggedError;
+
     public static bool Prefix(string prefabName, ref bool __result)
     {
-        if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+        try
         {
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+            {
+                return true;
+            }
+
+            __result = true;
+            return false;
+        }
+        catch (Exception ex)
+        {
+            if (!loggedError)
+            {
+                loggedError = true;
+                ModLogger.Error($"[StageBattleComponent.IsIgnoreCurrentNoteChecking] Prefix 예외: {ex}");
+            }
             return true;
         }
-
-        __result = true;
-        return false;
     }
 }
 
@@ -39,15 +53,29 @@ public class StageBattleComponent_IsIgnoreCurrentNoteChecking_Patch
     new Type[] { typeof(int), typeof(string) })]
 public class GameMusicScene_IsIgnoreCurrentNoteChecking_Patch
 {
+    private static bool loggedError;
+
     public static bool Prefix(int curScene, string notePrefabName, ref bool __result)
     {
-        if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+        try
         {
+            if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
+            {
+                return true;
+            }
+
+            __result = true;
+            return false;
+        }
+        catch (Exception ex)
+        {
+            if (!loggedError)
+            {
+                loggedError = true;
+                ModLogger.Error($"[GameMusicScene.IsIgnoreCurrentNoteChecking] Prefix 예외: {ex}");
+            }
             return true;
         }
-
-        __result = true;
-        return false;
     }
 }
 
@@ -104,7 +132,7 @@ public class GameMusicScene_InitTimer_Patch
     /// </summary>
     private static void InspectPureSceneSegments(Il2CppSystem.Collections.Generic.List<Il2CppGameLogic.MusicData> list)
     {
-        if (list == null) return;
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose) || list == null) return;
 
         var zzCounts = new SortedDictionary<string, int>();
         loggedGhostUids.Clear();

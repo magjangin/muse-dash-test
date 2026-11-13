@@ -18,7 +18,7 @@ namespace muse_dash_test.Patches.UI.Stage
         {
             try
             {
-                if (__instance == null) return;
+                if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose) || __instance == null) return;
                 int bufferChildCount = __instance.m_RankCellBuffer != null ? __instance.m_RankCellBuffer.childCount : 0;
                 int ranksDictCount = PnlRankLoggingHelper.GetMRanksCountReflect(__instance);
 
@@ -38,7 +38,7 @@ namespace muse_dash_test.Patches.UI.Stage
         {
             try
             {
-                if (__instance == null) return;
+                if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose) || __instance == null) return;
                 int bufferChildCount = __instance.m_RankCellBuffer != null ? __instance.m_RankCellBuffer.childCount : 0;
                 int ranksDictCount = PnlRankLoggingHelper.GetMRanksCountReflect(__instance);
 
@@ -58,6 +58,7 @@ namespace muse_dash_test.Patches.UI.Stage
         {
             try
             {
+                if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
                 string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 ModLogger.Verbose($"👑 [PnlRank.Refresh] Called! force={force}, UID='{uid}'");
             }

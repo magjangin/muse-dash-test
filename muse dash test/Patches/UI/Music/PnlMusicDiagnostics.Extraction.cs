@@ -54,7 +54,7 @@ namespace muse_dash_test
             {
                 string selectedUid = resolvedUid ?? ResolveCustomMusicUid(pnlInstance);
                 if (!string.IsNullOrEmpty(selectedUid)
-                    && HwaResourceManager.TryGetHwaPrimarySong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _, out _)
+                    && HwaResourceManager.TryGetHwaPrimarySong(selectedUid, out _, out _, out string manifestLevelDesigner, out _, out _, out _, out _, out _)
                     && !string.IsNullOrWhiteSpace(manifestLevelDesigner))
                 {
                     info.LevelDesigner = manifestLevelDesigner;
@@ -166,13 +166,7 @@ namespace muse_dash_test
 
         private static string SafeGetProp(object obj, string propName)
         {
-            try
-            {
-                var p = obj.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (p != null && p.CanRead) return p.GetValue(obj)?.ToString();
-            }
-            catch (Exception) { }
-            return null;
+            return ModReflection.GetValue(obj, propName, silent: true)?.ToString();
         }
 
         private static PnlStage FindLivePnlStage()

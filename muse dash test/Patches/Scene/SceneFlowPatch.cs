@@ -35,6 +35,7 @@ public class SceneChangeController_ChangeScene_Patch
 {
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
         try
         {
             ModLogger.Verbose($"[SceneFlow.ChangeScene] PRE  {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
@@ -44,6 +45,7 @@ public class SceneChangeController_ChangeScene_Patch
 
     public static void Postfix(Il2Cpp.SceneChangeController __instance, int sceneInfo)
     {
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
         try
         {
             ModLogger.Verbose($"[SceneFlow.ChangeScene] POST {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
@@ -57,21 +59,29 @@ public class SceneChangeController_ChangeNote_Patch
 {
     public static bool Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
-        if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart)
-        {
-            return true; // 순정곡이면 원본 ChangeNote 실행 허용
-        }
-
         try
         {
-            ModLogger.Verbose($"[SceneFlow.ChangeNote]  PRE(SKIP) {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
+            if (!muse_dash_test.CustomPlaySession.Current.ShouldApplyExperimentChart)
+            {
+                return true; // 순정곡이면 원본 ChangeNote 실행 허용
+            }
+
+            if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+            {
+                ModLogger.Verbose($"[SceneFlow.ChangeNote]  PRE(SKIP) {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
+            }
+            return false; // 커스텀곡일때만 원본 실행 차단
         }
-        catch (Exception ex) { ModLogger.Error($"[SceneFlow.ChangeNote] Prefix 예외: {ex}"); }
-        return false; // 커스텀곡일때만 원본 실행 차단
+        catch (Exception ex)
+        {
+            ModLogger.Error($"[SceneFlow.ChangeNote] Prefix 예외: {ex}");
+            return true;
+        }
     }
 
     public static void Postfix(Il2Cpp.SceneChangeController __instance, int sceneInfo)
     {
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
         try
         {
             ModLogger.Verbose($"[SceneFlow.ChangeNote]  POST {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");
@@ -85,6 +95,7 @@ public class SceneChangeController_SceneAnimationReset_Patch
 {
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
         try
         {
             ModLogger.Verbose($"[SceneFlow.AnimReset]   PRE  {SceneFlowLog.Stamp()}, sceneInfo={sceneInfo}, curScene={SceneFlowLog.SafeCurScene(__instance)}");

@@ -66,13 +66,14 @@ namespace muse_dash_test
         /// </summary>
         internal static void LogBmsWavMappingSummary(BmsChart chart)
         {
+            if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
+
             if (chart?.Notes == null || chart.Notes.Count == 0)
             {
                 ModLogger.Verbose("[HwaResourceManager.Bms] 노트가 없어 WAV 매핑 샘플을 건너뜁니다.");
                 return;
             }
 
-            if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
             {
                 int logged = 0;
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

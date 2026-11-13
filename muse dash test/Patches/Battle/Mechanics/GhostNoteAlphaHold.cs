@@ -73,9 +73,13 @@ namespace muse_dash_test
             try
             {
                 var note = controller.m_MusicData?.noteData;
-                if (note != null && (note.type != 0 || !string.IsNullOrEmpty(note.uid)))
+                if (note != null)
                 {
-                    return note.type == GhostType || IsGhostUid(note.uid);
+                    if (note.type == GhostType) return true;
+                    if (note.type != 0 || !string.IsNullOrEmpty(note.uid))
+                    {
+                        return IsGhostUid(note.uid);
+                    }
                 }
             }
             catch (Exception) { }
@@ -83,7 +87,7 @@ namespace muse_dash_test
             try
             {
                 string name = controller.gameObject != null ? controller.gameObject.name : null;
-                return name != null && name.Length >= 6 && IsGhostUid(name.Substring(0, 6));
+                return IsGhostUid(name);
             }
             catch (Exception) { }
 
@@ -97,7 +101,7 @@ namespace muse_dash_test
             {
                 if (!char.IsDigit(uid[i])) return false;
             }
-            return uid.Substring(2, 2) == GhostXx;
+            return uid[2] == GhostXx[0] && uid[3] == GhostXx[1];
         }
     }
 
