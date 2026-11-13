@@ -79,6 +79,14 @@ namespace muse_dash_test
                 AudioSource src = GameBgmSource.TryGet(out _);
                 if (src != null && src.clip != null)
                 {
+                    AudioClip injected = HwaMenuBgmController.InjectedMenuClip;
+                    bool isCustomClip = (injected != null && src.clip == injected)
+                        || (!string.IsNullOrEmpty(src.clip.name) && src.clip.name.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase));
+                    if (!isCustomClip)
+                    {
+                        return;
+                    }
+
                     if (src.volume < 0.05f)
                     {
                         src.volume = 1.0f;

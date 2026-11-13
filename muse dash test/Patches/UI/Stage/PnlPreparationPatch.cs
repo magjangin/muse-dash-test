@@ -7,6 +7,18 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.PnlPreparation), nameof(Il2Cpp.PnlPreparation.OnEnable))]
 public class PnlPreparation_OnEnable_Patch
 {
+    public static void Prefix(Il2Cpp.PnlPreparation __instance)
+    {
+        try
+        {
+            AudioSource_SetClip_Patch.RegisterPreparationPanel(__instance);
+        }
+        catch (Exception ex)
+        {
+            ModLogger.Error($"PnlPreparation.OnEnable Prefix 예외: {ex}");
+        }
+    }
+
     public static void Postfix(Il2Cpp.PnlPreparation __instance)
     {
         try

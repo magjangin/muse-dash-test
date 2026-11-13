@@ -15,6 +15,7 @@ public class PnlStage_OnEnable_Patch
     {
         try
         {
+            AudioSource_SetClip_Patch.RegisterStagePanel(__instance);
             var dataManager = Singleton<DataManager>.instance;
             if (dataManager != null)
             {
@@ -285,10 +286,7 @@ public class PnlStage_RefreshDiffUI_Patch
             {
                 CustomPlaySession.Current.SelectedMusicUid = musicInfo.uid;
                 CustomPlaySession.Current.RememberMusicSelection(musicInfo.uid);
-                if (CustomContentIds.IsVirtualSong(musicInfo.uid))
-                {
-                    HwaMenuBgmController.TriggerMenuBgmChange(musicInfo.uid);
-                }
+                HwaMenuBgmController.TriggerMenuBgmChange(musicInfo.uid);
             }
             // 곡을 고를 때마다 도는 자리입니다. 아래는 리플렉션으로 필드 다섯 개를 읽는 진단이라
             // 로그 수준이 Verbose가 아니면 만들지도 않습니다.

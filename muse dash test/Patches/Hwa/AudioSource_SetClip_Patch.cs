@@ -10,8 +10,8 @@ namespace muse_dash_test
     {
         private static Il2CppAssets.Scripts.UI.Panels.PnlStage cachedPnlStage;
         private static Il2Cpp.PnlPreparation cachedPnlPreparation;
-        private static int lastCheckFrame = -1;
-        private static bool lastCheckResult = false;
+        private static bool isMenuPanelActive = false;
+        private static bool lastScanResult = false;
         private static int lastScanFrame = -1;
 
         /// <summary>패널 씬 스캔(<c>FindObjectOfType</c>) 사이에 둘 최소 프레임 수.</summary>
@@ -135,11 +135,34 @@ namespace muse_dash_test
         {
             cachedPnlStage = null;
             cachedPnlPreparation = null;
-            lastCheckFrame = -1;
-            lastCheckResult = false;
+            isMenuPanelActive = false;
+            lastScanResult = false;
             lastScanFrame = -1;
             gameBgmPointer = IntPtr.Zero;
             gameBgmPointerFrame = -1;
+        }
+
+        internal static void SetMenuPanelActive(bool active)
+        {
+            isMenuPanelActive = active;
+        }
+
+        internal static void RegisterStagePanel(Il2CppAssets.Scripts.UI.Panels.PnlStage panel)
+        {
+            if (panel != null)
+            {
+                cachedPnlStage = panel;
+            }
+            isMenuPanelActive = false;
+        }
+
+        internal static void RegisterPreparationPanel(Il2Cpp.PnlPreparation panel)
+        {
+            if (panel != null)
+            {
+                cachedPnlPreparation = panel;
+            }
+            isMenuPanelActive = false;
         }
 
         private static bool IsAlive<T>(T comp) where T : UnityEngine.Component
@@ -205,10 +228,10 @@ namespace muse_dash_test
         {
             try
             {
-                int currentFrame = Time.frameCount;
-                if (currentFrame == lastCheckFrame)
+                if (isMenuPanelActive)
                 {
-                    return lastCheckResult;
+                    lastScanResult = false;
+                    return false;
                 }
 
                 // 씬 언로드로 파괴된 이전 C# 래퍼 참조는 null로 정리
@@ -221,21 +244,21 @@ namespace muse_dash_test
                     cachedPnlPreparation = null;
                 }
 
-                // 기존 캐시가 살아있으면 activeInHierarchy 확인
+                // 기존 캐시가 살아있으면 activeInHierarchy 확인 (같은 프레임 안에서도 패널 전환 즉시 반영)
                 bool stageActive = IsAliveAndActive(cachedPnlStage);
                 bool prepActive = IsAliveAndActive(cachedPnlPreparation);
 
                 if (stageActive || prepActive)
                 {
-                    lastCheckFrame = currentFrame;
-                    lastCheckResult = true;
+                    lastScanResult = true;
                     return true;
                 }
 
                 // 둘 다 비활성이거나 파괴되었을 때 스캔
-                // 단, 직전 프레임까지 활성이었다가 방금 꺼진 경우(PnlStage ↔ PnlPreparation 전환 순간)에는
+                // 단, 직전까지 활성이었다가 방금 꺼진 경우(PnlStage ↔ PnlPreparation 전환 순간)에는
                 // 30프레임 스로틀링을 즉시 우회하여 대상 패널 활성화를 즉시 감지합니다.
-                bool justDeactivated = lastCheckResult;
+                int currentFrame = Time.frameCount;
+                bool justDeactivated = lastScanResult;
                 bool scanAllowed = justDeactivated || lastScanFrame < 0 || currentFrame - lastScanFrame >= ScanIntervalFrames;
                 if (scanAllowed)
                 {
@@ -253,14 +276,12 @@ namespace muse_dash_test
 
                     if (IsAliveAndActive(cachedPnlStage) || IsAliveAndActive(cachedPnlPreparation))
                     {
-                        lastCheckFrame = currentFrame;
-                        lastCheckResult = true;
+                        lastScanResult = true;
                         return true;
                     }
                 }
 
-                lastCheckFrame = currentFrame;
-                lastCheckResult = false;
+                lastScanResult = false;
                 return false;
             }
             catch (Exception ex)

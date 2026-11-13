@@ -7,15 +7,16 @@ using muse_dash_test;
 [HarmonyLib.HarmonyPatch(typeof(Il2CppAssets.Scripts.UI.Panels.PnlMenu), nameof(Il2CppAssets.Scripts.UI.Panels.PnlMenu.OnEnable))]
 public class PnlMenu_OnEnable_Patch
 {
-    public static void Postfix(Il2CppAssets.Scripts.UI.Panels.PnlMenu __instance)
+    public static void Prefix(Il2CppAssets.Scripts.UI.Panels.PnlMenu __instance)
     {
         try
         {
+            AudioSource_SetClip_Patch.SetMenuPanelActive(true);
             HwaMenuBgmController.StopCustomMenuBgm("PnlMenu.OnEnable");
         }
         catch (Exception ex)
         {
-            ModLogger.Error($"PnlMenu.OnEnable Postfix 예외: {ex}");
+            ModLogger.Error($"PnlMenu.OnEnable Prefix 예외: {ex}");
         }
     }
 }
