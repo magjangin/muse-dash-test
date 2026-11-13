@@ -69,7 +69,7 @@ namespace muse_dash_test
                     out string manifestTitle,
                     out string manifestArtist,
                     out string manifestLevelDesigner,
-                    out _, out _, out _, out _, out _, out _))
+                    out _, out _, out _, out _, out _))
             {
                 if (!string.IsNullOrWhiteSpace(manifestTitle)) title = manifestTitle;
                 if (!string.IsNullOrWhiteSpace(manifestArtist)) artist = manifestArtist;

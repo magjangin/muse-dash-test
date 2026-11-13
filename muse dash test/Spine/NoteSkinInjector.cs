@@ -57,6 +57,51 @@ namespace muse_dash_test
         // 키: 에셋 포인터 + 요구 애니메이션 이름 목록. 값: 빠진 이름(없으면 빈 목록).
         private static readonly Dictionary<string, List<string>> ContractVerdicts = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         private static readonly HashSet<string> WarnedContracts = new HashSet<string>(StringComparer.Ordinal);
+        private static readonly Dictionary<PointerContractKey, CachedContractVerdict> PointerContracts = new Dictionary<PointerContractKey, CachedContractVerdict>();
+
+        private readonly struct PointerContractKey : IEquatable<PointerContractKey>
+        {
+            public readonly IntPtr CustomAsset;
+            public readonly IntPtr OriginalAsset;
+            public readonly IntPtr ActionData;
+            public readonly IntPtr FeverActionData;
+
+            public PointerContractKey(IntPtr customAsset, IntPtr originalAsset, IntPtr actionData, IntPtr feverActionData)
+            {
+                CustomAsset = customAsset;
+                OriginalAsset = originalAsset;
+                ActionData = actionData;
+                FeverActionData = feverActionData;
+            }
+
+            public bool Equals(PointerContractKey other)
+            {
+                return CustomAsset == other.CustomAsset
+                    && OriginalAsset == other.OriginalAsset
+                    && ActionData == other.ActionData
+                    && FeverActionData == other.FeverActionData;
+            }
+
+            public override bool Equals(object obj) => obj is PointerContractKey other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = CustomAsset.GetHashCode();
+                    hash = hash * 397 ^ OriginalAsset.GetHashCode();
+                    hash = hash * 397 ^ ActionData.GetHashCode();
+                    hash = hash * 397 ^ FeverActionData.GetHashCode();
+                    return hash;
+                }
+            }
+        }
+
+        private sealed class CachedContractVerdict
+        {
+            public string Key;
+            public List<string> Missing;
+        }
 
         private static int injectedCount;
 
@@ -93,12 +138,31 @@ namespace muse_dash_test
                 var skeletonData = custom.GetSkeletonData(true);
                 if (skeletonData == null) return;
 
-                var required = CollectRequiredAnimations(sac);
-                string contractKey = custom.Pointer.ToInt64() + "|" + string.Join("\u0001", required);
-                if (!ContractVerdicts.TryGetValue(contractKey, out var missing))
+                var actionData = sac.actionData;
+                var feverActionData = sac.m_FeverActionData;
+                var pointerKey = new PointerContractKey(
+                    custom.Pointer,
+                    original.Pointer,
+                    actionData != null ? actionData.Pointer : IntPtr.Zero,
+                    feverActionData != null ? feverActionData.Pointer : IntPtr.Zero);
+
+                string contractKey;
+                List<string> missing;
+                if (PointerContracts.TryGetValue(pointerKey, out var cachedVerdict))
                 {
-                    missing = NoteSkinRules.FindMissingAnimations(required, n => skeletonData.FindAnimation(n) != null);
-                    ContractVerdicts[contractKey] = missing;
+                    contractKey = cachedVerdict.Key;
+                    missing = cachedVerdict.Missing;
+                }
+                else
+                {
+                    var required = CollectRequiredAnimations(actionData, feverActionData);
+                    contractKey = custom.Pointer.ToInt64() + "|" + string.Join("\u0001", required);
+                    if (!ContractVerdicts.TryGetValue(contractKey, out missing))
+                    {
+                        missing = NoteSkinRules.FindMissingAnimations(required, n => skeletonData.FindAnimation(n) != null);
+                        ContractVerdicts[contractKey] = missing;
+                    }
+                    PointerContracts[pointerKey] = new CachedContractVerdict { Key = contractKey, Missing = missing };
                 }
 
                 if (missing.Count > 0)
@@ -183,6 +247,7 @@ namespace muse_dash_test
             // 계약 판정은 에셋 포인터로 묶여 있어, 에셋을 새로 만들면 같은 주소가 다시 쓰일 수 있습니다.
             ContractVerdicts.Clear();
             WarnedContracts.Clear();
+            PointerContracts.Clear();
 
             SkeletonDataAsset asset = null;
             if (stamp != 0)
@@ -209,11 +274,13 @@ namespace muse_dash_test
             return stamp == 0 ? 1 : stamp;
         }
 
-        private static List<string> CollectRequiredAnimations(SpineActionController sac)
+        private static List<string> CollectRequiredAnimations(
+            Il2CppReferenceArray<SkeletActionData> actionData,
+            Il2CppReferenceArray<SkeletActionData> feverActionData)
         {
             var names = new List<string>();
-            AppendActionNames(names, sac.actionData);
-            AppendActionNames(names, sac.m_FeverActionData);
+            AppendActionNames(names, actionData);
+            AppendActionNames(names, feverActionData);
             return names;
         }
 

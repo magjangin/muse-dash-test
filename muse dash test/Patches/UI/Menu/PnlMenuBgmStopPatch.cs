@@ -11,7 +11,7 @@ public class PnlMenu_OnEnable_Patch
     {
         try
         {
-            AudioSource_SetClip_Patch.SetMenuPanelActive(true);
+            AudioSource_SetClip_Patch.RegisterMenuPanel(__instance);
             HwaMenuBgmController.StopCustomMenuBgm("PnlMenu.OnEnable");
         }
         catch (Exception ex)

@@ -270,17 +270,20 @@ public class PnlStage_RefreshDiffUI_Patch
                 }
             }
 
-            string musicUid = musicInfo != null ? musicInfo.uid : "(null)";
-            string dmPtr = dataManager != null ? "Active" : "Null";
-            string accPtr = account != null ? "Found" : "Null";
-            string varState = val != null ? "Found" : "Null";
-            string execState = success ? "SUCCESS" : "FAILED";
+            if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+            {
+                string musicUid = musicInfo != null ? musicInfo.uid : "(null)";
+                string dmPtr = dataManager != null ? "Active" : "Null";
+                string accPtr = account != null ? "Found" : "Null";
+                string varState = val != null ? "Found" : "Null";
+                string execState = success ? "SUCCESS" : "FAILED";
 
-            ModConfig.VerboseLog($"[🔓 Unlock Process] PnlStage.RefreshDiffUI -> Target: [{musicUid}]");
-            ModConfig.VerboseLog($"  ├─ Step 1: DataManager dm = Singleton<DataManager>.instance; -> {dmPtr}");
-            ModConfig.VerboseLog($"  ├─ Step 2: DataObject account = (DataObject)dm[\"Account\"]; -> {accPtr}");
-            ModConfig.VerboseLog($"  ├─ Step 3: IVariable variable = account[\"IsUnlockAllMaster\"]; -> {varState}");
-            ModConfig.VerboseLog($"  └─ Step 4: VariableUtils.SetResult(variable, true); -> {execState}");
+                ModConfig.VerboseLog($"[🔓 Unlock Process] PnlStage.RefreshDiffUI -> Target: [{musicUid}]");
+                ModConfig.VerboseLog($"  ├─ Step 1: DataManager dm = Singleton<DataManager>.instance; -> {dmPtr}");
+                ModConfig.VerboseLog($"  ├─ Step 2: DataObject account = (DataObject)dm[\"Account\"]; -> {accPtr}");
+                ModConfig.VerboseLog($"  ├─ Step 3: IVariable variable = account[\"IsUnlockAllMaster\"]; -> {varState}");
+                ModConfig.VerboseLog($"  └─ Step 4: VariableUtils.SetResult(variable, true); -> {execState}");
+            }
 
             if (musicInfo != null && !string.IsNullOrEmpty(musicInfo.uid))
             {
@@ -307,26 +310,35 @@ public class PnlStage_RefreshDiffUI_Patch
     {
         try
         {
-            var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
-            string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}'" : "(null)";
-            ModConfig.VerboseLog($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, argDetails=[{argDetails}], currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
+            if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+            {
+                var infoWrap = musicInfo != null ? new MusicInfoWrapper(musicInfo) : null;
+                string argDetails = infoWrap != null ? $"uid={infoWrap.uid}, name='{infoWrap.name}', musicName='{infoWrap.musicName}', author='{infoWrap.author}'" : "(null)";
+                ModConfig.VerboseLog($"[PnlStage.RefreshDiffUI.Postfix] enter uid={musicInfo?.uid ?? "(null)"}, argDetails=[{argDetails}], currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
+            }
             CustomRecordUiPatchHelper.ApplyCustomRecordToPnlStage(__instance, musicInfo);
 
             if (PnlStagePatchHelper.ApplyTagTitleForMusicInfo("PnlStage.RefreshDiffUI.Direct", __instance, musicInfo))
             {
                 // 다이내믹 주입에 성공했으면 다른 정적 주입은 실행하지 않고 리턴합니다.
-                string mText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
-                string aText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-                ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Postfix (Direct Applied): musicNameTitle='{mText}', artistNameTitle='{aText}'");
+                if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+                {
+                    string mText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
+                    string aText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
+                    ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Postfix (Direct Applied): musicNameTitle='{mText}', artistNameTitle='{aText}'");
+                }
                 return;
             }
             PnlStagePatchHelper.ApplyTagTitle("PnlStage.RefreshDiffUI", __instance);
             PnlStagePatchHelper.ForceApplyTagTitle("PnlStage.RefreshDiffUI.Force", __instance);
 
-            ModConfig.VerboseLog($"[PnlStage.RefreshDiffUI.Postfix] exit uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
-            string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
-            string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
-            ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Postfix: musicNameTitle='{musicText}', artistNameTitle='{artistText}'");
+            if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+            {
+                ModConfig.VerboseLog($"[PnlStage.RefreshDiffUI.Postfix] exit uid={musicInfo?.uid ?? "(null)"}, currentSelectedUid={CustomPlaySession.Current.SelectedMusicUid}, experimentMode={CustomPlaySession.Current.IsExperimentModeActive}, shouldApply={CustomPlaySession.Current.ShouldApplyExperimentChart}");
+                string musicText = __instance.musicNameTitle != null ? __instance.musicNameTitle.text : "(null)";
+                string artistText = __instance.artistNameTitle != null ? __instance.artistNameTitle.text : "(null)";
+                ModConfig.VerboseLog($"PnlStage.RefreshDiffUI Postfix: musicNameTitle='{musicText}', artistNameTitle='{artistText}'");
+            }
         }
         catch (Exception ex) { ModLogger.Error($"PnlStage.RefreshDiffUI Postfix 예외: {ex}"); }
     }

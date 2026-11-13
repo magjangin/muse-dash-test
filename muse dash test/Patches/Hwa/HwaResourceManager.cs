@@ -266,16 +266,14 @@ namespace muse_dash_test
             return null;
         }
 
-        public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string description)
+        public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum)
         {
-            sourceUid = null;
-            sourceTitle = null;
-            sourceArtist = null;
-            sourceAlbum = null;
-
             if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
             {
-                description = string.Empty;
+                sourceUid = null;
+                sourceTitle = null;
+                sourceArtist = null;
+                sourceAlbum = null;
                 return false;
             }
 
@@ -283,11 +281,22 @@ namespace muse_dash_test
             sourceTitle = manifest.Title;
             sourceArtist = manifest.Artist;
             sourceAlbum = manifest.Album;
-            description = HwaManifestLoader.DescribeManifest(manifest);
             return true;
         }
 
-        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
+        public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string description)
+        {
+            if (!TryGetCachedHwaSearchTerms(uid, out sourceUid, out sourceTitle, out sourceArtist, out sourceAlbum))
+            {
+                description = string.Empty;
+                return false;
+            }
+
+            description = HwaManifestLoader.DescribeManifest(cachedManifests[uid]);
+            return true;
+        }
+
+        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5)
         {
             title = null;
             artist = null;
@@ -300,7 +309,6 @@ namespace muse_dash_test
 
             if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
             {
-                description = string.Empty;
                 return false;
             }
 
@@ -321,15 +329,19 @@ namespace muse_dash_test
                 diff4 = manifest.Difficulty4 ?? 0;
                 diff5 = manifest.Difficulty5 ?? 0;
             }
-            else
+
+            return true;
+        }
+
+        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
+        {
+            if (!TryGetHwaPrimarySong(uid, out title, out artist, out levelDesigner, out diff1, out diff2, out diff3, out diff4, out diff5))
             {
-                diff1 = 2;
-                diff2 = 5;
-                diff3 = 0;
-                diff4 = 0;
-                diff5 = 0;
+                description = string.Empty;
+                return false;
             }
-            description = HwaManifestLoader.DescribeManifest(manifest);
+
+            description = HwaManifestLoader.DescribeManifest(cachedManifests[uid]);
             return true;
         }
 

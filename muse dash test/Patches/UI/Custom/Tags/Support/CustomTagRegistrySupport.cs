@@ -47,7 +47,7 @@ namespace muse_dash_test
 
                 foreach (var uid in vUids)
                 {
-                    HwaResourceManager.TryGetCachedHwaSearchTerms(uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string _);
+                    HwaResourceManager.TryGetCachedHwaSearchTerms(uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum);
 
                     string lookupQuery = string.IsNullOrWhiteSpace(sourceUid) ? null : sourceUid;
                     if (string.IsNullOrWhiteSpace(lookupQuery)) lookupQuery = sourceTitle;
@@ -85,7 +85,7 @@ namespace muse_dash_test
                         int primaryDiff4 = 0;
                         int primaryDiff5 = 0;
 
-                        if (HwaResourceManager.TryGetHwaPrimarySong(uid, out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5, out _))
+                        if (HwaResourceManager.TryGetHwaPrimarySong(uid, out string manifestTitle, out string manifestArtist, out string manifestLevelDesigner, out int manifestDiff1, out int manifestDiff2, out int manifestDiff3, out int manifestDiff4, out int manifestDiff5))
                         {
                             if (!string.IsNullOrWhiteSpace(manifestTitle)) primaryName = manifestTitle;
                             if (!string.IsNullOrWhiteSpace(manifestArtist)) primaryAuthor = manifestArtist;

@@ -76,7 +76,15 @@ namespace muse_dash_test.Patches.UI.Setting
         [HarmonyPostfix]
         public static void Awake_Postfix(PnlInputMobile __instance)
         {
-            ModLogger.Msg($"📱 [PnlInputMobile] Awake 완료! (IsLeftRight: {__instance.m_IsLeftRight}, IsTouchReverse: {__instance.m_IsTouchReverse}, IsAutoFever: {__instance.m_IsAutoFever})");
+            try
+            {
+                if (__instance == null) return;
+                ModLogger.Msg($"📱 [PnlInputMobile] Awake 완료! (IsLeftRight: {__instance.m_IsLeftRight}, IsTouchReverse: {__instance.m_IsTouchReverse}, IsAutoFever: {__instance.m_IsAutoFever})");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[PnlInputMobile] Awake_Postfix 로깅 실패: {ex.Message}");
+            }
         }
 
         [HarmonyPatch(nameof(PnlInputMobile.SetAutoFever))]

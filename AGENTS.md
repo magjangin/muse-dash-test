@@ -11,7 +11,7 @@
 
 # 인수인계 (Handover)
 
-마지막 갱신: 2026-11-14 (안정화 감사: 게임 버전 경고 `GameVersionCheck` 추가, 배틀 수명주기·제목 조회 패치의 예외가 게임 흐름으로 새지 않게 감쌈. 빌드·로직 테스트 173개 통과, 실기 미확인. 감사 결과는 [AUDIT_2026-11-14.md](docs/architecture/AUDIT_2026-11-14.md). 직전: v0.14.1 홈(PnlMenu)↔곡 선택(PnlStage) 전환 시 커스텀 BGM 혼선 수정, 실기 확인. 그 이전 이력은 `git log --oneline`과 GitHub 릴리즈 노트(`gh release list`)를 보십시오.)
+마지막 갱신: 2026-11-14 (안정화·리팩토링·병목 감사 2차: 9개 대형/복합 파일 분할로 모든 `.cs` 450줄 이하 달성, `HwaResourceManager`·`NoteSkinInjector`·`GhostNoteAlphaHold`·Verbose 가드 등 핫패스 병목 개선, `AudioSource_SetClip_Patch` `isMenuPanelActive` 자동 복구 및 잔여 무가드 패치 `try/catch` 보강, `GameVersionCheck` 추가. 빌드 경고/오류 0·로직 테스트 173개 통과·`Mods` 배포 확인, 실기 미확인. 감사 결과는 [AUDIT_2026-11-14.md](docs/architecture/AUDIT_2026-11-14.md). 직전: v0.14.1 홈(PnlMenu)↔곡 선택(PnlStage) 전환 시 커스텀 BGM 혼선 수정, 실기 확인. 그 이전 이력은 `git log --oneline`과 GitHub 릴리즈 노트(`gh release list`)를 보십시오.)
 
 1. **게임 버전·고정**: Muse Dash 6.7.0, Unity 2019.4.41f1, MelonLoader v0.7.3. 작업용 사본은 `H:\muse dash hwa`(Steam 밖 독립 사본, `steam_appid.txt`만 있고 `.acf`가 없어 Steam Build ID는 기록되어 있지 않음). 자동 업데이트를 받지 않는 사본이라 버전이 고정되어 있습니다.
 2. **런타임·디컴파일**: Il2Cpp. 시그니처는 `Decompiled/`(SignatureDumper 출력)와 `H:\muse dash hwa\MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out`(RVA·필드 오프셋은 `ilspycmd -t <타입>`). 메서드 본문은 같은 폴더의 `Cpp2IL.exe --game-path "H:/muse dash hwa" --output-as isil --output-to <폴더>`로 ISIL을 뽑아 읽습니다(약 30초, 380MB). 의사코드가 필요하면 `H:\source\repos\rea-hwa\tools\pe_slice.py --dll "H:/muse dash hwa/GameAssembly.dll" --rva <RVA> --out <조각.dll>`로 함수만 잘라 REA `open_binary`(`provider_id: "ghidra"`) → `procedure_pseudo_code`로 봅니다(`GameAssembly.dll` 통째로 열면 시간 초과).

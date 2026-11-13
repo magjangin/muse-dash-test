@@ -83,6 +83,8 @@ public class PnlPreparation_OnDownloadBestReport_Patch
 
     private static void DumpRecordContext(Il2Cpp.PnlPreparation __instance, string phase)
     {
+        if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
+
         try
         {
             string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;

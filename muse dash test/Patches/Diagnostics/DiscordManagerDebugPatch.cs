@@ -26,51 +26,58 @@ namespace muse_dash_test
         [HarmonyPrefix]
         public static void SetUpdateActivity_Prefix(DiscordManager __instance, ref bool isPlaying, ref string levelInfo)
         {
-            // 기능이 꺼져 있으면 게임이 보내는 Discord 상태 인자를 바꾸지 않습니다. 예전에는 이 게이트가 없어
-            // EnableDiscordRPC=false여도 "In Menu" 등으로 인자가 덮였습니다.
-            if (!ModConfig.EnableDiscordRPC) return;
-
-            bool isSelectionActive = AudioSource_SetClip_Patch.IsStageSelectionContextActive();
-            bool isInBattle = IsInBattleStageContext();
-
-            // 곡 선택 패널도 아니고 배틀 중도 아니면 (홈 메뉴 복귀 시) "In Menu"로 명시적 덮어쓰기 전송
-            if (!isSelectionActive && !isInBattle)
+            try
             {
-                levelInfo = "In Menu";
-                isPlaying = false;
-                ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] 홈 메뉴 복귀 감지 ➔ 'In Menu' (isPlaying=false) 명시적 갱신 전송");
-                return;
-            }
+                // 기능이 꺼져 있으면 게임이 보내는 Discord 상태 인자를 바꾸지 않습니다. 예전에는 이 게이트가 없어
+                // EnableDiscordRPC=false여도 "In Menu" 등으로 인자가 덮였습니다.
+                if (!ModConfig.EnableDiscordRPC) return;
 
-            string currentUid = CustomPlaySession.Current.LastKnownMusicUid;
+                bool isSelectionActive = AudioSource_SetClip_Patch.IsStageSelectionContextActive();
+                bool isInBattle = IsInBattleStageContext();
 
-            ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
-            ModLogger.Verbose($"  - isPlaying (입력값): {isPlaying}");
-            ModLogger.Verbose($"  - isSelectionActive (곡선택 패널): {isSelectionActive}");
-            ModLogger.Verbose($"  - isInBattle (배틀 여부): {isInBattle}");
-            ModLogger.Verbose($"  - levelInfo (원본 전달값): '{levelInfo ?? "(null)"}'");
-            ModLogger.Verbose($"  - Current Selected UID: '{currentUid}'");
-
-            if (!string.IsNullOrEmpty(currentUid))
-            {
-                DiscordPresenceManager.ResolveSongDetails(currentUid, out string title, out string artist);
-                ModLogger.Verbose($"  - ResolveSongDetails 해석 결과: Title='{title}', Artist='{artist}'");
-
-                bool isCustom = CustomContentIds.IsVirtualSong(currentUid) || HwaResourceManager.IsRegisteredCustomHostUid(currentUid);
-                ModLogger.Verbose($"  - IsCustomRelated: {isCustom}");
-
-                if (isCustom && !string.IsNullOrEmpty(title))
+                // 곡 선택 패널도 아니고 배틀 중도 아니면 (홈 메뉴 복귀 시) "In Menu"로 명시적 덮어쓰기 전송
+                if (!isSelectionActive && !isInBattle)
                 {
-                    string oldInfo = levelInfo;
-                    string statusTag = isInBattle ? "플레이 중" : "곡 선택 중";
-                    levelInfo = $"{title} - {artist} ({statusTag})";
-
-                    // isPlaying이 false면 게임 내부 C++ 코드에서 'In Menu'로 강제 덮어쓰므로 true로 전환
-                    isPlaying = true;
-                    ModLogger.Verbose($"  - [가로채기 성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 전환 (상태: {statusTag})");
+                    levelInfo = "In Menu";
+                    isPlaying = false;
+                    ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] 홈 메뉴 복귀 감지 ➔ 'In Menu' (isPlaying=false) 명시적 갱신 전송");
+                    return;
                 }
+
+                string currentUid = CustomPlaySession.Current.LastKnownMusicUid;
+
+                ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
+                ModLogger.Verbose($"  - isPlaying (입력값): {isPlaying}");
+                ModLogger.Verbose($"  - isSelectionActive (곡선택 패널): {isSelectionActive}");
+                ModLogger.Verbose($"  - isInBattle (배틀 여부): {isInBattle}");
+                ModLogger.Verbose($"  - levelInfo (원본 전달값): '{levelInfo ?? "(null)"}'");
+                ModLogger.Verbose($"  - Current Selected UID: '{currentUid}'");
+
+                if (!string.IsNullOrEmpty(currentUid))
+                {
+                    DiscordPresenceManager.ResolveSongDetails(currentUid, out string title, out string artist);
+                    ModLogger.Verbose($"  - ResolveSongDetails 해석 결과: Title='{title}', Artist='{artist}'");
+
+                    bool isCustom = CustomContentIds.IsVirtualSong(currentUid) || HwaResourceManager.IsRegisteredCustomHostUid(currentUid);
+                    ModLogger.Verbose($"  - IsCustomRelated: {isCustom}");
+
+                    if (isCustom && !string.IsNullOrEmpty(title))
+                    {
+                        string oldInfo = levelInfo;
+                        string statusTag = isInBattle ? "플레이 중" : "곡 선택 중";
+                        levelInfo = $"{title} - {artist} ({statusTag})";
+
+                        // isPlaying이 false면 게임 내부 C++ 코드에서 'In Menu'로 강제 덮어쓰므로 true로 전환
+                        isPlaying = true;
+                        ModLogger.Verbose($"  - [가로채기 성공] levelInfo: '{oldInfo}' ➔ '{levelInfo}', isPlaying -> true 전환 (상태: {statusTag})");
+                    }
+                }
+                ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
             }
-            ModLogger.Verbose("[DiscordHook.SetUpdateActivity.Prefix] ----------------------------------------");
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[DiscordHook.SetUpdateActivity.Prefix] 예외: {ex.Message}");
+            }
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.SetUpdateActivity))]
