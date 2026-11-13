@@ -43,6 +43,9 @@ namespace muse_dash_test
             // 게임 업데이트로 깨진 패치 대상이 있는지 시작 시 점검하여 요약 로그로 표시합니다.
             PatchHealthCheck.Run();
 
+            // 메서드는 그대로인데 동작이 바뀐 업데이트는 위 점검이 못 잡습니다. 버전이 다르면 한 줄 경고를 남깁니다.
+            FeatureGuard.Run("Init.GameVersionCheck", LogGameVersionCheck, maxConsecutiveFailures: 0);
+
             // 초기화 단계의 각 기능을 독립적으로 격리합니다. 한 기능의 실패가 뒤따르는
             // 다른 기능의 초기화를 막지 않도록 FeatureGuard로 분리합니다.
             // (1회성 초기화이므로 서킷 브레이커 자동 비활성화는 사용하지 않습니다: maxConsecutiveFailures=0)
@@ -92,6 +95,20 @@ namespace muse_dash_test
 
             // Discord Rich Presence 초기화
             FeatureGuard.Run("Init.DiscordRPC", DiscordPresenceManager.Initialize, maxConsecutiveFailures: 0);
+        }
+
+        private static void LogGameVersionCheck()
+        {
+            string runtimeVersion = Application.version;
+            var result = GameVersionCheck.Evaluate(runtimeVersion);
+            string message = GameVersionCheck.Describe(result, runtimeVersion);
+            if (message == null)
+            {
+                ModLogger.Msg($"[GameVersion] 게임 {runtimeVersion} (검증 버전과 같음)");
+                return;
+            }
+
+            ModLogger.Warning($"[GameVersion] {message}");
         }
 
         // 이전 실행에서 생성된 진단 덤프 파일 목록. 매 실행 시작 시 삭제하여 새로 기록되게 합니다.

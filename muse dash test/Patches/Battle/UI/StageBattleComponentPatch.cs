@@ -69,8 +69,15 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance)
         {
-            string uid = CustomPlaySession.Current.LastKnownMusicUid;
-            ModLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
+            try
+            {
+                string uid = CustomPlaySession.Current.LastKnownMusicUid;
+                ModLogger.Msg($"StageBattleComponent.InitData 호출됨: {__instance}, 곡 UID={uid}");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[StageBattleComponent.InitData] Postfix 예외: {ex}");
+            }
         }
     }
 
@@ -111,8 +118,16 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance, bool pauseCorountine)
         {
-            ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Pause 호출됨");
-            HwaBattleMediaController.PauseMedia();
+            // 게임의 일시정지 흐름 안입니다. 여기서 던지면 게임 쪽 Pause 처리까지 끊기므로 반드시 삼킵니다.
+            try
+            {
+                ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.Pause 호출됨");
+                HwaBattleMediaController.PauseMedia();
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[StageBattleComponentPatch] Pause Postfix 예외: {ex}");
+            }
         }
     }
 
@@ -121,8 +136,15 @@ namespace muse_dash_test
     {
         public static void Postfix(StageBattleComponent __instance, bool isExit)
         {
-            ModLogger.Msg($"[StageBattleComponentPatch] StageBattleComponent.Resume 호출됨 (isExit={isExit})");
-            HwaBattleMediaController.ResumeMedia(isExit);
+            try
+            {
+                ModLogger.Msg($"[StageBattleComponentPatch] StageBattleComponent.Resume 호출됨 (isExit={isExit})");
+                HwaBattleMediaController.ResumeMedia(isExit);
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[StageBattleComponentPatch] Resume Postfix 예외: {ex}");
+            }
         }
     }
 
@@ -133,7 +155,10 @@ namespace muse_dash_test
         {
             ModLogger.Msg("[StageBattleComponentPatch] StageBattleComponent.End 호출됨");
             muse_dash_test.Patches.VictoryFlowGuard.MarkCompleted();
-            HwaBattleMediaController.StopMedia();
+            // StopMedia 앞부분(ProgressBarPatch.Reset·HwaSyncManager.ResetCache)은 자체 try 밖입니다.
+            // Exit/Release Postfix와 같이 여기서 감싸 게임의 End 흐름으로 예외가 새지 않게 합니다.
+            try { HwaBattleMediaController.StopMedia(); }
+            catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] End StopMedia 예외: {ex}"); }
         }
     }
 

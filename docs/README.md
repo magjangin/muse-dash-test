@@ -23,6 +23,7 @@
 | [CAST_AND_CUSTOM_TAG_GUIDE.md](architecture/CAST_AND_CUSTOM_TAG_GUIDE.md) | 유니버설 래퍼 패턴 및 커스텀 태그 동적 주입 구조 |
 | [PERFORMANCE_REVIEW_2026-09-20.md](architecture/PERFORMANCE_REVIEW_2026-09-20.md) | 전체 추적 파일 성능 검색, 병목 후보·실행 근거·검증 결과 (문서 끝에 후속 처리 상태 표 있음) |
 | [PERFORMANCE_REVIEW_2026-10-25.md](architecture/PERFORMANCE_REVIEW_2026-10-25.md) | 후속 검토: 지난 7개 항목 해결 확인, 꺼진 기능의 상시 입력 훅·미사용 씬 추적기 등 새 후보 |
+| [AUDIT_2026-11-14.md](architecture/AUDIT_2026-11-14.md) | 안정화 감사: v0.14.1 수정 재검토, 미병합 브랜치 2개, 450줄 넘는 파일, 게임 버전 경고 추가, 예외가 게임으로 새던 패치 감싸기 |
 | [CODE_REVIEW_2026-11-10.md](architecture/CODE_REVIEW_2026-11-10.md) | 코드 검토: 준비 패널 탐색 굶김 버그, BGM 소스 참조 비교, 죽은 `GameBindings` 상수 정리, 축약형 교정 오탐 등 고친 것과 남긴 것 |
 | [PERFORMANCE_REVIEW_2026-09-20_FILES.md](architecture/PERFORMANCE_REVIEW_2026-09-20_FILES.md) | 위 검토의 파일 목록 스냅샷 (기준 커밋 시점 것이라 이후 삭제·이동된 파일은 링크가 없음) |
 

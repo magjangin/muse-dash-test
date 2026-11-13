@@ -218,7 +218,28 @@ namespace muse_dash_test
         [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.GetLocal))]
         internal class MusicInfo_GetLocal_Patch
         {
+            private static bool _loggedPrefixFailure;
+
+            // 제목 조회는 곡 목록을 그릴 때마다 불립니다. 여기서 던지면 게임 UI 갱신이 끊기므로
+            // 예외는 첫 1회만 기록하고 원본 조회로 넘깁니다(원본 제목이 보일 뿐 화면은 유지).
             private static bool Prefix(MusicInfo __instance, int language, ref LocalALBUMInfo __result)
+            {
+                try
+                {
+                    return PrefixCore(__instance, ref __result);
+                }
+                catch (Exception ex)
+                {
+                    if (!_loggedPrefixFailure)
+                    {
+                        _loggedPrefixFailure = true;
+                        ModLogger.Error($"[MusicInfo.GetLocal Patch] 예외로 원본 조회로 넘깁니다(이후 같은 예외는 생략): {ex}");
+                    }
+                    return true;
+                }
+            }
+
+            private static bool PrefixCore(MusicInfo __instance, ref LocalALBUMInfo __result)
             {
                 if (__instance != null && CustomContentIds.IsVirtualSong(__instance.uid))
                 {
@@ -253,7 +274,27 @@ namespace muse_dash_test
             private static bool _loggedIndexDiagnostics;
             private static bool _loggedIndexResolveFailure;
 
+            private static bool _loggedPrefixFailure;
+
+            // MusicInfo.GetLocal 패치와 같은 이유로 예외는 첫 1회만 기록하고 원본 조회로 넘깁니다.
             private static bool Prefix(DBConfigLocalALBUM __instance, int index, ref LocalALBUMInfo __result)
+            {
+                try
+                {
+                    return PrefixCore(index, ref __result);
+                }
+                catch (Exception ex)
+                {
+                    if (!_loggedPrefixFailure)
+                    {
+                        _loggedPrefixFailure = true;
+                        ModLogger.Error($"[DBConfigLocalALBUM Patch] 예외로 원본 조회로 넘깁니다(이후 같은 예외는 생략): {ex}");
+                    }
+                    return true;
+                }
+            }
+
+            private static bool PrefixCore(int index, ref LocalALBUMInfo __result)
             {
                 // 곡을 바꾸는 순간엔 세션의 선택 곡이 아직 이전 곡입니다. 지금 그리는 곡을 먼저 봅니다.
                 string currentUid = SelectedSongLocalizationScope.DrawingUid ?? CustomPlaySession.Current.SelectedMusicUid;

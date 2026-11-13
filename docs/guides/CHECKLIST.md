@@ -229,6 +229,18 @@
 
 ---
 
+## 5. 게임 업데이트 후
+
+시작 로그에 `[GameVersion] 게임이 …으로 업데이트되었습니다` 경고가 보이면 이 절부터 봅니다.
+
+- [ ] **`[PatchInstaller]`/`[PatchHealth]` 경고를 먼저 읽었는가?** 대상이 사라진 패치는 여기에 이름이 나옵니다.
+- [ ] **경고가 없어도 동작이 바뀌었을 수 있다고 보았는가?** 6.7.0은 메서드를 지우지 않고 `BGM_OneShot` 소스를 새로 만들었고,
+      경고 하나 없이 배틀 BGM이 겹쳤습니다(1절 "이름 부분 일치" 항목). `SignatureDumper`로 새로 덤프해 이전 덤프와 비교하십시오.
+- [ ] **실기 검증을 마친 뒤 `GameVersionCheck.VerifiedGameVersion`과 AGENTS.md 1항의 버전을 함께 올렸는가?**
+      (2026-11-14: 버전 경고를 추가했습니다. 그 전까지는 업데이트 여부를 MelonLoader 머리말의 `Game Version` 줄로만 알 수 있었습니다.)
+
+---
+
 ## 관련 문서
 
 - [LOGGING_AND_TROUBLESHOOTING.md](LOGGING_AND_TROUBLESHOOTING.md) — 로그 읽는 법과 로그별 의미
