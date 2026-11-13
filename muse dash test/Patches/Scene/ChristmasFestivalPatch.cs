@@ -21,6 +21,8 @@ namespace muse_dash_test
     /// </list>
     ///
     /// <para><b>전역 날짜 속이기</b> (<see cref="ModConfig.ForceChristmas"/>): 세 곳 모두 켭니다. 공식 곡도 포함입니다.</para>
+    /// <para><b>공식곡 옵션</b> (config.txt '공식곡에서도 크리스마스 적용하기'): 공식 곡의 배경·보스만 바꿉니다(노트 스킨은 아님).
+    ///   <c>isChristmas</c>는 건드리지 않습니다.</para>
     /// <para><b>곡별 옵션</b> (info.txt '크리스마스 배경'): 배경과 보스만 바꿉니다. <c>isChristmas</c>는
     ///   아이템·로딩처럼 곡과 무관한 곳도 쓰므로 곡 옵션으로는 건드리지 않습니다.</para>
     /// </summary>
@@ -33,6 +35,16 @@ namespace muse_dash_test
 
         /// <summary>지금 곡에서 크리스마스 배경·보스를 강제로 쓸지. 판정 근거를 <paramref name="reason"/>에 남깁니다.</summary>
         internal static bool ShouldForceForCurrentSong(out string reason)
+            => Evaluate(includeOfficialSongOption: true, out reason);
+
+        /// <summary>
+        /// 지금 곡에 크리스마스 노트 스킨을 씌울지. 배경·보스와 같은 판정이지만 config.txt
+        /// '공식곡에서도 크리스마스 적용하기'는 보지 않습니다. 그 옵션은 공식 곡의 배경·보스만 바꾸려는 것입니다.
+        /// </summary>
+        internal static bool ShouldApplyNoteSkinForCurrentSong(out string reason)
+            => Evaluate(includeOfficialSongOption: false, out reason);
+
+        private static bool Evaluate(bool includeOfficialSongOption, out string reason)
         {
             reason = null;
             try
@@ -52,7 +64,13 @@ namespace muse_dash_test
                     return false;
                 }
 
-                // 2) 공식 곡 문맥일 때만 전역 ForceChristmas 설정을 참조합니다.
+                // 2) 공식 곡 문맥일 때만 전역 설정을 참조합니다.
+                if (includeOfficialSongOption && InputOverlay.christmasOnOfficialSongs)
+                {
+                    reason = "config.txt 공식곡에서도 크리스마스 적용하기 (공식 곡)";
+                    return true;
+                }
+
                 if (ModConfig.ForceChristmas)
                 {
                     reason = "ForceChristmas 전역 설정 (공식 곡)";

@@ -164,11 +164,12 @@ dt를 권장 표로 고치기 = 활성화
 
 `LoadScene`은 처음 씬과 곡 중간 전환 목록의 씬마다 이 함수를 부르므로, 곡 중간에 5번 씬으로 넘어가도 크리스마스 판이 됩니다. 보스도 같은 구조입니다. `Boss.BossFestival("0501_boss")`이 `BattleHelper.isChristmas`이거나 uid가 `0-47`/`38-1`이면 `0501_boss_christmas`를 돌려줍니다.
 
-커스텀 곡(uid `1999-*`)은 게임 판정만으로는 날짜 조건으로만 나옵니다. 모드가 두 가지 길을 더합니다(`ChristmasFestivalPatch.cs`).
+커스텀 곡(uid `1999-*`)은 게임 판정만으로는 날짜 조건으로만 나옵니다. 모드가 세 가지 길을 더합니다(`ChristmasFestivalPatch.cs`).
 
 | 방법 | 범위 | 바꾸는 것 |
 | --- | --- | --- |
 | `info.txt`의 `크리스마스 배경 = 활성화` | 그 커스텀 곡만 | 5번 씬 배경, 5번 보스, 노트 스킨(`skin test/note/`) |
+| `save custom key/config.txt`의 `공식곡에서도 크리스마스 적용하기 = true` | 공식 곡만 | 5번 씬 배경, 5번 보스 (노트 스킨·`isChristmas`는 그대로) |
 | MelonPreferences `ForceChristmas = true` (`UserData/MelonPreferences.cfg`의 `[muse-dash-custom-chart-features]`) | 공식 곡을 포함한 게임 전체 | 위 셋 + `BattleHelper.isChristmas`를 쓰는 곳 전부(`GameInit.SpecialLogic`, `ItemManager.ChristmasItemLogic`, `MainManager.InitLoading`) |
 
 `ForceChristmas`는 12월 24일 전에 크리스마스 연출을 실기로 확인하려고 만든 테스트용 설정이라 기본은 꺼짐입니다. 곡 옵션이 `isChristmas`를 건드리지 않는 것은, 아이템·로딩 화면처럼 곡과 무관한 곳까지 바뀌기 때문입니다.

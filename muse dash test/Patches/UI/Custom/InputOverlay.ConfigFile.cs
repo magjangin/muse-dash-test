@@ -21,6 +21,10 @@ namespace muse_dash_test
         /// </summary>
         private const string GhostNotesKey = "공식곡에서도고스트노트보이기";
 
+        /// <summary>공식곡 크리스마스 항목의 파일 문구와 비교용 키. 고스트 노트와 같이 두 상수를 함께 고치세요.</summary>
+        private const string ChristmasOfficialKeyText = "공식곡에서도 크리스마스 적용하기";
+        private const string ChristmasOfficialKey = "공식곡에서도크리스마스적용하기";
+
         /// <summary>굵은 구분선. 섹션의 시작과 끝을 나눕니다.</summary>
         private const string Rule = "# ============================================================================";
 
@@ -35,7 +39,9 @@ namespace muse_dash_test
         /// </summary>
         // v5는 잠깐 넣었다 뺀 '어린 악마 마리쟈 체력 감소 속도' 항목이 있던 레이아웃입니다.
         // v6으로 올려 그 판으로 저장된 config.txt에서 남은 줄을 지웁니다.
-        private const int ConfigFormatVersion = 6;
+        // v7은 [5] 연출에 '공식곡에서도 크리스마스 적용하기' 설명을 넣은 레이아웃입니다. 항목을 손으로 먼저 적어 둔
+        // 파일도 설명이 채워지게 올렸습니다.
+        private const int ConfigFormatVersion = 7;
 
         /// <summary>레이아웃 버전을 기록하는 주석 줄의 앞부분.</summary>
         private const string ConfigFormatMarkerPrefix = "config-format:";
@@ -53,6 +59,7 @@ namespace muse_dash_test
             "판정바글자크기", "판정바틱유지시간", "판정바반응형",
             "오토플레이", "피버충전금지", "시네마", "강제퍼펙트",
             GhostNotesKey,
+            ChristmasOfficialKey,
             "모바일터치조작",
             "히든해금표시",
         };
@@ -247,10 +254,17 @@ namespace muse_dash_test
                 sb.AppendLine("#           생김새는 고스트 그대로이고, 보이기만 합니다.");
                 sb.AppendLine("#           이 값은 '공식 곡'에만 적용됩니다. 커스텀 곡은 각 곡 폴더의 'hwa info.txt'에 적은");
                 sb.AppendLine("#           '커스텀 곡 고스트 노트 보이기' 값을 따릅니다.");
+                sb.AppendLine("#");
+                sb.AppendLine($"#  {ChristmasOfficialKeyText}");
+                sb.AppendLine("#         : 날짜와 상관없이 5번 씬 배경·보스를 크리스마스판으로 바꿉니다.");
+                sb.AppendLine("#           노트 스킨('skin test/note')은 바뀌지 않습니다.");
+                sb.AppendLine("#           이 값은 '공식 곡'에만 적용됩니다. 커스텀 곡은 각 곡 폴더의 info.txt에 적은");
+                sb.AppendLine("#           '크리스마스' 값을 따릅니다. 곡을 새로 시작할 때 반영됩니다.");
                 sb.AppendLine($"#  값 형식 : {onOff}");
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
                 sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}");
+                sb.AppendLine($"{ChristmasOfficialKeyText}={christmasOnOfficialSongs.ToString().ToLower()}");
                 sb.AppendLine();
                 sb.AppendLine();
 

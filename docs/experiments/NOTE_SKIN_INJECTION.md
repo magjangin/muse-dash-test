@@ -91,7 +91,8 @@
   한 스켈레톤을 쓰는 프리팹(속도 1·2·3 등)이 함께 바뀌고, 계약 검사는 프리팹마다 따로 합니다.
 - **공식 곡에도 적용합니다.** 처음엔 커스텀 곡 폴더 `note skin/`에서만 읽었으나, 실험 단계에서는 공식 곡으로 바로 보는 편이
   빠르다는 판단으로 같은 날 `skin test/`로 옮겼습니다. 이어서 같은 날 **크리스마스 곡에만** 적용하도록 좁혔습니다
-  (`NoteSkinInjector.IsChristmasSong` → `ChristmasFestival.ShouldForceForCurrentSong`, 배경·보스와 같은 판정).
+  (`NoteSkinInjector.IsChristmasSong` → `ChristmasFestival.ShouldApplyNoteSkinForCurrentSong`, 배경·보스와 같은 판정).
+  2026-11-13부터 config.txt `공식곡에서도 크리스마스 적용하기`는 배경·보스에만 쓰고 노트 스킨 판정에서는 뺍니다.
   `gamescene_04` 번들에 `0411_road_SkeletonData`·`0411_air_SkeletonData`(scale 0.005)가 있는 것을 UnityPy로 확인했습니다.
 - 캐릭터 주입기가 이미 바꾼 스켈레톤(`CustomSkinInjector.IsCachedAsset`)은 건드리지 않습니다.
 - **첫 실측(2026-11-11, 씬 04 공식 곡 `0-18`)**: 세트는 제대로 찾았으나 아틀라스 생성이

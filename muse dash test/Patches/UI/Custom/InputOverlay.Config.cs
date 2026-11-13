@@ -51,6 +51,12 @@ namespace muse_dash_test
         // 커스텀 곡은 이 값 대신 각자의 `hwa info.txt`에 적은 '커스텀 곡 고스트 노트 보이기'를 따릅니다.
         public static bool showGhostNotes = true;
 
+        // 공식곡에서도 5번 씬 배경·보스를 크리스마스판으로 바꿉니다(ChristmasFestival.ShouldForceForCurrentSong).
+        // 노트 스킨은 이 값을 보지 않습니다(ShouldApplyNoteSkinForCurrentSong).
+        // 커스텀 곡은 이 값 대신 각자의 info.txt '크리스마스' 값을 따릅니다. MelonPreferences ForceChristmas와 달리
+        // BattleHelper.isChristmas(아이템·로딩 화면)는 건드리지 않습니다.
+        public static bool christmasOnOfficialSongs = false;
+
         // 모바일 터치 및 마우스-터치 브릿지 설정 필드 (세부 좌우/반전 설정은 인게임 PnlInputMobile UI에서 직접 제어)
         public static bool enableMobileTouch = false;
 
@@ -303,6 +309,9 @@ namespace muse_dash_test
                         case GhostNotesLegacyKey:
                             showGhostNotes = ParseBool(val, key, showGhostNotes);
                             break;
+                        case ChristmasOfficialKey:
+                            christmasOnOfficialSongs = ParseBool(val, key, christmasOnOfficialSongs);
+                            break;
                         case "강제퍼펙트":
                         case "올퍼펙트":
                         case "allperfect":
@@ -334,7 +343,7 @@ namespace muse_dash_test
                     }
                 }
 
-                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide})");
+                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 공식곡크리스마스={christmasOnOfficialSongs}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide})");
                 UpdateTextures();
             }
             catch (Exception ex)

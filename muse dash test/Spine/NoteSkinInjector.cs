@@ -19,7 +19,8 @@ namespace muse_dash_test
     /// <para><b>무엇을 지키나</b>
     /// <list type="bullet">
     /// <item><b>크리스마스 곡에만</b> 적용됩니다: info.txt에 '크리스마스 … = 활성화'(<see cref="HwaManifest.ChristmasScene"/>)를 둔 커스텀 곡,
-    ///   또는 <see cref="ModConfig.ForceChristmas"/>를 켠 때. 판정은 크리스마스 배경·보스와 같은 <see cref="ChristmasFestival.ShouldForceForCurrentSong"/>입니다.
+    ///   또는 <see cref="ModConfig.ForceChristmas"/>를 켠 때. 판정은 <see cref="ChristmasFestival.ShouldApplyNoteSkinForCurrentSong"/>로, 배경·보스와 같되
+    ///   config.txt '공식곡에서도 크리스마스 적용하기'는 보지 않습니다(그 옵션은 배경·보스만 바꿈).
     ///   그 밖의 곡(공식 곡 포함)은 원본 노트 그대로입니다. 세트 폴더가 없어도 아무것도 하지 않습니다.</item>
     /// <item>캐릭터 주입기가 이미 바꾼 스켈레톤은 건드리지 않습니다.</item>
     /// <item><c>scale</c>은 원본 에셋 값 × 2입니다(<see cref="NoteSkinRules.RuntimeScale"/>). 스킨 파일 좌표가 원본의 절반이라는
@@ -136,7 +137,7 @@ namespace muse_dash_test
             }
 
             lastCheckedUid = currentUid;
-            christmasGate = ChristmasFestival.ShouldForceForCurrentSong(out string reason);
+            christmasGate = ChristmasFestival.ShouldApplyNoteSkinForCurrentSong(out string reason);
             christmasGateCheckedAt = now;
 
             string log = christmasGate
