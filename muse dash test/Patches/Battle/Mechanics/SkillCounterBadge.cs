@@ -76,9 +76,11 @@ namespace muse_dash_test
                 {
                     icon.gameObject.SetActive(true);
                 }
+                HideBuiltInNumberSprites(icon);
+                Text badge = GetOrCreateBadge(icon);
                 if (countsChanged)
                 {
-                    GetOrCreateBadge(icon).text = count.Value.ToString();
+                    badge.text = count.Value.ToString();
                 }
             }
 
@@ -100,59 +102,44 @@ namespace muse_dash_test
             return IconKind.Unknown;
         }
 
-        private static Sprite _pillSprite;
         private static Font _cachedGameFont;
+
+        /// <summary>기본 아이콘의 숫자 스프라이트(Img1~Img5)를 숨겨 999 텍스트와 겹치지 않게 합니다.</summary>
+        private static void HideBuiltInNumberSprites(Transform icon)
+        {
+            for (int i = 0; i < icon.childCount; i++)
+            {
+                Transform ch = icon.GetChild(i);
+                if (ch.name != BadgeName && ch.name.StartsWith("Img", System.StringComparison.Ordinal) && ch.gameObject.activeSelf)
+                {
+                    ch.gameObject.SetActive(false);
+                }
+            }
+        }
 
         private static Text GetOrCreateBadge(Transform icon)
         {
             Transform existing = icon.Find(BadgeName);
             if (existing != null)
             {
-                var existingText = existing.GetComponentInChildren<Text>(true);
-                if (existingText != null && _cachedGameFont != null && existingText.font != _cachedGameFont)
-                    existingText.font = _cachedGameFont;
-                return existingText;
-            }
-
-            if (icon.childCount > 0)
-            {
-                for (int c = 0; c < icon.childCount; c++)
+                var existingText = existing.GetComponent<Text>();
+                if (existingText != null)
                 {
-                    Transform ch = icon.GetChild(c);
-                    ModLogger.Msg($"[SkillCounter.Badge] '{icon.name}' 기존 자식: '{ch.name}' active={ch.gameObject.activeSelf} sprite={SpriteName(ch)}");
+                    Font f = FindFont();
+                    if (f != null && existingText.font != f)
+                        existingText.font = f;
                 }
+                return existingText;
             }
 
             var iconRect = icon.GetComponent<RectTransform>();
             float iconHeight = iconRect != null && iconRect.rect.height > 1f ? iconRect.rect.height : 80f;
 
-            // Muse Dash HUD 톤(어두운 보라색 둥근 알약 배지)으로 기본 '1'을 자연스럽게 덮습니다.
-            var bgGo = new GameObject(BadgeName);
-            bgGo.transform.SetParent(icon, false);
-            var bgImg = bgGo.AddComponent<Image>();
-            Sprite pill = GetOrCreatePillSprite();
-            if (pill != null)
-            {
-                bgImg.sprite = pill;
-                bgImg.type = Image.Type.Sliced;
-            }
-            bgImg.color = new Color(0.21f, 0.11f, 0.40f, 0.95f);
-            bgImg.raycastTarget = false;
-
-            float badgeH = Mathf.Max(20f, iconHeight * 0.30f);
-            float badgeW = Mathf.Max(46f, badgeH * 2.1f);
-            RectTransform bgRect = bgGo.GetComponent<RectTransform>();
-            bgRect.anchorMin = new Vector2(0.5f, 0f);
-            bgRect.anchorMax = new Vector2(0.5f, 0f);
-            bgRect.pivot = new Vector2(0.5f, 0.5f);
-            bgRect.anchoredPosition = new Vector2(0f, -1f);
-            bgRect.sizeDelta = new Vector2(badgeW, badgeH);
-
-            var textGo = new GameObject("Text");
-            textGo.transform.SetParent(bgGo.transform, false);
+            var textGo = new GameObject(BadgeName);
+            textGo.transform.SetParent(icon, false);
             Text text = textGo.AddComponent<Text>();
             text.font = FindFont();
-            text.fontSize = Mathf.Max(14, Mathf.RoundToInt(iconHeight * 0.27f));
+            text.fontSize = Mathf.Max(18, Mathf.RoundToInt(iconHeight * 0.36f));
             text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -160,48 +147,30 @@ namespace muse_dash_test
             text.raycastTarget = false;
 
             var outline = textGo.AddComponent<Outline>();
-            outline.effectColor = new Color(0.14f, 0.06f, 0.28f, 1f);
-            outline.effectDistance = new Vector2(2f, -2f);
+            outline.effectColor = new Color(0.24f, 0.11f, 0.45f, 1f);
+            outline.effectDistance = new Vector2(2.5f, -2.5f);
 
+            // 기존 'Img1' 숫자 스프라이트 자리에 배경 박스 없이 999만 자연스럽게 배치합니다.
             RectTransform textRect = textGo.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(0f, -1f);
-            textRect.offsetMax = new Vector2(0f, -1f);
-            return text;
-        }
-
-        private static Sprite GetOrCreatePillSprite()
-        {
-            if (_pillSprite != null) return _pillSprite;
-            const int size = 20;
-            const float radius = 8f;
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            tex.wrapMode = TextureWrapMode.Clamp;
-            tex.filterMode = FilterMode.Bilinear;
-            float center = (size - 1) * 0.5f;
-            float inner = center - radius;
-            for (int y = 0; y < size; y++)
+            Transform img1 = icon.Find("Img1");
+            var img1Rect = img1 != null ? img1.GetComponent<RectTransform>() : null;
+            if (img1Rect != null)
             {
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = Mathf.Max(0f, Mathf.Abs(x - center) - inner);
-                    float dy = Mathf.Max(0f, Mathf.Abs(y - center) - inner);
-                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
-                    float a = Mathf.Clamp01(radius - dist + 0.5f);
-                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
-                }
+                textRect.anchorMin = img1Rect.anchorMin;
+                textRect.anchorMax = img1Rect.anchorMax;
+                textRect.pivot = img1Rect.pivot;
+                textRect.anchoredPosition = img1Rect.anchoredPosition;
+                textRect.sizeDelta = new Vector2(Mathf.Max(img1Rect.sizeDelta.x, 60f), Mathf.Max(img1Rect.sizeDelta.y, 26f));
             }
-            tex.Apply();
-            _pillSprite = Sprite.Create(
-                tex,
-                new Rect(0, 0, size, size),
-                new Vector2(0.5f, 0.5f),
-                100f,
-                0u,
-                SpriteMeshType.FullRect,
-                new Vector4(radius, radius, radius, radius));
-            return _pillSprite;
+            else
+            {
+                textRect.anchorMin = new Vector2(0.5f, 0f);
+                textRect.anchorMax = new Vector2(0.5f, 0f);
+                textRect.pivot = new Vector2(0.5f, 0.5f);
+                textRect.anchoredPosition = new Vector2(0f, -2f);
+                textRect.sizeDelta = new Vector2(60f, 26f);
+            }
+            return text;
         }
 
         /// <summary>Muse Dash 시그니처 폰트(LuckiestGuy)를 우선 사용하고, 없으면 점수판 근처 폰트를 빌립니다.</summary>
@@ -229,7 +198,7 @@ namespace muse_dash_test
             {
                 foreach (var t in score.GetComponentsInChildren<Text>(true))
                 {
-                    if (t.font != null && t.gameObject.name != BadgeName && (t.transform.parent == null || t.transform.parent.name != BadgeName))
+                    if (t.font != null && t.gameObject.name != BadgeName)
                         return t.font;
                 }
             }
