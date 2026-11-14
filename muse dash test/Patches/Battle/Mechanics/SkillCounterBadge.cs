@@ -113,8 +113,8 @@ namespace muse_dash_test
 
             Text text = go.AddComponent<Text>();
             text.font = FindFont();
-            text.fontSize = Mathf.Max(14, Mathf.RoundToInt(iconHeight * 0.38f));
-            text.alignment = TextAnchor.LowerRight;
+            text.fontSize = Mathf.Max(13, Mathf.RoundToInt(iconHeight * 0.30f));
+            text.alignment = TextAnchor.UpperCenter;
             text.color = Color.white;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
@@ -122,14 +122,15 @@ namespace muse_dash_test
 
             var outline = go.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-            outline.effectDistance = new Vector2(2f, -2f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
 
-            // 아이콘 오른쪽 아래 모서리에 붙입니다.
+            // 아이콘 바로 아래 중앙에 배치해 원본 아이콘 그림과 겹치지 않게 합니다.
             RectTransform rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -2f);
+            rect.sizeDelta = new Vector2(0f, Mathf.Max(20f, iconHeight * 0.36f));
             return text;
         }
 
