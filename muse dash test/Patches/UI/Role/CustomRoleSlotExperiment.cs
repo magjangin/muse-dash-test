@@ -164,7 +164,7 @@ namespace muse_dash_test.Patches.UI.Role
                 characterName = src.characterName,
                 cosName = "[실험] 기타 린 (복제)",
                 description = src.description,
-                defaultHP = src.defaultHP,
+                defaultHP = "999",
                 skillName = src.skillName,
                 skill = src.skill,
                 chipName = src.chipName,
