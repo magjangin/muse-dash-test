@@ -103,34 +103,47 @@ namespace muse_dash_test
         private static Text GetOrCreateBadge(Transform icon)
         {
             Transform existing = icon.Find(BadgeName);
-            if (existing != null) return existing.GetComponent<Text>();
-
-            var go = new GameObject(BadgeName);
-            go.transform.SetParent(icon, false);
+            if (existing != null) return existing.GetComponentInChildren<Text>(true);
 
             var iconRect = icon.GetComponent<RectTransform>();
             float iconHeight = iconRect != null && iconRect.rect.height > 1f ? iconRect.rect.height : 80f;
 
-            Text text = go.AddComponent<Text>();
+            // 아이콘 하단의 기본 '1' 표기를 가리는 어두운 배지 배경
+            var bgGo = new GameObject(BadgeName);
+            bgGo.transform.SetParent(icon, false);
+            var bgImg = bgGo.AddComponent<Image>();
+            bgImg.color = new Color(0.10f, 0.06f, 0.20f, 0.92f);
+            bgImg.raycastTarget = false;
+
+            float badgeH = Mathf.Max(20f, iconHeight * 0.32f);
+            float badgeW = Mathf.Max(46f, badgeH * 2.2f);
+            RectTransform bgRect = bgGo.GetComponent<RectTransform>();
+            bgRect.anchorMin = new Vector2(0.5f, 0f);
+            bgRect.anchorMax = new Vector2(0.5f, 0f);
+            bgRect.pivot = new Vector2(0.5f, 0.5f);
+            bgRect.anchoredPosition = new Vector2(0f, -2f);
+            bgRect.sizeDelta = new Vector2(badgeW, badgeH);
+
+            var textGo = new GameObject("Text");
+            textGo.transform.SetParent(bgGo.transform, false);
+            Text text = textGo.AddComponent<Text>();
             text.font = FindFont();
-            text.fontSize = Mathf.Max(13, Mathf.RoundToInt(iconHeight * 0.30f));
-            text.alignment = TextAnchor.UpperCenter;
+            text.fontSize = Mathf.Max(13, Mathf.RoundToInt(iconHeight * 0.28f));
+            text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.raycastTarget = false;
 
-            var outline = go.AddComponent<Outline>();
+            var outline = textGo.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
             outline.effectDistance = new Vector2(1.5f, -1.5f);
 
-            // 아이콘 바로 아래 중앙에 배치해 원본 아이콘 그림과 겹치지 않게 합니다.
-            RectTransform rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -2f);
-            rect.sizeDelta = new Vector2(0f, Mathf.Max(20f, iconHeight * 0.36f));
+            RectTransform textRect = textGo.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
             return text;
         }
 
@@ -141,7 +154,10 @@ namespace muse_dash_test
             if (score != null)
             {
                 foreach (var t in score.GetComponentsInChildren<Text>(true))
-                    if (t.font != null && t.gameObject.name != BadgeName) return t.font;
+                {
+                    if (t.font != null && t.gameObject.name != BadgeName && (t.transform.parent == null || t.transform.parent.name != BadgeName))
+                        return t.font;
+                }
             }
             return Resources.GetBuiltinResource<Font>("Arial.ttf");
         }
