@@ -139,16 +139,20 @@ namespace muse_dash_test
             textGo.transform.SetParent(icon, false);
             Text text = textGo.AddComponent<Text>();
             text.font = FindFont();
-            text.fontSize = Mathf.Max(18, Mathf.RoundToInt(iconHeight * 0.36f));
+            text.fontSize = Mathf.Max(22, Mathf.RoundToInt(iconHeight * 0.44f));
             text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
+            text.color = new Color(0.42f, 0.92f, 0.88f, 1f);
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.raycastTarget = false;
 
             var outline = textGo.AddComponent<Outline>();
-            outline.effectColor = new Color(0.24f, 0.11f, 0.45f, 1f);
-            outline.effectDistance = new Vector2(2.5f, -2.5f);
+            outline.effectColor = new Color(0.22f, 0.09f, 0.44f, 1f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var shadow = textGo.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0.14f, 0.05f, 0.30f, 0.95f);
+            shadow.effectDistance = new Vector2(0f, -2f);
 
             // 기존 'Img1' 숫자 스프라이트 자리에 배경 박스 없이 999만 자연스럽게 배치합니다.
             RectTransform textRect = textGo.GetComponent<RectTransform>();
