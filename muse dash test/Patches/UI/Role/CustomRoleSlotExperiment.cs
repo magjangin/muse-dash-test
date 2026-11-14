@@ -2,6 +2,8 @@ using System;
 using HarmonyLib;
 using Il2Cpp;
 using Il2CppAssets.Scripts.Database;
+using Il2CppAssets.Scripts.GameCore.HostComponent;
+using Il2CppAssets.Scripts.GameCore.Managers;
 using Il2CppAssets.Scripts.UI.Panels.PnlRole;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Collections.Generic;
@@ -386,6 +388,30 @@ namespace muse_dash_test.Patches.UI.Role
             catch (Exception ex)
             {
                 ModLogger.Error($"[RoleSlotExp] RefreshSkinItems Prefix 실패: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(BattleRoleAttributeComponent), nameof(BattleRoleAttributeComponent.Init))]
+    internal static class BattleRoleAttributeComponent_Init_ExperimentPatch
+    {
+        private static void Prefix()
+        {
+            try
+            {
+                if (!CustomRoleSlotExperiment.Enabled) return;
+                if (CustomRoleSlotExperiment.ClonedRoleIndex < 0) return;
+                if (DataHelper.selectedRoleIndex != CustomRoleSlotExperiment.ClonedRoleIndex) return;
+
+                var prop = BattleProperty.instance;
+                if (prop == null) return;
+
+                prop.maxHp = 999;
+                ModLogger.Msg($"[RoleSlotExp] 복제 슬롯({CustomRoleSlotExperiment.ClonedRoleIndex}) 전용 스킬 적용: BattleProperty.maxHp = 999");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[RoleSlotExp] BattleRoleAttributeComponent.Init Prefix 실패: {ex}");
             }
         }
     }
