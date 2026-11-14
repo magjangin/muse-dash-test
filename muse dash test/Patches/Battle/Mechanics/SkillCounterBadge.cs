@@ -1,3 +1,4 @@
+using Il2CppAssets.Scripts.GameCore.GameObjectLogics.ExtraControl;
 using Il2CppAssets.Scripts.GameCore.Managers;
 using Il2CppAssets.Scripts.PeroTools.Commons;
 using UnityEngine;
@@ -39,11 +40,13 @@ namespace muse_dash_test
             {
                 if (Time.unscaledTime < nextFindTime) return;
                 nextFindTime = Time.unscaledTime + FindRetrySeconds;
-                var go = GameObject.Find(GridPath);
+                var ctrl = Object.FindObjectOfType<SkillIconGridShowControl>();
+                var go = ctrl != null ? ctrl.gameObject : GameObject.Find(GridPath) ?? GameObject.Find("SkillIconGrid");
                 if (go == null) return;
                 grid = go.transform;
                 dumped = false;
                 shownGreat = shownMiss = int.MinValue;
+                ModLogger.Msg($"[SkillCounter.Badge] SkillIconGrid 발견: '{go.name}' (children={grid.childCount})");
             }
 
             var property = Singleton<BattleProperty>.instance;
