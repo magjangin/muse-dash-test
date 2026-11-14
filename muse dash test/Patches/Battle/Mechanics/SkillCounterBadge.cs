@@ -67,6 +67,10 @@ namespace muse_dash_test
                     allKnown = false;
                     continue;
                 }
+                if (count.Value > 0 && !icon.gameObject.activeSelf)
+                {
+                    icon.gameObject.SetActive(true);
+                }
                 GetOrCreateBadge(icon).text = count.Value.ToString();
             }
 
