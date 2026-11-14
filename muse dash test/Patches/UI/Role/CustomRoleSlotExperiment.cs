@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using Il2Cpp;
 using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI.Panels.PnlRole;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
@@ -288,7 +289,7 @@ namespace muse_dash_test.Patches.UI.Role
                 if (!CustomRoleSlotExperiment.Enabled || __instance == null) return;
                 var cur = __instance.m_CurrentCharacterInfo;
                 var loc = __instance.m_CurrentLocalCharacterInfo;
-                ModLogger.Msg(
+                ModLogger.Verbose(
                     $"[RoleSlotExp] OnFsvIndexChanged({index}): curIdx={cur?.listIndex}, curOrder={cur?.order}, " +
                     $"locIdx={loc?.listIndex}, locName={loc?.characterName}, locCos={loc?.cosName}");
             }
@@ -309,7 +310,7 @@ namespace muse_dash_test.Patches.UI.Role
                 if (!CustomRoleSlotExperiment.Enabled || __instance == null) return;
                 var cur = __instance.m_CurrentCharacterInfo;
                 var loc = __instance.m_CurrentLocalCharacterInfo;
-                ModLogger.Msg(
+                ModLogger.Verbose(
                     $"[RoleSlotExp] SetProperties: curIdx={cur?.listIndex}, clonedIdx={CustomRoleSlotExperiment.ClonedRoleIndex}, " +
                     $"locIdx={loc?.listIndex}, locName={loc?.characterName}, locCos={loc?.cosName}");
 
@@ -322,7 +323,6 @@ namespace muse_dash_test.Patches.UI.Role
                     if (cloned != null)
                     {
                         __instance.m_CurrentLocalCharacterInfo = cloned;
-                        ModLogger.Msg("[RoleSlotExp] SetProperties에서 m_CurrentLocalCharacterInfo를 복제본으로 교체했습니다.");
                     }
                 }
             }
@@ -333,14 +333,44 @@ namespace muse_dash_test.Patches.UI.Role
         }
     }
 
+    [HarmonyPatch(typeof(PnlRole), nameof(PnlRole.RefreshButtonState))]
+    internal static class PnlRole_RefreshButtonState_ExperimentPatch
+    {
+        private static bool Prefix(PnlRole __instance, ref BtnApply.ButtonState __result)
+        {
+            try
+            {
+                if (!CustomRoleSlotExperiment.Enabled || __instance == null) return true;
+                var cur = __instance.m_CurrentCharacterInfo;
+                if (cur == null || cur.listIndex != CustomRoleSlotExperiment.ClonedRoleIndex) return true;
+
+                __result = DataHelper.selectedRoleIndex == CustomRoleSlotExperiment.ClonedRoleIndex
+                    ? BtnApply.ButtonState.InUse
+                    : BtnApply.ButtonState.Apply;
+                __instance.m_CurrentButtonState = __result;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[RoleSlotExp] RefreshButtonState Prefix 실패: {ex}");
+            }
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(PnlRoleSkinContainer), nameof(PnlRoleSkinContainer.RefreshSkinItems))]
     internal static class PnlRoleSkinContainer_RefreshSkinItems_ExperimentPatch
     {
-        private static void Prefix(PnlRoleSkinContainer __instance, CharacterInfo characterInfo)
+        private static void Prefix(PnlRoleSkinContainer __instance, CharacterInfo characterInfo, ref bool hasGotCharacter)
         {
             try
             {
                 if (!CustomRoleSlotExperiment.Enabled || __instance == null || characterInfo == null) return;
+                if (characterInfo.listIndex == CustomRoleSlotExperiment.ClonedRoleIndex)
+                {
+                    hasGotCharacter = true;
+                }
+
                 int needed = characterInfo.listIndex + 1;
                 var arr = __instance.m_SelectedSkinIndexs;
                 if (arr == null || arr.Length >= needed) return;
