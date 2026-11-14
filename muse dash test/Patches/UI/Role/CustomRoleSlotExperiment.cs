@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using Il2CppAssets.Scripts.Database;
 using Il2CppAssets.Scripts.UI.Panels.PnlRole;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Collections.Generic;
 
 namespace muse_dash_test.Patches.UI.Role
@@ -277,6 +278,27 @@ namespace muse_dash_test.Patches.UI.Role
         }
     }
 
+    [HarmonyPatch(typeof(PnlRole), nameof(PnlRole.OnFsvIndexChanged))]
+    internal static class PnlRole_OnFsvIndexChanged_ExperimentPatch
+    {
+        private static void Postfix(PnlRole __instance, int index)
+        {
+            try
+            {
+                if (!CustomRoleSlotExperiment.Enabled || __instance == null) return;
+                var cur = __instance.m_CurrentCharacterInfo;
+                var loc = __instance.m_CurrentLocalCharacterInfo;
+                ModLogger.Msg(
+                    $"[RoleSlotExp] OnFsvIndexChanged({index}): curIdx={cur?.listIndex}, curOrder={cur?.order}, " +
+                    $"locIdx={loc?.listIndex}, locName={loc?.characterName}, locCos={loc?.cosName}");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[RoleSlotExp] OnFsvIndexChanged Postfix 실패: {ex}");
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(PnlRole), nameof(PnlRole.SetProperties))]
     internal static class PnlRole_SetProperties_ExperimentPatch
     {
@@ -286,22 +308,54 @@ namespace muse_dash_test.Patches.UI.Role
             {
                 if (!CustomRoleSlotExperiment.Enabled || __instance == null) return;
                 var cur = __instance.m_CurrentCharacterInfo;
+                var loc = __instance.m_CurrentLocalCharacterInfo;
+                ModLogger.Msg(
+                    $"[RoleSlotExp] SetProperties: curIdx={cur?.listIndex}, clonedIdx={CustomRoleSlotExperiment.ClonedRoleIndex}, " +
+                    $"locIdx={loc?.listIndex}, locName={loc?.characterName}, locCos={loc?.cosName}");
+
                 if (cur == null || cur.listIndex != CustomRoleSlotExperiment.ClonedRoleIndex) return;
 
-                if (__instance.m_CurrentLocalCharacterInfo == null)
+                if (loc == null || loc.listIndex != CustomRoleSlotExperiment.ClonedRoleIndex)
                 {
                     var localDb = __instance.m_ConfigCharacter?.GetLocal();
                     var cloned = CustomRoleSlotExperiment.GetOrCreateClonedLocalInfo(localDb);
                     if (cloned != null)
                     {
                         __instance.m_CurrentLocalCharacterInfo = cloned;
-                        ModLogger.Msg("[RoleSlotExp] SetProperties에서 null이던 m_CurrentLocalCharacterInfo를 복제본으로 보정했습니다.");
+                        ModLogger.Msg("[RoleSlotExp] SetProperties에서 m_CurrentLocalCharacterInfo를 복제본으로 교체했습니다.");
                     }
                 }
             }
             catch (Exception ex)
             {
                 ModLogger.Error($"[RoleSlotExp] SetProperties Prefix 실패: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(PnlRoleSkinContainer), nameof(PnlRoleSkinContainer.RefreshSkinItems))]
+    internal static class PnlRoleSkinContainer_RefreshSkinItems_ExperimentPatch
+    {
+        private static void Prefix(PnlRoleSkinContainer __instance, CharacterInfo characterInfo)
+        {
+            try
+            {
+                if (!CustomRoleSlotExperiment.Enabled || __instance == null || characterInfo == null) return;
+                int needed = characterInfo.listIndex + 1;
+                var arr = __instance.m_SelectedSkinIndexs;
+                if (arr == null || arr.Length >= needed) return;
+
+                var resized = new Il2CppStructArray<int>(needed);
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    resized[i] = arr[i];
+                }
+                __instance.m_SelectedSkinIndexs = resized;
+                ModLogger.Msg($"[RoleSlotExp] m_SelectedSkinIndexs 크기 확장: {arr.Length} -> {needed}");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[RoleSlotExp] RefreshSkinItems Prefix 실패: {ex}");
             }
         }
     }
