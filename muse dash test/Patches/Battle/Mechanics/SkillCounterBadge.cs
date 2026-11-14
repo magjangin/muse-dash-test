@@ -100,35 +100,59 @@ namespace muse_dash_test
             return IconKind.Unknown;
         }
 
+        private static Sprite _pillSprite;
+        private static Font _cachedGameFont;
+
         private static Text GetOrCreateBadge(Transform icon)
         {
             Transform existing = icon.Find(BadgeName);
-            if (existing != null) return existing.GetComponentInChildren<Text>(true);
+            if (existing != null)
+            {
+                var existingText = existing.GetComponentInChildren<Text>(true);
+                if (existingText != null && _cachedGameFont != null && existingText.font != _cachedGameFont)
+                    existingText.font = _cachedGameFont;
+                return existingText;
+            }
+
+            if (icon.childCount > 0)
+            {
+                for (int c = 0; c < icon.childCount; c++)
+                {
+                    Transform ch = icon.GetChild(c);
+                    ModLogger.Msg($"[SkillCounter.Badge] '{icon.name}' 기존 자식: '{ch.name}' active={ch.gameObject.activeSelf} sprite={SpriteName(ch)}");
+                }
+            }
 
             var iconRect = icon.GetComponent<RectTransform>();
             float iconHeight = iconRect != null && iconRect.rect.height > 1f ? iconRect.rect.height : 80f;
 
-            // 아이콘 하단의 기본 '1' 표기를 가리는 어두운 배지 배경
+            // Muse Dash HUD 톤(어두운 보라색 둥근 알약 배지)으로 기본 '1'을 자연스럽게 덮습니다.
             var bgGo = new GameObject(BadgeName);
             bgGo.transform.SetParent(icon, false);
             var bgImg = bgGo.AddComponent<Image>();
-            bgImg.color = new Color(0.10f, 0.06f, 0.20f, 0.92f);
+            Sprite pill = GetOrCreatePillSprite();
+            if (pill != null)
+            {
+                bgImg.sprite = pill;
+                bgImg.type = Image.Type.Sliced;
+            }
+            bgImg.color = new Color(0.21f, 0.11f, 0.40f, 0.95f);
             bgImg.raycastTarget = false;
 
-            float badgeH = Mathf.Max(20f, iconHeight * 0.32f);
-            float badgeW = Mathf.Max(46f, badgeH * 2.2f);
+            float badgeH = Mathf.Max(20f, iconHeight * 0.30f);
+            float badgeW = Mathf.Max(46f, badgeH * 2.1f);
             RectTransform bgRect = bgGo.GetComponent<RectTransform>();
             bgRect.anchorMin = new Vector2(0.5f, 0f);
             bgRect.anchorMax = new Vector2(0.5f, 0f);
             bgRect.pivot = new Vector2(0.5f, 0.5f);
-            bgRect.anchoredPosition = new Vector2(0f, -2f);
+            bgRect.anchoredPosition = new Vector2(0f, -1f);
             bgRect.sizeDelta = new Vector2(badgeW, badgeH);
 
             var textGo = new GameObject("Text");
             textGo.transform.SetParent(bgGo.transform, false);
             Text text = textGo.AddComponent<Text>();
             text.font = FindFont();
-            text.fontSize = Mathf.Max(13, Mathf.RoundToInt(iconHeight * 0.28f));
+            text.fontSize = Mathf.Max(14, Mathf.RoundToInt(iconHeight * 0.27f));
             text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -136,20 +160,70 @@ namespace muse_dash_test
             text.raycastTarget = false;
 
             var outline = textGo.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
+            outline.effectColor = new Color(0.14f, 0.06f, 0.28f, 1f);
+            outline.effectDistance = new Vector2(2f, -2f);
 
             RectTransform textRect = textGo.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = Vector2.zero;
-            textRect.offsetMax = Vector2.zero;
+            textRect.offsetMin = new Vector2(0f, -1f);
+            textRect.offsetMax = new Vector2(0f, -1f);
             return text;
         }
 
-        /// <summary>점수판 근처 게임 Text의 폰트를 빌려 씁니다. 없으면 Unity 내장 Arial.</summary>
+        private static Sprite GetOrCreatePillSprite()
+        {
+            if (_pillSprite != null) return _pillSprite;
+            const int size = 20;
+            const float radius = 8f;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.filterMode = FilterMode.Bilinear;
+            float center = (size - 1) * 0.5f;
+            float inner = center - radius;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Max(0f, Mathf.Abs(x - center) - inner);
+                    float dy = Mathf.Max(0f, Mathf.Abs(y - center) - inner);
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                    float a = Mathf.Clamp01(radius - dist + 0.5f);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            }
+            tex.Apply();
+            _pillSprite = Sprite.Create(
+                tex,
+                new Rect(0, 0, size, size),
+                new Vector2(0.5f, 0.5f),
+                100f,
+                0u,
+                SpriteMeshType.FullRect,
+                new Vector4(radius, radius, radius, radius));
+            return _pillSprite;
+        }
+
+        /// <summary>Muse Dash 시그니처 폰트(LuckiestGuy)를 우선 사용하고, 없으면 점수판 근처 폰트를 빌립니다.</summary>
         private static Font FindFont()
         {
+            if (_cachedGameFont != null) return _cachedGameFont;
+
+            if (Patches.VictoryDataCache.PremiumFont != null)
+            {
+                _cachedGameFont = Patches.VictoryDataCache.PremiumFont;
+                return _cachedGameFont;
+            }
+
+            foreach (var f in Resources.FindObjectsOfTypeAll<Font>())
+            {
+                if (f != null && f.name != null && f.name.IndexOf("Luckiest", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    _cachedGameFont = f;
+                    return _cachedGameFont;
+                }
+            }
+
             Transform score = grid != null ? grid.parent : null;
             if (score != null)
             {
