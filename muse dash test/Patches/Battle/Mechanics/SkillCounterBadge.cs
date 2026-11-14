@@ -141,7 +141,7 @@ namespace muse_dash_test
             text.font = FindFont();
             text.fontSize = Mathf.Max(22, Mathf.RoundToInt(iconHeight * 0.44f));
             text.alignment = TextAnchor.MiddleCenter;
-            text.color = new Color(0.42f, 0.92f, 0.88f, 1f);
+            text.color = Color.white;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.raycastTarget = false;
