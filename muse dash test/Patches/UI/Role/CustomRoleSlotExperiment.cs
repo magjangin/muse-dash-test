@@ -67,9 +67,37 @@ namespace muse_dash_test.Patches.UI.Role
             _clonedInfo = clone;
             _clonedLocalInfo = null;
 
+            TryInjectLocalCharacter(config);
+
             ModLogger.Msg(
                 $"[RoleSlotExp] 기타 린 복제 슬롯 주입 완료: sourceIdx={SourceRoleIndex} (order={source.order}, cos={source.cosName}) " +
                 $"-> clonedIdx={ClonedRoleIndex} (order={ClonedRoleOrder})");
+        }
+
+        private static void TryInjectLocalCharacter(DBConfigCharacter config)
+        {
+            var localDb = config.GetLocal();
+            if (localDb == null) return;
+
+            var localItems = localDb.m_Items;
+            if (localItems == null) return;
+
+            var localClone = GetOrCreateClonedLocalInfo(localDb);
+            if (localClone == null) return;
+
+            if (localItems.Count == ClonedRoleIndex)
+            {
+                localItems.Add(localClone);
+                if (localDb.list != null && !ReferenceEquals(localDb.list, localItems) && localDb.list.Count == ClonedRoleIndex)
+                {
+                    localDb.list.Add(localClone);
+                }
+                ModLogger.Msg($"[RoleSlotExp] DBConfigLocalCharacter.m_Items[{ClonedRoleIndex}]에 복제 현지화 항목 추가 완료");
+            }
+            else if (ClonedRoleIndex >= 0 && ClonedRoleIndex < localItems.Count)
+            {
+                localItems[ClonedRoleIndex] = localClone;
+            }
         }
 
         internal static LocalCharacterInfo GetOrCreateClonedLocalInfo(DBConfigLocalCharacter localDb)
@@ -246,6 +274,35 @@ namespace muse_dash_test.Patches.UI.Role
                 ModLogger.Error($"[RoleSlotExp] GetInfoByIndex Prefix 실패: {ex}");
             }
             return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(PnlRole), nameof(PnlRole.SetProperties))]
+    internal static class PnlRole_SetProperties_ExperimentPatch
+    {
+        private static void Prefix(PnlRole __instance)
+        {
+            try
+            {
+                if (!CustomRoleSlotExperiment.Enabled || __instance == null) return;
+                var cur = __instance.m_CurrentCharacterInfo;
+                if (cur == null || cur.listIndex != CustomRoleSlotExperiment.ClonedRoleIndex) return;
+
+                if (__instance.m_CurrentLocalCharacterInfo == null)
+                {
+                    var localDb = __instance.m_ConfigCharacter?.GetLocal();
+                    var cloned = CustomRoleSlotExperiment.GetOrCreateClonedLocalInfo(localDb);
+                    if (cloned != null)
+                    {
+                        __instance.m_CurrentLocalCharacterInfo = cloned;
+                        ModLogger.Msg("[RoleSlotExp] SetProperties에서 null이던 m_CurrentLocalCharacterInfo를 복제본으로 보정했습니다.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Error($"[RoleSlotExp] SetProperties Prefix 실패: {ex}");
+            }
         }
     }
 }
