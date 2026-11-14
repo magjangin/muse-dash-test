@@ -163,6 +163,7 @@ namespace muse_dash_test
             FeatureGuard.Run("StageCheck", UpdateStageCheck);
             FeatureGuard.Run("ExperimentStage", HandleExperimentStageUpdate);
             FeatureGuard.Run("ExperimentHitPoint", UpdateExperimentHitPoint);
+            FeatureGuard.Run("SkillCounter.Badge", SkillCounterBadge.Update);
         }
 
         private static void UpdateStageCheck()

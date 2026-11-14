@@ -22,6 +22,9 @@ namespace muse_dash_test.Patches.UI.Role
         internal static int ClonedRoleIndex { get; private set; } = -1;
         internal static int ClonedRoleOrder { get; private set; } = -1;
 
+        internal static bool IsClonedRoleActive() =>
+            Enabled && ClonedRoleIndex >= 0 && DataHelper.selectedRoleIndex == ClonedRoleIndex;
+
         private static CharacterInfo _clonedInfo;
         private static LocalCharacterInfo _clonedLocalInfo;
 
@@ -116,6 +119,7 @@ namespace muse_dash_test.Patches.UI.Role
             if (src == null)
                 return null;
 
+            const string skillDesc = "최대 체력 999 / GREAT→PERFECT 999회 / MISS→PERFECT 999회 / 유메 톱니바퀴 파괴!";
             var clone = new LocalCharacterInfo
             {
                 listIndex = ClonedRoleIndex,
@@ -123,8 +127,8 @@ namespace muse_dash_test.Patches.UI.Role
                 cosName = "[실험] 기타 린 (복제)",
                 cosNames = CloneStringList(src.cosNames, "[실험] 기타 린 (복제)"),
                 description = src.description,
-                skill = src.skill,
-                skills = src.skills,
+                skill = skillDesc,
+                skills = CloneStringList(src.skills, skillDesc, overrideAll: true),
                 thiefSkill = src.thiefSkill,
                 chipName = src.chipName,
                 chipDescription = src.chipDescription,
@@ -206,13 +210,13 @@ namespace muse_dash_test.Patches.UI.Role
             return clone;
         }
 
-        private static List<string> CloneStringList(List<string> src, string firstOverride)
+        private static List<string> CloneStringList(List<string> src, string firstOverride, bool overrideAll = false)
         {
             if (src == null) return null;
             var copy = new List<string>(src.Count);
             for (int i = 0; i < src.Count; i++)
             {
-                copy.Add(i == 0 && !string.IsNullOrEmpty(firstOverride) ? firstOverride : src[i]);
+                copy.Add((overrideAll || i == 0) && !string.IsNullOrEmpty(firstOverride) ? firstOverride : src[i]);
             }
             return copy;
         }
@@ -399,9 +403,7 @@ namespace muse_dash_test.Patches.UI.Role
         {
             try
             {
-                if (!CustomRoleSlotExperiment.Enabled) return;
-                if (CustomRoleSlotExperiment.ClonedRoleIndex < 0) return;
-                if (DataHelper.selectedRoleIndex != CustomRoleSlotExperiment.ClonedRoleIndex) return;
+                if (!CustomRoleSlotExperiment.IsClonedRoleActive()) return;
 
                 var prop = BattleProperty.instance;
                 if (prop == null) return;
