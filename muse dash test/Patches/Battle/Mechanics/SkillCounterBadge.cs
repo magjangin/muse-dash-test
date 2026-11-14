@@ -46,14 +46,16 @@ namespace muse_dash_test
                 grid = go.transform;
                 dumped = false;
                 shownGreat = shownMiss = int.MinValue;
-                ModLogger.Msg($"[SkillCounter.Badge] SkillIconGrid 발견: '{go.name}' (children={grid.childCount})");
+                if (!grid.gameObject.activeSelf) grid.gameObject.SetActive(true);
+                ModLogger.Msg($"[SkillCounter.Badge] SkillIconGrid 발견: '{go.name}' (activeInHierarchy={go.activeInHierarchy}, children={grid.childCount})");
+                DumpGrid();
             }
 
             var property = Singleton<BattleProperty>.instance;
             if (property == null) return;
             int great = property.greatToPerfect;
             int miss = property.missToGreat;
-            if (great == shownGreat && miss == shownMiss) return;
+            bool countsChanged = great != shownGreat || miss != shownMiss;
 
             bool allKnown = true;
             for (int i = 0; i < grid.childCount; i++)
@@ -74,12 +76,18 @@ namespace muse_dash_test
                 {
                     icon.gameObject.SetActive(true);
                 }
-                GetOrCreateBadge(icon).text = count.Value.ToString();
+                if (countsChanged)
+                {
+                    GetOrCreateBadge(icon).text = count.Value.ToString();
+                }
             }
 
-            shownGreat = great;
-            shownMiss = miss;
-            if (!allKnown && !dumped) DumpGrid();
+            if (countsChanged)
+            {
+                shownGreat = great;
+                shownMiss = miss;
+                if (!allKnown && !dumped) DumpGrid();
+            }
         }
 
         private enum IconKind { Unknown, GreatToPerfect, MissRescue }
@@ -145,7 +153,12 @@ namespace muse_dash_test
             for (int i = 0; i < grid.childCount && lines < MaxDumpLines; i++)
             {
                 Transform icon = grid.GetChild(i);
-                ModLogger.Msg($"[SkillCounter.Badge] 아이콘 '{icon.name}' active={icon.gameObject.activeSelf} 분류={ClassifyIcon(icon.name)} sprite={SpriteName(icon)}");
+                var cg = icon.GetComponent<CanvasGroup>();
+                var img = icon.GetComponent<Image>();
+                ModLogger.Msg(
+                    $"[SkillCounter.Badge] 아이콘 '{icon.name}' active={icon.gameObject.activeSelf}/{icon.gameObject.activeInHierarchy} " +
+                    $"분류={ClassifyIcon(icon.name)} sprite={SpriteName(icon)} imgA={(img != null ? img.color.a.ToString("0.0") : "-")} " +
+                    $"cgA={(cg != null ? cg.alpha.ToString("0.0") : "-")}");
                 lines++;
                 for (int j = 0; j < icon.childCount && lines < MaxDumpLines; j++)
                 {
