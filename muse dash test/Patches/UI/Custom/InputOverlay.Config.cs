@@ -64,6 +64,11 @@ namespace muse_dash_test
         // 스위치이고, 이쪽은 게임 중 저장하면 바로 반영되는 사용자용 스위치입니다. 둘 다 켜져 있어야 보입니다.
         public static bool showHiddenGuide = true;
 
+        // 'skin test/character' 캐릭터 스킨 전체를 켜고 끕니다(InjectHelper.TryInject). 노트 스킨은 보지 않습니다.
+        // MelonPreferences의 EnableSpineSkin은 캐릭터·노트 스킨 기능 전체의 스위치이고, 둘 다 켜져 있어야 씌웁니다.
+        // 배틀 중에는 이 파일을 다시 읽지 않으므로 다음 판부터 반영됩니다.
+        public static bool enableCharacterSkin = true;
+
         /// <summary>
         /// 설정 파일이 변경되었거나 아직 로드되지 않았다면 실시간으로 다시 읽어옵니다. (1초 주기 스캔)
         /// </summary>
@@ -217,12 +222,7 @@ namespace muse_dash_test
                     string val = trimmed.Substring(idx + 1).Trim();
 
                     // 키의 띄어쓰기는 무시합니다. '공식곡에서도 고스트 노트 보이기'처럼 읽기 좋게 적어도 되게.
-                    string strippedKey = StripSpaces(key).ToLower();
-
-                    // '커스텀 스킨 {세트}'는 세트 이름이 붙는 항목이라 switch 대신 앞부분으로 고릅니다.
-                    if (TryParseCharacterSkinEntry(strippedKey, val, key)) continue;
-
-                    switch (strippedKey)
+                    switch (StripSpaces(key).ToLower())
                     {
                         case "키가로크기":
                             TryParseFloat(val, ref keyWidth);
@@ -327,10 +327,13 @@ namespace muse_dash_test
                             }
                             break;
                         }
+                        case CharacterSkinKey:
+                            enableCharacterSkin = ParseBool(val, key, enableCharacterSkin);
+                            break;
                     }
                 }
 
-                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 공식곡크리스마스={christmasOnOfficialSongs}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide}, 꺼진캐릭터스킨={DisabledCharacterSkinsSummary()})");
+                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 공식곡크리스마스={christmasOnOfficialSongs}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide}, 캐릭터커스텀스킨={enableCharacterSkin})");
                 UpdateTextures();
             }
             catch (Exception ex)

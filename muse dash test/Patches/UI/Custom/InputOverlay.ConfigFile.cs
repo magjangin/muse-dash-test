@@ -25,6 +25,10 @@ namespace muse_dash_test
         private const string ChristmasOfficialKeyText = "공식곡에서도 크리스마스 적용하기";
         private const string ChristmasOfficialKey = "공식곡에서도크리스마스적용하기";
 
+        /// <summary>캐릭터 스킨 항목의 파일 문구와 비교용 키. 고스트 노트와 같이 두 상수를 함께 고치세요.</summary>
+        private const string CharacterSkinKeyText = "캐릭터 커스텀 스킨";
+        private const string CharacterSkinKey = "캐릭터커스텀스킨";
+
         /// <summary>굵은 구분선. 섹션의 시작과 끝을 나눕니다.</summary>
         private const string Rule = "# ============================================================================";
 
@@ -41,7 +45,7 @@ namespace muse_dash_test
         // v6으로 올려 그 판으로 저장된 config.txt에서 남은 줄을 지웁니다.
         // v7은 [5] 연출에 '공식곡에서도 크리스마스 적용하기' 설명을 넣은 레이아웃입니다. 항목을 손으로 먼저 적어 둔
         // 파일도 설명이 채워지게 올렸습니다.
-        // v8은 [8] 커스텀 캐릭터 스킨 섹션(세트마다 '커스텀 스킨 {세트}=true/false')을 넣은 레이아웃입니다.
+        // v8은 [8] 커스텀 캐릭터 스킨 섹션('캐릭터 커스텀 스킨' 한 줄)을 넣은 레이아웃입니다.
         private const int ConfigFormatVersion = 8;
 
         /// <summary>레이아웃 버전을 기록하는 주석 줄의 앞부분.</summary>
@@ -51,7 +55,6 @@ namespace muse_dash_test
         /// config.txt에 들어가는 설정 키 전체 목록(공백 제거·소문자 형태).
         /// <see cref="WriteConfigFile"/>이 실제로 쓰는 키와 반드시 일치해야 합니다.
         /// 새 설정을 추가할 때는 이 배열과 WriteConfigFile 두 곳만 고치면 됩니다.
-        /// (세트마다 붙는 '커스텀 스킨 {세트}' 항목은 <see cref="CharacterSkinCanonicalKeys"/>가 따로 냅니다.)
         /// </summary>
         private static readonly string[] CanonicalKeys =
         {
@@ -64,6 +67,7 @@ namespace muse_dash_test
             ChristmasOfficialKey,
             "모바일터치조작",
             "히든해금표시",
+            CharacterSkinKey,
         };
 
         /// <summary>
@@ -137,15 +141,6 @@ namespace muse_dash_test
             }
 
             foreach (string key in CanonicalKeys)
-            {
-                if (!seen.Contains(key))
-                {
-                    reason = $"'{key}' 항목이 없음";
-                    return false;
-                }
-            }
-
-            foreach (string key in CharacterSkinCanonicalKeys())
             {
                 if (!seen.Contains(key))
                 {
@@ -303,7 +298,15 @@ namespace muse_dash_test
                 sb.AppendLine();
                 sb.AppendLine();
 
-                AppendCharacterSkinSection(sb, onOff);
+                sb.AppendLine(Rule);
+                sb.AppendLine("#  [8] 커스텀 캐릭터 스킨");
+                sb.AppendLine(Rule);
+                sb.AppendLine($"#  {CharacterSkinKeyText} : 'skin test/character' 폴더의 캐릭터 스킨을 한꺼번에 켜고 끕니다.");
+                sb.AppendLine("#                       끄면 모든 캐릭터가 게임 원래 모습으로 나옵니다. 노트 스킨은 바뀌지 않습니다.");
+                sb.AppendLine("#                       배틀 중에는 이 파일을 읽지 않으므로 다음 판부터 반영됩니다.");
+                sb.AppendLine($"#  값 형식            : {onOff}");
+                sb.AppendLine(ThinRule);
+                sb.AppendLine($"{CharacterSkinKeyText}={enableCharacterSkin.ToString().ToLower()}");
 
                 AtomicFile.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 ModLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");
