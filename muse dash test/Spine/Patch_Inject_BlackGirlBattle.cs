@@ -36,6 +36,10 @@ namespace muse_dash_test
 
             if (!TargetToBaseName.TryGetValue(instance.gameObject.name, out var baseName)) return;
 
+            // config.txt [8] '커스텀 스킨 {세트}=false'면 그 캐릭터는 원래 모습으로 둡니다.
+            // 배틀 중에는 config.txt를 다시 읽지 않으므로 판 도중에 바뀌지 않습니다(LoadConfigIfNeeded).
+            if (!InputOverlay.IsCharacterSkinEnabled(baseName)) return;
+
             var customAsset = CustomSkinInjector.GetOrBuild(baseName);
             if (customAsset == null)
             {

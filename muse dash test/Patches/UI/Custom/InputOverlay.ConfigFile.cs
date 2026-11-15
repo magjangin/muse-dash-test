@@ -41,7 +41,8 @@ namespace muse_dash_test
         // v6으로 올려 그 판으로 저장된 config.txt에서 남은 줄을 지웁니다.
         // v7은 [5] 연출에 '공식곡에서도 크리스마스 적용하기' 설명을 넣은 레이아웃입니다. 항목을 손으로 먼저 적어 둔
         // 파일도 설명이 채워지게 올렸습니다.
-        private const int ConfigFormatVersion = 7;
+        // v8은 [8] 커스텀 캐릭터 스킨 섹션(세트마다 '커스텀 스킨 {세트}=true/false')을 넣은 레이아웃입니다.
+        private const int ConfigFormatVersion = 8;
 
         /// <summary>레이아웃 버전을 기록하는 주석 줄의 앞부분.</summary>
         private const string ConfigFormatMarkerPrefix = "config-format:";
@@ -50,6 +51,7 @@ namespace muse_dash_test
         /// config.txt에 들어가는 설정 키 전체 목록(공백 제거·소문자 형태).
         /// <see cref="WriteConfigFile"/>이 실제로 쓰는 키와 반드시 일치해야 합니다.
         /// 새 설정을 추가할 때는 이 배열과 WriteConfigFile 두 곳만 고치면 됩니다.
+        /// (세트마다 붙는 '커스텀 스킨 {세트}' 항목은 <see cref="CharacterSkinCanonicalKeys"/>가 따로 냅니다.)
         /// </summary>
         private static readonly string[] CanonicalKeys =
         {
@@ -135,6 +137,15 @@ namespace muse_dash_test
             }
 
             foreach (string key in CanonicalKeys)
+            {
+                if (!seen.Contains(key))
+                {
+                    reason = $"'{key}' 항목이 없음";
+                    return false;
+                }
+            }
+
+            foreach (string key in CharacterSkinCanonicalKeys())
             {
                 if (!seen.Contains(key))
                 {
@@ -289,6 +300,10 @@ namespace muse_dash_test
                 sb.AppendLine($"#  값 형식      : {onOff}");
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"히든해금표시={showHiddenGuide.ToString().ToLower()}");
+                sb.AppendLine();
+                sb.AppendLine();
+
+                AppendCharacterSkinSection(sb, onOff);
 
                 AtomicFile.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 ModLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");

@@ -217,7 +217,12 @@ namespace muse_dash_test
                     string val = trimmed.Substring(idx + 1).Trim();
 
                     // 키의 띄어쓰기는 무시합니다. '공식곡에서도 고스트 노트 보이기'처럼 읽기 좋게 적어도 되게.
-                    switch (StripSpaces(key).ToLower())
+                    string strippedKey = StripSpaces(key).ToLower();
+
+                    // '커스텀 스킨 {세트}'는 세트 이름이 붙는 항목이라 switch 대신 앞부분으로 고릅니다.
+                    if (TryParseCharacterSkinEntry(strippedKey, val, key)) continue;
+
+                    switch (strippedKey)
                     {
                         case "키가로크기":
                             TryParseFloat(val, ref keyWidth);
@@ -325,7 +330,7 @@ namespace muse_dash_test
                     }
                 }
 
-                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 공식곡크리스마스={christmasOnOfficialSongs}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide})");
+                ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 공식곡크리스마스={christmasOnOfficialSongs}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide}, 꺼진캐릭터스킨={DisabledCharacterSkinsSummary()})");
                 UpdateTextures();
             }
             catch (Exception ex)
