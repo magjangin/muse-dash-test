@@ -45,6 +45,7 @@ namespace muse_dash_test
 
             // 메서드는 그대로인데 동작이 바뀐 업데이트는 위 점검이 못 잡습니다. 버전이 다르면 한 줄 경고를 남깁니다.
             FeatureGuard.Run("Init.GameVersionCheck", LogGameVersionCheck, maxConsecutiveFailures: 0);
+            FeatureGuard.Run("Init.GameBinaryCheck", LogGameBinaryCheck, maxConsecutiveFailures: 0);
 
             // 초기화 단계의 각 기능을 독립적으로 격리합니다. 한 기능의 실패가 뒤따르는
             // 다른 기능의 초기화를 막지 않도록 FeatureGuard로 분리합니다.
@@ -109,6 +110,14 @@ namespace muse_dash_test
             }
 
             ModLogger.Warning($"[GameVersion] {message}");
+        }
+
+        private static void LogGameBinaryCheck()
+        {
+            string path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath) ?? string.Empty, "GameAssembly.dll");
+            long size = System.IO.File.Exists(path) ? new System.IO.FileInfo(path).Length : 0;
+            string message = GameVersionCheck.DescribeBinaryMismatch(size);
+            if (message != null) ModLogger.Warning($"[GameVersion] {message}");
         }
 
         // 이전 실행에서 생성된 진단 덤프 파일 목록. 매 실행 시작 시 삭제하여 새로 기록되게 합니다.

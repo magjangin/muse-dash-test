@@ -8,6 +8,18 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(GameVersionCheck.Result.Match, GameVersionCheck.Evaluate(" 6.7.0 ", "6.7.0"));
         }
 
+        public static void DescribeBinaryMismatch_SameOrUnreadable_ReturnsNull()
+        {
+            Assert.True(GameVersionCheck.DescribeBinaryMismatch(100, 100) == null);
+            Assert.True(GameVersionCheck.DescribeBinaryMismatch(0, 100) == null);
+            Assert.True(GameVersionCheck.DescribeBinaryMismatch(-1, 100) == null);
+        }
+
+        public static void DescribeBinaryMismatch_Different_ReturnsMessage()
+        {
+            Assert.True(GameVersionCheck.DescribeBinaryMismatch(101, 100) != null);
+        }
+
         public static void Evaluate_MissingTrailingZero_IsMatch()
         {
             Assert.Equal(GameVersionCheck.Result.Match, GameVersionCheck.Evaluate("6.7", "6.7.0"));

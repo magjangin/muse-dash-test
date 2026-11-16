@@ -19,6 +19,23 @@ namespace muse_dash_test
         /// <summary>이 모드를 실기로 검증한 게임 버전입니다. 새 게임 버전에서 실기 검증을 마치면 함께 올리십시오.</summary>
         public const string VerifiedGameVersion = "6.7.0";
 
+        /// <summary>
+        /// 검증한 <c>GameAssembly.dll</c>의 바이트 크기입니다(6.7.0, 67470336). 버전 번호는 그대로인데
+        /// 바이너리만 바뀐 핫픽스 빌드를 잡는 보조 지문입니다. 새 버전을 검증하면 버전 상수와 함께 올립니다.
+        /// </summary>
+        public const long VerifiedGameAssemblySize = 67470336L;
+
+        /// <summary>
+        /// 실행 중인 <c>GameAssembly.dll</c> 크기가 검증 때와 다르면 설명 문장을, 같거나 읽지 못했으면(&lt;= 0) null을 돌려줍니다.
+        /// 크기만 비교하는 값싼 지문이라 같다고 해서 동일 빌드를 보장하지는 않지만, 다르면 확실히 다른 빌드입니다.
+        /// </summary>
+        public static string DescribeBinaryMismatch(long actualSize, long verifiedSize = VerifiedGameAssemblySize)
+        {
+            if (actualSize <= 0 || actualSize == verifiedSize) return null;
+            return $"GameAssembly.dll 크기({actualSize}바이트)가 검증 빌드({verifiedSize}바이트)와 다릅니다. " +
+                   "버전 번호가 같아도 게임 바이너리가 교체되었을 수 있으니 [PatchInstaller]/[PatchHealth] 경고를 확인하십시오.";
+        }
+
         public enum Result
         {
             /// <summary>검증한 버전과 같습니다.</summary>
