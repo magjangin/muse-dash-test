@@ -26,7 +26,7 @@ namespace muse_dash_test
     public static class BmsDtTable
     {
         // [속도 1, 속도 2, 속도 3]
-        private static readonly double[] NormalDt = { 1.47, 1.26, 1.18 };
+        private static readonly double[] NormalDt = { 1.48, 1.28, 1.18 };
         private static readonly double[] HoldDt = { 1.47, 1.26, 1.10 };
         private static readonly double[] BossProjectileDt = { 0.8, 0.76, 0.6 };
 
@@ -38,8 +38,8 @@ namespace muse_dash_test
         private static readonly double[] Scene05ProjectileDt = { 1.07, 1.03, 0.83 };
 
         // 일반 계열에서 차터가 권장표를 벗어나 고를 수 있는 범위(사용자 지정, 2026-10-25).
-        // 속도 1은 1.47~1.48입니다(애니메이션 실측 1.467, 예전 권장값 1.48로 쓴 채보도 경고하지 않음).
-        private static readonly double[] NormalMin = { 1.47, 1.18, 0.98 };
+        // 속도 1은 범위 없이 1.48 고정입니다.
+        private static readonly double[] NormalMin = { 1.48, 1.18, 0.98 };
         private static readonly double[] NormalMax = { 1.48, 1.38, 1.28 };
 
         // WAV 이름의 dt는 소수 3자리로 반올림돼 들어옵니다.
