@@ -202,6 +202,11 @@
       **곡 선택 화면까지만 보고 끝내지 말 것.** 배틀에 실제로 진입해야 `StageBattleComponent.InitData` →
       `PnlBattle.GameStart` → `MusicProgressInit` 경로가 돕니다. NRE는 `GameStart` 약 5초 뒤에 터졌습니다.
 
+- [ ] **커스텀 곡 배틀 시작 때 어긋난 소리가 들리지 않는가?** 로그에 `레디·고 감지, 커스텀 미디어 주입을 시작합니다`가 있어야 합니다.
+      BGM을 `StageBattleComponent.Load` 직후에 주입·재생하면 게임 음악 시작(`FixedOffset`)보다 약 6.5초 앞서 흘러
+      시작 순간에 어긋난 소리가 들렸다가 재동기화됩니다(2026-11-16). `FixedOffset`은 `FixedMusicOffset`을 인라인하므로
+      후킹은 둘 다 필요합니다.
+
 - [ ] **관찰용 Postfix 로그가 찍혔는가?**
       원본이 예외를 던지면 Harmony Postfix는 건너뛰어집니다. 그래서 **"있어야 할 로그가 없는 것"이 예외의 신호**입니다.
       예: `[ProgressBarPatch] sldProgress 슬라이더 감지됨`이 안 보이면 `MusicProgressInit`이 던진 것입니다.

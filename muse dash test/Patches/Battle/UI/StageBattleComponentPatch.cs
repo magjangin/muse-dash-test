@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using Il2CppFormulaBase;
 
@@ -91,7 +91,7 @@ namespace muse_dash_test
                 ModLogger.Msg($"[StageBattleComponent.Load] 호출됨: {__instance}");
                 // 매 배틀 로드 시마다 미디어 주입 시작 상태 초기화 및 주입 실행
                 HwaBattleMediaController.ResetState();
-                HwaBattleMediaController.StartBattleMediaInjection();
+                // 미디어 주입은 레디·고 직후(PnlReadyToggle.PlayReadyGo)에 시작합니다. BattleStartSyncPatch 참고.
 
                 // APMod (All Perfect Mod) 세션 상태 리셋 (ActiveTarget, FontCache 초기화)
                 // 이번 배틀의 ActiveTarget은 AddScore/GetAccuracy/IsFullCombo 훅이 다시 채웁니다.

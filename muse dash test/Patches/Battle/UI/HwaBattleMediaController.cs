@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,6 +16,8 @@ namespace muse_dash_test
     public static partial class HwaBattleMediaController
     {
         private static bool battleMediaInjectionStarted;
+        // 게임이 음악을 이미 시작했는지(FixedOffset 이후). 레디·고 훅이 못 불린 배틀에서 주입이 늦게 끝나도 바로 틀기 위함입니다.
+        internal static bool gameMusicStarted;
 
         // 로드 코루틴이 끝났을 때 아직 같은 배틀인지 확인하는 번호입니다. 정지·리셋마다 올립니다.
         // 정지 뒤에 끝난 옛 로드가 클립을 틀어 결과 화면에서 소리가 되살아나던 문제를 막습니다.
@@ -34,6 +36,7 @@ namespace muse_dash_test
             long currentMem = GC.GetTotalMemory(false);
             string clipDesc = DescribeAudioClip(injectedClip);
             battleMediaInjectionStarted = false;
+            gameMusicStarted = false;
             injectedAudioSource = null;
             mediaGeneration++;
             // 여기서 즉시 Destroy하면 아직 새 클립이 로드되기 전이라 AudioManager.bgm.clip이 파괴된 클립을 가리켜
@@ -265,8 +268,13 @@ namespace muse_dash_test
                 targetSource.clip = clip;
                 targetSource.loop = true;
                 targetSource.playOnAwake = false;
+                // 여기서 Play()하지 않습니다. 레디·고 이전에 틀면 게임 음악 시작(FixedOffset)과 어긋난 채 먼저 흘러갑니다.
+                // 재생은 게임이 음악을 시작하는 순간 StartPlaybackAtGameStart가 맡습니다.
                 targetSource.Stop();
-                targetSource.Play();
+                if (gameMusicStarted)
+                {
+                    targetSource.Play();
+                }
                 injectedAudioSource = targetSource;
                 injectedClip = clip;
                 DestroyUnreferencedRetiredClips("new battle BGM applied");
