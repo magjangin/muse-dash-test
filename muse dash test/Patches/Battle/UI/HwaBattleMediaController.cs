@@ -1,4 +1,4 @@
-using MelonLoader;
+﻿using MelonLoader;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -265,8 +265,9 @@ namespace muse_dash_test
                 targetSource.clip = clip;
                 targetSource.loop = true;
                 targetSource.playOnAwake = false;
+                // 여기서 Play()하지 않습니다. 레디·고 이전에 틀면 게임 음악 시작(FixedOffset)과 어긋난 채 먼저 흘러갑니다.
+                // 재생은 게임이 음악을 시작하는 순간 StartPlaybackAtGameStart가 맡습니다.
                 targetSource.Stop();
-                targetSource.Play();
                 injectedAudioSource = targetSource;
                 injectedClip = clip;
                 DestroyUnreferencedRetiredClips("new battle BGM applied");
