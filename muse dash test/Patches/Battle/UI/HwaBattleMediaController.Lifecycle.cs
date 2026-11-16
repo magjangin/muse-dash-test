@@ -21,10 +21,13 @@ namespace muse_dash_test
         /// 게임이 음악을 시작(오프셋 시크 + 음소거 해제)한 직후 커스텀 BGM이 안 돌고 있으면 틉니다.
         /// 게임이 이미 시크해 둔 위치(timeSamples)에서 이어 재생됩니다.
         /// </summary>
-        public static void StartPlaybackAtGameStart(AudioSource bgm)
+        public static void OnGameMusicStarted(AudioSource bgm)
         {
             try
             {
+                gameMusicStarted = true;
+                // 레디·고 훅이 불리지 않은 배틀의 안전망: 아직 주입 전이면 지금 시작합니다(로드가 끝나면 바로 재생).
+                StartBattleMediaInjection();
                 if (bgm == null || injectedAudioSource == null || bgm.Pointer != injectedAudioSource.Pointer || bgm.clip == null)
                 {
                     return;
