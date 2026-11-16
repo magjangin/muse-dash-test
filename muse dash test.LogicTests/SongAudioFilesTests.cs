@@ -1,4 +1,4 @@
-namespace muse_dash_test.LogicTests
+﻿namespace muse_dash_test.LogicTests
 {
     // SongAudioFiles: 곡 폴더에서 BGM ogg 하나를 고르는 규칙(미리듣기와 배틀이 공유) 검증.
     public static class SongAudioFilesTests
@@ -41,6 +41,33 @@ namespace muse_dash_test.LogicTests
             var oggFiles = new[] { @"C:\b.ogg", @"C:\a.ogg" };
             SongAudioFiles.PickBgmOgg(oggFiles, null);
             Assert.Equal(@"C:\b.ogg", oggFiles[0]);
+        }
+
+        public static void ResolveBgmOggPath_CachesAndDropsDeletedFile()
+        {
+            string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "sat_" + System.Guid.NewGuid().ToString("N"));
+            System.IO.Directory.CreateDirectory(dir);
+            try
+            {
+                SongAudioFiles.ClearCache();
+                string a = System.IO.Path.Combine(dir, "a.ogg");
+                System.IO.File.WriteAllText(a, "x");
+                Assert.Equal(a, SongAudioFiles.ResolveBgmOggPath(dir));
+
+                // 유예 안에서는 새 파일이 생겨도 캐시된 결과를 돌려줍니다(디렉터리 재스캔 생략).
+                string bgm = System.IO.Path.Combine(dir, "bgm.ogg");
+                System.IO.File.WriteAllText(bgm, "x");
+                Assert.Equal(a, SongAudioFiles.ResolveBgmOggPath(dir));
+
+                // 캐시된 파일이 사라지면 즉시 다시 스캔합니다.
+                System.IO.File.Delete(a);
+                Assert.Equal(bgm, SongAudioFiles.ResolveBgmOggPath(dir));
+            }
+            finally
+            {
+                SongAudioFiles.ClearCache();
+                System.IO.Directory.Delete(dir, true);
+            }
         }
     }
 }

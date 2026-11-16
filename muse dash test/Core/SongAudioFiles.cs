@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 namespace muse_dash_test
@@ -21,6 +21,22 @@ namespace muse_dash_test
     {
         private static readonly string[] BgmKeywords = { "bgm", "battle", "music", "song" };
 
+        /// <summary>
+        /// 같은 곡 폴더를 다시 탐색하지 않는 유예 시간(ms). 곡 선택 휠을 오가거나 미리듣기→배틀로 넘어갈 때마다
+        /// <c>.ogg</c>/<c>.txt</c> 재귀 스캔 2번이 반복되던 것을 줄입니다. 캐시된 경로는 쓰기 전에 파일이 아직
+        /// 있는지 확인하고, 유예가 지나면 다시 스캔하므로 폴더를 고쳐도 곧 반영됩니다.
+        /// </summary>
+        internal const long CacheTtlMs = 30_000;
+
+        private static readonly System.Collections.Generic.Dictionary<string, (string path, long tickMs)> ResolveCache =
+            new System.Collections.Generic.Dictionary<string, (string path, long tickMs)>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>캐시를 비웁니다(차트 폴더 재로드 등에서 즉시 반영하고 싶을 때).</summary>
+        public static void ClearCache()
+        {
+            lock (ResolveCache) ResolveCache.Clear();
+        }
+
         /// <summary>곡 폴더(하위 폴더 포함)에서 BGM ogg 경로를 찾습니다. 없거나 읽지 못하면 null입니다.</summary>
         public static string ResolveBgmOggPath(string songDir)
         {
@@ -31,6 +47,17 @@ namespace muse_dash_test
                     return null;
                 }
 
+                long now = Environment.TickCount64;
+                lock (ResolveCache)
+                {
+                    if (ResolveCache.TryGetValue(songDir, out var hit)
+                        && now - hit.tickMs < CacheTtlMs
+                        && hit.path != null && File.Exists(hit.path))
+                    {
+                        return hit.path;
+                    }
+                }
+
                 string[] oggFiles = Directory.GetFiles(songDir, "*.ogg", SearchOption.AllDirectories);
                 if (oggFiles.Length == 0)
                 {
@@ -38,7 +65,9 @@ namespace muse_dash_test
                 }
 
                 string[] txtFiles = Directory.GetFiles(songDir, "*.txt", SearchOption.AllDirectories);
-                return PickBgmOgg(oggFiles, txtFiles);
+                string picked = PickBgmOgg(oggFiles, txtFiles);
+                lock (ResolveCache) ResolveCache[songDir] = (picked, now);
+                return picked;
             }
             catch (Exception ex)
             {
