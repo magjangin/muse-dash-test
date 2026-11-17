@@ -52,4 +52,11 @@
    - 메뉴 미리듣기 `handler.compressed = true`: 이 게임 빌드에서 `getContent` 시간이 그대로였습니다(효과 없음). `AudioClip.loadType`은 스트리밍 클립도 `DecompressOnLoad`로 보고하므로 판단 근거로 쓰지 마십시오.
    - 커스텀 BGM 어긋남 원인을 BGA 영상 자체 소리(`VideoAudioOutputMode.Direct`)로 본 것: `video.mp4`를 폴더에서 빼도 재현되어 무관했습니다.
    - `FixedMusicOffset` Prefix/Postfix만 후킹한 것: 게임이 `FixedOffset` 안에 인라인해 즉시 시작 경로에서는 호출되지 않았습니다. 로그에 훅 줄이 안 찍힌 것이 단서였습니다.
+   - 일반 노트의 uid별 도착 시각 차이(2026-11-17, `feature/hold-dt-frames`에 `NoteArrivalProbe`와 함께 보관, 폐기): 같은 `in_nor_38`·같은 dt인데 `0411`·`0413`이 `0405`·`0410`·`0412`·`0414`보다 날아오는 도중 20~35ms 늦고 업/다운은 15~35ms 늦습니다(게임 원본 애니메이션 데이터의 차이로 보이고 dt로는 못 고침). 시도와 결과:
+     - dt 권장표를 바꾼 것(1.47/1.26/1.18, 1.10, 1.277): 차이가 uid마다 달라 한 값으로 맞지 않았습니다.
+     - `PlayByKey("in")` 뒤에 `currentAnimationTime`을 앞당긴 것: 위치가 전혀 안 변했습니다(게임이 스폰 직후 `EnemySkAnimInit → FixSpineAnim`에서 `현재 - showTick`으로 다시 씀). `Animator`는 대부분의 노트에 없습니다.
+     - `MoveNote`에서 `showTick`을 앞당긴 것: 그 uid 노트가 아예 안 보였습니다(비행 시작 로그 없음).
+     - 판정선 통과는 `in`이 아니라 히트 애니메이션 `out_p`(`note_out_p`, 판정 시 재생) 안에서 일어납니다. `out_p` 시작 시 `currentAnimationTime`을 앞당기면 판정선 도착 오차는 0이 되지만(측정), 눈으로 맞게 보이는지 확정하지 못해 버렸습니다.
+     - 측정 기준(그려진 메시 중심이 x=-3.86을 지나는 시각)은 스켈레톤마다 그림 중심이 달라 눈과 안 맞을 수 있습니다. 노트 몸체(transform)는 움직이지 않습니다.
+   - 끊김(히치)으로 늦게 스폰된 노트가 가끔 일찍(-90~-125ms)/늦게(+317ms) 도착하는 것: 모드의 지연 보정을 끄면 늦게, `currentAnimationTime = lag`로 켜면 스파인 `Update`가 같은 프레임에 `Time.deltaTime`을 더해 이중으로 앞당겨졌습니다. `lag - deltaTime`으로 고쳐도 `0416` 업에서 -89ms가 남아 게임 자체가 이중 보정하는 것으로 보이고, 플레이당 한 번 나올까 말까 해 더 파지 않았습니다.
 6. **빌드·배포**: `dotnet build`(또는 `build.bat`) → `H:\muse dash hwa\Mods\muse-dash-custom-chart.dll`로 자동 배포. `[AutoDeploy] Successfully deployed` 줄과 `ls -la "H:/muse dash hwa/Mods/"`로 확인합니다.
