@@ -15,8 +15,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         var manifest = HwaResourceManager.GetManifest(activeUid);
         bool fix = manifest?.FixDtToRecommended == true;
+        // info.txt에 '비활성화'라고 명시한 곡만: 적용하지는 않고, 켰다면 바뀌었을 노트를 로그로 보여줍니다.
+        bool explicitOff = manifest?.FixDtToRecommended == false;
 
         int changed = 0;
+        int wouldChange = 0;
+        var wouldFix = new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
         var offenders = new System.Collections.Generic.Dictionary<string, int>(System.StringComparer.Ordinal);
 
         foreach (var spec in specs)
@@ -34,6 +38,16 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 continue;
             }
 
+            if (explicitOff
+                && BmsDtTable.TryGetRecommended(family, speed, out double wouldBe, spec.Uid)
+                && System.Math.Abs(spec.Dt - wouldBe) > 0.0005)
+            {
+                wouldChange++;
+                string fixKey = $"uid={spec.Uid}, {BmsDtTable.Describe(family)} 속도 {speed}: _dt{spec.Dt:0.###} → 권장 {wouldBe:0.###}";
+                wouldFix.TryGetValue(fixKey, out int fixCount);
+                wouldFix[fixKey] = fixCount + 1;
+            }
+
             if (BmsDtTable.IsAllowed(family, speed, spec.Dt, out string expected, spec.Uid)) continue;
 
             string key = $"uid={spec.Uid}, {BmsDtTable.Describe(family)} 속도 {speed}, _dt{spec.Dt:0.###} (허용 {expected})";
@@ -45,6 +59,22 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             ModLogger.Msg($"[ExperimentChart.Dt] 'dt를 권장 표로 고치기' 활성화: 권장값으로 바꾼 노트 {changed}개 / 전체 {specs.Count}개");
             return;
+        }
+
+        if (explicitOff)
+        {
+            ModLogger.Msg($"[ExperimentChart.Dt] 'dt를 권장 표로 고치기' 비활성화: 켰다면 보정됐을 노트 {wouldChange}개 / 전체 {specs.Count}개 (적용 안 함)");
+            int fixLines = 0;
+            foreach (var pair in wouldFix)
+            {
+                if (fixLines++ >= MaxDtWarningLines)
+                {
+                    ModLogger.Msg($"[ExperimentChart.Dt] ...외 {wouldFix.Count - MaxDtWarningLines}종 생략");
+                    break;
+                }
+
+                ModLogger.Msg($"[ExperimentChart.Dt] 보정 대상: {pair.Key} × {pair.Value}개");
+            }
         }
 
         if (offenders.Count == 0) return;
