@@ -212,17 +212,8 @@ namespace muse_dash_test
                         Type originalType = target.GetType();
                         if (originalType != typeof(Il2CppSystem.Object))
                         {
-                            try
-                            {
-                                var tryCastMethod = typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).GetMethod("TryCast");
-                                if (tryCastMethod != null)
-                                {
-                                    var generic = tryCastMethod.MakeGenericMethod(originalType);
-                                    var castResult = generic.Invoke(cloned, null);
-                                    if (castResult != null) return castResult;
-                                }
-                            }
-                            catch (Exception ex) { ModLogger.Verbose($"[CustomTagRegistrySupport] 무시된 예외: {ex.Message}"); }
+                            var castResult = ModReflection.TryCastIl2Cpp(cloned, originalType, "CustomTagRegistrySupport");
+                            if (castResult != null) return castResult;
                         }
                         return cloned;
                     }

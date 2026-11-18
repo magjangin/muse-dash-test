@@ -136,19 +136,32 @@ namespace muse_dash_test
     public class OfflineCustomSandboxPatch
     {
         private static HashSet<uint> loggedDLCs = new HashSet<uint>();
+        private static bool loggedError;
 
         static bool Prefix(ref bool __result, AppId_t appID)
         {
-            if (!OfflineCustomSandbox.IsEnabled)
-                return true; // 원본 로직 실행
-
-            if (loggedDLCs.Add(appID.m_AppId))
+            try
             {
-                ModLogger.Msg($"[OfflineSandbox] DLC {appID.m_AppId} → 오프라인 샌드박스 허용");
-            }
+                if (!OfflineCustomSandbox.IsEnabled)
+                    return true; // 원본 로직 실행
 
-            __result = true;
-            return false; // 원본 로직 스킵
+                if (loggedDLCs.Add(appID.m_AppId))
+                {
+                    ModLogger.Msg($"[OfflineSandbox] DLC {appID.m_AppId} → 오프라인 샌드박스 허용");
+                }
+
+                __result = true;
+                return false; // 원본 로직 스킵
+            }
+            catch (Exception ex)
+            {
+                if (!loggedError)
+                {
+                    loggedError = true;
+                    ModLogger.Warning($"[OfflineSandbox] BIsDlcInstalled 패치 예외 (원본으로 복귀): {ex.Message}");
+                }
+                return true;
+            }
         }
     }
 
@@ -158,15 +171,29 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SteamManager), nameof(SteamManager.DLCVerify))]
     public class OfflineVerifyPatch
     {
+        private static bool loggedError;
+
         static bool Prefix(SteamManager __instance)
         {
-            if (!OfflineCustomSandbox.IsEnabled)
-                return true; // 원본 로직 실행
+            try
+            {
+                if (!OfflineCustomSandbox.IsEnabled || __instance == null)
+                    return true; // 원본 로직 실행
 
-            ModLogger.Msg("[OfflineSandbox] DLCVerify 바이패스 (오프라인 샌드박스 활성 중)");
-            __instance.m_DoSomething1 = true;
-            __instance.m_DoSomething3 = true;
-            return true;
+                ModLogger.Msg("[OfflineSandbox] DLCVerify 바이패스 (오프라인 샌드박스 활성 중)");
+                __instance.m_DoSomething1 = true;
+                __instance.m_DoSomething3 = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!loggedError)
+                {
+                    loggedError = true;
+                    ModLogger.Warning($"[OfflineSandbox] DLCVerify 패치 예외 (원본으로 복귀): {ex.Message}");
+                }
+                return true;
+            }
         }
     }
 }

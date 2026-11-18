@@ -40,6 +40,28 @@ namespace muse_dash_test
         /// </summary>
         private static readonly Dictionary<MemberCacheKey, MemberInfo> MemberCache = new Dictionary<MemberCacheKey, MemberInfo>();
 
+        private static readonly MethodInfo Il2CppTryCastMethod = typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase)
+            .GetMethod("TryCast", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+
+        /// <summary>
+        /// Il2Cpp 객체 래퍼를 지정한 Il2Cpp 대상 타입으로 안전하게 제네릭 <c>TryCast&lt;T&gt;()</c> 변환합니다.
+        /// 메서드 조회를 1회 캐싱하고 실패 시 null을 반환합니다.
+        /// </summary>
+        public static object TryCastIl2Cpp(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase objBase, Type targetType, string logContext = "ModReflection")
+        {
+            if (objBase == null || targetType == null || Il2CppTryCastMethod == null) return null;
+            try
+            {
+                var generic = Il2CppTryCastMethod.MakeGenericMethod(targetType);
+                return generic.Invoke(objBase, null);
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[{logContext}] TryCast<{targetType.Name}> 예외: {ex.Message}");
+                return null;
+            }
+        }
+
         /// <summary>
         /// 특정 멤버의 부재 또는 예외로 인해 로그 파일이 스패밍되는 현상을 방지하기 위해
         /// 에러/경고가 출력된 고유 식별자 키들을 기록하고 중복 로그 출력을 억제합니다.
@@ -301,18 +323,8 @@ namespace muse_dash_test
 
             if (value is Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase objBase && typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).IsAssignableFrom(underlying))
             {
-                try
-                {
-                    var tryCastMethod = typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).GetMethod("TryCast");
-                    if (tryCastMethod != null)
-                    {
-                        var generic = tryCastMethod.MakeGenericMethod(underlying);
-                        var casted = generic.Invoke(objBase, null);
-                        if (casted != null) return casted;
-                    }
-                }
-                catch (Exception ex) { ModLogger.Verbose($"[ModReflection] 무시된 예외: {ex.Message}"); }
-                return value;
+                var casted = TryCastIl2Cpp(objBase, underlying, "ModReflection");
+                return casted ?? value;
             }
 
             return Convert.ChangeType(value, underlying);

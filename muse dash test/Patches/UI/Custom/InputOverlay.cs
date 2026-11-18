@@ -194,10 +194,10 @@ namespace muse_dash_test
                 var keysObj = dict.GetType().GetProperty("Keys")?.GetValue(dict);
                 if (keysObj == null) return result;
 
-                var enumerator = keysObj.GetType().GetMethod("GetEnumerator")?.Invoke(keysObj, null);
+                var enumerator = keysObj.GetType().GetMethod("GetEnumerator", Type.EmptyTypes)?.Invoke(keysObj, null);
                 if (enumerator == null) return result;
 
-                var moveNext = enumerator.GetType().GetMethod("MoveNext");
+                var moveNext = enumerator.GetType().GetMethod("MoveNext", Type.EmptyTypes);
                 var current = enumerator.GetType().GetProperty("Current");
                 if (moveNext == null || current == null) return result;
 

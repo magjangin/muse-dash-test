@@ -43,6 +43,21 @@ namespace muse_dash_test
 
                     if (TryFindUncompilablePatchMethod(type, out MethodInfo broken, out Exception jitError))
                     {
+                        // 다중 메서드 정적 패치 클래스에서 일부 메서드만 JIT에 실패한 경우:
+                        // 컴파일과 대상 해석을 모두 통과한 나머지 패치 메서드만 부분 적용해 기능을 최대한 살립니다.
+                        if (!PatchHealthCheck.HasDynamicTargets(type))
+                        {
+                            int survivorApplied = ApplySurvivingMethodPatches(harmony, type);
+                            if (survivorApplied > 0)
+                            {
+                                applied++;
+                                ModLogger.Warning(
+                                    $"[PatchInstaller] '{type.Name}' 중 JIT 실패 메서드({broken.Name}: {jitError.GetType().Name})를 건너뛰고 " +
+                                    $"나머지 {survivorApplied}개 패치만 부분 적용했습니다.");
+                                continue;
+                            }
+                        }
+
                         skipped.Add(type.Name);
                         ModLogger.Warning(
                             $"[PatchInstaller] '{type.Name}' 패치를 걸지 않았습니다. {broken.Name}이(가) 현재 게임 빌드에서 " +
@@ -160,6 +175,13 @@ namespace muse_dash_test
             {
                 if (!PatchHealthCheck.IsPatchMethod(method)) continue;
 
+                if (!TryPreparePatchMethod(method, out Exception jitError))
+                {
+                    ModLogger.Warning(
+                        $"[PatchInstaller] '{patchClass.Name}.{method.Name}' 개별 패치 건너뜀(JIT 실패): {jitError.GetType().Name}: {jitError.Message}");
+                    continue;
+                }
+
                 var methodAttrs = method.GetCustomAttributes(typeof(HarmonyPatch), true);
                 var target = (methodAttrs == null || methodAttrs.Length == 0)
                     ? classTarget
@@ -209,11 +231,7 @@ namespace muse_dash_test
                 if (candidate.IsAbstract || candidate.ContainsGenericParameters) continue;
                 if (!PatchHealthCheck.IsPatchMethod(candidate) && !PatchHealthCheck.IsDynamicTargetSelector(candidate)) continue;
 
-                try
-                {
-                    RuntimeHelpers.PrepareMethod(candidate.MethodHandle);
-                }
-                catch (Exception ex)
+                if (!TryPreparePatchMethod(candidate, out Exception ex))
                 {
                     method = candidate;
                     error = ex;
@@ -224,6 +242,21 @@ namespace muse_dash_test
             method = null;
             error = null;
             return false;
+        }
+
+        private static bool TryPreparePatchMethod(MethodInfo candidate, out Exception error)
+        {
+            try
+            {
+                RuntimeHelpers.PrepareMethod(candidate.MethodHandle);
+                error = null;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+                return false;
+            }
         }
     }
 }

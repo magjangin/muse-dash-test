@@ -34,7 +34,7 @@
 
 ### 1.5 쓰이지 않는 `GameBindings` 상수 20개 삭제 (업데이트 내성)
 
-- 패치 대상을 `nameof(...)`로 옮긴 뒤 `GameBindings`의 패치용 상수는 쓰는 곳이 없었고, `PatchHealthCheck`도 이 파일을 읽지 않습니다. 그런데 파일 머리말과 [ARCHITECTURE.md](ARCHITECTURE.md)는 "업데이트로 패치가 깨지면 이 파일부터 고치라"고 안내하고 있었습니다. 고쳐도 아무 효과가 없는 곳입니다.
+- 패치 대상을 `nameof(...)`로 옮긴 뒤 `GameBindings`의 패치용 상수는 쓰는 곳이 없었고, `PatchHealthCheck`도 이 파일을 읽지 않습니다. 그런데 파일 머리말과 [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)는 "업데이트로 패치가 깨지면 이 파일부터 고치라"고 안내하고 있었습니다. 고쳐도 아무 효과가 없는 곳입니다.
 - 실제로 쓰이는 `Il2CppCollection.AddMaskValue`만 남기고 문서의 안내를 `[HarmonyPatch(typeof, nameof)]` 쪽으로 바꿨습니다.
 
 ### 1.6 줄바꿈이 깨진 파일 2개

@@ -162,22 +162,31 @@
 ├── muse dash test/           # C# 모드 프로젝트 폴더
 │   ├── Bms/                  # BMS 파서/렉서, WAV 코드 해석, 노트 매칭, 보스 스왑 플래너
 │   ├── Core/                 # 하드웨어 감지, 로그 레벨 제어, 예외 격리, 터치 판독, 세션/기록 저장소, ModConfig 통합 설정
+│   │   ├── AccuracyMath.cs   # 커스텀 곡 정확도 계산 순수 로직
 │   │   ├── DeviceDetector.cs # UMPC/핸드헬드 하드웨어 자동 판별
+│   │   ├── GameBgmSource.cs  # 배틀·메뉴 공용 게임 BGM AudioSource 단일 조회
+│   │   ├── GameVersionCheck.cs # 시작 시 게임 버전·GameAssembly.dll 크기 검증 경고
 │   │   ├── ModLogger.cs      # 모드 로그의 단일 창구 & 레벨 동적 제어
 │   │   ├── ModConfig.cs      # MelonPreferences 기반 13개 개별 기능 및 LogLevel 제어
+│   │   ├── SafeAccess.cs     # 진단/방어적 프로퍼티 조회 공통 예외 래퍼
+│   │   ├── TextNormalizer.cs # 영문 축약형 공백 분리 자동 정규화
 │   │   └── ...
 │   ├── Integration/          # Discord RPC 연동
 │   │   └── DiscordPresenceManager.cs
 │   ├── Patches/              # Harmony 런타임 패치 클래스들
 │   │   ├── Battle/           # 인게임 배틀 제어 및 연출
-│   │   │   ├── Mechanics/    # 오토플레이, 피버 차단, 보스 런타임 스왑
+│   │   │   ├── Mechanics/    # 오토플레이, 피버 차단, 보스 런타임 스왑, 고스트/노트 애니메이션 동기화
 │   │   │   │   ├── AutoPlayPatch.cs
-│   │   │   │   ├── BossPatch.cs
-│   │   │   │   └── ChangeFeverValuePatch.cs
-│   │   │   └── UI/           # 올 퍼펙트 배너, 폰트 캐싱, BGA/미디어, 진행바
+│   │   │   │   ├── BossPatch*.cs
+│   │   │   │   ├── ChangeFeverValuePatch.cs
+│   │   │   │   ├── GhostNoteAlphaHold.cs
+│   │   │   │   ├── MouseTouchBridgePatch.cs
+│   │   │   │   └── NoteAnimationSyncPatch.cs
+│   │   │   └── UI/           # 올 퍼펙트 배너, 폰트 캐싱, BGA/미디어, 진행바, 배틀 시작 동기화
 │   │   │       ├── APModPatch*.cs # 정확도 재계산 + ALL PERFECT 배너 (3파일 분할)
 │   │   │       ├── AllPerfectSound.cs
-│   │   │       ├── ExperimentHitPointInstaller.cs
+│   │   │       ├── BattleStartSyncPatch.cs
+│   │   │       ├── ExperimentHitPointInstaller*.cs
 │   │   │       ├── HwaBattleMediaController*.cs
 │   │   │       ├── PnlBattleGameStartPatch.cs
 │   │   │       ├── PnlVictoryLoggingPatch.cs
@@ -244,8 +253,9 @@
 │   │           ├── PnlReportCardPatch.cs
 │   │           ├── PnlStagePatch.cs
 │   │           └── RankCellHookPatch.cs
-│   ├── Spine/                # Spine 커스텀 스킨 주입 및 아키텍처 제어
+│   ├── Spine/                # Spine 커스텀 스킨(캐릭터·노트) 주입 및 아키텍처 제어
 │   │   ├── CustomSkinInjector.cs
+│   │   ├── NoteSkinInjector.cs
 │   │   ├── Patch_Inject_BlackGirlBattle.cs
 │   │   ├── Patch_SkinNameProbe.cs
 │   │   └── Patch_SpineActionContract.cs
@@ -284,7 +294,7 @@
 ├── muse dash test.LogicTests/ # 게임 없이 순수 로직(BMS 파서 등)만 검증하는 테스트 프로젝트
 │
 ├── SignatureDumper/          # 게임의 Il2Cpp 어셈블리를 시그니처 스텁 .cs로 덤프하는 도구 (결과는 gitignore된 Decompiled/)
-├── scripts/                  # 게임 어셈블리 탐색용 일회성 PowerShell 스크립트, 진행도 초기화(reset_progress.bat)
+├── scripts/                  # 진행도 초기화(reset_progress.bat), 씬 구조 조사(scene_survey.py)
 │
 ├── build.bat                 # MSBuild 자동 추적 및 모드 파일(DLL) 빌드/배포 스크립트
 ├── run-logic-tests.bat       # BMS 로직 테스트 실행 스크립트
@@ -360,7 +370,7 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:Gam
 ## 🧪 로직 테스트
 
 모드 본체는 IL2CPP 어셈블리(`Il2CppAssemblies`)를 참조하므로 게임 밖에서 로드할 수 없습니다.
-대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `PlayRecordMerge`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 113개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행합니다. 기록 파일 저장/파싱과 `config.txt` 파싱은 게임 의존 클래스 안에 있어 아직 테스트 대상이 아닙니다.)
+대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `AccuracyMath`·`CustomRecordStore.Serialization`·`PlayRecordMerge`·`GameVersionCheck`·`TextNormalizer`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`·`NoteSkinRules`·`SkinFolderRules`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 187개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행하며, GitHub Actions CI [`.github/workflows/logic-tests.yml`](.github/workflows/logic-tests.yml)에서 푸시/PR마다 자동 실행됩니다.)
 
 ```powershell
 .\run-logic-tests.bat
@@ -371,7 +381,7 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:Gam
 .\run-logic-tests.bat BmsWavParser
 ```
 
-* **검증 대상**: `BmsParser`(헤더/채널→레인/틱·시간 계산), `BmsWavParser`(UID `zzxxyy` → NoteType·보스 액션 매핑), `BmsBossSwapPlanner`(out→in 보스 교체), `BmsNoteMatcher`(홀드/샌드백 짝 매칭)
+* **검증 대상**: `BmsParser`(헤더/채널→레인/틱·시간 계산), `BmsWavParser`(UID `zzxxyy` → NoteType·보스 액션 매핑), `BmsDtTable`(권장 dt 표·보정 로그 포맷), `BmsBossSwapPlanner`(out→in 보스 교체), `BmsNoteMatcher`(홀드/샌드백 짝 매칭), `BmsChartSet`(난이도별 채보·숙주 대체), `AccuracyMath`, `CustomRecordStore.Serialization`, `GameVersionCheck`, `TextNormalizer`, `NoteSkinRules`/`SkinFolderRules` 등
 * **외부 패키지 없음**: NuGet 의존성 없이 `dotnet run`만으로 동작하며, `MelonLogger`는 스텁으로 대체됩니다.
 
 ---

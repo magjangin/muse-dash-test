@@ -83,9 +83,10 @@ namespace muse_dash_test
                 {
                     TryReadSongDetailsFromDb(uid, ref title, ref artist);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // DB 접근 또는 게임 업데이트로 인한 JIT 실패 시 무시하고 폴백 사용
+                    // DB 접근 또는 게임 업데이트로 인한 JIT 실패 시 폴백 사용 (원인 추적용 Verbose 기록)
+                    ModLogger.Verbose($"[DiscordRPC] DB 곡 정보 조회 폴백(uid={uid}): {ex.GetType().Name}: {ex.Message}");
                 }
             }
 

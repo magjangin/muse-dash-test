@@ -41,7 +41,7 @@ MelonLoader 모드 진입점 클래스입니다.
 ### 📂 [Bms/BmsParser.cs](../../muse%20dash%20test/Bms/BmsParser.cs)
 인게임 차트에 쓰이는 BMS(Be-Music Source) 형태의 노트를 해석하고 분석하기 위한 파서 모듈입니다. BMS 데이터 포맷 규격을 디코딩하여 곡 분석 작업을 보조합니다.
 
-### 📂 [Utils/TextNormalizer.cs](../../muse%20dash%20test/Utils/TextNormalizer.cs) [v0.12.1]
+### 📂 [Core/TextNormalizer.cs](../../muse%20dash%20test/Core/TextNormalizer.cs) [v0.12.1]
 * 외부 BMS 차트 메타데이터(`#TITLE`, `#ARTIST`)나 사용자 작성 `info.txt`에서 인코딩 깨짐이나 오타로 인해 발생하는 영문 축약형의 비정상적 공백 분리(`you'   re`, `don ' t`, `it ’ s`, `I ` m` 등)를 표준 축약형(`you're`, `don't`, `it's`, `I'm`)으로 자동 교정하는 정규화 유틸리티입니다.
 * 따옴표(`'`, `’`, `` ` ``, `´`) 미포함 문자열에 대한 Fast-Path 조기 탈출 가드와 대문자 축약형(`DON'T`, `YOU'RE`) 보존 로직이 탑재되어 안전하고 신속하게 텍스트를 정제합니다.
 

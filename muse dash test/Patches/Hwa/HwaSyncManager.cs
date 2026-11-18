@@ -25,6 +25,7 @@ namespace muse_dash_test
         private const float BgaSearchInterval = 1.0f;
         private static VideoPlayer cachedBgaPlayer = null;
         private static float nextBgaSearchTime = 0f;
+        private static bool loggedSyncError = false;
 
         public static void ResetCache()
         {
@@ -32,6 +33,7 @@ namespace muse_dash_test
             syncCheckTimer = 0f;
             cachedBgaPlayer = null;
             nextBgaSearchTime = 0f;
+            loggedSyncError = false;
         }
 
         public static void HandleBattleSynchronization()
@@ -72,9 +74,13 @@ namespace muse_dash_test
 
                 CorrectVideoDrift(bgaPlayer);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // 동기화 보정 예외 무시
+                if (!loggedSyncError)
+                {
+                    loggedSyncError = true;
+                    ModLogger.Warning($"[Sync.BGA] 동기화 보정 예외 (이후 생략): {ex.GetType().Name}: {ex.Message}");
+                }
             }
         }
 

@@ -31,15 +31,29 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(MusicTagManager), nameof(MusicTagManager.RefreshStageDisplayMusics), new Type[] { typeof(int) })]
     public class MusicTagManager_RefreshStageDisplayMusics_Patch
     {
+        private static bool loggedError;
+
         public static bool Prefix(MusicTagManager __instance, int tagIndex)
         {
-            ModLogger.Verbose($"[RefreshStageDisplayMusics Patch] Prefix called: tagIndex={tagIndex}");
-            if (tagIndex == CustomTagRegistry.TagUid || tagIndex == -1)
+            try
             {
-                ModLogger.Verbose($"[RefreshStageDisplayMusics Patch] Bypassing: tagIndex={tagIndex}");
-                return false; // 원래 메서드 실행 차단
+                ModLogger.Verbose($"[RefreshStageDisplayMusics Patch] Prefix called: tagIndex={tagIndex}");
+                if (tagIndex == CustomTagRegistry.TagUid || tagIndex == -1)
+                {
+                    ModLogger.Verbose($"[RefreshStageDisplayMusics Patch] Bypassing: tagIndex={tagIndex}");
+                    return false; // 원래 메서드 실행 차단
+                }
+                return true;
             }
-            return true;
+            catch (Exception ex)
+            {
+                if (!loggedError)
+                {
+                    loggedError = true;
+                    ModLogger.Warning($"[RefreshStageDisplayMusics Patch] 예외 (원본으로 복귀): {ex.Message}");
+                }
+                return true;
+            }
         }
     }
 }

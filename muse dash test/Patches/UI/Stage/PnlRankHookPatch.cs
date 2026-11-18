@@ -92,19 +92,11 @@ namespace muse_dash_test.Patches.UI.Stage
             if (instance == null) return 0;
             try
             {
-                PropertyInfo prop = typeof(PnlRank).GetProperty(nameof(PnlRank.m_Ranks), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (prop != null)
+                object dictObj = ModReflection.GetValue(instance, nameof(PnlRank.m_Ranks), silent: true);
+                if (dictObj != null)
                 {
-                    object dictObj = prop.GetValue(instance, null);
-                    if (dictObj != null)
-                    {
-                        PropertyInfo countProp = dictObj.GetType().GetProperty("Count");
-                        if (countProp != null)
-                        {
-                            object val = countProp.GetValue(dictObj, null);
-                            if (val is int count) return count;
-                        }
-                    }
+                    object val = ModReflection.GetValue(dictObj, "Count", silent: true);
+                    if (val is int count) return count;
                 }
             }
             catch (Exception ex)
