@@ -16,13 +16,22 @@ namespace muse_dash_test
         static void Postfix(SpineActionController __instance)
         {
             // 이 프로브는 커스텀 스킨 대상을 찾기 위한 것이라, 스킨 기능을 끄면 로그도 나오지 않아야 합니다.
-            if (!ModConfig.EnableSpineSkin) return;
+            // Verbose가 꺼져 있을 때는 노트·캐릭터 스폰마다 일어나는 IL2CPP 문자열 마샬링(gameObject.name) 자체를 건너뜁니다.
+            if (!ModConfig.EnableSpineSkin || !ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
+            if (__instance == null || __instance.gameObject == null) return;
 
-            var name = __instance.gameObject.name;
-            // Awake는 노트·캐릭터 컨트롤러가 생길 때마다 불립니다. 소문자 사본을 만들지 않고 비교합니다.
-            if (name != null && name.IndexOf("battle", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            try
             {
-                ModLogger.Verbose($"[SkinNameProbe] 배틀 오브젝트 이름 = \"{name}\"");
+                var name = __instance.gameObject.name;
+                // Awake는 노트·캐릭터 컨트롤러가 생길 때마다 불립니다. 소문자 사본을 만들지 않고 비교합니다.
+                if (name != null && name.IndexOf("battle", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    ModLogger.Verbose($"[SkinNameProbe] 배틀 오브젝트 이름 = \"{name}\"");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ModLogger.Verbose($"[SkinNameProbe] 무시된 예외: {ex.Message}");
             }
         }
     }

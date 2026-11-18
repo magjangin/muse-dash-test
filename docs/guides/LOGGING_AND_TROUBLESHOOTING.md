@@ -25,10 +25,12 @@ Il2Cpp.Boss.InitBossObject: ... 적용 -> name=..., scene=...   (보스가 있�
 | 로그 | 수준 | 의미 |
 | --- | --- | --- |
 | `[PatchInstaller] … 패치를 걸지 않았습니다` | Warning | 게임 업데이트로 그 패치 본문이 현재 게임에서 컴파일되지 않습니다. 뒤의 예외 메시지가 사라진 멤버 이름입니다. |
+| `[GameVersion] 게임 6.7.0 (검증 버전과 같음)` | Info | 실행 중인 게임 버전이 모드를 실기 검증한 버전과 일치합니다. 버전이나 `GameAssembly.dll` 크기가 다르면 Warning으로 바뀌며 [CHECKLIST.md](CHECKLIST.md) 5절을 확인해야 합니다. |
 | `모드가 로드되었습니다.` | Info | MelonLoader가 DLL을 정상 로드했습니다. |
 | `씬이 로드되었습니다` | Info | Unity 씬 전환이 감지됐습니다. |
 | `DBStageInfo.SetRuntimeMusicData 호출됨` | Info | 게임이 런타임 차트 데이터를 만들었습니다(공식곡도 찍힙니다). |
 | `[ExperimentChart] 적용 시작` / `적용 건너뜀` | Info | 커스텀 차트를 적용하는 판인지, 순정 판인지 결정된 결과와 사유입니다. |
+| `[ExperimentChart.Dt] 'dt를 권장 표로 고치기' 활성화/비활성화` | Info / Warning | `info.txt` 설정에 따라 노트 `_dt`를 권장표로 덮어쓴 개수, `비활성화` 명시 시의 보정 대상 미리보기, 또는 허용 범위 밖 `_dt` 경고를 출력합니다([DT_RECOMMENDED_TABLE.md](DT_RECOMMENDED_TABLE.md)). |
 | `실험 노트 추가` | **Verbose** | 노트 하나가 실제 `MusicData`로 들어갔습니다(노트마다 한 줄이라 Verbose에만 남깁니다). |
 | `실험 차트 적용 완료` | Info | 원본 리스트를 실험 리스트로 재구성했습니다. |
 | `PnlPreparation.OnEnable: 곡 이름=…` 등 (`LogCompact`) | **Verbose** | 준비 화면에서 읽은 곡 정보입니다. 예전 문서의 `PnlStage.ChangeFinalMusic` 로그는 지금 없습니다. |

@@ -14,7 +14,15 @@ namespace muse_dash_test.Patches.UI.Menu
     {
         public static void Postfix(PnlMenu __instance)
         {
-            MenuPanelDebugHelper.LogPanelState("PnlMenu.OnEnable", __instance != null ? __instance.gameObject : null);
+            if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
+            try
+            {
+                MenuPanelDebugHelper.LogPanelState("PnlMenu.OnEnable", __instance != null ? __instance.gameObject : null);
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[UI.PanelDebug] PnlMenu.OnEnable 무시된 예외: {ex.Message}");
+            }
         }
     }
 

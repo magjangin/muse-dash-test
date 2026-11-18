@@ -77,7 +77,12 @@ namespace muse_dash_test
 
                 var nameMap = BuildJsonIndexNameMap();
 
-                ModLogger.Msg($"[CollabEndTime] DlcUIExtensionInfo {list.Count}건 로드됨:");
+                ModLogger.Msg($"[CollabEndTime] DlcUIExtensionInfo {list.Count}건 로드됨 (AlbumJsonIndexDefine {nameMap.Count}건)");
+                if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+                {
+                    return;
+                }
+
                 for (int i = 0; i < list.Count; i++)
                 {
                     var info = list[i];
@@ -87,13 +92,13 @@ namespace muse_dash_test
                     }
 
                     string name = nameMap.TryGetValue(info.jsonIndex, out string n) ? n : "(이름 매칭 안 됨)";
-                    ModLogger.Msg($"[CollabEndTime]   jsonIndex={info.jsonIndex} ({name}), dlcEndTime={info.dlcEndTime:yyyy-MM-dd HH:mm:ss}");
+                    ModLogger.Verbose($"[CollabEndTime]   jsonIndex={info.jsonIndex} ({name}), dlcEndTime={info.dlcEndTime:yyyy-MM-dd HH:mm:ss}");
                 }
 
                 // AlbumJsonIndexDefine에 정의된 "전체" 이름 목록 기준으로 역조회.
                 // djmax처럼 위 목록(DlcUIExtensionInfo)엔 없던 콜라보도 여기서 다 훑어서
                 // 실제로 UI 확장 정보(=종료일 데이터)가 있는지 없는지 전부 보여준다.
-                ModLogger.Msg($"[CollabEndTime] AlbumJsonIndexDefine 전체 {nameMap.Count}건 역조회:");
+                ModLogger.Verbose($"[CollabEndTime] AlbumJsonIndexDefine 전체 {nameMap.Count}건 역조회:");
                 foreach (var pair in nameMap.OrderBy(p => p.Value))
                 {
                     int jsonIndex = pair.Key;
@@ -101,11 +106,11 @@ namespace muse_dash_test
                     var info = __instance.GetDlcUIExtensionByJsonIndex(jsonIndex);
                     if (info == null)
                     {
-                        ModLogger.Msg($"[CollabEndTime]   jsonIndex={jsonIndex} ({collabName}) -> DlcUIExtensionInfo 없음(UI 확장 정보 미등록)");
+                        ModLogger.Verbose($"[CollabEndTime]   jsonIndex={jsonIndex} ({collabName}) -> DlcUIExtensionInfo 없음(UI 확장 정보 미등록)");
                     }
                     else
                     {
-                        ModLogger.Msg($"[CollabEndTime]   jsonIndex={jsonIndex} ({collabName}) -> dlcEndTime={info.dlcEndTime:yyyy-MM-dd HH:mm:ss}");
+                        ModLogger.Verbose($"[CollabEndTime]   jsonIndex={jsonIndex} ({collabName}) -> dlcEndTime={info.dlcEndTime:yyyy-MM-dd HH:mm:ss}");
                     }
                 }
             }

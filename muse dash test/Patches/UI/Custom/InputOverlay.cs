@@ -162,13 +162,13 @@ namespace muse_dash_test
             try
             {
                 var type = dict.GetType();
-                var containsKey = type.GetMethod("ContainsKey");
+                var containsKey = type.GetMethod("ContainsKey", new[] { typeof(string) }) ?? type.GetMethod("ContainsKey");
                 if (containsKey != null && !(bool)containsKey.Invoke(dict, new object[] { key }))
                 {
                     return false;
                 }
 
-                var getItem = type.GetMethod("get_Item");
+                var getItem = type.GetMethod("get_Item", new[] { typeof(string) }) ?? type.GetMethod("get_Item");
                 if (getItem == null) return false;
 
                 value = getItem.Invoke(dict, new object[] { key });
@@ -221,7 +221,8 @@ namespace muse_dash_test
         {
             try
             {
-                var containsKey = proposalDict.GetType().GetMethod("ContainsKey");
+                var type = proposalDict.GetType();
+                var containsKey = type.GetMethod("ContainsKey", new[] { typeof(string) }) ?? type.GetMethod("ContainsKey");
                 if (containsKey != null && (bool)containsKey.Invoke(proposalDict, new object[] { exactKey }))
                 {
                     return exactKey;
@@ -253,7 +254,7 @@ namespace muse_dash_test
             {
                 var type = listObj.GetType();
                 var countProp = type.GetProperty("Count");
-                var getItem = type.GetMethod("get_Item");
+                var getItem = type.GetMethod("get_Item", new[] { typeof(int) }) ?? type.GetMethod("get_Item");
                 if (countProp == null || getItem == null) return;
 
                 int count = (int)countProp.GetValue(listObj);

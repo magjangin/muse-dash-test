@@ -14,7 +14,8 @@ namespace muse_dash_test
         private static readonly string configFolder = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "save custom key");
         private static readonly string configPath = Path.Combine(configFolder, "config.txt");
         private static DateTime lastWriteTime = DateTime.MinValue;
-        private static float lastConfigCheckTime = 0f;
+        // OnInitializeMelon 시점에는 Time.unscaledTime이 0이므로, 0으로 두면 첫 호출이 간격 제한에 막혀 건너뛰어집니다.
+        private static float lastConfigCheckTime = float.NegativeInfinity;
         private const float ConfigCheckInterval = 1.0f; // 1초마다 실시간 변경 감지 (디스크 I/O 최적화)
         private static bool hasFailedToWrite = false;   // 쓰기/생성 실패 시 반복적인 시도 및 로그 스패밍 방지
         private static bool canonicalizeDone = false;   // 표준 형식 정규화는 세션당 1회만 (무한 재작성 방지)

@@ -92,5 +92,26 @@ namespace muse_dash_test.LogicTests
             Assert.True(BmsDtTable.TryGetRecommended(DtFamily.BossProjectile, 1, out double other, "010701"));
             Assert.Equal(0.8, other);
         }
+
+        public static void FormatFixCandidateAndOffender_UseInvariantDecimalAndHandleMissingDtAndSpeedZero()
+        {
+            Assert.Equal(
+                "uid=041102, 일반 속도 2: _dt1.3 → 권장 1.28",
+                BmsDtTable.FormatFixCandidate("041102", DtFamily.Normal, 2, 1.3, 1.28));
+
+            // WAV 이름에 _dt가 없는 노트(-1)는 _dt-1 대신 _dt(미지정)으로 표시합니다.
+            Assert.Equal(
+                "uid=041101, 일반 속도 1: _dt(미지정) → 권장 1.48",
+                BmsDtTable.FormatFixCandidate("041101", DtFamily.Normal, 1, -1.0, 1.48));
+
+            // 고정 이벤트(speed=0)는 '속도 0'을 붙이지 않습니다.
+            Assert.Equal(
+                "uid=000401, 고정 이벤트: _dt0.5 → 권장 0",
+                BmsDtTable.FormatFixCandidate("000401", DtFamily.FixedEvent, 0, 0.5, 0.0));
+
+            Assert.Equal(
+                "uid=051002, 일반 속도 2, _dt1.45 (허용 1.18~1.38)",
+                BmsDtTable.FormatOffender("051002", DtFamily.Normal, 2, 1.45, "1.18~1.38"));
+        }
     }
 }

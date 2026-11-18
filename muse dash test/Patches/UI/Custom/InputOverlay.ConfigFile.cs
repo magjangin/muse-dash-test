@@ -93,9 +93,16 @@ namespace muse_dash_test
 
             ParseConfigFile();
 
-            if (IsCanonicalConfigText(text, out string reason)) return;
+            if (!IsCanonicalConfigText(text, out string reason))
+            {
+                WriteConfigFile($"config.txt를 표준 형식으로 다시 썼습니다 (사유: {reason}, 설정값은 그대로 유지)");
+            }
 
-            WriteConfigFile($"config.txt를 표준 형식으로 다시 썼습니다 (사유: {reason}, 설정값은 그대로 유지)");
+            // 바로 이어지는 LoadConfigIfNeeded의 타임스탬프 검사에서 같은 파일을 즉시 한 번 더 파싱하지 않도록 기록합니다.
+            if (File.Exists(configPath))
+            {
+                lastWriteTime = File.GetLastWriteTime(configPath);
+            }
         }
 
         /// <summary>

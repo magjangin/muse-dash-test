@@ -142,7 +142,7 @@ namespace muse_dash_test
         {
             try
             {
-                var targetMethod = AccessTools.Method(typeof(Il2Cpp.MusicTagManager), "InitAlbumTagInfo");
+                var targetMethod = AccessTools.Method(typeof(Il2Cpp.MusicTagManager), nameof(Il2Cpp.MusicTagManager.InitAlbumTagInfo));
                 if (targetMethod == null)
                 {
                     ModLogger.Warning("[PatchHealth] MusicTagManager.InitAlbumTagInfo 메서드를 찾을 수 없습니다! Harmony 패치가 동작하지 않을 가능성이 높습니다. Init으로 시작하는 메서드를 찾아 덤프 파일을 생성합니다.");

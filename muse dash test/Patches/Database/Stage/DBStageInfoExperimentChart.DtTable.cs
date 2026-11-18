@@ -43,14 +43,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 && System.Math.Abs(spec.Dt - wouldBe) > 0.0005)
             {
                 wouldChange++;
-                string fixKey = $"uid={spec.Uid}, {BmsDtTable.Describe(family)} 속도 {speed}: _dt{spec.Dt:0.###} → 권장 {wouldBe:0.###}";
+                string fixKey = BmsDtTable.FormatFixCandidate(spec.Uid, family, speed, spec.Dt, wouldBe);
                 wouldFix.TryGetValue(fixKey, out int fixCount);
                 wouldFix[fixKey] = fixCount + 1;
             }
 
             if (BmsDtTable.IsAllowed(family, speed, spec.Dt, out string expected, spec.Uid)) continue;
 
-            string key = $"uid={spec.Uid}, {BmsDtTable.Describe(family)} 속도 {speed}, _dt{spec.Dt:0.###} (허용 {expected})";
+            string key = BmsDtTable.FormatOffender(spec.Uid, family, speed, spec.Dt, expected);
             offenders.TryGetValue(key, out int count);
             offenders[key] = count + 1;
         }

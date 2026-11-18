@@ -28,15 +28,17 @@ namespace muse_dash_test
                 gameMusicStarted = true;
                 // 레디·고 훅이 불리지 않은 배틀의 안전망: 아직 주입 전이면 지금 시작합니다(로드가 끝나면 바로 재생).
                 StartBattleMediaInjection();
-                if (bgm == null || injectedAudioSource == null || bgm.Pointer != injectedAudioSource.Pointer || bgm.clip == null)
+                // 게임 업데이트로 AudioManager.bgm이 바뀌어 bgm이 null이더라도, 이름 스캔 폴백으로 잡은 injectedAudioSource가 있으면 재생합니다.
+                AudioSource target = bgm != null ? bgm : injectedAudioSource;
+                if (target == null || injectedAudioSource == null || target.Pointer != injectedAudioSource.Pointer || target.clip == null)
                 {
                     return;
                 }
 
-                if (!bgm.isPlaying)
+                if (!target.isPlaying)
                 {
-                    bgm.Play();
-                    ModLogger.Msg($"[HwaBattleMediaController] 게임 음악 시작 시점에 커스텀 BGM 재생 시작: bgm.time={bgm.time:F3}");
+                    target.Play();
+                    ModLogger.Msg($"[HwaBattleMediaController] 게임 음악 시작 시점에 커스텀 BGM 재생 시작: bgm.time={target.time:F3}");
                 }
             }
             catch (Exception ex)

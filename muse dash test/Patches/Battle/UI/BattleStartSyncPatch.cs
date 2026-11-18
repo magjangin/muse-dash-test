@@ -32,7 +32,14 @@ namespace muse_dash_test
     {
         public static void Postfix()
         {
-            HwaBattleMediaController.OnGameMusicStarted(GameBgmSource.TryGet(out _));
+            try
+            {
+                HwaBattleMediaController.OnGameMusicStarted(GameBgmSource.TryGet(out _));
+            }
+            catch (System.Exception ex)
+            {
+                ModLogger.Error($"[FixedOffset] 커스텀 BGM 시작 처리 예외: {ex}");
+            }
         }
     }
 
@@ -41,7 +48,14 @@ namespace muse_dash_test
     {
         public static void Postfix(UnityEngine.AudioSource bgm)
         {
-            HwaBattleMediaController.OnGameMusicStarted(bgm);
+            try
+            {
+                HwaBattleMediaController.OnGameMusicStarted(bgm);
+            }
+            catch (System.Exception ex)
+            {
+                ModLogger.Error($"[FixedMusicOffset] 커스텀 BGM 시작 처리 예외: {ex}");
+            }
         }
     }
 }

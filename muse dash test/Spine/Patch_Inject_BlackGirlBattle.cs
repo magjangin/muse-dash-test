@@ -33,30 +33,38 @@ namespace muse_dash_test
             // (예전에는 MainMod의 'skin test' 폴더 생성만 이 설정에 묶여 있어서, 설정을 꺼도
             //  스킨 주입은 그대로 돌았습니다.)
             if (!ModConfig.EnableSpineSkin) return;
+            if (instance == null || instance.gameObject == null) return;
 
-            if (!TargetToBaseName.TryGetValue(instance.gameObject.name, out var baseName)) return;
-
-            // config.txt [8] '캐릭터 커스텀 스킨=false'면 모든 캐릭터를 원래 모습으로 둡니다.
-            // 배틀 중에는 config.txt를 다시 읽지 않으므로 판 도중에 바뀌지 않습니다(LoadConfigIfNeeded).
-            if (!InputOverlay.enableCharacterSkin) return;
-
-            var customAsset = CustomSkinInjector.GetOrBuild(baseName);
-            if (customAsset == null)
+            try
             {
-                ModLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
-                return;
-            }
+                if (!TargetToBaseName.TryGetValue(instance.gameObject.name, out var baseName)) return;
 
-            var ska = instance.skeletonAnimation;
-            if (ska == null)
+                // config.txt [8] '캐릭터 커스텀 스킨=false'면 모든 캐릭터를 원래 모습으로 둡니다.
+                // 배틀 중에는 config.txt를 다시 읽지 않으므로 판 도중에 바뀌지 않습니다(LoadConfigIfNeeded).
+                if (!InputOverlay.enableCharacterSkin) return;
+
+                var customAsset = CustomSkinInjector.GetOrBuild(baseName);
+                if (customAsset == null)
+                {
+                    ModLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
+                    return;
+                }
+
+                var ska = instance.skeletonAnimation;
+                if (ska == null)
+                {
+                    ModLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
+                    return;
+                }
+
+                ska.skeletonDataAsset = customAsset;
+                ska.Initialize(true);
+                ModLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료");
+            }
+            catch (System.Exception ex)
             {
-                ModLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
-                return;
+                ModLogger.Warning($"[Inject] 캐릭터 스킨 주입 예외: {ex.Message}");
             }
-
-            ska.skeletonDataAsset = customAsset;
-            ska.Initialize(true);
-            ModLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료");
         }
     }
 

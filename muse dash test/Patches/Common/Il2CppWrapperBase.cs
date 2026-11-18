@@ -15,6 +15,7 @@ namespace muse_dash_test
         /// </summary>
         public object RawObject { get; }
         private static readonly HashSet<string> LoggedFailures = new HashSet<string>();
+        private static readonly Dictionary<Type, System.Reflection.MethodInfo> AddMaskMethodCache = new Dictionary<Type, System.Reflection.MethodInfo>();
         private static readonly object CacheLock = new object();
 
         /// <summary>
@@ -83,12 +84,35 @@ namespace muse_dash_test
         /// <param name="value">키에 할당할 객체 값</param>
         public void AddMaskValue(string key, object value)
         {
+            if (RawObject == null) return;
             try
             {
-                var method = RawObject.GetType().GetMethod(GameBindings.Il2CppCollection.AddMaskValue, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                Type type = RawObject.GetType();
+                System.Reflection.MethodInfo method;
+                bool isFirstMissingLog = false;
+                lock (CacheLock)
+                {
+                    if (!AddMaskMethodCache.TryGetValue(type, out method))
+                    {
+                        method = type.GetMethod(
+                            GameBindings.Il2CppCollection.AddMaskValue,
+                            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        AddMaskMethodCache[type] = method;
+                    }
+
+                    if (method == null)
+                    {
+                        isFirstMissingLog = LoggedFailures.Add($"{type.FullName}_{GameBindings.Il2CppCollection.AddMaskValue}_missing");
+                    }
+                }
+
                 if (method != null)
                 {
                     method.Invoke(RawObject, new object[] { key, value });
+                }
+                else if (isFirstMissingLog)
+                {
+                    ModLogger.Warning($"[Il2CppWrapperBase] '{type.FullName}'에서 '{GameBindings.Il2CppCollection.AddMaskValue}' 메서드를 찾지 못했습니다 (게임 업데이트 가능성, 1회만 표시됩니다)");
                 }
             }
             catch (Exception ex)

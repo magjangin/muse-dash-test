@@ -143,6 +143,31 @@ namespace muse_dash_test
             }
         }
 
+        /// <summary>
+        /// 'dt를 권장 표로 고치기 = 비활성화'일 때 로그에 남길 보정 대상 요약 키를 만듭니다.
+        /// 로케일과 무관하게 마침표 소수점(<see cref="CultureInfo.InvariantCulture"/>)을 쓰고,
+        /// WAV 이름에 <c>_dt</c>를 적지 않은 노트(음수)는 <c>_dt-1</c> 대신 <c>_dt(미지정)</c>으로 표시합니다.
+        /// </summary>
+        public static string FormatFixCandidate(string uid, DtFamily family, int speed, double actualDt, double recommendedDt)
+        {
+            string familyWithSpeed = DescribeWithSpeed(family, speed);
+            string actualText = actualDt < 0.0 ? "_dt(미지정)" : "_dt" + Format(actualDt);
+            return $"uid={uid}, {familyWithSpeed}: {actualText} → 권장 {Format(recommendedDt)}";
+        }
+
+        /// <summary>
+        /// 차터 허용 범위를 벗어난 노트의 경고 요약 키를 만듭니다(로케일 무관 마침표 소수점).
+        /// </summary>
+        public static string FormatOffender(string uid, DtFamily family, int speed, double actualDt, string expected)
+        {
+            string familyWithSpeed = DescribeWithSpeed(family, speed);
+            string actualText = actualDt < 0.0 ? "_dt(미지정)" : "_dt" + Format(actualDt);
+            return $"uid={uid}, {familyWithSpeed}, {actualText} (허용 {expected})";
+        }
+
+        private static string DescribeWithSpeed(DtFamily family, int speed)
+            => speed > 0 ? $"{Describe(family)} 속도 {speed}" : Describe(family);
+
         private static double[] TableFor(DtFamily family, string uid)
         {
             switch (family)
