@@ -154,7 +154,10 @@ namespace muse_dash_test
                     if (!string.IsNullOrEmpty(uid)) return uid;
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[PnlMusicDiagnostics] 커스텀 UID 탐색 예외: {ex.GetType().Name}: {ex.Message}");
+            }
 
             return null;
         }

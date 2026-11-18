@@ -233,8 +233,9 @@ namespace muse_dash_test
                     value = customRatio;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                ModLogger.Verbose($"[ProgressBarPatch.SetProgress] Prefix 예외: {ex.GetType().Name}: {ex.Message}");
             }
         }
     }
@@ -252,8 +253,9 @@ namespace muse_dash_test
                     __result = customRatio;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                ModLogger.Verbose($"[ProgressBarPatch.GetTimeProgress] Postfix 예외: {ex.GetType().Name}: {ex.Message}");
             }
         }
     }

@@ -103,15 +103,11 @@ namespace muse_dash_test
                 ModLogger.Verbose($"[MenuBGM] AudioManager.bgm을 쓰지 못해 이름으로 찾습니다: {failure ?? "비활성 상태"}");
 
                 // 0단계: 핀포인트로 "BGM" 오브젝트 검색 시도
-                GameObject bgmGo = GameObject.Find("BGM");
-                if (bgmGo != null)
+                AudioSource namedSource = GameBgmSource.FindNamedBgmObject();
+                if (namedSource != null && namedSource.gameObject.activeInHierarchy)
                 {
-                    AudioSource source = bgmGo.GetComponent<AudioSource>();
-                    if (source != null && source.gameObject.activeInHierarchy)
-                    {
-                        ModLogger.Verbose($"[MenuBGM] 핀포인트 매칭 성공: GO={bgmGo.name}");
-                        return source;
-                    }
+                    ModLogger.Verbose($"[MenuBGM] 핀포인트 매칭 성공: GO={namedSource.gameObject.name}");
+                    return namedSource;
                 }
 
                 // 핀포인트 검색 실패 시에만 예외적으로 씬 내 전체 스캔 진행 (폴백)

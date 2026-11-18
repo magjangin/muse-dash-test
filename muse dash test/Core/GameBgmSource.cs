@@ -40,6 +40,25 @@ namespace muse_dash_test
         }
 
         /// <summary>
+        /// <see cref="TryGet"/>이 실패했을 때 씬에서 이름이 "BGM"인 <see cref="AudioSource"/>를 폴백으로 찾아 반환합니다.
+        /// </summary>
+        public static AudioSource TryGetWithNameFallback(out string failure)
+        {
+            AudioSource bgm = TryGet(out failure);
+            if (bgm != null) return bgm;
+            return FindNamedBgmObject();
+        }
+
+        /// <summary>
+        /// 씬에서 이름이 "BGM"인 GameObject의 <see cref="AudioSource"/>를 찾습니다.
+        /// </summary>
+        public static AudioSource FindNamedBgmObject()
+        {
+            GameObject bgmGo = GameObject.Find("BGM");
+            return bgmGo != null ? bgmGo.GetComponent<AudioSource>() : null;
+        }
+
+        /// <summary>
         /// 이름 스캔 폴백에서 건너뛸 보조 소스인지 확인합니다. 6.7.0의 "BGM_OneShot"은 승리 효과음
         /// (<c>sfx_victory_bgm</c>) 같은 단발음을 트는 소스라 곡을 주입할 대상이 아닙니다.
         /// </summary>

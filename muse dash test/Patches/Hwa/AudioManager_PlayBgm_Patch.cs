@@ -97,8 +97,9 @@ namespace muse_dash_test
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                ModLogger.Verbose($"[AudioManager.PlayBgm] Postfix 예외: {ex.GetType().Name}: {ex.Message}");
             }
         }
     }

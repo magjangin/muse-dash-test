@@ -225,8 +225,9 @@ namespace muse_dash_test
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                ModLogger.Verbose($"[AudioSource.SetClip] FindSceneComponent<{typeof(T).Name}> 예외: {ex.GetType().Name}: {ex.Message}");
             }
             return null;
         }

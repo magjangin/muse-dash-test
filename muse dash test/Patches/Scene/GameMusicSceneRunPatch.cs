@@ -21,8 +21,7 @@ public class GameMusicScene_Run_Patch
         {
             if (__instance == null) return;
 
-            int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
+            int frame = SafeAccess.Get(() => UnityEngine.Time.frameCount, 0, "GameMusicScene.Run.frame");
             if (_dumpCount > 0 && frame - _lastDumpFrame < DumpIntervalFrames)
             {
                 return;
@@ -62,8 +61,7 @@ public class GameMusicScene_Run_Patch
             int nullCount = 0;
             for (int i = 0; i < list.Count; i++)
             {
-                string uid = null;
-                try { uid = list[i]?.noteData?.uid; } catch (Exception) { }
+                string uid = SafeAccess.Get(() => list[i]?.noteData?.uid, null);
                 if (string.IsNullOrEmpty(uid)) { nullCount++; continue; }
                 string zz = uid.Length >= 2 ? uid.Substring(0, 2) : uid;
                 hist[zz] = hist.TryGetValue(zz, out int c) ? c + 1 : 1;

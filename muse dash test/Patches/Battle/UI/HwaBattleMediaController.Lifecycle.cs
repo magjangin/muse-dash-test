@@ -69,15 +69,11 @@ namespace muse_dash_test
                     ModLogger.Msg("[HwaBattleMediaController] 주입된 BGM 오디오 재생을 일시정지했습니다.");
                 }
 
-                GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
-                if (bgmGo != null)
+                AudioSource bgm = GetFallbackBgmSource();
+                if (bgm != null && bgm.isPlaying)
                 {
-                    AudioSource bgm = bgmGo.GetComponent<AudioSource>();
-                    if (bgm != null && bgm.isPlaying)
-                    {
-                        bgm.Pause();
-                        ModLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 일시정지했습니다.");
-                    }
+                    bgm.Pause();
+                    ModLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 일시정지했습니다.");
                 }
             }
             catch (Exception ex)
@@ -116,15 +112,11 @@ namespace muse_dash_test
                     ModLogger.Msg("[HwaBattleMediaController] 주입된 BGM 오디오 재생을 재개했습니다.");
                 }
 
-                GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
-                if (bgmGo != null)
+                AudioSource bgm = GetFallbackBgmSource();
+                if (bgm != null && !bgm.isPlaying)
                 {
-                    AudioSource bgm = bgmGo.GetComponent<AudioSource>();
-                    if (bgm != null && !bgm.isPlaying)
-                    {
-                        bgm.UnPause();
-                        ModLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 재개했습니다.");
-                    }
+                    bgm.UnPause();
+                    ModLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 재개했습니다.");
                 }
             }
             catch (Exception ex)
@@ -200,15 +192,11 @@ namespace muse_dash_test
                 // 메뉴 BGM이 AudioManager.bgm.clip을 실제로 교체한 직후에만 DestroyUnreferencedRetiredClips로
                 // 참조가 완전히 끊긴 은퇴 클립을 파괴하여 장시간(3시간+) 플레이 시 FMOD/오디오 스트림 누수를 막습니다.
 
-                GameObject bgmGo = GameObject.Find("HwaBattleBgmSource");
-                if (bgmGo != null)
+                AudioSource bgm = GetFallbackBgmSource();
+                if (bgm != null)
                 {
-                    AudioSource bgm = bgmGo.GetComponent<AudioSource>();
-                    if (bgm != null)
-                    {
-                        bgm.Stop();
-                        ModLogger.Msg("[HwaBattleMediaController] HwaBattleBgmSource 재생을 완전히 멈췄습니다.");
-                    }
+                    bgm.Stop();
+                    ModLogger.Msg("[HwaBattleMediaController] HwaBattleBgmSource 재생을 완전히 멈췄습니다.");
                 }
 
                 // 진단용: Verbose가 켜져 있을 때만 씬의 AudioSource 전체를 스캔합니다.

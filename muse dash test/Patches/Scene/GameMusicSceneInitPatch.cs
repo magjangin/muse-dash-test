@@ -113,8 +113,7 @@ public class GameMusicScene_InitTimer_Patch
 
             if (EnableDebugLogs)
             {
-                int frame = 0;
-                try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
+                int frame = SafeAccess.Get(() => UnityEngine.Time.frameCount, 0, "GameMusicScene.InitTimer.frame");
                 SceneDiagnosticLogger.Log("GameMusicScene.InitTimer.Prefix", $"[GameMusicScene.InitTimer] PRE frame={frame}, total={total}", 20);
             }
 
@@ -179,8 +178,7 @@ public class GameMusicScene_InitSceneEvents_Patch
         {
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
-            int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
+            int frame = SafeAccess.Get(() => UnityEngine.Time.frameCount, 0, "GameMusicScene.InitSceneEvents.PRE.frame");
             SceneDiagnosticLogger.Log("GameMusicScene.InitSceneEvents", $"[GameMusicScene.InitSceneEvents] PRE frame={frame}, curSceneName={SafeCurSceneName(__instance)}", 20);
         }
         catch (Exception ex) { ModLogger.Error($"[GameMusicScene.InitSceneEvents] Prefix 예외: {ex}"); }
@@ -192,8 +190,7 @@ public class GameMusicScene_InitSceneEvents_Patch
         {
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
-            int sceneCount = -1;
-            try { sceneCount = __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1; } catch (Exception) { }
+            int sceneCount = SafeAccess.Get(() => __instance != null && __instance.scenes != null ? __instance.scenes.Count : -1, -1, "GameMusicScene.InitSceneEvents.POST.scenes");
             SceneDiagnosticLogger.Log("GameMusicScene.InitSceneEvents", $"[GameMusicScene.InitSceneEvents] POST scenes.Count={sceneCount}, curSceneName={SafeCurSceneName(__instance)}", 20);
         }
         catch (Exception ex) { ModLogger.Error($"[GameMusicScene.InitSceneEvents] Postfix 예외: {ex}"); }

@@ -39,12 +39,7 @@ namespace muse_dash_test.Patches.UI.Menu
             {
                 string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;
 
-                AudioSource bgmSource = GameBgmSource.TryGet(out _);
-                if (bgmSource == null)
-                {
-                    GameObject bgmGo = GameObject.Find("BGM");
-                    bgmSource = bgmGo != null ? bgmGo.GetComponent<AudioSource>() : null;
-                }
+                AudioSource bgmSource = GameBgmSource.TryGetWithNameFallback(out _);
 
                 string clipName = bgmSource != null && bgmSource.clip != null ? bgmSource.clip.name : "(null)";
                 bool isPlaying = bgmSource != null && bgmSource.isPlaying;

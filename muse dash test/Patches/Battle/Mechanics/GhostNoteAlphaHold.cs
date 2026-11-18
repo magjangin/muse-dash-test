@@ -51,7 +51,10 @@ namespace muse_dash_test
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+            }
 
             return InputOverlay.showGhostNotes;
         }
@@ -82,14 +85,20 @@ namespace muse_dash_test
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+            }
 
             try
             {
                 string name = controller.gameObject != null ? controller.gameObject.name : null;
                 return IsGhostUid(name);
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+            }
 
             return false;
         }
@@ -254,7 +263,10 @@ namespace muse_dash_test
                 var asset = controller.skeletonAnimation != null ? controller.skeletonAnimation.skeletonDataAsset : null;
                 if (asset != null && !string.IsNullOrEmpty(asset.name)) return asset.name;
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+            }
 
             return ObjectNameOf(controller);
         }

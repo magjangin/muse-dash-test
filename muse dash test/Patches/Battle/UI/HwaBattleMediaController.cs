@@ -23,6 +23,8 @@ namespace muse_dash_test
         // 정지 뒤에 끝난 옛 로드가 클립을 틀어 결과 화면에서 소리가 되살아나던 문제를 막습니다.
         internal static int mediaGeneration;
         private static AudioSource injectedAudioSource;
+        private static AudioSource cachedFallbackBgmSource;
+        private static bool fallbackBgmLookupAttempted;
         // 우리가 직접 주입한 커스텀 배틀 BGM 클립만 추적합니다(해제 대상 한정).
         private static AudioClip injectedClip;
         // 이전 배틀에서 썼던 커스텀 클립들을 모아 두었다가, 어떤 AudioSource도 더 이상 참조하지 않을 때만 안전하게 Destroy합니다.
@@ -38,6 +40,8 @@ namespace muse_dash_test
             battleMediaInjectionStarted = false;
             gameMusicStarted = false;
             injectedAudioSource = null;
+            cachedFallbackBgmSource = null;
+            fallbackBgmLookupAttempted = false;
             mediaGeneration++;
             // 여기서 즉시 Destroy하면 아직 새 클립이 로드되기 전이라 AudioManager.bgm.clip이 파괴된 클립을 가리켜
             // 재시작/결과창이 멈춥니다(b14b0a5 참고). 대신 은퇴 목록에 옮겨 두고 AudioManager.bgm.clip이 다른 클립으로
@@ -47,6 +51,19 @@ namespace muse_dash_test
             ProgressBarPatch.Reset();
             HwaSyncManager.ResetCache();
             ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, 은퇴 대기={retiredClips.Count}개, ManagedHeap={currentMem / 1048576f:F2}MB)");
+        }
+
+        private static AudioSource GetFallbackBgmSource()
+        {
+            if (cachedFallbackBgmSource != null) return cachedFallbackBgmSource;
+            if (fallbackBgmLookupAttempted) return null;
+            fallbackBgmLookupAttempted = true;
+            GameObject go = GameObject.Find("HwaBattleBgmSource");
+            if (go != null)
+            {
+                cachedFallbackBgmSource = go.GetComponent<AudioSource>();
+            }
+            return cachedFallbackBgmSource;
         }
 
         private static void RetireClip(AudioClip clip)
@@ -73,14 +90,10 @@ namespace muse_dash_test
                 AudioClip activeInjectedSourceClip = injectedAudioSource != null ? injectedAudioSource.clip : null;
 
                 AudioClip activeFallbackClip = null;
-                GameObject fallbackGo = GameObject.Find("HwaBattleBgmSource");
-                if (fallbackGo != null)
+                AudioSource fallbackSource = GetFallbackBgmSource();
+                if (fallbackSource != null)
                 {
-                    AudioSource fallbackSource = fallbackGo.GetComponent<AudioSource>();
-                    if (fallbackSource != null)
-                    {
-                        activeFallbackClip = fallbackSource.clip;
-                    }
+                    activeFallbackClip = fallbackSource.clip;
                 }
 
                 for (int i = retiredClips.Count - 1; i >= 0; i--)

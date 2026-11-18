@@ -14,9 +14,8 @@ internal static class SceneFlowLog
     // frameCount/time을 같이 찍어 같은 프레임 내 연타인지, 프레임 분산인지 구분한다.
     public static string Stamp()
     {
-        int frame = 0;
-        float time = 0f;
-        try { frame = UnityEngine.Time.frameCount; time = UnityEngine.Time.time; } catch (Exception) { }
+        int frame = SafeAccess.Get(() => UnityEngine.Time.frameCount, 0, "SceneFlowLog.Stamp.frame");
+        float time = SafeAccess.Get(() => UnityEngine.Time.time, 0f, "SceneFlowLog.Stamp.time");
         return $"#{++_seq} frame={frame} t={time:F3}";
     }
 

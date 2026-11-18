@@ -28,6 +28,8 @@
     <Compile Include="..\muse dash test\Core\AtomicFile.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\TextNormalizer.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\GameVersionCheck.cs" Link="UnderTest\%(Filename)%(Extension)" />
+    <Compile Include="..\muse dash test\Core\AccuracyMath.cs" Link="UnderTest\%(Filename)%(Extension)" />
+    <Compile Include="..\muse dash test\Core\CustomRecordStore.Serialization.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Spine\NoteSkinRules.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Spine\SkinFolderRules.cs" Link="UnderTest\%(Filename)%(Extension)" />
   </ItemGroup>

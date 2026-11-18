@@ -146,7 +146,10 @@ namespace muse_dash_test.Patches
                                 $"GetTrueAccuracy()={rawGetTrueAccuracy:F6}, " +
                                 $"GetTrueAccuracyNew()={rawGetTrueAccuracyNew:F6}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[APModPatch] TaskStageTarget 로그 예외: {ex.GetType().Name}: {ex.Message}");
+            }
         }
     }
 

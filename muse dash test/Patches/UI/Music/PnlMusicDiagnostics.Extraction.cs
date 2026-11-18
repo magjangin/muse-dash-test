@@ -109,25 +109,17 @@ namespace muse_dash_test
 
             foreach (var p in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                try
-                {
-                    if (p.GetIndexParameters().Length > 0) continue;
-                    if (!IsTitleMemberName((p.Name ?? "").ToLowerInvariant())) continue;
-                    string text = ValueToUsefulText(p.GetValue(obj));
-                    if (!string.IsNullOrWhiteSpace(text) && !IsUiObjectName(text)) return text;
-                }
-                catch (Exception) { }
+                if (p.GetIndexParameters().Length > 0) continue;
+                if (!IsTitleMemberName((p.Name ?? "").ToLowerInvariant())) continue;
+                string text = SafeAccess.Get(() => ValueToUsefulText(p.GetValue(obj)), null);
+                if (!string.IsNullOrWhiteSpace(text) && !IsUiObjectName(text)) return text;
             }
 
             foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                try
-                {
-                    if (!IsTitleMemberName((f.Name ?? "").ToLowerInvariant())) continue;
-                    string text = ValueToUsefulText(f.GetValue(obj));
-                    if (!string.IsNullOrWhiteSpace(text) && !IsUiObjectName(text)) return text;
-                }
-                catch (Exception) { }
+                if (!IsTitleMemberName((f.Name ?? "").ToLowerInvariant())) continue;
+                string text = SafeAccess.Get(() => ValueToUsefulText(f.GetValue(obj)), null);
+                if (!string.IsNullOrWhiteSpace(text) && !IsUiObjectName(text)) return text;
             }
 
             return null;
@@ -140,14 +132,11 @@ namespace muse_dash_test
 
         private static string GetMemberText(object obj, string memberName)
         {
-            try
-            {
-                if (obj == null) return null;
-                object val = ModReflection.GetValue(obj, memberName, silent: true);
-                return ValueToUsefulText(val);
-            }
-            catch (Exception) { }
-            return null;
+            if (obj == null) return null;
+            return SafeAccess.Get(
+                () => ValueToUsefulText(ModReflection.GetValue(obj, memberName, silent: true)),
+                null,
+                $"PnlMusicDiagnostics.GetMemberText({memberName})");
         }
 
         private static string ValueToUsefulText(object value)
@@ -182,18 +171,13 @@ namespace muse_dash_test
 
             foreach (var p in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                try
-                {
-                    if (p.GetIndexParameters().Length > 0) continue;
-                    ApplyNamedValue(p.Name, p.GetValue(obj), info);
-                }
-                catch (Exception) { }
+                if (p.GetIndexParameters().Length > 0) continue;
+                SafeAccess.Get(() => { ApplyNamedValue(p.Name, p.GetValue(obj), info); return true; }, false);
             }
 
             foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             {
-                try { ApplyNamedValue(f.Name, f.GetValue(obj), info); }
-                catch (Exception) { }
+                SafeAccess.Get(() => { ApplyNamedValue(f.Name, f.GetValue(obj), info); return true; }, false);
             }
         }
 

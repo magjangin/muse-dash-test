@@ -71,15 +71,11 @@ namespace muse_dash_test
             reason = "씬 AudioSource 없음";
             try
             {
-                GameObject bgmGo = GameObject.Find("BGM");
-                if (bgmGo != null)
+                AudioSource namedSource = GameBgmSource.TryGetWithNameFallback(out _);
+                if (namedSource != null && namedSource.clip != null)
                 {
-                    AudioSource source = bgmGo.GetComponent<AudioSource>();
-                    if (source != null && source.clip != null)
-                    {
-                        reason = null;
-                        return source.clip.name;
-                    }
+                    reason = null;
+                    return namedSource.clip.name;
                 }
 
                 var sources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
@@ -111,7 +107,10 @@ namespace muse_dash_test
                         if (firstPausedMusicClip == null)
                             firstPausedMusicClip = clipName;
                     }
-                    catch (Exception) { }
+                    catch (Exception ex)
+                    {
+                        ModLogger.Verbose($"[PnlMusicDiagnostics] AudioSource 순회 예외: {ex.GetType().Name}: {ex.Message}");
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(firstMusicClip)) return firstMusicClip;

@@ -20,7 +20,7 @@ namespace muse_dash_test
     public static class ChartFingerprint
     {
         /// <summary>BMS가 없는 슬롯의 지문입니다. "아직 지문을 안 적던 시절의 기록"(빈 값)과 구분해야 하므로 별도 표식을 씁니다.</summary>
-        public const string NoChart = "none";
+        public const string NoChart = CustomRecordStore.NoChartFingerprint;
 
         private sealed class CacheEntry
         {

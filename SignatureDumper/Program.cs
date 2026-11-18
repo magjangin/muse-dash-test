@@ -108,11 +108,23 @@ namespace SignatureDumper
 
         static string ResolveDefaultAssembliesDirectory()
         {
-            var candidates = new List<string>
+            var candidates = new List<string>();
+
+            string envGamePath = Environment.GetEnvironmentVariable("MUSE_DASH_GAME_PATH")
+                ?? Environment.GetEnvironmentVariable("GamePath");
+            if (!string.IsNullOrWhiteSpace(envGamePath))
             {
-                Path.Combine("H:\\muse dash hwa", "MelonLoader", "Il2CppAssemblies"),
-                Path.Combine("H:\\steam", "steamapps", "common", "Muse Dash", "MelonLoader", "Il2CppAssemblies")
-            };
+                candidates.Add(Path.Combine(envGamePath.Trim(), "MelonLoader", "Il2CppAssemblies"));
+            }
+
+            candidates.Add(Path.Combine("H:\\muse dash hwa", "MelonLoader", "Il2CppAssemblies"));
+            candidates.Add(Path.Combine("H:\\steam", "steamapps", "common", "Muse Dash", "MelonLoader", "Il2CppAssemblies"));
+
+            string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            if (!string.IsNullOrWhiteSpace(programFilesX86))
+            {
+                candidates.Add(Path.Combine(programFilesX86, "Steam", "steamapps", "common", "Muse Dash", "MelonLoader", "Il2CppAssemblies"));
+            }
 
             foreach (string candidate in candidates)
             {
@@ -122,7 +134,7 @@ namespace SignatureDumper
                 }
             }
 
-            return Path.Combine("H:\\muse dash hwa", "MelonLoader", "Il2CppAssemblies");
+            return candidates[0];
         }
 
         static void PrintUsage()
@@ -130,10 +142,13 @@ namespace SignatureDumper
             Console.WriteLine("Usage:");
             Console.WriteLine("  SignatureDumper [inputDir] [outputDir] [target1,target2,...]");
             Console.WriteLine();
+            Console.WriteLine("Environment variables (used when inputDir is omitted):");
+            Console.WriteLine("  MUSE_DASH_GAME_PATH or GamePath  Game root folder (expects MelonLoader\\Il2CppAssemblies inside)");
+            Console.WriteLine();
             Console.WriteLine("Examples:");
             Console.WriteLine("  SignatureDumper");
-            Console.WriteLine("  SignatureDumper H:\\muse dash hwa\\MelonLoader\\Il2CppAssemblies");
-            Console.WriteLine("  SignatureDumper H:\\muse dash hwa\\MelonLoader\\Il2CppAssemblies H:\\out\\decompiled Assembly-CSharp.dll,Assembly-CSharp-firstpass.dll");
+            Console.WriteLine("  SignatureDumper \"H:\\muse dash hwa\\MelonLoader\\Il2CppAssemblies\"");
+            Console.WriteLine("  SignatureDumper \"H:\\muse dash hwa\\MelonLoader\\Il2CppAssemblies\" \"H:\\out\\decompiled\" Assembly-CSharp.dll,Assembly-CSharp-firstpass.dll");
         }
     }
 }

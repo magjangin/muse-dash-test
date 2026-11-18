@@ -19,16 +19,15 @@ public class GameMusicScene_PreLoadEnemy_Patch
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
             if (!EnableDebugLogs) return;
 
-            int frame = 0;
-            try { frame = UnityEngine.Time.frameCount; } catch (Exception) { }
+            int frame = SafeAccess.Get(() => UnityEngine.Time.frameCount, 0, "PreLoadEnemy.PRE.frame");
 
             var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
             int musicCount = -1, oriCount = -1;
             string musicHead = "?", oriHead = "?";
             if (db != null)
             {
-                try { musicCount = db.musicList != null ? db.musicList.Count : -1; } catch (Exception) { }
-                try { oriCount = db.oriMusicList != null ? db.oriMusicList.Count : -1; } catch (Exception) { }
+                musicCount = SafeAccess.Get(() => db.musicList != null ? db.musicList.Count : -1, -1, "PreLoadEnemy.musicList.Count");
+                oriCount = SafeAccess.Get(() => db.oriMusicList != null ? db.oriMusicList.Count : -1, -1, "PreLoadEnemy.oriMusicList.Count");
                 musicHead = DescribeCompact(db.musicList);
                 oriHead = DescribeCompact(db.oriMusicList);
             }
@@ -47,10 +46,9 @@ public class GameMusicScene_PreLoadEnemy_Patch
 
             if (EnableDebugLogs)
             {
-                int preloadCount = -1, objCtrlCount = -1, preloads1Count = -1;
-                try { preloadCount = __instance.preloads != null ? __instance.preloads.Count : -1; } catch (Exception) { }
-                try { objCtrlCount = __instance.objCtrls != null ? __instance.objCtrls.Count : -1; } catch (Exception) { }
-                try { preloads1Count = __instance.preloads1 != null ? __instance.preloads1.Count : -1; } catch (Exception) { }
+                int preloadCount = SafeAccess.Get(() => __instance.preloads != null ? __instance.preloads.Count : -1, -1, "PreLoadEnemy.preloads.Count");
+                int objCtrlCount = SafeAccess.Get(() => __instance.objCtrls != null ? __instance.objCtrls.Count : -1, -1, "PreLoadEnemy.objCtrls.Count");
+                int preloads1Count = SafeAccess.Get(() => __instance.preloads1 != null ? __instance.preloads1.Count : -1, -1, "PreLoadEnemy.preloads1.Count");
 
                 var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
                 var summary = $"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}\n[PreLoadEnemy] POST 무변형 musicList 유지 확인: {DescribeCompact(db != null ? db.musicList : null)}";
@@ -71,8 +69,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
             int nullCount = 0;
             for (int i = 0; i < list.Count; i++)
             {
-                string uid = null;
-                try { uid = list[i]?.noteData?.uid; } catch (Exception) { }
+                string uid = SafeAccess.Get(() => list[i]?.noteData?.uid, null);
                 if (string.IsNullOrEmpty(uid)) { nullCount++; continue; }
                 string zz = uid.Length >= 2 ? uid.Substring(0, 2) : uid;
                 hist[zz] = hist.TryGetValue(zz, out int c) ? c + 1 : 1;

@@ -62,7 +62,10 @@ namespace muse_dash_test.Patches.UI.Stage
                 string uid = CustomPlaySession.Current.LastKnownMusicUid;
                 ModLogger.Verbose($"👑 [PnlRank.Refresh] Called! force={force}, UID='{uid}'");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[PnlRank.Refresh] 로깅 예외: {ex.GetType().Name}: {ex.Message}");
+            }
         }
     }
 
@@ -104,7 +107,10 @@ namespace muse_dash_test.Patches.UI.Stage
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[PnlRank.Refresh] 로깅 예외: {ex.GetType().Name}: {ex.Message}");
+            }
             return 0;
         }
     }

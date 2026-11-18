@@ -7,6 +7,8 @@ namespace muse_dash_test
 {
     public static partial class CustomRecordStore
     {
+        internal const string NoChartFingerprint = "none";
+
         public class PlayRecord
         {
             public string uid = string.Empty;
@@ -35,14 +37,14 @@ namespace muse_dash_test
             internal PlayRecord Clone() => (PlayRecord)MemberwiseClone();
         }
 
-        private static PlayRecord ReadRecordFile(string filePath)
+        internal static PlayRecord ReadRecordFile(string filePath)
         {
             var record = ParseJson(File.ReadAllText(filePath, Encoding.UTF8));
             if (record != null && record.playCount <= 0) record.playCount = 1;
             return record;
         }
 
-        private static PlayRecord ParseJson(string json)
+        internal static PlayRecord ParseJson(string json)
         {
             var record = new PlayRecord();
             var lines = json.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
@@ -116,7 +118,7 @@ namespace muse_dash_test
         }
 
         // 사람이 열어볼 수 있도록 들여쓰기된 평문 JSON을 직접 구성합니다.
-        private static string BuildJson(
+        internal static string BuildJson(
             string uid, int noteCount,
             int standard, int gears, int hearts, int blueNotes,
             int perfect, int great, int miss,
@@ -143,7 +145,7 @@ namespace muse_dash_test
             sb.Append("  \"isAllPerfect\": ").Append(isAllPerfect ? "true" : "false").Append(",\n");
             sb.Append("  \"playCount\": ").Append(playCount).Append(",\n");
             sb.Append("  \"savedAtUtc\": \"").Append(string.IsNullOrEmpty(savedAtUtc) ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", ci) : savedAtUtc).Append("\",\n");
-            sb.Append("  \"chartFingerprint\": \"").Append(EscapeJson(string.IsNullOrEmpty(chartFingerprint) ? ChartFingerprint.NoChart : chartFingerprint)).Append("\",\n");
+            sb.Append("  \"chartFingerprint\": \"").Append(EscapeJson(string.IsNullOrEmpty(chartFingerprint) ? NoChartFingerprint : chartFingerprint)).Append("\",\n");
             sb.Append("  \"songFolder\": \"").Append(EscapeJson(songFolder)).Append("\"\n");
             sb.Append('}').Append('\n');
             return sb.ToString();
@@ -155,7 +157,7 @@ namespace muse_dash_test
             return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
         }
 
-        private static string SanitizeFileName(string uid)
+        internal static string SanitizeFileName(string uid)
         {
             foreach (char c in Path.GetInvalidFileNameChars())
             {

@@ -107,15 +107,7 @@ namespace muse_dash_test
             }
             try
             {
-                AudioSource src = GameBgmSource.TryGet(out _);
-                if (src == null)
-                {
-                    GameObject bgmGo = GameObject.Find("BGM");
-                    if (bgmGo != null)
-                    {
-                        src = bgmGo.GetComponent<AudioSource>();
-                    }
-                }
+                AudioSource src = GameBgmSource.TryGetWithNameFallback(out _);
 
                 if (src != null && injectedMenuClip != null && src.clip == injectedMenuClip)
                 {
