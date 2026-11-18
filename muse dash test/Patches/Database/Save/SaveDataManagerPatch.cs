@@ -35,118 +35,105 @@ namespace muse_dash_test
                     return;
                 }
 
-                int totalRemovedFields = 0;
-
-                // ==========================================
                 // 1. 제네릭 컬렉션 필드 클렌징 (Account, Task, IAP, StageAchievement 등)
-                // ==========================================
-                foreach (var k in datas.Keys)
-                {
-                    var subData = datas[k];
-                    if (subData != null)
-                    {
-                        var fields = subData.fields;
-                        if (fields != null)
-                        {
-                            var keysToRemove = new System.Collections.Generic.List<string>();
-                            foreach (var key in fields.Keys)
-                            {
-                                if (CustomContentIds.IsVirtualContent(key))
-                                {
-                                    keysToRemove.Add(key);
-                                }
-                            }
+                int totalRemovedFields = CleanCollectionFields(datas);
 
-                            if (keysToRemove.Count > 0)
-                            {
-                                ModLogger.Msg($"[SaveDataManagerPatch] -> '{k}' 컬렉션에서 가상 필드 {keysToRemove.Count}개 제거 중: {string.Join(", ", keysToRemove)}");
-                                foreach (var key in keysToRemove)
-                                {
-                                    fields.Remove(key);
-                                }
-                                totalRemovedFields += keysToRemove.Count;
-                            }
-                        }
-                    }
-                }
-
-                // ==========================================
                 // 2. Achievement 컬렉션 내부 리스트 및 다차원 데이터 클렌징 (최고점수, 최근 플레이, 패스 기록 등)
-                // ==========================================
-                if (datas.ContainsKey("Achievement"))
-                {
-                    var achievementData = datas["Achievement"];
-                    if (achievementData != null)
-                    {
-                        var fields = achievementData.fields;
-                        if (fields != null)
-                        {
-                            // 2-1. highest 최고 기록 리스트 클렌징
-                            if (fields.ContainsKey("highest"))
-                            {
-                                var highestVar = fields["highest"];
-                                if (highestVar != null)
-                                {
-                                    var highestList = VariableUtils.GetResult<Il2CppSystem.Collections.Generic.List<IData>>(highestVar);
-                                    if (highestList != null)
-                                    {
-                                        int highestRemoved = CleanIDataList(highestList);
-                                        if (highestRemoved > 0)
-                                        {
-                                            ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.highest 리스트에서 가상 곡 플레이 결과 {highestRemoved}개 클렌징 완료.");
-                                        }
-                                    }
-                                }
-                            }
+                CleanAchievementLists(datas);
 
-                            // 2-2. recentPassLevelData 최근 플레이 리스트 클렌징
-                            if (fields.ContainsKey("recentPassLevelData"))
-                            {
-                                var recentVar = fields["recentPassLevelData"];
-                                if (recentVar != null)
-                                {
-                                    var recentList = VariableUtils.GetResult<Il2CppSystem.Collections.Generic.List<IData>>(recentVar);
-                                    if (recentList != null)
-                                    {
-                                        int recentRemoved = CleanIDataList(recentList);
-                                        if (recentRemoved > 0)
-                                        {
-                                            ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.recentPassLevelData 리스트에서 가상 곡 기록 {recentRemoved}개 클렌징 완료.");
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 2-3. easy_pass, hard_pass, master_pass 난이도별 클리어 곡 리스트 클렌징
-                            string[] passKeys = { "easy_pass", "hard_pass", "master_pass" };
-                            foreach (var pk in passKeys)
-                            {
-                                if (fields.ContainsKey(pk))
-                                {
-                                    var passVar = fields[pk];
-                                    if (passVar != null)
-                                    {
-                                        var passList = VariableUtils.GetResult<Il2CppSystem.Collections.Generic.List<string>>(passVar);
-                                        if (passList != null)
-                                        {
-                                            int passRemoved = CleanStringList(passList);
-                                            if (passRemoved > 0)
-                                            {
-                                                ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.{pk} 리스트에서 가상 클리어 {passRemoved}개 클렌징 완료.");
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                ModLogger.Verbose("[SaveDataManagerPatch] 세이브 데이터 정밀 정화 완료. 깨끗한 상태로 안전하게 저장을 계속 진행합니다.");
+                ModLogger.Verbose($"[SaveDataManagerPatch] 세이브 데이터 정밀 정화 완료(제거 필드 {totalRemovedFields}개). 깨끗한 상태로 안전하게 저장을 계속 진행합니다.");
             }
             catch (System.Exception ex)
             {
                 ModLogger.Error($"[SaveDataManagerPatch] Save Prefix 정화 중 예외 발생: {ex}");
+            }
+        }
+
+        private static int CleanCollectionFields(Il2CppSystem.Collections.Generic.Dictionary<string, IData> datas)
+        {
+            int totalRemovedFields = 0;
+            foreach (var k in datas.Keys)
+            {
+                var subData = datas[k];
+                var fields = subData?.fields;
+                if (fields == null) continue;
+
+                var keysToRemove = new System.Collections.Generic.List<string>();
+                foreach (var key in fields.Keys)
+                {
+                    if (CustomContentIds.IsVirtualContent(key))
+                    {
+                        keysToRemove.Add(key);
+                    }
+                }
+
+                if (keysToRemove.Count == 0) continue;
+
+                ModLogger.Msg($"[SaveDataManagerPatch] -> '{k}' 컬렉션에서 가상 필드 {keysToRemove.Count}개 제거 중: {string.Join(", ", keysToRemove)}");
+                foreach (var key in keysToRemove)
+                {
+                    fields.Remove(key);
+                }
+                totalRemovedFields += keysToRemove.Count;
+            }
+            return totalRemovedFields;
+        }
+
+        private static void CleanAchievementLists(Il2CppSystem.Collections.Generic.Dictionary<string, IData> datas)
+        {
+            if (!datas.ContainsKey("Achievement")) return;
+
+            var fields = datas["Achievement"]?.fields;
+            if (fields == null) return;
+
+            // 2-1. highest 최고 기록 리스트 클렌징
+            CleanAchievementDataList(fields, "highest", "가상 곡 플레이 결과");
+
+            // 2-2. recentPassLevelData 최근 플레이 리스트 클렌징
+            CleanAchievementDataList(fields, "recentPassLevelData", "가상 곡 기록");
+
+            // 2-3. easy_pass, hard_pass, master_pass 난이도별 클리어 곡 리스트 클렌징
+            CleanAchievementPassLists(fields);
+        }
+
+        private static void CleanAchievementDataList(
+            Il2CppSystem.Collections.Generic.Dictionary<string, IVariable> fields,
+            string fieldKey,
+            string logLabel)
+        {
+            if (!fields.ContainsKey(fieldKey)) return;
+
+            var listVar = fields[fieldKey];
+            if (listVar == null) return;
+
+            var dataList = VariableUtils.GetResult<Il2CppSystem.Collections.Generic.List<IData>>(listVar);
+            if (dataList == null) return;
+
+            int removed = CleanIDataList(dataList);
+            if (removed > 0)
+            {
+                ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.{fieldKey} 리스트에서 {logLabel} {removed}개 클렌징 완료.");
+            }
+        }
+
+        private static void CleanAchievementPassLists(Il2CppSystem.Collections.Generic.Dictionary<string, IVariable> fields)
+        {
+            string[] passKeys = { "easy_pass", "hard_pass", "master_pass" };
+            foreach (var pk in passKeys)
+            {
+                if (!fields.ContainsKey(pk)) continue;
+
+                var passVar = fields[pk];
+                if (passVar == null) continue;
+
+                var passList = VariableUtils.GetResult<Il2CppSystem.Collections.Generic.List<string>>(passVar);
+                if (passList == null) continue;
+
+                int passRemoved = CleanStringList(passList);
+                if (passRemoved > 0)
+                {
+                    ModLogger.Msg($"[SaveDataManagerPatch] -> Achievement.{pk} 리스트에서 가상 클리어 {passRemoved}개 클렌징 완료.");
+                }
             }
         }
 

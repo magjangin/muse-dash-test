@@ -41,7 +41,7 @@ namespace muse_dash_test
             ModLogger.Msg("HywHpTextMod - 체력바 텍스트 모드가 성공적으로 연동 활성화되었습니다!");
 
             // 게임 업데이트로 깨진 패치 대상이 있는지 시작 시 점검하여 요약 로그로 표시합니다.
-            PatchHealthCheck.Run();
+            FeatureGuard.Run("Init.PatchHealthCheck", PatchHealthCheck.Run, maxConsecutiveFailures: 0);
 
             // 메서드는 그대로인데 동작이 바뀐 업데이트는 위 점검이 못 잡습니다. 버전이 다르면 한 줄 경고를 남깁니다.
             FeatureGuard.Run("Init.GameVersionCheck", LogGameVersionCheck, maxConsecutiveFailures: 0);
@@ -154,6 +154,7 @@ namespace muse_dash_test
             FeatureGuard.Run("Scene.ResetHitPoint", ExperimentHitPointInstaller.Reset);
             FeatureGuard.Run("Scene.ResetVictoryCache", Patches.VictoryDataCache.ResetSession);
             FeatureGuard.Run("Scene.ResetMenuBgmCache", HwaMenuBgmController.ResetSceneCache);
+            FeatureGuard.Run("Scene.ResetDiscordCache", DiscordManagerDebugPatch.ResetCache);
             // 오프셋 훅이 들고 있는 폴백 UID 캐시를 버립니다. 씬이 바뀌면 곡도 바뀔 수 있습니다.
             FeatureGuard.Run("Scene.ResetOffsetUidCache", OffsetHookPatches.ResetUidCache);
             // 전역 오프셋 진단. Verbose일 때만 값을 읽고, 바뀌지 않았으면 아무것도 하지 않습니다.

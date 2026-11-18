@@ -133,7 +133,7 @@ namespace muse_dash_test
 
                 var patchMethods = patchClass.GetMethods(
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)
-                    .Where(m => PatchHealthCheck.IsPatchMethod(m)).ToList();
+                    .Where(m => PatchHealthCheck.IsPatchMethod(m) && TryPreparePatchMethod(m, out _)).ToList();
 
                 foreach (var original in dynamicTargets)
                 {
@@ -144,11 +144,10 @@ namespace muse_dash_test
                         bool anyAdded = false;
                         foreach (var method in patchMethods)
                         {
-                            var hm = new HarmonyMethod(method);
-                            if (method.Name == "Prefix" || method.IsDefined(typeof(HarmonyPrefix), true)) { processor.AddPrefix(hm); anyAdded = true; }
-                            else if (method.Name == "Postfix" || method.IsDefined(typeof(HarmonyPostfix), true)) { processor.AddPostfix(hm); anyAdded = true; }
-                            else if (method.Name == "Transpiler" || method.IsDefined(typeof(HarmonyTranspiler), true)) { processor.AddTranspiler(hm); anyAdded = true; }
-                            else if (method.Name == "Finalizer" || method.IsDefined(typeof(HarmonyFinalizer), true)) { processor.AddFinalizer(hm); anyAdded = true; }
+                            if (TryRegisterPatchMethod(processor, method))
+                            {
+                                anyAdded = true;
+                            }
                         }
 
                         if (anyAdded)
@@ -194,17 +193,7 @@ namespace muse_dash_test
                 try
                 {
                     var processor = harmony.CreateProcessor(original);
-                    var hm = new HarmonyMethod(method);
-                    if (method.Name == "Prefix" || method.IsDefined(typeof(HarmonyPrefix), true))
-                        processor.AddPrefix(hm);
-                    else if (method.Name == "Postfix" || method.IsDefined(typeof(HarmonyPostfix), true))
-                        processor.AddPostfix(hm);
-                    else if (method.Name == "Transpiler" || method.IsDefined(typeof(HarmonyTranspiler), true))
-                        processor.AddTranspiler(hm);
-                    else if (method.Name == "Finalizer" || method.IsDefined(typeof(HarmonyFinalizer), true))
-                        processor.AddFinalizer(hm);
-                    else
-                        continue;
+                    if (!TryRegisterPatchMethod(processor, method)) continue;
 
                     processor.Patch();
                     patched++;
@@ -216,6 +205,23 @@ namespace muse_dash_test
             }
 
             return patched;
+        }
+
+        private static bool TryRegisterPatchMethod(PatchProcessor processor, MethodInfo method)
+        {
+            var hm = new HarmonyMethod(method);
+            if (method.Name == "Prefix" || method.IsDefined(typeof(HarmonyPrefix), true))
+                processor.AddPrefix(hm);
+            else if (method.Name == "Postfix" || method.IsDefined(typeof(HarmonyPostfix), true))
+                processor.AddPostfix(hm);
+            else if (method.Name == "Transpiler" || method.IsDefined(typeof(HarmonyTranspiler), true))
+                processor.AddTranspiler(hm);
+            else if (method.Name == "Finalizer" || method.IsDefined(typeof(HarmonyFinalizer), true))
+                processor.AddFinalizer(hm);
+            else
+                return false;
+
+            return true;
         }
 
         /// <summary>

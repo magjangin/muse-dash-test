@@ -218,7 +218,12 @@ namespace muse_dash_test
                         return cloned;
                     }
                 }
-                var method = target.GetType().GetMethod("MemberwiseClone", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                var method = target.GetType().GetMethod(
+                    "MemberwiseClone",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public,
+                    null,
+                    Type.EmptyTypes,
+                    null);
                 if (method != null)
                 {
                     return method.Invoke(target, null);

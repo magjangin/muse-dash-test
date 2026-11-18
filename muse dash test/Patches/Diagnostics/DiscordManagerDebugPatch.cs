@@ -15,6 +15,11 @@ namespace muse_dash_test
     {
         private static PnlBattle cachedPnlBattle;
 
+        public static void ResetCache()
+        {
+            cachedPnlBattle = null;
+        }
+
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.InitDiscord))]
         [HarmonyPrefix]
         public static void InitDiscord_Prefix(DiscordManager __instance)

@@ -151,6 +151,17 @@ namespace muse_dash_test
         // (제네릭 Il2Cpp Dictionary/List는 컴파일 타임 타입을 알 수 없어 메서드 기반 리플렉션으로 접근)
         // ==========================================
 
+        private static bool TryDictContainsKey(object dict, string key, out bool contains)
+        {
+            contains = false;
+            if (dict == null || key == null) return false;
+            var type = dict.GetType();
+            var containsKey = type.GetMethod("ContainsKey", new[] { typeof(string) }) ?? type.GetMethod("ContainsKey");
+            if (containsKey == null) return false;
+            contains = (bool)containsKey.Invoke(dict, new object[] { key });
+            return true;
+        }
+
         /// <summary>
         /// Il2Cpp 딕셔너리에서 key에 해당하는 값을 ContainsKey + get_Item으로 안전하게 조회합니다.
         /// </summary>
@@ -161,13 +172,12 @@ namespace muse_dash_test
 
             try
             {
-                var type = dict.GetType();
-                var containsKey = type.GetMethod("ContainsKey", new[] { typeof(string) }) ?? type.GetMethod("ContainsKey");
-                if (containsKey != null && !(bool)containsKey.Invoke(dict, new object[] { key }))
+                if (TryDictContainsKey(dict, key, out bool exists) && !exists)
                 {
                     return false;
                 }
 
+                var type = dict.GetType();
                 var getItem = type.GetMethod("get_Item", new[] { typeof(string) }) ?? type.GetMethod("get_Item");
                 if (getItem == null) return false;
 
@@ -191,7 +201,7 @@ namespace muse_dash_test
 
             try
             {
-                var keysObj = dict.GetType().GetProperty("Keys")?.GetValue(dict);
+                var keysObj = ModReflection.GetValue(dict, "Keys", silent: true);
                 if (keysObj == null) return result;
 
                 var enumerator = keysObj.GetType().GetMethod("GetEnumerator", Type.EmptyTypes)?.Invoke(keysObj, null);
@@ -221,9 +231,7 @@ namespace muse_dash_test
         {
             try
             {
-                var type = proposalDict.GetType();
-                var containsKey = type.GetMethod("ContainsKey", new[] { typeof(string) }) ?? type.GetMethod("ContainsKey");
-                if (containsKey != null && (bool)containsKey.Invoke(proposalDict, new object[] { exactKey }))
+                if (TryDictContainsKey(proposalDict, exactKey, out bool exists) && exists)
                 {
                     return exactKey;
                 }
@@ -252,12 +260,11 @@ namespace muse_dash_test
 
             try
             {
+                var countObj = ModReflection.GetValue(listObj, "Count", silent: true);
                 var type = listObj.GetType();
-                var countProp = type.GetProperty("Count");
                 var getItem = type.GetMethod("get_Item", new[] { typeof(int) }) ?? type.GetMethod("get_Item");
-                if (countProp == null || getItem == null) return;
+                if (!(countObj is int count) || getItem == null) return;
 
-                int count = (int)countProp.GetValue(listObj);
                 var indexArg = new object[1];
                 for (int i = 0; i < count; i++)
                 {
