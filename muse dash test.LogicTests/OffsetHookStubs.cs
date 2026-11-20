@@ -57,10 +57,7 @@ namespace muse_dash_test
             }
         }
     }
-    public static class CustomContentIds
-    {
-        public static bool IsVirtualSong(string uid) => uid.StartsWith("1999-");
-    }
+    // CustomContentIds는 게임 의존이 없어 진짜 소스(Core/CustomContentIds.cs)를 링크해 씁니다.
     public static class PnlStagePatchHelper
     {
         // 진짜 구현은 FindObjectOfType<PnlStage>() 한 번에 PnlStage의 필드·프로퍼티를 전부

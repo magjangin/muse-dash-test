@@ -22,6 +22,9 @@ namespace muse_dash_test
             // 이걸 빼면 강제값이 세이브 파일에 그대로 남습니다(UnlockAllMasterGuard 참고).
             RestoreUnlockAllMasterForSave(__instance);
 
+            // '마지막 선택'이 커스텀 태그·곡을 가리키면 바닐라 값으로 저장합니다. 모드를 뺀 뒤 곡 선택 화면이 멈추지 않게(SaveSelectionRules).
+            SaveSelectionGuard.SanitizeForSave(__instance);
+
             try
             {
                 if (__instance == null) return;
@@ -145,6 +148,7 @@ namespace muse_dash_test
         public static void Postfix(DataManager __instance)
         {
             ReapplyUnlockAllMasterAfterSave(__instance);
+            SaveSelectionGuard.RestoreAfterSave();
         }
 
         /// <summary>
