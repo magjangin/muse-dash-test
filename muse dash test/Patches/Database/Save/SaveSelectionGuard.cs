@@ -17,9 +17,9 @@ namespace muse_dash_test
         // 이번 실행에서 본 마지막 바닐라 선택(셋 다 바닐라였던 때). 모드를 뺀 뒤 그 곡으로 돌아가게 합니다.
         private static readonly Dictionary<string, string> lastVanilla = new Dictionary<string, string>();
 
-        // 저장 뒤 되돌릴 값. 원래 객체(박싱된 int, Il2Cpp 문자열)를 그대로 다시 넣어 형식이 바뀌지 않게 합니다.
-        private static readonly List<KeyValuePair<IVariable, Il2CppSystem.Object>> pendingRestore =
-            new List<KeyValuePair<IVariable, Il2CppSystem.Object>>();
+        // 저장 뒤 되돌릴 값(키 → 읽어 둔 원래 값의 문자열). 되돌릴 때 키의 형식(int/문자열)에 맞춰 다시 만듭니다.
+        private static readonly List<KeyValuePair<IVariable, KeyValuePair<string, string>>> pendingRestore =
+            new List<KeyValuePair<IVariable, KeyValuePair<string, string>>>();
 
         // 같은 선택으로 저장이 반복될 때 Info 로그를 한 번만 남기려고 둡니다.
         private static string lastLoggedSelection;
@@ -39,8 +39,7 @@ namespace muse_dash_test
                 {
                     IVariable variable = account[key];
                     if (variable == null) continue;
-                    var value = VariableUtils.GetResult<Il2CppSystem.Object>(variable);
-                    current[key] = value?.ToString();
+                    current[key] = ReadAsText(key, variable);
                     variables[key] = variable;
                 }
 
@@ -59,13 +58,12 @@ namespace muse_dash_test
                     string replacement = SaveSelectionRules.ReplacementFor(pair.Key, lastVanilla);
                     if (replacement == null) continue;
 
-                    Il2CppSystem.Object original = VariableUtils.GetResult<Il2CppSystem.Object>(pair.Value);
-                    Il2CppSystem.Object newValue = pair.Key == SaveSelectionRules.TagIndexKey
-                        ? BoxInt(int.Parse(replacement, System.Globalization.CultureInfo.InvariantCulture))
-                        : (Il2CppSystem.Object)replacement;
+                    string original = current[pair.Key];
+                    if (original == null) continue; // 원래 값을 못 읽었으면 되돌릴 수 없으니 건드리지 않습니다.
 
-                    VariableUtils.SetResult(pair.Value, newValue);
-                    pendingRestore.Add(new KeyValuePair<IVariable, Il2CppSystem.Object>(pair.Value, original));
+                    Write(pair.Key, pair.Value, replacement);
+                    pendingRestore.Add(new KeyValuePair<IVariable, KeyValuePair<string, string>>(
+                        pair.Value, new KeyValuePair<string, string>(pair.Key, original)));
                     replaced.Add($"{pair.Key}={current[pair.Key]}→{replacement}");
                 }
 
@@ -90,7 +88,7 @@ namespace muse_dash_test
             {
                 foreach (var pair in pendingRestore)
                 {
-                    VariableUtils.SetResult(pair.Key, pair.Value);
+                    Write(pair.Value.Key, pair.Key, pair.Value.Value);
                 }
             }
             catch (Exception ex)
@@ -101,6 +99,38 @@ namespace muse_dash_test
             {
                 pendingRestore.Clear();
             }
+        }
+
+        /// <summary>
+        /// 값을 문자열로 읽습니다. 태그 인덱스는 <c>GetResult&lt;int&gt;</c>로 읽어야 합니다:
+        /// <c>GetResult&lt;Il2CppSystem.Object&gt;</c>로 읽으면 박싱되지 않은 int가 객체로 해석돼 엉뚱한 수(-524941344)가 나왔습니다(2026-11-20 실기).
+        /// 읽지 못하면 null입니다.
+        /// </summary>
+        private static string ReadAsText(string key, IVariable variable)
+        {
+            try
+            {
+                if (key == SaveSelectionRules.TagIndexKey)
+                {
+                    return VariableUtils.GetResult<int>(variable).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                }
+                var value = VariableUtils.GetResult<Il2CppSystem.Object>(variable);
+                return value?.ToString();
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[SaveSelectionGuard] {key} 읽기 실패: {ex.GetType().Name}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>키의 형식(태그 인덱스 = int, 나머지 = 문자열)에 맞춰 값을 씁니다.</summary>
+        private static void Write(string key, IVariable variable, string text)
+        {
+            Il2CppSystem.Object value = key == SaveSelectionRules.TagIndexKey
+                ? BoxInt(int.Parse(text, System.Globalization.CultureInfo.InvariantCulture))
+                : (Il2CppSystem.Object)text;
+            VariableUtils.SetResult(variable, value);
         }
 
         private static Il2CppSystem.Object BoxInt(int value)
