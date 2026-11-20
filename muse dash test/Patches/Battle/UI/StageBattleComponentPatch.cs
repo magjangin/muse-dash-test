@@ -171,6 +171,13 @@ namespace muse_dash_test
             try { HwaBattleMediaController.StopMedia(); }
             catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] End StopMedia 예외: {ex}"); }
 
+            try
+            {
+                string keysound = KeysoundProbe.Summary();
+                if (keysound != null) ModLogger.Msg($"[KeysoundProbe] {keysound}");
+            }
+            catch (Exception ex) { ModLogger.Verbose($"[StageBattleComponentPatch] End 키음 요약 예외: {ex.Message}"); }
+
             if (!customChart) return;
             try
             {
