@@ -166,7 +166,7 @@ namespace muse_dash_test
             }
             catch (Exception ex) { ModLogger.Verbose($"[StageBattleComponentPatch] End 진행바 상태 조회 예외: {ex.Message}"); }
 
-            // StopMedia 앞부분(ProgressBarPatch.Reset·HwaSyncManager.ResetCache)은 자체 try 밖입니다.
+            // StopMedia 앞부분(HwaSyncManager.ResetCache)은 자체 try 밖입니다.
             // Exit/Release Postfix와 같이 여기서 감싸 게임의 End 흐름으로 예외가 새지 않게 합니다.
             try { HwaBattleMediaController.StopMedia(); }
             catch (Exception ex) { ModLogger.Error($"[StageBattleComponentPatch] End StopMedia 예외: {ex}"); }

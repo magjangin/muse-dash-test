@@ -129,7 +129,8 @@ namespace muse_dash_test
         {
             // 진행 중인 로드가 끝나도 재생하지 않도록 세대를 올립니다(HwaBattleMediaController.mediaGeneration 참고).
             mediaGeneration++;
-            ProgressBarPatch.Reset();
+            // 진행바 기준 길이(ProgressBarPatch.Reset)는 여기서 지우지 않습니다. StopMedia 뒤에도 End까지 진행바가
+            // 같은 분모로 차올라야 하고(예전엔 여기서 지워 채보 길이로 바뀌며 바가 툭 찼음), 다음 배틀의 ResetState가 지웁니다.
             HwaSyncManager.ResetCache();
             try
             {
@@ -181,7 +182,7 @@ namespace muse_dash_test
                 }
 
                 // [중요] 여기서 injectedClip을 즉시 Destroy하면 안 됩니다.
-                // StopMedia는 승리 직후 OnShowVictory 동기 이벤트 안에서 호출되는데, 그 이벤트는
+                // StopMedia는 게임 종료 흐름(End, 예전에는 OnShowVictory 동기 이벤트) 안에서 호출되는데, 그 흐름은
                 // 게임의 GameMusic.BattleEnd() 실행 도중 동기로 디스패치됩니다. 게임의 BGM AudioSource는
                 // 아직 이 클립을 참조 중이라, 여기서 파괴하면 BattleEnd가 복귀해 파괴된 클립을 건드려
                 // NullReferenceException으로 죽고(매 프레임 반복), 결과 화면으로 절대 넘어가지 못합니다.
