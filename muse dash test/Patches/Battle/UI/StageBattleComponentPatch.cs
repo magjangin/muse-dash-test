@@ -17,7 +17,7 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg($"[StageBattleComponent.LoadMusicData] 호출됨: {__instance}");
+                ModLogger.Verbose($"[StageBattleComponent.LoadMusicData] 호출됨: {__instance}");
             }
             catch (Exception ex)
             {
@@ -88,7 +88,7 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg($"[StageBattleComponent.Load] 호출됨: {__instance}");
+                ModLogger.Verbose($"[StageBattleComponent.Load] 호출됨: {__instance}");
                 // 매 배틀 로드 시마다 미디어 주입 시작 상태 초기화 및 주입 실행
                 HwaBattleMediaController.ResetState();
                 // 미디어 주입은 레디·고 직후(PnlReadyToggle.PlayReadyGo)에 시작합니다. BattleStartSyncPatch 참고.
@@ -138,7 +138,7 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg($"[StageBattleComponentPatch] StageBattleComponent.Resume 호출됨 (isExit={isExit})");
+                ModLogger.Verbose($"[StageBattleComponentPatch] StageBattleComponent.Resume 호출됨 (isExit={isExit})");
                 HwaBattleMediaController.ResumeMedia(isExit);
             }
             catch (Exception ex)

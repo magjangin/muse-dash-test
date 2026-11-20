@@ -55,7 +55,7 @@ namespace muse_dash_test
 
             try
             {
-                ModLogger.Msg($"[OfflineSandbox.PnlRank] 🛡️ 오프라인 샌드박스: 원격 랭킹 조회 스킵 (Target UID='{uid}')");
+                ModLogger.Verbose($"[OfflineSandbox.PnlRank] 🛡️ 오프라인 샌드박스: 원격 랭킹 조회 스킵 (Target UID='{uid}')");
 
                 // 로딩 인디케이터 즉시 끄고 "서버 연결 없음(noNet)" 상태로 전환 및 커스텀 문구 적용
                 if (__instance != null)

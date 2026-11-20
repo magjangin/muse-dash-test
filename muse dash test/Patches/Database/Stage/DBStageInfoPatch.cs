@@ -91,7 +91,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 CustomPlaySession.Current.RememberMusicSelection(uid);
             }
 
-            ModLogger.Msg($"DBStageInfo.SetRuntimeMusicData 호출됨: activeUid={uid ?? "(null)"}");
+            ModLogger.Verbose($"DBStageInfo.SetRuntimeMusicData 호출됨: activeUid={uid ?? "(null)"}");
 
             // [진단] 주입 후 호출 스택 확인 — 이 데이터가 어디로 흘러가는지 역추적.
             // 매 호출(순정 곡 포함)마다 전체 스택을 찍으면 로그가 폭발하므로,

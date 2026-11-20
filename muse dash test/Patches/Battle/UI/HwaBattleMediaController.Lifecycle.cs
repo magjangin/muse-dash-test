@@ -86,7 +86,7 @@ namespace muse_dash_test
         {
             try
             {
-                ModLogger.Msg($"[HwaBattleMediaController] ResumeMedia 호출됨 (isExit={isExit}) - 비디오 및 BGM을 재개/정지합니다.");
+                ModLogger.Verbose($"[HwaBattleMediaController] ResumeMedia 호출됨 (isExit={isExit}) - 비디오 및 BGM을 재개/정지합니다.");
                 if (isExit)
                 {
                     StopMedia();

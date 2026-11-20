@@ -52,7 +52,7 @@ namespace muse_dash_test
                         texture.name = "CustomTagIconTexture";
                         texture.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC 방지
                         cachedCustomTexture = texture;
-                        ModLogger.Msg($"[APMod.TagIcon] 물리 파일 '{pngPath}' 로드 및 텍스처 디코딩 성공! 해상도: {texture.width}x{texture.height}");
+                        ModLogger.Verbose($"[APMod.TagIcon] 물리 파일 '{pngPath}' 로드 및 텍스처 디코딩 성공! 해상도: {texture.width}x{texture.height}");
                         return texture;
                     }
                     else
@@ -97,7 +97,7 @@ namespace muse_dash_test
                     return;
                 }
 
-                ModLogger.Msg("[APMod.TagIcon] 가상 태그 AlbumTagToggle 초기화 감지. 내장 텍스처 교체를 시작합니다.");
+                ModLogger.Verbose("[APMod.TagIcon] 가상 태그 AlbumTagToggle 초기화 감지. 내장 텍스처 교체를 시작합니다.");
 
                 // 2. tag_icon.png 텍스처 확보
                 Texture2D customTexture = GetCustomTexture();

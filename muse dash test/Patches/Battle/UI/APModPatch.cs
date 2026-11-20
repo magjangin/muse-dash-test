@@ -33,7 +33,7 @@ namespace muse_dash_test.Patches
                 if (VictoryDataCache.ActiveTarget != __instance)
                 {
                     VictoryDataCache.ActiveTarget = __instance;
-                    ModLogger.Msg($"[APMod] AddScore를 통해 TaskStageTarget 캐싱 완료. Pointer={__instance.Pointer}");
+                    ModLogger.Verbose($"[APMod] AddScore를 통해 TaskStageTarget 캐싱 완료. Pointer={__instance.Pointer}");
                 }
 
                 // HUD에서 게임플레이용 꾸밈 폰트를 캐싱합니다.
@@ -74,7 +74,7 @@ namespace muse_dash_test.Patches
                         if (font != null)
                         {
                             VictoryDataCache.PremiumFont = font;
-                            ModLogger.Msg($"[APMod] 게임플레이 HUD에서 최종 메인 시그니처 폰트 캐싱 완료: '{font.name}'");
+                            ModLogger.Verbose($"[APMod] 게임플레이 HUD에서 최종 메인 시그니처 폰트 캐싱 완료: '{font.name}'");
                         }
                         else
                         {
@@ -101,7 +101,7 @@ namespace muse_dash_test.Patches
                 if (VictoryDataCache.ActiveTarget != __instance)
                 {
                     VictoryDataCache.ActiveTarget = __instance;
-                    ModLogger.Msg($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
+                    ModLogger.Verbose($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
 
                 // 아래 진단 로그는 게임 원래 값과 비교하려는 것이므로, 덮어쓰기 '전에' 받아 둡니다.
@@ -203,7 +203,7 @@ namespace muse_dash_test.Patches
                 if (VictoryDataCache.ActiveTarget != __instance)
                 {
                     VictoryDataCache.ActiveTarget = __instance;
-                    ModLogger.Msg($"[APMod] IsFullCombo를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
+                    ModLogger.Verbose($"[APMod] IsFullCombo를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
                 }
             }
             catch (Exception ex)

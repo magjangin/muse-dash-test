@@ -180,7 +180,7 @@ namespace muse_dash_test
                 if (!OfflineCustomSandbox.IsEnabled || __instance == null)
                     return true; // 원본 로직 실행
 
-                ModLogger.Msg("[OfflineSandbox] DLCVerify 바이패스 (오프라인 샌드박스 활성 중)");
+                ModLogger.Verbose("[OfflineSandbox] DLCVerify 바이패스 (오프라인 샌드박스 활성 중)");
                 __instance.m_DoSomething1 = true;
                 __instance.m_DoSomething3 = true;
                 return true;

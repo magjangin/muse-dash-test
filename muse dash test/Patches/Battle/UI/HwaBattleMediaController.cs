@@ -135,7 +135,7 @@ namespace muse_dash_test
             try
             {
                 string debugUid = CustomPlaySession.Current.LastKnownMusicUid;
-                ModLogger.Msg($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, {CustomPlaySession.Current.DescribeApplyDecision()}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
+                ModLogger.Verbose($"[HwaBattleMediaController.Debug] StartBattleMediaInjection 호출: uid={debugUid}, {CustomPlaySession.Current.DescribeApplyDecision()}, battleMediaInjectionStarted={battleMediaInjectionStarted}");
 
                 if (battleMediaInjectionStarted)
                 {
@@ -145,7 +145,7 @@ namespace muse_dash_test
 
                 if (!CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
-                    ModLogger.Msg($"[HwaBattleMediaController.Debug] 스킵: 커스텀 배틀 미디어 비활성 ({CustomPlaySession.Current.DescribeApplyDecision()})");
+                    ModLogger.Verbose($"[HwaBattleMediaController.Debug] 스킵: 커스텀 배틀 미디어 비활성 ({CustomPlaySession.Current.DescribeApplyDecision()})");
                     return;
                 }
 
