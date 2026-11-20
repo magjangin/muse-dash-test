@@ -49,6 +49,8 @@ namespace muse_dash_test
             RetireClip(injectedClip);
             injectedClip = null;
             ProgressBarPatch.Reset();
+            ProgressBarPatch.BeginBattle(); // 지난 배틀의 '끝까지 채움'이 새 배틀 GetTimeProgress에 남지 않게
+            KeysoundProbe.Reset();
             HwaSyncManager.ResetCache();
             ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, 은퇴 대기={retiredClips.Count}개, ManagedHeap={currentMem / 1048576f:F2}MB)");
         }

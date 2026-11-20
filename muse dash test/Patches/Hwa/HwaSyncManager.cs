@@ -45,13 +45,6 @@ namespace muse_dash_test
                     syncCooldownTimer = Math.Max(0f, syncCooldownTimer - Time.deltaTime);
                 }
 
-                syncCheckTimer += Time.deltaTime;
-                if (syncCheckTimer < SyncCheckInterval)
-                {
-                    return;
-                }
-                syncCheckTimer = 0f;
-
                 var pnl = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
                 if (pnl == null || pnl.CurrentBattleUIComp == null)
                 {
@@ -59,14 +52,21 @@ namespace muse_dash_test
                     ResetCache();
                     return;
                 }
+                if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
                 var sld = pnl.CurrentBattleUIComp.sldProgress;
                 if (sld == null || !sld.gameObject.activeInHierarchy) return;
-                if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
-                // 호스트 곡보다 긴 커스텀 곡에서 DOTween 진행바가 먼저 멈추더라도
-                // 실제 커스텀 곡/채보 진행률로 슬라이더를 계속 갱신합니다.
+                // 진행바는 매 프레임 갱신합니다. 게임 트윈은 호스트 곡 길이라 짧은 호스트에서는 중간에 멈추는데,
+                // 그 뒤를 0.1초 간격으로만 갱신하면 바가 계단처럼 움직였습니다.
                 ProgressBarPatch.UpdateProgress(sld);
+
+                syncCheckTimer += Time.deltaTime;
+                if (syncCheckTimer < SyncCheckInterval)
+                {
+                    return;
+                }
+                syncCheckTimer = 0f;
 
                 VideoPlayer bgaPlayer = GetOrFindBgaPlayer();
                 if (syncCooldownTimer > 0f || Time.timeScale <= 0f) return;

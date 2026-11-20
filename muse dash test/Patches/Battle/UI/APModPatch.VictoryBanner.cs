@@ -38,16 +38,10 @@ namespace muse_dash_test.Patches
     {
         public static void Postfix(Il2CppAssets.Scripts.UI.GameMain.PnlVictory2dManager __instance, Il2CppSystem.Object sender, Il2CppSystem.Object rev, Il2CppReferenceArray<Il2CppSystem.Object> pars)
         {
-            // 커스텀 BGM/BGA 정지와 커스텀 기록 저장은 AP 배너 설정과 무관하게 항상 실행합니다.
-            // 예전에는 아래 게이트 뒤에 있어서 AP 배너를 끄면 결과 화면까지 커스텀 BGM이 남고 기록도 빠졌습니다.
-            try
-            {
-                HwaBattleMediaController.StopMedia();
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[APMod] 결과 화면 미디어 정지 중 예외: {ex}");
-            }
+            // 커스텀 BGM/BGA는 여기서 멈추지 않습니다. 게임은 승리 배너를 음원 끝 약 3초 전에 띄우고(GameMusic.BattleEnd),
+            // 음원이 끝나는 순간 StageBattleComponent.End를 부릅니다. 바닐라처럼 배너 동안 곡 꼬리를 끝까지 들려주고,
+            // 정지는 End/Exit/Release Postfix의 StopMedia가 맡습니다(2026-11-21 사용자 결정, 예전엔 여기서 끊어 3초가 잘렸음).
+            // 커스텀 기록 저장은 AP 배너 설정과 무관하게 항상 실행합니다(아래 게이트 앞).
 
             // [인게임 오버레이 정리] 스테이지 클리어 연출 시작 시 인게임 키 뷰어와 판정바가 결과 화면에 잔존하지 않도록 즉시 종료 처리합니다.
             try
