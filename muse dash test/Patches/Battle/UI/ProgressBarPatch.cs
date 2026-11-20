@@ -30,11 +30,56 @@ namespace muse_dash_test
         private static bool hasComputedChartDuration;
         private static float customAudioDuration;
 
+        /// <summary>
+        /// 이번 배틀이 끝났는지(<c>StageBattleComponent.End</c>). 끝난 뒤에는 진행바를 100%로 둡니다.
+        /// <see cref="Reset"/>은 <c>End</c> 안의 <c>StopMedia</c>가 부르므로 여기서 지우지 않고, 다음 배틀을 시작할 때만
+        /// 지웁니다(<see cref="BeginBattle"/>).
+        /// </summary>
+        private static bool battleEnded;
+
         public static void Reset()
         {
             cachedChartDuration = 0f;
             hasComputedChartDuration = false;
             customAudioDuration = 0f;
+        }
+
+        /// <summary>새 배틀을 불러올 때(<c>HwaBattleMediaController.ResetState</c>)와 진행바가 시작될 때(<c>PnlBattle.MusicProgressInit</c>) 부릅니다.</summary>
+        public static void BeginBattle()
+        {
+            battleEnded = false;
+        }
+
+        /// <summary>
+        /// 배틀 종료 직전의 진행 상태를 로그용 문자열로 만듭니다. <c>StopMedia</c>가 BGM 소스를 치우기 전에 불러야 합니다.
+        /// </summary>
+        public static string DescribeProgressBeforeEnd()
+        {
+            try
+            {
+                float duration = GetEffectiveDuration();
+                bool hasRatio = TryGetCustomProgressRatio(out float ratio);
+                var bgm = HwaBattleMediaController.ActiveAudioSource;
+                string bgmTime = bgm != null && bgm.clip != null ? bgm.time.ToString("F2") + "s" : "(none)";
+                return $"ratio={(hasRatio ? ratio.ToString("P1") : "(none)")}, bgm.time={bgmTime}, " +
+                       $"duration={duration:F2}s (audio={customAudioDuration:F2}s, chart={cachedChartDuration:F2}s)";
+            }
+            catch (Exception ex)
+            {
+                return "(진행 상태 조회 예외: " + ex.GetType().Name + ")";
+            }
+        }
+
+        /// <summary>
+        /// 배틀이 끝나면 진행바를 끝까지 채웁니다.
+        /// <para><b>왜</b>: 게임은 커스텀 음원이 끝나기 약 0.5초 전에 <c>End</c>를 부릅니다(오프셋 주입으로 게임 시계가
+        /// BGM보다 앞섬, 2026-11-20 로그: 주입 후 176.14초에 End, 음원 176.65초). 진행바는 <c>bgm.time / 음원 길이</c>라
+        /// 다 차기 전에 결과 화면으로 넘어갔습니다. 바닐라는 트윈 길이가 음원 길이와 같아 끝에서 가득 찹니다.</para>
+        /// </summary>
+        public static void FillOnBattleEnd(Slider sld)
+        {
+            battleEnded = true;
+            if (sld != null) sld.value = 1f;
         }
 
         public static void OnCustomAudioClipLoaded(float clipLength)
@@ -102,6 +147,12 @@ namespace muse_dash_test
         public static bool TryGetCustomProgressRatio(out float ratio)
         {
             ratio = 0f;
+            if (battleEnded)
+            {
+                ratio = 1f;
+                return true;
+            }
+
             float duration = GetEffectiveDuration();
             if (duration <= 1f) return false;
 
@@ -163,6 +214,7 @@ namespace muse_dash_test
             try
             {
                 ModLogger.Msg("[ProgressBarPatch] PnlBattle.MusicProgressInit 호출됨 - 진행바 상태 점검(관찰 전용)");
+                ProgressBarPatch.BeginBattle();
 
                 if (CustomPlaySession.Current.ShouldApplyExperimentChart)
                 {
