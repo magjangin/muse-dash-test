@@ -132,7 +132,8 @@ namespace muse_dash_test
                 string baseName = NoteSkinRules.BaseNameFromAssetName(original.name);
                 if (baseName == null) return;
 
-                var custom = GetOrBuild(baseName, NoteSkinRules.RuntimeScale(original.scale));
+                // 원본 머티리얼(셰이더·속성)을 복사해 텍스처만 바꿉니다. 캐릭터 분신과 같은 이유입니다(CustomSkinInjector.PrimaryMaterialOf).
+                var custom = GetOrBuild(baseName, NoteSkinRules.RuntimeScale(original.scale), CustomSkinInjector.PrimaryMaterialOf(original));
                 if (custom == null) return;
 
                 var skeletonData = custom.GetSkeletonData(true);
@@ -216,9 +217,11 @@ namespace muse_dash_test
             return christmasGate;
         }
 
-        private static SkeletonDataAsset GetOrBuild(string baseName, float scale)
+        private static SkeletonDataAsset GetOrBuild(string baseName, float scale, Material materialSource)
         {
-            string key = baseName + "|" + scale.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // 같은 스켈레톤을 다른 머티리얼로 그리는 프리팹이 있을 수 있어 머티리얼 이름도 키에 넣습니다.
+            string materialKey = materialSource != null ? materialSource.name : "(default)";
+            string key = baseName + "|" + scale.ToString(System.Globalization.CultureInfo.InvariantCulture) + "|" + materialKey;
             float now = Time.realtimeSinceStartup;
 
             if (Sets.TryGetValue(key, out var entry))
@@ -252,7 +255,7 @@ namespace muse_dash_test
             SkeletonDataAsset asset = null;
             if (stamp != 0)
             {
-                asset = CustomSkinInjector.BuildAsset("note:" + baseName, png, atlas, json, scale);
+                asset = CustomSkinInjector.BuildAsset("note:" + baseName, png, atlas, json, scale, materialSource);
                 if (asset != null) OwnAssets.Add(asset.Pointer);
             }
 

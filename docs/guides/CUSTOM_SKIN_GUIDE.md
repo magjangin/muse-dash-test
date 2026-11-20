@@ -77,6 +77,12 @@ H:\muse dash hwa\skin test\
   모든 캐릭터가 원래 모습이 되고 노트 스킨은 그대로입니다. 배틀 중에는 config.txt를 다시 읽지 않으므로 다음 판부터 반영됩니다.
   어느 캐릭터에 어느 세트를 씌우는지는 코드(`InjectHelper.TargetToBaseName`)에 있습니다.
 - 게임 실행 중에 노트 스킨 파일을 고치면 다음 곡을 로딩할 때 다시 읽습니다. 캐릭터 스킨은 게임을 다시 켜야 합니다.
+- **머티리얼은 원본 것을 그대로 씁니다.** 모드는 원본 스켈레톤의 아틀라스 머티리얼(`PrimaryMaterial`)을 복사해 텍스처만 스킨 png로 바꿉니다
+  (`CustomSkinInjector.BuildAsset`의 `materialPropertySource`). 동시치기 분신(`*_ghost`)은 본체와 같은 텍스처를 전용 셰이더 머티리얼
+  (`char_3_black_ghost_Material`: `_ColorR/G/B`·`_Alpha`·`_Distortion`)로 그려 반투명 하늘색으로 보이므로, 분신용 에셋은 본체와 따로 만듭니다
+  (`SkinFolderRules.CharacterRole`). 원본 머티리얼을 못 읽으면 예전처럼 `Spine/Skeleton` 셰이더로 만들고 경고를 남깁니다.
+  (2026-11-20: 모든 스킨을 `Spine/Skeleton`으로 만들어 분신이 본체처럼 불투명하게 나왔습니다.)
+  로그 `[Inject] … 스킨 주입 완료 (ghost, char_3_black_ghost_Material…)`에서 어떤 머티리얼로 그렸는지 봅니다.
 
 ## 2. 만드는 순서
 

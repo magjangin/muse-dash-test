@@ -3,6 +3,7 @@ using HarmonyLib;
 using MelonLoader;
 using Il2Cpp;
 using Il2CppSpine.Unity;
+using UnityEngine;
 
 namespace muse_dash_test
 {
@@ -43,13 +44,6 @@ namespace muse_dash_test
                 // 배틀 중에는 config.txt를 다시 읽지 않으므로 판 도중에 바뀌지 않습니다(LoadConfigIfNeeded).
                 if (!InputOverlay.enableCharacterSkin) return;
 
-                var customAsset = CustomSkinInjector.GetOrBuild(baseName);
-                if (customAsset == null)
-                {
-                    ModLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
-                    return;
-                }
-
                 var ska = instance.skeletonAnimation;
                 if (ska == null)
                 {
@@ -57,16 +51,31 @@ namespace muse_dash_test
                     return;
                 }
 
+                // 원본 아틀라스 머티리얼을 그대로 복사해 텍스처만 바꿉니다. 분신(_ghost)은 전용 셰이더로 반투명 하늘색으로
+                // 그려지는데, 이 머티리얼을 버리면 본체처럼 불투명하게 나옵니다(PrimaryMaterialOf 주석).
+                // OnControllerStart에서 다시 불릴 때는 이미 우리 에셋이라 원본을 읽지 않고 캐시(역할별)를 씁니다.
+                var current = ska.skeletonDataAsset;
+                Material source = current != null && !CustomSkinInjector.IsCachedAsset(current)
+                    ? CustomSkinInjector.PrimaryMaterialOf(current)
+                    : null;
+                string role = SkinFolderRules.CharacterRole(instance.gameObject.name);
+
+                var customAsset = CustomSkinInjector.GetOrBuild(baseName, role, source);
+                if (customAsset == null)
+                {
+                    ModLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
+                    return;
+                }
+
                 ska.skeletonDataAsset = customAsset;
                 ska.Initialize(true);
-                ModLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료");
+                ModLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료 ({role}, {CustomSkinInjector.DescribeMaterial(CustomSkinInjector.PrimaryMaterialOf(customAsset))})");
             }
             catch (System.Exception ex)
             {
                 ModLogger.Warning($"[Inject] 캐릭터 스킨 주입 예외: {ex.Message}");
             }
-        }
-    }
+        }    }
 
     // 오브젝트가 처음 생성될 때(Init).
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.Init), typeof(int), typeof(int))]

@@ -38,6 +38,19 @@ namespace muse_dash_test
         public static string PreferredSetDirectory(string root, SkinKind kind, string baseName) =>
             Path.Combine(KindDirectory(root, kind), baseName);
 
+        /// <summary>캐릭터 본체 역할 이름입니다. 캐릭터 스킨 캐시 키에 들어갑니다.</summary>
+        public const string MainRole = "main";
+
+        /// <summary>캐릭터 동시치기 분신 역할 이름입니다. 분신은 전용 셰이더 머티리얼로 그려지므로 본체와 에셋을 나눕니다.</summary>
+        public const string GhostRole = "ghost";
+
+        /// <summary>
+        /// 캐릭터 오브젝트 이름(<c>black_girl_battle_ghost(Clone)</c>)에서 역할을 고릅니다. 분신은 <see cref="GhostRole"/>, 나머지는 <see cref="MainRole"/>입니다.
+        /// 같은 세트라도 원본 머티리얼이 달라(분신: 반투명 하늘색 셰이더) 에셋을 따로 만들어야 합니다.
+        /// </summary>
+        public static string CharacterRole(string objectName) =>
+            objectName != null && objectName.EndsWith("_ghost(Clone)", StringComparison.Ordinal) ? GhostRole : MainRole;
+
         /// <summary>옛 배치(<c>{root}/{세트}</c>)의 세트 폴더입니다.</summary>
         public static string LegacySetDirectory(string root, string baseName) => Path.Combine(root, baseName);
 

@@ -66,29 +66,74 @@ namespace muse_dash_test
             return false;
         }
 
-        public static SkeletonDataAsset GetOrBuild(string baseName)
+        // 캐시 키(세트|역할)별로 처음 본 원본 머티리얼. 캐시가 비워진 뒤 다시 만들 때, 오브젝트가 이미 우리 에셋을 들고 있어
+        // 원본 머티리얼을 다시 읽을 수 없으므로 여기서 꺼내 씁니다.
+        private static readonly Dictionary<string, Material> SourceMaterials = new Dictionary<string, Material>();
+
+        /// <summary>
+        /// 캐릭터 스킨 에셋을 만들거나 캐시에서 꺼냅니다. <paramref name="role"/>은 같은 세트를 다른 머티리얼로 그리는 오브젝트를
+        /// 나눕니다(본체 <c>main</c> / 동시치기 분신 <c>ghost</c>). <paramref name="materialSource"/>는 원본 스켈레톤의 아틀라스 머티리얼이며,
+        /// 셰이더와 속성을 그대로 복사하고 텍스처만 스킨으로 바꿉니다(<see cref="BuildAsset"/>).
+        /// </summary>
+        public static SkeletonDataAsset GetOrBuild(string baseName, string role, Material materialSource)
         {
+            string key = baseName + "|" + role;
+            if (materialSource != null) SourceMaterials[key] = materialSource;
+
             // Unity Object의 == 오버로드 때문에, 네이티브 오브젝트가 파괴되면(씬 전환 중 회수 등)
             // 캐시에 값이 있어도 "죽은" 상태일 수 있다. 그런 경우 다시 만든다.
-            if (Cache.TryGetValue(baseName, out var existing) && existing != null)
+            if (Cache.TryGetValue(key, out var existing) && existing != null)
                 return existing;
+
+            if (materialSource == null && SourceMaterials.TryGetValue(key, out var remembered) && remembered != null)
+                materialSource = remembered;
 
             var dir = GetSetDirectory(SkinKind.Character, baseName);
             var skeletonDataAsset = BuildAsset(
-                baseName,
+                baseName + ":" + role,
                 Path.Combine(dir, baseName + ".png"),
                 Path.Combine(dir, baseName + ".atlas"),
                 Path.Combine(dir, baseName + ".json"),
-                0.01f); // 원본 캐릭터 0.005의 2배. 스킨 파일 좌표가 원본의 절반이라는 관행(NoteSkinRules.HalfImportFactor)과 짝입니다.
-            if (skeletonDataAsset != null) Cache[baseName] = skeletonDataAsset;
+                0.01f, // 원본 캐릭터 0.005의 2배. 스킨 파일 좌표가 원본의 절반이라는 관행(NoteSkinRules.HalfImportFactor)과 짝입니다.
+                materialSource);
+            if (skeletonDataAsset != null) Cache[key] = skeletonDataAsset;
             return skeletonDataAsset;
+        }
+
+        /// <summary>
+        /// 원본 스켈레톤이 그려지는 아틀라스 머티리얼(첫 아틀라스의 <c>PrimaryMaterial</c>)입니다. 없거나 읽지 못하면 null입니다.
+        /// <para>캐릭터 분신(<c>*_ghost</c>)은 본체와 같은 텍스처를 전용 셰이더 머티리얼(<c>char_1_rampage_ghost_Material</c>:
+        /// <c>_ColorR/G/B</c>·<c>_Alpha</c>·<c>_Distortion</c>)로 그려 반투명 하늘색으로 보입니다. 이 머티리얼을 버리고
+        /// <c>Spine/Skeleton</c>으로 만들면 분신이 본체처럼 불투명하게 나옵니다(2026-11-20 스크린샷).</para>
+        /// </summary>
+        public static Material PrimaryMaterialOf(SkeletonDataAsset asset)
+        {
+            try
+            {
+                var atlases = asset?.atlasAssets;
+                if (atlases == null) return null;
+                for (int i = 0; i < atlases.Length; i++)
+                {
+                    var atlas = atlases[i];
+                    if (atlas == null) continue;
+                    var material = atlas.PrimaryMaterial;
+                    if (material != null) return material;
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[CustomSkinInjector] 원본 머티리얼 조회 예외: {ex.GetType().Name}: {ex.Message}");
+            }
+            return null;
         }
 
         /// <summary>
         /// png·atlas·json 세 파일로 런타임 <see cref="SkeletonDataAsset"/>을 만듭니다. 캐시하지 않으므로 호출자가 보관합니다.
         /// 파일이 없거나 만들지 못하면 null입니다. 캐릭터 스킨(scale 0.01)과 노트 스킨(원본 에셋의 scale)이 같이 씁니다.
+        /// <para><paramref name="materialPropertySource"/>가 있으면 그 머티리얼을 복사해 텍스처만 바꿉니다(원본 셰이더·속성 유지).
+        /// 없거나 그 방식으로 만들지 못하면 <c>Spine/Skeleton</c> 셰이더로 만듭니다.</para>
         /// </summary>
-        public static SkeletonDataAsset BuildAsset(string label, string pngPath, string atlasPath, string jsonPath, float scale)
+        public static SkeletonDataAsset BuildAsset(string label, string pngPath, string atlasPath, string jsonPath, float scale, Material materialPropertySource = null)
         {
             try
             {
@@ -128,10 +173,7 @@ namespace muse_dash_test
                 var atlasTextAsset = new TextAsset(atlasText);
                 atlasTextAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-                var shader = Shader.Find("Spine/Skeleton");
-                if (shader == null) shader = Shader.Find("Sprites/Default");
-
-                var atlasAsset = SpineAtlasAsset.CreateRuntimeInstance(atlasTextAsset, new Texture2D[] { texture }, shader, true);
+                var atlasAsset = CreateAtlasAsset(label, atlasTextAsset, texture, materialPropertySource, out string materialLabel);
                 if (atlasAsset != null) atlasAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
                 var jsonText = File.ReadAllText(jsonPath);
@@ -151,13 +193,59 @@ namespace muse_dash_test
                 }
 
                 skeletonDataAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
-                ModLogger.Verbose($"[CustomSkinInjector] {label} 커스텀 SkeletonDataAsset 생성 완료 (scale {scale})");
+                ModLogger.Verbose($"[CustomSkinInjector] {label} 커스텀 SkeletonDataAsset 생성 완료 (scale {scale}, {materialLabel})");
                 return skeletonDataAsset;
             }
             catch (Exception ex)
             {
                 ModLogger.Error($"[CustomSkinInjector] {label} 예외: " + ex);
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// 런타임 아틀라스를 만듭니다. 원본 머티리얼이 있으면 그것을 복사하고(셰이더·속성 유지), 실패하면 셰이더 방식으로 물러납니다.
+        /// <paramref name="materialLabel"/>은 로그용으로 무엇으로 만들었는지 적습니다.
+        /// </summary>
+        private static SpineAtlasAsset CreateAtlasAsset(string label, TextAsset atlasTextAsset, Texture2D texture, Material materialPropertySource, out string materialLabel)
+        {
+            if (materialPropertySource != null)
+            {
+                string sourceName = DescribeMaterial(materialPropertySource);
+                try
+                {
+                    var fromSource = SpineAtlasAsset.CreateRuntimeInstance(atlasTextAsset, new Texture2D[] { texture }, materialPropertySource, true);
+                    if (fromSource != null)
+                    {
+                        materialLabel = "material=" + sourceName;
+                        return fromSource;
+                    }
+                    ModLogger.Warning($"[CustomSkinInjector] {label}: 원본 머티리얼({sourceName})로 아틀라스를 만들지 못해 기본 셰이더로 만듭니다.");
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.Warning($"[CustomSkinInjector] {label}: 원본 머티리얼({sourceName}) 복사 예외, 기본 셰이더로 만듭니다: {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+
+            var shader = Shader.Find("Spine/Skeleton");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            materialLabel = "shader=" + (shader != null ? shader.name : "(null)");
+            return SpineAtlasAsset.CreateRuntimeInstance(atlasTextAsset, new Texture2D[] { texture }, shader, true);
+        }
+
+        /// <summary>로그용 머티리얼 설명: <c>이름(셰이더)</c>.</summary>
+        public static string DescribeMaterial(Material material)
+        {
+            if (material == null) return "(none)";
+            try
+            {
+                var shader = material.shader;
+                return material.name + "(" + (shader != null ? shader.name : "no shader") + ")";
+            }
+            catch (Exception ex)
+            {
+                return "(material 조회 예외: " + ex.GetType().Name + ")";
             }
         }
 
@@ -177,6 +265,7 @@ namespace muse_dash_test
                     }
                 }
                 Cache.Clear();
+                SourceMaterials.Clear();
                 ModLogger.Verbose("[CustomSkinInjector] Spine 스킨 캐시 및 네이티브 에셋을 전면 초기화했습니다.");
             }
             catch (Exception ex)

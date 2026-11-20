@@ -57,5 +57,15 @@ namespace muse_dash_test.LogicTests
             Assert.Equal(Path.Combine(Root, "note", "0411_road"), dir);
             Assert.False(legacy);
         }
+
+        public static void CharacterRole_SeparatesGhostFromMain()
+        {
+            // 분신은 전용 셰이더 머티리얼로 그려집니다. 본체와 같은 캐시 키를 쓰면 한쪽 머티리얼로 두 오브젝트가 그려집니다
+            // (2026-11-20: 분신이 본체처럼 불투명하게 나옴).
+            Assert.Equal(SkinFolderRules.GhostRole, SkinFolderRules.CharacterRole("black_girl_battle_ghost(Clone)"));
+            Assert.Equal(SkinFolderRules.MainRole, SkinFolderRules.CharacterRole("black_girl_battle(Clone)"));
+            Assert.Equal(SkinFolderRules.MainRole, SkinFolderRules.CharacterRole("rampage_girl_battle_shadow(Clone)"));
+            Assert.Equal(SkinFolderRules.MainRole, SkinFolderRules.CharacterRole(null));
+        }
     }
 }
