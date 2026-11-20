@@ -173,6 +173,7 @@ namespace muse_dash_test
             FeatureGuard.Run("StageCheck", UpdateStageCheck);
             FeatureGuard.Run("ExperimentStage", HandleExperimentStageUpdate);
             FeatureGuard.Run("ExperimentHitPoint", UpdateExperimentHitPoint);
+            FeatureGuard.Run("KeysoundProbe.F8", KeysoundProbe.PollMarkKey); // 진단: 키음이 안 들린 순간 F8로 표시
         }
 
         private static void UpdateStageCheck()
