@@ -43,6 +43,8 @@ namespace muse_dash_test
                     variables[key] = variable;
                 }
 
+                ModLogger.Verbose($"[SaveSelectionGuard] 저장 직전 선택: {DescribeValues(current)}");
+
                 if (!SaveSelectionRules.AnyPointsToModContent(current))
                 {
                     if (current.Count == SaveSelectionRules.Keys.Length)
@@ -122,6 +124,13 @@ namespace muse_dash_test
                 ModLogger.Verbose($"[SaveSelectionGuard] {key} 읽기 실패: {ex.GetType().Name}: {ex.Message}");
                 return null;
             }
+        }
+
+        private static string DescribeValues(Dictionary<string, string> values)
+        {
+            var parts = new List<string>();
+            foreach (var pair in values) parts.Add(pair.Key + "=" + (pair.Value ?? "(null)"));
+            return parts.Count > 0 ? string.Join(", ", parts) : "(Account에 선택 키 없음)";
         }
 
         /// <summary>키의 형식(태그 인덱스 = int, 나머지 = 문자열)에 맞춰 값을 씁니다.</summary>
