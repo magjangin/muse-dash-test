@@ -7,7 +7,7 @@ namespace muse_dash_test
 {
     /// <summary>
     /// 배틀 진행 중인 경우, 마스터 오디오 시계(BGM AudioSource 또는 StageBattleComponent.timeFromMusicStart)를 기준으로
-    /// BGA 비디오(VideoPlayer)의 재생 시점 드리프트만 보정하는 컨트롤러입니다.
+    /// BGA 비디오(VideoPlayer)의 재생 시작과 드리프트를 맞추는 컨트롤러입니다(재생 속도 미세 조절, 큰 오차만 시크).
     ///
     /// [주의 - 노트 버벅거림/밀림 방지]
     /// 스트리밍 Ogg Vorbis(`streamAudio = true`)로 로드된 BGM AudioSource에 대해 `bgmSource.time = expectedTime`을
@@ -20,7 +20,6 @@ namespace muse_dash_test
         private static float syncCooldownTimer = 0f;
         private static float syncCheckTimer = 0f;
         private const float SyncCheckInterval = 0.1f;
-        private const float VideoDriftThreshold = 0.35f;
         private const float VideoSeekCooldown = 2.0f;
         private const float BgaSearchInterval = 1.0f;
         private static VideoPlayer cachedBgaPlayer = null;
@@ -61,6 +60,13 @@ namespace muse_dash_test
                 // 그 뒤를 0.1초 간격으로만 갱신하면 바가 계단처럼 움직였습니다.
                 ProgressBarPatch.UpdateProgress(sld);
 
+                // BGA 시작은 매 프레임 확인합니다(음악 시작 순간을 놓치지 않게). 캐시된 참조라 BGA 없는 곡에서도 값쌉니다.
+                VideoPlayer bgaPlayer = GetOrFindBgaPlayer();
+                if (bgaPlayer != null && !HwaBattleMediaController.videoStartedAtMusic)
+                {
+                    TryStartVideoAtMusicTime(bgaPlayer);
+                }
+
                 syncCheckTimer += Time.deltaTime;
                 if (syncCheckTimer < SyncCheckInterval)
                 {
@@ -68,8 +74,7 @@ namespace muse_dash_test
                 }
                 syncCheckTimer = 0f;
 
-                VideoPlayer bgaPlayer = GetOrFindBgaPlayer();
-                if (syncCooldownTimer > 0f || Time.timeScale <= 0f) return;
+                if (Time.timeScale <= 0f) return;
                 if (bgaPlayer == null || !bgaPlayer.isPrepared || !bgaPlayer.isPlaying) return;
 
                 CorrectVideoDrift(bgaPlayer);
@@ -113,8 +118,51 @@ namespace muse_dash_test
         }
 
         /// <summary>
-        /// BGA 재생 위치가 마스터 시계에서 <see cref="VideoDriftThreshold"/>보다 멀어졌으면 비디오만 시크합니다.
-        /// 시크한 뒤에는 <see cref="VideoSeekCooldown"/> 동안 다시 보정하지 않습니다.
+        /// 게임이 음악을 시작했고(<c>FixedOffset</c>) BGM이 실제로 돌고 있으며 비디오 준비가 끝났으면, BGM 위치로 맞춰 재생을 시작합니다.
+        /// 비디오는 곡 오디오와 같은 타임라인으로 만든 것이므로(il vento d'oro: 영상 301.48초, 음원 301.49초) 기준은 들리는 소리인 <c>bgm.time</c>입니다.
+        /// </summary>
+        private static void TryStartVideoAtMusicTime(VideoPlayer bgaPlayer)
+        {
+            if (!HwaBattleMediaController.gameMusicStarted || !bgaPlayer.isPrepared) return;
+            if (Time.timeScale <= 0f) return; // 일시정지 중에는 시작하지 않습니다
+            if (!TryGetMasterPlaybackTime(out float masterTime)) return;
+
+            HwaBattleMediaController.videoStartedAtMusic = true;
+            float videoDuration = (float)bgaPlayer.length;
+            float startTime = videoDuration > 0.5f && bgaPlayer.isLooping ? masterTime % videoDuration : masterTime;
+            if (startTime > 0.05f) bgaPlayer.time = startTime;
+            bgaPlayer.playbackSpeed = 1f;
+            bgaPlayer.Play();
+            ResetDriftStats();
+            ModLogger.Msg($"[Sync.BGA] 음악 시작에 맞춰 BGA 재생 시작: bgm.time={masterTime:F3}s, video.time→{startTime:F3}s");
+        }
+
+        // 작은 오차는 재생 속도를 살짝 바꿔 따라붙고(시크는 키프레임 탐색이라 멈칫함), 이보다 크면 시크합니다.
+        private const float VideoSeekThreshold = 0.5f;
+        private const float VideoSpeedDeadband = 0.02f;
+        private const float VideoSpeedGain = 1.0f;     // 오차 0.1초 → 속도 ±10%
+        private const float VideoMaxSpeedDelta = 0.15f;
+        private const float DriftReportInterval = 30f;
+
+        private static float driftReportTimer;
+        private static float driftMaxAbs;
+        private static float driftSumAbs;
+        private static int driftSamples;
+        private static int driftSeeks;
+
+        private static void ResetDriftStats()
+        {
+            driftReportTimer = 0f;
+            driftMaxAbs = 0f;
+            driftSumAbs = 0f;
+            driftSamples = 0;
+            driftSeeks = 0;
+        }
+
+        /// <summary>
+        /// BGA를 BGM 위치(<c>bgm.time</c>)에 붙입니다. 예전에는 0.35초가 넘을 때만 시크해서 그 안의 오차(반 박자 남짓)가 그대로 남았습니다.
+        /// 이제 오차가 <see cref="VideoSpeedDeadband"/>를 넘으면 <c>playbackSpeed</c>를 오차에 비례해 최대 ±15% 바꿔 부드럽게 따라붙고,
+        /// <see cref="VideoSeekThreshold"/>를 넘을 때만 시크합니다(시크 뒤 <see cref="VideoSeekCooldown"/> 동안 대기).
         /// </summary>
         private static void CorrectVideoDrift(VideoPlayer bgaPlayer)
         {
@@ -125,19 +173,53 @@ namespace muse_dash_test
                 ? (masterTime % videoDuration)
                 : Mathf.Min(masterTime, videoDuration);
             float currentVideoTime = (float)bgaPlayer.time;
-            float drift = Mathf.Abs(currentVideoTime - expectedVideoTime);
+            float diff = currentVideoTime - expectedVideoTime; // + : 영상이 앞섬
 
-            // 루프 경계 근처에서는 위상차로 인해 오차가 크게 보일 수 있으므로 보정에서 제외합니다.
-            if (bgaPlayer.isLooping && (videoDuration - drift) < VideoDriftThreshold)
+            // 루프 경계를 넘나드는 순간의 위상차는 반대쪽으로 접습니다.
+            if (bgaPlayer.isLooping)
             {
-                drift = videoDuration - drift;
+                if (diff > videoDuration * 0.5f) diff -= videoDuration;
+                else if (diff < -videoDuration * 0.5f) diff += videoDuration;
             }
 
-            if (drift <= VideoDriftThreshold) return;
+            float absDiff = Mathf.Abs(diff);
+            RecordDrift(absDiff);
 
-            ModLogger.Verbose($"[Sync.BGA] 비디오 싱크 보정 적용: 오차={currentVideoTime - expectedVideoTime:F3}초 | 현재={currentVideoTime:F2}초 -> 마스터={expectedVideoTime:F2}초");
-            bgaPlayer.time = expectedVideoTime;
-            syncCooldownTimer = VideoSeekCooldown;
+            if (syncCooldownTimer > 0f) return;
+
+            if (absDiff > VideoSeekThreshold)
+            {
+                ModLogger.Msg($"[Sync.BGA] 오차가 커서 시크: 오차={diff:+0.000;-0.000}초 | 현재={currentVideoTime:F2}초 -> BGM={expectedVideoTime:F2}초");
+                bgaPlayer.playbackSpeed = 1f;
+                bgaPlayer.time = expectedVideoTime;
+                syncCooldownTimer = VideoSeekCooldown;
+                driftSeeks++;
+                return;
+            }
+
+            float targetSpeed = absDiff <= VideoSpeedDeadband
+                ? 1f
+                : 1f - Mathf.Clamp(diff * VideoSpeedGain, -VideoMaxSpeedDelta, VideoMaxSpeedDelta);
+            if (Mathf.Abs(bgaPlayer.playbackSpeed - targetSpeed) > 0.005f)
+            {
+                bgaPlayer.playbackSpeed = targetSpeed;
+            }
+        }
+
+        private static void RecordDrift(float absDiff)
+        {
+            driftSamples++;
+            driftSumAbs += absDiff;
+            if (absDiff > driftMaxAbs) driftMaxAbs = absDiff;
+            driftReportTimer += SyncCheckInterval;
+            if (driftReportTimer < DriftReportInterval) return;
+
+            ModLogger.Msg($"[Sync.BGA] 최근 {driftReportTimer:F0}초 BGA-BGM 오차: 평균 {driftSumAbs / driftSamples * 1000f:F0}ms, 최대 {driftMaxAbs * 1000f:F0}ms, 시크 {driftSeeks}회");
+            driftReportTimer = 0f;
+            driftMaxAbs = 0f;
+            driftSumAbs = 0f;
+            driftSamples = 0;
+            driftSeeks = 0;
         }
 
         private static bool TryGetMasterPlaybackTime(out float masterTime)
