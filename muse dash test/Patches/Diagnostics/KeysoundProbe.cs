@@ -114,7 +114,10 @@ namespace muse_dash_test
                     sameFrameByType[type]++;
                     lastSameFrameKey = keyAudio;
                     previousKey = lastKeyByType[type];
-                    if (!string.Equals(previousKey, keyAudio, StringComparison.Ordinal))
+                    // 빈 공격음(char_common_empty_atk)은 홀드를 누를 때 sfx_press_top과 같은 프레임에 같이 와서 묻히는데,
+                    // 원래 들리지 않아도 되는 소리라 '들리는 누락'으로 세지 않습니다(2026-11-21 실기 10건 전부 이 짝).
+                    if (!string.Equals(previousKey, keyAudio, StringComparison.Ordinal)
+                        && !IsEmptyAttackSound(previousKey) && !IsEmptyAttackSound(keyAudio))
                     {
                         sameFrameDifferentKey++;
                         flags |= EventFlags.SameFrameDifferentKey;
@@ -240,6 +243,14 @@ namespace muse_dash_test
                 : controller.curBassAs;
         }
 
+        /// <summary>샌드백(연타) 노트의 <c>noteData.type</c>. 게임 <c>ShowAttackEffect</c>가 키음을 건너뛰는 값입니다.</summary>
+        private const uint MultiHitNoteType = 8;
+
+        private static bool IsEmptyAttackSound(string key)
+        {
+            return key != null && key.StartsWith("char_common_empty", StringComparison.Ordinal);
+        }
+
         private static string TypeName(int type)
         {
             return type == 0 ? "Hit" : type == 1 ? "Touch" : type == 2 ? "Others" : "Bass";
@@ -310,6 +321,9 @@ namespace muse_dash_test
             var note = md.noteData;
             uint noteType = note != null ? note.type : 0u;
             string key = note != null ? note.key_audio : null;
+            // 샌드백(연타, type 8)은 게임이 ShowAttackEffect에서 일부러 건너뛰고 MultHitEnemyController.OnControllerAttacked에서
+            // 소리를 냅니다(ISIL). 2026-11-21 실기에서 "호출 없음" 588건이 전부 type 8이었고 사용자는 소리를 들었습니다(오탐).
+            if (noteType == MultiHitNoteType) return;
 
             attackEffectsWithoutKeysound++;
             if (attackEffectsWithoutKeysound <= MaxLinesPerKind)
