@@ -310,6 +310,7 @@
 | 설정 키 (Entry) | 기본값 | 기능 설명 |
 |---|---|---|
 | `EnableCustomChart` | `true` | 커스텀 차트 로더, 인메모리 BMS 주입, 실험 차트 HitPoints 프리팹 설치 활성화 |
+| `EnableCustomTag` | `true` | 곡 선택창에 '실험 모드' 커스텀 태그·가상 앨범·가상 곡 등록. 끄면 태그가 만들어지지 않아 곡 선택창이 바닐라와 같아집니다(게임을 새로 켜야 반영, 2026-11-21 실기 확인). `EnableCustomChart`를 꺼도 태그는 사라지지 않으니 따로 끄세요 |
 | `EnableHiddenGuide` | `true` | 곡 선택창에 히든 해금 조건(예: Master 버튼 여러 번 연타) 표시. 게임 중에 끄고 켤 때는 `config.txt`의 `히든해금표시`를 쓰세요(둘 다 켜져 있어야 표시) |
 | `EnableInputOverlay` | `true` | 인게임 실시간 키보드 입력 오버레이 HUD 표시 |
 | `EnableJudgmentBar` | `true` | 화면 하단 판정 타임라인 시각화 그래프 UI 표시 |

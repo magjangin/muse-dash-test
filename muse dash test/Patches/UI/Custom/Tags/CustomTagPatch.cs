@@ -19,6 +19,9 @@ namespace muse_dash_test
         {
             private static void Postfix(MusicTagManager __instance)
             {
+                // 스위치(EnableCustomTag)가 꺼져 있으면 태그·앨범·가상 곡을 아예 만들지 않아 곡 선택창이 바닐라와 같아집니다.
+                if (!ModConfig.EnableCustomTag) return;
+
                 // 가상 곡 주입 및 가상 앨범/태그 생성 비즈니스 로직을 모듈러 레지스트리로 이송하여 단 1줄로 초슬림 처리합니다.
                 CustomTagRegistry.RegisterAll(__instance);
             }
