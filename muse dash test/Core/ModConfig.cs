@@ -13,6 +13,7 @@ namespace muse_dash_test
         public static MelonPreferences_Category Category { get; private set; }
 
         public static MelonPreferences_Entry<bool> CustomChartEntry { get; private set; }
+        public static MelonPreferences_Entry<bool> CustomTagEntry { get; private set; }
         public static MelonPreferences_Entry<bool> HiddenGuideEntry { get; private set; }
         public static MelonPreferences_Entry<bool> InputOverlayEntry { get; private set; }
         public static MelonPreferences_Entry<bool> JudgmentBarEntry { get; private set; }
@@ -30,6 +31,8 @@ namespace muse_dash_test
         public static MelonPreferences_Entry<string> LogLevelEntry { get; private set; }
 
         public static bool EnableCustomChart => CustomChartEntry?.Value ?? true;
+        /// <summary>곡 선택창의 '실험 모드' 커스텀 태그·가상 앨범·가상 곡 등록 여부입니다. 끄면 태그가 아예 만들어지지 않습니다.</summary>
+        public static bool EnableCustomTag => CustomTagEntry?.Value ?? true;
         public static bool EnableHiddenGuide => HiddenGuideEntry?.Value ?? true;
         public static bool EnableInputOverlay => InputOverlayEntry?.Value ?? true;
         public static bool EnableJudgmentBar => JudgmentBarEntry?.Value ?? true;
@@ -59,6 +62,7 @@ namespace muse_dash_test
             Category = MelonPreferences.CreateCategory("muse-dash-custom-chart-features", "Muse Dash Mod Feature Toggles");
 
             CustomChartEntry = Category.CreateEntry("EnableCustomChart", true, description: "커스텀 차트 및 BMS 주입/로드 기능 활성화");
+            CustomTagEntry = Category.CreateEntry("EnableCustomTag", true, description: "곡 선택창에 '실험 모드' 커스텀 태그·가상 앨범·가상 곡을 등록합니다. 끄면 태그가 나타나지 않습니다(게임을 새로 켜야 반영)");
             HiddenGuideEntry = Category.CreateEntry("EnableHiddenGuide", true, description: "곡 선택창에 히든 해금 조건(예: Master 버튼 여러 번 연타) 표시 활성화");
             InputOverlayEntry = Category.CreateEntry("EnableInputOverlay", true, description: "인게임 키 입력 오버레이 HUD 표시 활성화");
             JudgmentBarEntry = Category.CreateEntry("EnableJudgmentBar", true, description: "인게임 판정바 UI 그래픽 표시 활성화");
