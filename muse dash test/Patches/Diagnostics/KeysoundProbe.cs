@@ -19,7 +19,7 @@ namespace muse_dash_test
     /// <para><b>잡는 것</b>: ① 같은 프레임에 같은 종류가 두 번 와서 앞 키음이 한 프레임도 못 울린 것(이름이 다르면 귀에 들리는 누락),
     /// ② 키음 호출 뒤 소스가 재생 중이 아닌 것, ③ 호출이 <c>AudioSource.PlayOneShot</c>까지 못 간 것이나 모드 훅이 막은 것,
     /// ④ 타격 연출(<c>ShowAttackEffect</c>)인데 키음 호출이 없었던 것, ⑤ 키음 직전 프레임 끊김(히치).
-    /// 의심 사건은 바로 한 줄씩 남기고, 사용자가 "방금 안 들렸다"고 느낄 때 <b>F8</b>을 누르면 최근 키음 기록을 덤프합니다
+    /// 의심 사건 줄은 Verbose, 배틀 요약은 의심 사건이 있을 때만 Info 한 줄입니다. 사용자가 "방금 안 들렸다"고 느낄 때 <b>F8</b>을 누르면 최근 키음 기록을 덤프합니다
     /// (<see cref="Mark"/>).</para>
     /// </summary>
     [HarmonyPatch(typeof(AttacksController), nameof(AttacksController.PlayOneShot), new Type[] { typeof(string), typeof(AttacksController.KeyAudioType) })]
@@ -52,6 +52,7 @@ namespace muse_dash_test
 
         // 이번 PlayOneShot 호출 안에서 AudioSource.PlayOneShot까지 갔는지(AllPerfectSound 훅이 알려 줌).
         private static bool insideKeysound;
+        private static bool unityHookAlive;
         private static bool unityReached;
         private static bool unityAllowed;
         private static string unityClipName;
@@ -155,7 +156,7 @@ namespace muse_dash_test
                 pendingEvent = BeginEvent(keyAudio, type, frame, flags);
                 if ((flags & EventFlags.SameFrameDifferentKey) != 0 && sameFrameDifferentKey <= MaxLinesPerKind)
                 {
-                    ModLogger.Msg($"[KeysoundProbe] 같은 프레임 다른 키음: '{previousKey}'가 '{keyAudio}'에 묻혀 안 울림 ({TypeName(type)}, t={GameTime():F3}s)");
+                    ModLogger.Verbose($"[KeysoundProbe] 같은 프레임 다른 키음: '{previousKey}'가 '{keyAudio}'에 묻혀 안 울림 ({TypeName(type)}, t={GameTime():F3}s)");
                 }
             }
             catch (Exception ex)
@@ -180,7 +181,9 @@ namespace muse_dash_test
 
                 if (!volumeWasZero)
                 {
-                    if (!unityReached)
+                    // AudioSource.PlayOneShot 훅이 이번 실행에서 한 번도 안 불렸으면(게임 업데이트로 훅이 빠진 경우 등)
+                    // '미도달'을 세지 않습니다. 세면 모든 키음이 실패로 잡히는 오탐이 됩니다.
+                    if (!unityReached && unityHookAlive)
                     {
                         notReachedUnity++;
                         flags |= EventFlags.NotReachedUnity;
@@ -201,7 +204,7 @@ namespace muse_dash_test
                 if ((flags & (EventFlags.NotReachedUnity | EventFlags.BlockedByMod | EventFlags.NotPlayingAfter)) != 0
                     && ++failureLines <= MaxLinesPerKind)
                 {
-                    ModLogger.Msg($"[KeysoundProbe] 키음 재생 실패 의심: '{keyAudio}' ({TypeName(type)}, t={GameTime():F3}s) " +
+                    ModLogger.Verbose($"[KeysoundProbe] 키음 재생 실패 의심: '{keyAudio}' ({TypeName(type)}, t={GameTime():F3}s) " +
                                   $"Unity도달={unityReached}, 모드허용={unityAllowed}, 클립={(unityClipName ?? "(none)")}, " +
                                   $"재생중={playing}, {DescribeSource(source)}");
                 }
@@ -222,6 +225,7 @@ namespace muse_dash_test
         /// </summary>
         internal static void OnUnityPlayOneShot(AudioClip clip, bool allowed)
         {
+            unityHookAlive = true;
             if (!insideKeysound) return;
             try
             {
@@ -328,7 +332,7 @@ namespace muse_dash_test
             attackEffectsWithoutKeysound++;
             if (attackEffectsWithoutKeysound <= MaxLinesPerKind)
             {
-                ModLogger.Msg($"[KeysoundProbe] 타격 연출인데 키음 호출 없음: id={id}, result={resultCode}, noteType={noteType}, " +
+                ModLogger.Verbose($"[KeysoundProbe] 타격 연출인데 키음 호출 없음: id={id}, result={resultCode}, noteType={noteType}, " +
                               $"uid={(note != null ? note.uid : "(null)")}, key_audio='{key ?? "(null)"}', t={GameTime():F3}s");
             }
             RecordAttackWithoutKeysound(id, key);

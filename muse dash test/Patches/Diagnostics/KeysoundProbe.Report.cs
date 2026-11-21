@@ -164,12 +164,31 @@ namespace muse_dash_test
                    $"타격 연출 {attackEffects}회 중 키음 호출 없음 {attackEffectsWithoutKeysound}회, F8 표시 {marks}회";
         }
 
-        /// <summary>End 없이 재시작·이탈한 배틀도 요약을 남깁니다.</summary>
-        private static void EmitSummaryIfPending(string reason)
+        /// <summary>
+        /// 귀에 들리는 누락으로 볼 만한 사건 수. 같은 프레임 같은 키음(같은 소리라 안 들림), 빈 공격음, 샌드백, 히치, 볼륨 0은
+        /// 넣지 않습니다(2026-11-21 실기에서 이것들이 오탐이었음).
+        /// </summary>
+        private static int SuspiciousCount()
+        {
+            return sameFrameDifferentKey + notReachedUnity + blockedByMod + notPlayingAfter + attackEffectsWithoutKeysound;
+        }
+
+        /// <summary>
+        /// 배틀 요약을 남깁니다. 의심 사건이 없으면 Verbose(평소 로그에 안 보임), 있으면 Info 한 줄입니다.
+        /// End Postfix와, End 없이 재시작·이탈한 배틀(<see cref="Reset"/>)에서 부릅니다.
+        /// </summary>
+        public static void LogSummary(string reason)
         {
             if (summaryEmitted || calls == 0) return;
             string summary = Summary();
-            if (summary != null) ModLogger.Msg($"[KeysoundProbe] ({reason}) {summary}");
+            if (summary == null) return;
+            if (SuspiciousCount() > 0) ModLogger.Msg($"[KeysoundProbe] ({reason}) 키음 누락 의심 {SuspiciousCount()}건 — {summary}");
+            else ModLogger.Verbose($"[KeysoundProbe] ({reason}) {summary}");
+        }
+
+        private static void EmitSummaryIfPending(string reason)
+        {
+            LogSummary(reason);
         }
     }
 }
