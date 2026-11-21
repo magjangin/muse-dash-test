@@ -71,10 +71,10 @@ namespace muse_dash_test
                 videoPlayer.renderMode = VideoRenderMode.MaterialOverride;
                 videoPlayer.targetMaterialRenderer = renderer;
                 videoPlayer.targetMaterialProperty = "_MainTex";
-                // 영상 속 오디오는 내보내지 않습니다. 곡은 music.ogg(BGM 소스)로만 나옵니다. 예전에는 Direct라
-                // mp4에 곡 오디오 트랙이 있으면(il vento d'oro: AAC 301.5초) 같은 곡이 최대 0.35초 늦게 한 번 더 들렸습니다
-                // (2026-11-21 사용자 제보 "BGA 있는 곡만 반박자 늦는 감").
-                videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+                // 영상 속 오디오는 그대로 내보냅니다(사용자 결정 2026-11-21: 영상 소리를 들으며 싱크를 판단·지시함).
+                // mp4에 곡 오디오 트랙이 있으면(il vento d'oro: AAC 301.5초) BGM과 같은 곡이 겹쳐 나오므로,
+                // 영상을 BGM에 붙이는 보정(HwaSyncManager.CorrectVideoDrift)이 곧 두 소리의 어긋남을 줄이는 일입니다.
+                videoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
                 videoPlayer.playOnAwake = false;
                 videoPlayer.skipOnDrop = true;
                 videoPlayer.waitForFirstFrame = true;
@@ -84,7 +84,7 @@ namespace muse_dash_test
                 // (HwaSyncManager.TryStartVideoAtMusicTime). 예전에는 여기서 Play()해 음악보다 수 초 먼저 흘렀습니다.
                 videoStartedAtMusic = false;
                 videoPlayer.Prepare();
-                ModLogger.Msg("[HwaBattleMediaController.Video] BGA 비디오 준비를 시작했습니다(음악 시작 때 BGM 위치에서 재생, 영상 오디오 끔).");
+                ModLogger.Msg("[HwaBattleMediaController.Video] BGA 비디오 준비를 시작했습니다(음악 시작 때 BGM 위치에서 재생, 영상 오디오 켬).");
 
                 MelonCoroutines.Start(MonitorVideoPlayback(videoPlayer));
             }
