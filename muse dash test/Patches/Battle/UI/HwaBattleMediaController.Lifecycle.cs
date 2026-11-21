@@ -97,7 +97,8 @@ namespace muse_dash_test
                 if (mainCam != null)
                 {
                     VideoPlayer vp = mainCam.GetComponentInChildren<VideoPlayer>();
-                    if (vp != null)
+                    // 음악 시작 전(카운트다운 중 일시정지)에는 틀지 않습니다. 시작은 HwaSyncManager가 BGM 위치에서 합니다.
+                    if (vp != null && videoStartedAtMusic)
                     {
                         bool wasPlaying = vp.isPlaying;
                         bool wasPrepared = vp.isPrepared;
