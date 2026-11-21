@@ -133,6 +133,9 @@ namespace muse_dash_test
             if (startTime > 0.05f) bgaPlayer.time = startTime;
             bgaPlayer.playbackSpeed = 1f;
             bgaPlayer.Play();
+            // 시작 시크가 끝날 때까지 video.time은 0을 돌려줍니다. 바로 보정하면 같은 위치로 한 번 더 시크했습니다
+            // (2026-11-21 실기: 시작 35ms 뒤 "오차 -1.285초" 시크). 시크 대기 시간만큼 보정을 쉽니다.
+            syncCooldownTimer = VideoSeekCooldown;
             ResetDriftStats();
             ModLogger.Msg($"[Sync.BGA] 음악 시작에 맞춰 BGA 재생 시작: bgm.time={masterTime:F3}s, video.time→{startTime:F3}s");
         }
@@ -182,10 +185,11 @@ namespace muse_dash_test
                 else if (diff < -videoDuration * 0.5f) diff += videoDuration;
             }
 
+            // 시크 직후(쿨다운 중)에는 video.time이 아직 옛 값이라 통계에도 넣지 않습니다.
+            if (syncCooldownTimer > 0f) return;
+
             float absDiff = Mathf.Abs(diff);
             RecordDrift(absDiff);
-
-            if (syncCooldownTimer > 0f) return;
 
             if (absDiff > VideoSeekThreshold)
             {
