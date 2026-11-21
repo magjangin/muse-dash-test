@@ -173,8 +173,7 @@ namespace muse_dash_test
 
             try
             {
-                string keysound = KeysoundProbe.Summary();
-                if (keysound != null) ModLogger.Msg($"[KeysoundProbe] {keysound}");
+                KeysoundProbe.LogSummary("배틀 종료");
             }
             catch (Exception ex) { ModLogger.Verbose($"[StageBattleComponentPatch] End 키음 요약 예외: {ex.Message}"); }
 

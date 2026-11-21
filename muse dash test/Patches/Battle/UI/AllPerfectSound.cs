@@ -118,7 +118,9 @@ namespace muse_dash_test.Patches
     {
         public static bool Prefix(AudioClip clip)
         {
-            return AllPerfectSound.ShouldPlayOneShot(clip, "PlayOneShot");
+            bool allowed = AllPerfectSound.ShouldPlayOneShot(clip, "PlayOneShot");
+            KeysoundProbe.OnUnityPlayOneShot(clip, allowed); // 진단: 키음 호출 안일 때만 기록
+            return allowed;
         }
     }
 
@@ -128,7 +130,9 @@ namespace muse_dash_test.Patches
     {
         public static bool Prefix(AudioClip clip)
         {
-            return AllPerfectSound.ShouldPlayOneShot(clip, "PlayOneShot(novol)");
+            bool allowed = AllPerfectSound.ShouldPlayOneShot(clip, "PlayOneShot(novol)");
+            KeysoundProbe.OnUnityPlayOneShot(clip, allowed); // 진단: 키음 호출 안일 때만 기록
+            return allowed;
         }
     }
 }
