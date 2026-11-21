@@ -18,6 +18,8 @@ namespace muse_dash_test
         private static bool battleMediaInjectionStarted;
         // 게임이 음악을 이미 시작했는지(FixedOffset 이후). 레디·고 훅이 못 불린 배틀에서 주입이 늦게 끝나도 바로 틀기 위함입니다.
         internal static bool gameMusicStarted;
+        /// <summary>BGA 비디오를 게임 음악 시작 뒤 BGM 위치에서 재생 시작했는지. 그 전에는 일시정지 해제(ResumeMedia)로도 틀지 않습니다.</summary>
+        internal static bool videoStartedAtMusic;
 
         // 로드 코루틴이 끝났을 때 아직 같은 배틀인지 확인하는 번호입니다. 정지·리셋마다 올립니다.
         // 정지 뒤에 끝난 옛 로드가 클립을 틀어 결과 화면에서 소리가 되살아나던 문제를 막습니다.
@@ -39,6 +41,7 @@ namespace muse_dash_test
             string clipDesc = DescribeAudioClip(injectedClip);
             battleMediaInjectionStarted = false;
             gameMusicStarted = false;
+            videoStartedAtMusic = false;
             injectedAudioSource = null;
             cachedFallbackBgmSource = null;
             fallbackBgmLookupAttempted = false;
