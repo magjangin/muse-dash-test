@@ -44,6 +44,11 @@ namespace muse_dash_test
                     syncCooldownTimer = Math.Max(0f, syncCooldownTimer - Time.deltaTime);
                 }
 
+                // 커스텀 곡이 아니면 IL2CPP 조회(PnlBattle.instance 등)를 하나도 하지 않고 바로 나갑니다. 매 프레임 불리는데
+                // 예전에는 이 검사가 패널 조회 뒤에 있어 공식 곡 배틀과 메뉴에서도 프레임마다 래퍼를 만들었습니다.
+                // 캐시는 커스텀 곡에서만 쓰이고, 배틀을 불러올 때마다 HwaBattleMediaController.ResetState가 비웁니다.
+                if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
+
                 var pnl = Il2CppAssets.Scripts.UI.Panels.PnlBattle.instance;
                 if (pnl == null || pnl.CurrentBattleUIComp == null)
                 {
@@ -51,7 +56,6 @@ namespace muse_dash_test
                     ResetCache();
                     return;
                 }
-                if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
                 var sld = pnl.CurrentBattleUIComp.sldProgress;
                 if (sld == null || !sld.gameObject.activeInHierarchy) return;
@@ -218,7 +222,9 @@ namespace muse_dash_test
             driftReportTimer += SyncCheckInterval;
             if (driftReportTimer < DriftReportInterval) return;
 
-            ModLogger.Msg($"[Sync.BGA] 최근 {driftReportTimer:F0}초 BGA-BGM 오차: 평균 {driftSumAbs / driftSamples * 1000f:F0}ms, 최대 {driftMaxAbs * 1000f:F0}ms, 시크 {driftSeeks}회");
+            // 곡마다 여러 번 나오는 반복 줄이라 Verbose입니다(로그 레벨 기준: 곡당 요약 한 줄만 Info). 싱크를 의심하면
+            // MelonPreferences LogLevel을 Verbose로 올려 이 줄을 보십시오. 이상 징후인 시크 줄은 Info로 둡니다.
+            ModLogger.Verbose($"[Sync.BGA] 최근 {driftReportTimer:F0}초 BGA-BGM 오차: 평균 {driftSumAbs / driftSamples * 1000f:F0}ms, 최대 {driftMaxAbs * 1000f:F0}ms, 시크 {driftSeeks}회");
             driftReportTimer = 0f;
             driftMaxAbs = 0f;
             driftSumAbs = 0f;

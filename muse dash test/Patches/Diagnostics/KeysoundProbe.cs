@@ -59,6 +59,7 @@ namespace muse_dash_test
 
         // 이번 ShowAttackEffect 호출 안에서 키음이 몇 번 불렸는지.
         private static int attackEffectDepth;
+        private static int attackEffectFrame;
         private static int keysoundsInAttackEffect;
 
         public static void Reset()
@@ -294,6 +295,13 @@ namespace muse_dash_test
         {
             public static void Prefix()
             {
+                // 원본이 예외로 빠져나가면 Postfix가 건너뛰어져 깊이가 내려가지 않습니다. 그대로 두면 배틀 끝까지 모든 키음이
+                // '타격 연출 안'으로 잡히고 '키음 호출 없음' 검사가 꺼진 채 남으므로, 프레임이 바뀌었으면 남은 깊이를 버립니다
+                // (SelectedSongLocalizationScope와 같은 자가 복구).
+                int frame = Time.frameCount;
+                if (attackEffectDepth > 0 && frame != attackEffectFrame) attackEffectDepth = 0;
+                attackEffectFrame = frame;
+
                 attackEffectDepth++;
                 if (attackEffectDepth == 1) keysoundsInAttackEffect = 0;
             }

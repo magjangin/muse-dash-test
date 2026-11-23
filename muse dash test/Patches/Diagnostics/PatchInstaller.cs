@@ -96,6 +96,19 @@ namespace muse_dash_test
                 }
                 catch (Exception ex)
                 {
+                    // JIT와 대상 해석은 통과했는데 Harmony가 거는 단계에서 실패한 경우입니다(게임 업데이트로 원본 파라미터
+                    // 이름이 바뀌어 패치 메서드의 인자를 묶지 못하는 경우 등). 다중 메서드 클래스면 메서드 하나 때문에
+                    // 나머지까지 꺼지지 않도록, 이미 걸린 일부를 걷어낸 뒤 메서드별로 다시 겁니다.
+                    int recovered = TryRecoverFailedClass(harmony, type);
+                    if (recovered > 0)
+                    {
+                        applied++;
+                        ModLogger.Warning(
+                            $"[PatchInstaller] '{type.Name}' 클래스 단위 적용이 실패해 메서드별로 다시 걸었습니다: {recovered}개 적용 " +
+                            $"(실패 원인: {ex.GetType().Name}: {ex.Message})");
+                        continue;
+                    }
+
                     failed.Add(type.Name);
                     ModLogger.Error($"[PatchInstaller] '{type.FullName}' 패치 적용 실패: {ex}");
                 }
@@ -205,6 +218,54 @@ namespace muse_dash_test
             }
 
             return patched;
+        }
+
+        /// <summary>
+        /// <c>CreateClassProcessor(type).Patch()</c>가 던졌을 때의 복구입니다. Harmony는 클래스의 패치 메서드를 차례로 걸다가
+        /// 중간에 던지므로, 앞쪽 메서드는 이미 걸려 있을 수 있습니다. 그대로 메서드별 재적용을 하면 같은 패치가 두 번 걸리므로
+        /// 먼저 이 클래스가 건 패치를 모두 걷어냅니다. 걷어내기에 실패하면 이중 적용을 피하려고 재적용하지 않습니다(0 반환).
+        /// 메서드가 하나뿐인 클래스는 같은 이유로 다시 실패하므로 재적용 결과도 0이 되고, 호출자가 실패로 기록합니다.
+        /// </summary>
+        private static int TryRecoverFailedClass(HarmonyLib.Harmony harmony, Type patchClass)
+        {
+            try
+            {
+                UnpatchClass(harmony, patchClass);
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[PatchInstaller] '{patchClass.Name}' 부분 적용분을 걷어내지 못해 메서드별 재적용을 건너뜁니다: {ex.GetType().Name}: {ex.Message}");
+                return 0;
+            }
+
+            try
+            {
+                return ApplySurvivingMethodPatches(harmony, patchClass);
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[PatchInstaller] '{patchClass.Name}' 메서드별 재적용 실패: {ex.GetType().Name}: {ex.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>이 Harmony 인스턴스가 <paramref name="patchClass"/>의 메서드로 건 패치만 골라 걷어냅니다.</summary>
+        private static void UnpatchClass(HarmonyLib.Harmony harmony, Type patchClass)
+        {
+            foreach (MethodBase original in harmony.GetPatchedMethods().ToList())
+            {
+                HarmonyLib.Patches info = HarmonyLib.Harmony.GetPatchInfo(original);
+                if (info == null) continue;
+
+                var mine = info.Prefixes.Concat(info.Postfixes).Concat(info.Transpilers).Concat(info.Finalizers)
+                    .Where(p => p.owner == harmony.Id && p.PatchMethod != null && p.PatchMethod.DeclaringType == patchClass)
+                    .Select(p => p.PatchMethod)
+                    .ToList();
+                foreach (MethodInfo patchMethod in mine)
+                {
+                    harmony.Unpatch(original, patchMethod);
+                }
+            }
         }
 
         private static bool TryRegisterPatchMethod(PatchProcessor processor, MethodInfo method)

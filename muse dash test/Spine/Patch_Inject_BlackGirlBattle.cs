@@ -34,15 +34,18 @@ namespace muse_dash_test
             // (예전에는 MainMod의 'skin test' 폴더 생성만 이 설정에 묶여 있어서, 설정을 꺼도
             //  스킨 주입은 그대로 돌았습니다.)
             if (!ModConfig.EnableSpineSkin) return;
-            if (instance == null || instance.gameObject == null) return;
+            // config.txt [8] '캐릭터 커스텀 스킨=false'면 모든 캐릭터를 원래 모습으로 둡니다.
+            // 배틀 중에는 config.txt를 다시 읽지 않으므로 판 도중에 바뀌지 않습니다(LoadConfigIfNeeded).
+            // 이 함수는 노트가 생길 때마다(SpineActionController.Init) 불리므로, 이름(IL2CPP 문자열 마샬링)을 읽기 전에 봅니다.
+            if (!InputOverlay.enableCharacterSkin) return;
+            if (instance == null) return;
 
             try
             {
-                if (!TargetToBaseName.TryGetValue(instance.gameObject.name, out var baseName)) return;
-
-                // config.txt [8] '캐릭터 커스텀 스킨=false'면 모든 캐릭터를 원래 모습으로 둡니다.
-                // 배틀 중에는 config.txt를 다시 읽지 않으므로 판 도중에 바뀌지 않습니다(LoadConfigIfNeeded).
-                if (!InputOverlay.enableCharacterSkin) return;
+                var go = instance.gameObject;
+                if (go == null) return;
+                string objName = go.name;
+                if (objName == null || !TargetToBaseName.TryGetValue(objName, out var baseName)) return;
 
                 var ska = instance.skeletonAnimation;
                 if (ska == null)
@@ -58,7 +61,7 @@ namespace muse_dash_test
                 Material source = current != null && !CustomSkinInjector.IsCachedAsset(current)
                     ? CustomSkinInjector.PrimaryMaterialOf(current)
                     : null;
-                string role = SkinFolderRules.CharacterRole(instance.gameObject.name);
+                string role = SkinFolderRules.CharacterRole(objName);
 
                 var customAsset = CustomSkinInjector.GetOrBuild(baseName, role, source);
                 if (customAsset == null)
@@ -69,7 +72,7 @@ namespace muse_dash_test
 
                 ska.skeletonDataAsset = customAsset;
                 ska.Initialize(true);
-                ModLogger.Msg($"[Inject] {instance.gameObject.name}에 {baseName} 스킨 주입 완료 ({role}, {CustomSkinInjector.DescribeMaterial(CustomSkinInjector.PrimaryMaterialOf(customAsset))})");
+                ModLogger.Msg($"[Inject] {objName}에 {baseName} 스킨 주입 완료 ({role}, {CustomSkinInjector.DescribeMaterial(CustomSkinInjector.PrimaryMaterialOf(customAsset))})");
             }
             catch (System.Exception ex)
             {
