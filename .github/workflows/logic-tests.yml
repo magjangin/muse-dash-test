@@ -9,7 +9,9 @@ on:
 
 jobs:
   logic-tests:
-    runs-on: ubuntu-latest
+    # 테스트 픽스처가 Windows 경로(H:\songs\…, 폴더 구분자 \)를 그대로 씁니다. 모드가 실제로 도는 OS도 Windows라 맞춥니다.
+    # ubuntu에서는 워크플로를 만든 2026-11-18부터 경로 픽스처 테스트 23개가 늘 실패했습니다(WAV 폴더 접두는 파서가 직접 자르도록 고쳤음).
+    runs-on: windows-latest
 
     steps:
       - name: Checkout

@@ -371,7 +371,7 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:Gam
 ## 🧪 로직 테스트
 
 모드 본체는 IL2CPP 어셈블리(`Il2CppAssemblies`)를 참조하므로 게임 밖에서 로드할 수 없습니다.
-대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `AccuracyMath`·`CustomRecordStore.Serialization`·`PlayRecordMerge`·`GameVersionCheck`·`TextNormalizer`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`·`NoteSkinRules`·`SkinFolderRules`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 187개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행하며, GitHub Actions CI [`.github/workflows/logic-tests.yml`](.github/workflows/logic-tests.yml)에서 푸시/PR마다 자동 실행됩니다.)
+대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `AccuracyMath`·`CustomRecordStore.Serialization`·`PlayRecordMerge`·`GameVersionCheck`·`TextNormalizer`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`·`NoteSkinRules`·`SkinFolderRules`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 194개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행하며, GitHub Actions CI [`.github/workflows/logic-tests.yml`](.github/workflows/logic-tests.yml)에서 푸시/PR마다 Windows 러너로 자동 실행됩니다.)
 
 ```powershell
 .\run-logic-tests.bat
