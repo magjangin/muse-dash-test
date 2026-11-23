@@ -66,7 +66,7 @@ flowchart TD
 
 `PatchHealthCheck`는 게임 업데이트 후 Harmony 대상 메서드가 사라졌는지 확인합니다. 패치가 갑자기 동작하지 않으면 먼저 이 로그를 봅니다. 대상 타입이 사라진 클래스가 있어도 그 클래스만 따로 보고하고 나머지 점검은 계속합니다.
 
-`PatchInstaller`는 MelonLoader 대신 패치를 겁니다(`[assembly: HarmonyDontPatchAll]`). 걸기 전에 패치 메서드를 미리 JIT 해 보고, 현재 게임 빌드에서 컴파일되지 않는 클래스(본문이 쓰던 게임 멤버가 사라진 경우)는 걸지 않습니다. 그런 패치가 걸린 채로 두면 호출마다 `During invoking native->managed trampoline` 에러가 나고, Prefix였다면 게임 원본 메서드까지 실행되지 않습니다. 패치 본문 안의 try/catch로는 이 예외를 잡을 수 없습니다.
+`PatchInstaller`는 MelonLoader 대신 패치를 겁니다(`[assembly: HarmonyDontPatchAll]`). 걸기 전에 패치 메서드를 미리 JIT 해 보고, 현재 게임 빌드에서 컴파일되지 않는 클래스(본문이 쓰던 게임 멤버가 사라진 경우)는 걸지 않습니다. 그런 패치가 걸린 채로 두면 호출마다 `During invoking native->managed trampoline` 에러가 나고, Prefix였다면 게임 원본 메서드까지 실행되지 않습니다. 패치 본문 안의 try/catch로는 이 예외를 잡을 수 없습니다. 컴파일·대상 해석은 통과했는데 Harmony가 거는 단계에서 던지면(원본 파라미터 이름이 바뀌어 인자를 못 묶는 경우 등), 그 클래스가 이미 건 일부를 걷어낸 뒤 메서드별로 다시 걸어 실패한 메서드만 뺍니다(`TryRecoverFailedClass`, 2026-11-23).
 
 게임 멤버를 만지는 코드에 폴백을 붙일 때는 멤버 접근을 **별도 메서드로 분리**해야 폴백이 실제로 돕니다. 같은 메서드에 두면 멤버가 사라졌을 때 메서드 전체가 JIT에 실패해 폴백까지 같이 죽습니다(`GameBgmSource` 참고).
 

@@ -41,6 +41,7 @@ namespace muse_dash_test
         {
             cachedChartDuration = 0f;
             hasComputedChartDuration = false;
+            nextChartDurationRetryTime = 0f;
             customAudioDuration = 0f;
         }
 
@@ -127,12 +128,19 @@ namespace muse_dash_test
             return maxEndTick > 0f ? (maxEndTick + 2.0f) : 0f;
         }
 
+        // 채보 길이를 못 구했을 때(0) 다시 시도하는 간격입니다. 매 프레임 불리므로 실패 때마다 다시 훑지 않게 합니다.
+        private const float ChartDurationRetrySeconds = 1f;
+        private static float nextChartDurationRetryTime;
+
         public static float GetEffectiveDuration()
         {
-            if (!hasComputedChartDuration)
+            if (!hasComputedChartDuration && Time.unscaledTime >= nextChartDurationRetryTime)
             {
                 cachedChartDuration = ComputeCustomChartDuration();
-                hasComputedChartDuration = true;
+                // 0이면 노트 목록이 아직 안 채워졌을 수 있어 확정하지 않고 잠시 뒤 다시 봅니다. 예전에는 첫 조회의 0을
+                // 배틀 내내 들고 있어, 음원 없는 곡(채보 길이로 물러나는 경우)의 진행바가 움직이지 않을 수 있었습니다.
+                hasComputedChartDuration = cachedChartDuration > 0f;
+                nextChartDurationRetryTime = Time.unscaledTime + ChartDurationRetrySeconds;
             }
 
             // 커스텀 음원이 있으면 그 길이만 씁니다. 게임이 End를 재는 길이(bgm.clip.length)가 바로 이 클립이라
