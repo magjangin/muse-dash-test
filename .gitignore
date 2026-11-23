@@ -37,3 +37,6 @@ scripts/reset_progress_backup/
 
 # 사용자별 Claude Code 권한 설정(개인 로컬 파일)
 .claude/settings.local.json
+
+# 릴리즈 스크립트 산출물 (tools/release.ps1)
+dist/

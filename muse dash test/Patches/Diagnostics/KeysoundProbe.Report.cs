@@ -92,10 +92,12 @@ namespace muse_dash_test
 
         /// <summary>
         /// 사용자가 "방금 키음이 안 들렸다"고 느낄 때 누르는 F8. 최근 키음 기록과 오디오 상태를 덤프합니다.
-        /// <c>MainMod.OnUpdate</c>가 매 프레임 부릅니다(키를 안 누르면 <c>GetKeyDown</c> 한 번뿐).
+        /// <c>MainMod.OnUpdate</c>가 매 프레임 부릅니다. 배틀 밖(메뉴·로딩)에서는 관리 플래그만 보고 돌아가
+        /// <c>Input.GetKeyDown</c>(IL2CPP 호출)도 하지 않습니다. 배틀 밖 F8은 지난 배틀 기록을 덤프할 뿐이라 쓸모가 없었습니다.
         /// </summary>
         public static void PollMarkKey()
         {
+            if (!HywStageManager.IsInStageStatic) return;
             if (!Input.GetKeyDown(KeyCode.F8)) return;
             Mark();
         }
