@@ -44,8 +44,8 @@
     <EmbeddedResource Include="Resources\tag_icon.png" />
   </ItemGroup>
 
-  <!-- 빌드 후 산출 DLL을 게임 Mods 폴더로 항상 자동 배포 -->
-  <Target Name="DeployToMods" AfterTargets="Build">
+  <!-- 빌드 후 산출 DLL을 게임 Mods 폴더로 자동 배포. -p:SkipDeploy=true면 건너뜁니다(tools/release.ps1이 씁니다). -->
+  <Target Name="DeployToMods" AfterTargets="Build" Condition="'$(SkipDeploy)' != 'true'">
     <MakeDir Directories="$(ModsDir)" Condition="!Exists('$(ModsDir)')" />
     <!-- 성공 메시지는 실제로 복사된 파일이 있을 때만 찍습니다. ContinueOnError로 빌드는 계속되므로 여기서 갈라집니다. -->
     <Copy SourceFiles="$(TargetPath)"

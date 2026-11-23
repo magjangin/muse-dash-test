@@ -232,6 +232,8 @@
 
 ## 4. 릴리즈 전
 
+`.\tools\release.ps1`(검증만) → `.\tools\release.ps1 -Publish`(태그·GitHub 릴리즈)가 아래 첫 두 항목과 버전·CHANGELOG 일치를 자동으로 확인합니다(2026-11-23 추가). 게시 전에 `ModInfo.Version`과 `CHANGELOG.md`의 `## [<버전>]` 항목을 같이 올리십시오. 나머지 항목은 여전히 손으로 봅니다.
+
 - [ ] **`git fetch origin` 후 ahead/behind를 확인했는가?** (여러 클론에서 작업하므로 실제로 갈라진 적이 있습니다)
 
 - [ ] **CI가 초록인가?** `gh run list --limit 3`. 로컬 테스트 통과만 보지 마십시오.
