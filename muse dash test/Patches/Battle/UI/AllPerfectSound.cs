@@ -39,7 +39,9 @@ namespace muse_dash_test.Patches
         /// <summary>해당 클립이 게임 기본 풀콤보 효과음인지 판별합니다. 클립마다 이름은 한 번만 읽습니다.</summary>
         public static bool IsFullComboClip(AudioClip clip)
         {
-            if (clip == null) return false;
+            // 모든 효과음마다 불리는 경로라 Unity 비교(op_Equality, IL2CPP 호출) 대신 관리 비교를 씁니다.
+            // 파괴된 클립이면 아래 clip.name에서 예외가 나고, 호출부(ShouldPlayOneShot)의 catch가 원본 재생을 그대로 둡니다.
+            if (clip is null) return false;
 
             IntPtr pointer = clip.Pointer;
             if (fullComboClipByPointer.TryGetValue(pointer, out bool known)) return known;

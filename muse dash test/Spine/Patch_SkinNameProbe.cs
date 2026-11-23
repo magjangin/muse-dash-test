@@ -13,6 +13,16 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.Awake))]
     internal static class Patch_SkinNameProbe
     {
+        /// <summary>
+        /// 스킨 기능과 Verbose 로그가 둘 다 켜진 실행에서만 겁니다. 둘 다 시작 때 정해지고 실행 중에는 바뀌지 않습니다
+        /// (<see cref="ModConfig.Load"/>가 <see cref="PatchInstaller"/>보다 먼저 돕니다). <c>Awake</c>는 노트·캐릭터가 생길 때마다
+        /// 불려서, 본문이 첫 줄에서 돌아가도 IL2CPP 트램펄린 비용이 노트마다 들었습니다.
+        /// </summary>
+        static bool Prepare()
+        {
+            return ModConfig.EnableSpineSkin && ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+        }
+
         static void Postfix(SpineActionController __instance)
         {
             // 이 프로브는 커스텀 스킨 대상을 찾기 위한 것이라, 스킨 기능을 끄면 로그도 나오지 않아야 합니다.

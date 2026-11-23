@@ -14,6 +14,15 @@ namespace muse_dash_test
         private static readonly string configFolder = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "save custom key");
         private static readonly string configPath = Path.Combine(configFolder, "config.txt");
         private static DateTime lastWriteTime = DateTime.MinValue;
+
+        /// <summary>
+        /// 같은 수정 시각에서 읽기·파싱이 실패한 횟수입니다. 메모장 등이 파일을 비우고 다시 쓰는 도중이거나 잠가 둔 순간에 읽으면
+        /// 실패하는데, 예전에는 실패해도 수정 시각을 먼저 기록해 그 변경을 다음 수정 때까지 다시 읽지 않았습니다(설정이 조용히 안 바뀜).
+        /// 이제 성공했을 때만 시각을 기록하고, 같은 시각에서는 <see cref="MaxParseRetriesPerWrite"/>번까지 1초 간격으로 다시 읽습니다.
+        /// </summary>
+        private static int failedParseCount;
+        private static DateTime failedParseWriteTime = DateTime.MinValue;
+        private const int MaxParseRetriesPerWrite = 5;
         // OnInitializeMelon 시점에는 Time.unscaledTime이 0이므로, 0으로 두면 첫 호출이 간격 제한에 막혀 건너뛰어집니다.
         private static float lastConfigCheckTime = float.NegativeInfinity;
         private const float ConfigCheckInterval = 1.0f; // 1초마다 실시간 변경 감지 (디스크 I/O 최적화)
@@ -114,8 +123,25 @@ namespace muse_dash_test
                     DateTime currentWriteTime = File.GetLastWriteTime(configPath);
                     if (currentWriteTime != lastWriteTime)
                     {
-                        lastWriteTime = currentWriteTime;
-                        ParseConfigFile();
+                        if (currentWriteTime != failedParseWriteTime)
+                        {
+                            failedParseWriteTime = currentWriteTime;
+                            failedParseCount = 0;
+                        }
+
+                        if (failedParseCount < MaxParseRetriesPerWrite)
+                        {
+                            if (ParseConfigFile())
+                            {
+                                // 읽기에 성공한 뒤에만 기록합니다(실패한 변경을 놓치지 않게).
+                                lastWriteTime = currentWriteTime;
+                                failedParseCount = 0;
+                            }
+                            else if (++failedParseCount >= MaxParseRetriesPerWrite)
+                            {
+                                ModLogger.Warning($"[InputOverlay] config.txt를 {MaxParseRetriesPerWrite}번 연속 읽지 못했습니다. 파일을 다시 저장하면 다시 시도합니다.");
+                            }
+                        }
                     }
                 }
             }
@@ -196,14 +222,15 @@ namespace muse_dash_test
             }
         }
 
-        private static void ParseConfigFile()
+        /// <summary>config.txt를 읽어 설정에 반영합니다. 파일이 없거나 비어 있거나(저장 도중) 읽기에 실패하면 false입니다.</summary>
+        private static bool ParseConfigFile()
         {
             try
             {
-                if (!File.Exists(configPath)) return;
+                if (!File.Exists(configPath)) return false;
 
                 string text = ReadConfigTextRobust();
-                if (string.IsNullOrEmpty(text)) return;
+                if (string.IsNullOrEmpty(text)) return false;
 
                 ModConfig.VerboseLog($"[InputOverlay] ParseConfigFile 시작. 총 문자 수={text.Length}, configPath={configPath}");
 
@@ -336,10 +363,12 @@ namespace muse_dash_test
 
                 ModLogger.Msg($"[InputOverlay] 설정을 성공적으로 적용했습니다. (키크기={keyWidth}x{keyHeight}, 하단여백={offsetFromBottom}, 판정바={showBar}, 오토플레이={forceAutoPlay}, 피버충전금지={blockFever}, 시네마={enableCinema}, 강제퍼펙트={forcePerfect}, 고스트노트={showGhostNotes}, 공식곡크리스마스={christmasOnOfficialSongs}, 모바일터치={enableMobileTouch}, 히든해금표시={showHiddenGuide}, 캐릭터커스텀스킨={enableCharacterSkin})");
                 UpdateTextures();
+                return true;
             }
             catch (Exception ex)
             {
                 ModLogger.Error($"[InputOverlay] 설정 파일 파싱 중 에러 발생: {ex.Message}");
+                return false;
             }
         }
         /// <summary>

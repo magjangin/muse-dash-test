@@ -23,12 +23,15 @@ namespace muse_dash_test
 
         public override void OnInitializeMelon()
         {
-            // 예전에 MelonLoader가 패치를 걸던 자리와 같은 시점이 되도록 맨 먼저 겁니다. 이 아래 초기화는
-            // 전부 패치가 걸린 뒤에 돌던 코드입니다. 이유와 동작은 PatchInstaller 주석을 보십시오.
-            PatchInstaller.ApplyAll(HarmonyInstance, MelonAssembly.Assembly);
-
+            // 기기 감지와 기능 토글(MelonPreferences)은 패치보다 먼저 읽습니다. 둘 다 패치에 의존하지 않고,
+            // 패치 클래스의 Prepare()가 설정을 보고 아예 걸지 않을 수 있게 하기 위해서입니다(예: Patch_SkinNameProbe).
+            // 로그 레벨도 여기서 정해지므로 UMPC에서는 아래 패치 설치 로그부터 억제됩니다.
             DeviceDetector.Detect();
             ModConfig.Load();
+
+            // 예전에 MelonLoader가 패치를 걸던 자리와 같은 시점이 되도록 초기화 맨 앞에서 겁니다. 이 아래 초기화는
+            // 전부 패치가 걸린 뒤에 돌던 코드입니다. 이유와 동작은 PatchInstaller 주석을 보십시오.
+            PatchInstaller.ApplyAll(HarmonyInstance, MelonAssembly.Assembly);
 
             if (DeviceDetector.IsUmpc)
             {
