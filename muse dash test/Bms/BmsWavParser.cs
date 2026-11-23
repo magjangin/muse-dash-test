@@ -74,6 +74,8 @@ namespace muse_dash_test
             { "0911", "boss_far_atk_2" }, { "0912", "boss_far_atk_2" },
         };
 
+        private static readonly char[] FolderSeparators = { '\\', '/' };
+
         public static BmsWavInfo ParseWavName(string wavName)
         {
             if (string.IsNullOrWhiteSpace(wavName))
@@ -82,7 +84,12 @@ namespace muse_dash_test
             }
 
             var info = new BmsWavInfo { RawWavName = wavName };
-            string nameWithoutExt = Path.GetFileNameWithoutExtension(wavName);
+            // BMS의 #WAV 값은 Windows에서 만든 채보라 폴더 구분자가 '\'입니다(예: "1번 씬 wav폴더\011001_….wav").
+            // Path.GetFileNameWithoutExtension은 Windows에서만 '\'를 구분자로 봅니다. Linux·Android 런타임에서는
+            // 폴더 이름까지 파일 이름으로 남아 UID를 못 읽었습니다(CI ubuntu에서 23개 실패로 드러남). 두 구분자를 직접 자릅니다.
+            int lastSeparator = wavName.LastIndexOfAny(FolderSeparators);
+            string fileName = lastSeparator >= 0 ? wavName.Substring(lastSeparator + 1) : wavName;
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
 
             // 1. Parse UID (6 digits at the start of filename, e.g., 051001)
             var uidMatch = UidRegex.Match(nameWithoutExt);

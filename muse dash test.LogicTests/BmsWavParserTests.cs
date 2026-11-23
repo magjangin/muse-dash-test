@@ -23,6 +23,17 @@ namespace muse_dash_test.LogicTests
             Assert.Equal("011001", info.PrefabName);
         }
 
+        public static void ParseWavName_StripsFolderPrefixWithEitherSeparator()
+        {
+            // '\'와 '/'를 파서가 직접 자르므로 실행 OS(Windows/Linux/Android)와 무관하게 같은 결과여야 합니다.
+            var forward = BmsWavParser.ParseWavName("1번 씬 wav폴더/sub/011001_일반 노트1 지상 노멀_dt1.48.wav");
+            var mixed = BmsWavParser.ParseWavName(@"a/b\011001_일반 노트1 지상 노멀_dt1.48.wav");
+
+            Assert.Equal("011001", forward.Uid);
+            Assert.Equal(1.48, forward.Dt);
+            Assert.Equal("011001", mixed.Uid);
+        }
+
         public static void ParseWavName_ReadsZeroDtFromTransitionNotes()
         {
             // 보스 전환/씬 전환 노트는 실제 차트에서 _dt0 으로 선언됩니다.
