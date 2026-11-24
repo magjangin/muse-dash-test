@@ -15,7 +15,9 @@ namespace muse_dash_test
         {
             try
             {
-                shouldLogCurrent = (System.DateTime.UtcNow - lastLogTime).TotalSeconds >= 10.0;
+                // AddFever는 매 노트 타격마다 호출되므로 Verbose가 꺼져 있으면 시계 조회(DateTime.UtcNow)를 건너뜁니다.
+                shouldLogCurrent = ModLogger.IsLevelEnabled(ModLogLevel.Verbose)
+                    && (System.DateTime.UtcNow - lastLogTime).TotalSeconds >= 10.0;
                 if (shouldLogCurrent)
                 {
                     ModLogger.Verbose($"[FeverPatch] AbstractFeverManager.AddFever Prefix 호출 감지: 원래 value={value}, 피버 차단 설정값={InputOverlay.blockFever}");
@@ -41,13 +43,11 @@ namespace muse_dash_test
 
         public static void Postfix(Il2CppAssets.Scripts.GameCore.Managers.AbstractFeverManager __instance, int value)
         {
+            if (!shouldLogCurrent) return;
             try
             {
-                if (shouldLogCurrent)
-                {
-                    ModLogger.Verbose($"[FeverPatch] AbstractFeverManager.AddFever Postfix 최종 적용 완료: value={value}, instance={__instance}");
-                    lastLogTime = System.DateTime.UtcNow;
-                }
+                ModLogger.Verbose($"[FeverPatch] AbstractFeverManager.AddFever Postfix 최종 적용 완료: value={value}, instance={__instance}");
+                lastLogTime = System.DateTime.UtcNow;
             }
             catch (System.Exception ex)
             {

@@ -31,6 +31,7 @@ namespace muse_dash_test
         public static void ApplyAll(HarmonyLib.Harmony harmony, Assembly assembly)
         {
             int applied = 0;
+            int disabledByPrepare = 0;
             var skipped = new List<string>();
             var failed = new List<string>();
 
@@ -62,6 +63,14 @@ namespace muse_dash_test
                         ModLogger.Warning(
                             $"[PatchInstaller] '{type.Name}' 패치를 걸지 않았습니다. {broken.Name}이(가) 현재 게임 빌드에서 " +
                             $"컴파일되지 않습니다(게임 업데이트로 참조 멤버가 사라졌을 수 있음): {jitError.GetType().Name}: {jitError.Message}");
+                        continue;
+                    }
+
+                    // Prepare()가 false를 돌려주면 설정/로그 레벨로 비활성화된 패치이므로
+                    // 대상 검사·적용·카운트에서 모두 제외합니다(부분 복구 경로에서도 동일하게 지킵니다).
+                    if (!ShouldApplyByPrepare(type))
+                    {
+                        disabledByPrepare++;
                         continue;
                     }
 
@@ -114,17 +123,51 @@ namespace muse_dash_test
                 }
             }
 
+            string disabledNote = disabledByPrepare > 0 ? $" (설정으로 비활성 {disabledByPrepare}개)" : string.Empty;
             if (skipped.Count == 0 && failed.Count == 0)
             {
-                ModLogger.Msg($"[PatchInstaller] 패치 클래스 {applied}개를 적용했습니다.");
+                ModLogger.Msg($"[PatchInstaller] 패치 클래스 {applied}개를 적용했습니다{disabledNote}.");
                 return;
             }
 
             ModLogger.Warning(
-                $"[PatchInstaller] 패치 클래스 {applied}개 적용, {skipped.Count}개 제외(대상 미존재/JIT 실패), {failed.Count}개 적용 실패. " +
+                $"[PatchInstaller] 패치 클래스 {applied}개 적용{disabledNote}, {skipped.Count}개 제외(대상 미존재/JIT 실패), {failed.Count}개 적용 실패. " +
                 "제외·실패한 기능만 꺼지고 게임 원본 동작은 그대로입니다.");
             if (skipped.Count > 0) ModLogger.Warning($"[PatchInstaller]   제외: {string.Join(", ", skipped)}");
             if (failed.Count > 0) ModLogger.Warning($"[PatchInstaller]   실패: {string.Join(", ", failed)}");
+        }
+
+        /// <summary>
+        /// 패치 클래스에 <c>Prepare()</c> 또는 <c>[HarmonyPrepare]</c>(매개변수 없음, bool 반환)가 있으면 실행해
+        /// 이 클래스를 실제로 걸어야 하는지 확인합니다. 예외가 나면 경고를 남기고 false를 돌려 안전하게 건너뜁니다.
+        /// </summary>
+        internal static bool ShouldApplyByPrepare(Type patchClass)
+        {
+            foreach (MethodInfo method in patchClass.GetMethods(
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                bool isPrepare = string.Equals(method.Name, "Prepare", StringComparison.Ordinal)
+                    || method.IsDefined(typeof(HarmonyPrepare), true);
+                if (!isPrepare) continue;
+                if (method.ReturnType != typeof(bool) || method.GetParameters().Length != 0) continue;
+
+                try
+                {
+                    if (!(bool)method.Invoke(null, null))
+                    {
+                        ModLogger.Verbose($"[PatchInstaller] '{patchClass.Name}'은(는) Prepare() 결과(false)로 건너뛰었습니다.");
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var inner = ex is TargetInvocationException tie && tie.InnerException != null ? tie.InnerException : ex;
+                    ModLogger.Warning($"[PatchInstaller] '{patchClass.Name}.Prepare()' 예외로 패치를 건너뜁니다: {inner.GetType().Name}: {inner.Message}");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -134,6 +177,8 @@ namespace muse_dash_test
         /// </summary>
         private static int ApplySurvivingMethodPatches(HarmonyLib.Harmony harmony, Type patchClass)
         {
+            if (!ShouldApplyByPrepare(patchClass)) return 0;
+
             int patched = 0;
 
             // 1) 동적 타깃(TargetMethod / TargetMethods)을 가진 클래스인 경우

@@ -31,7 +31,7 @@ namespace muse_dash_test
             {
                 // PlayByKey는 캐릭터 및 모든 노트가 공유하는 핫 패스이므로 첫 줄에서 빠르게 걸러냅니다.
                 if (!string.Equals(actionKey, FlightActionKey, StringComparison.Ordinal)) return;
-                if (__instance == null || __instance.skeletonAnimation == null) return;
+                if (__instance is null || __instance.skeletonAnimation is null) return;
 
                 var stage = StageBattleComponent.instance;
                 if (stage == null || !stage.isInGame) return;

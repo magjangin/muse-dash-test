@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using MelonLoader;
@@ -167,6 +168,8 @@ namespace muse_dash_test
             return true;
         }
 
+        private static string Fmt(float value) => value.ToString(CultureInfo.InvariantCulture);
+
         /// <summary>
         /// 현재 설정값 전체를 config.txt에 씁니다. 생성·정규화 모두 이 함수 하나만 씁니다.
         /// (부분 추가/수정 경로를 두지 않는 것이 핵심입니다. 아래 <see cref="CanonicalKeys"/>와 짝을 맞추세요.)
@@ -198,12 +201,12 @@ namespace muse_dash_test
                 sb.AppendLine($"#  오버레이표시            : {onOff}");
                 sb.AppendLine("#  글자크기                : 키 이름 글자 크기");
                 sb.AppendLine(ThinRule);
-                sb.AppendLine($"키가로크기={keyWidth}");
-                sb.AppendLine($"키세로크기={keyHeight}");
-                sb.AppendLine($"키간격={spacing}");
-                sb.AppendLine($"하단여백={offsetFromBottom}");
+                sb.AppendLine($"키가로크기={Fmt(keyWidth)}");
+                sb.AppendLine($"키세로크기={Fmt(keyHeight)}");
+                sb.AppendLine($"키간격={Fmt(spacing)}");
+                sb.AppendLine($"하단여백={Fmt(offsetFromBottom)}");
                 sb.AppendLine($"오버레이표시={showOverlay.ToString().ToLower()}");
-                sb.AppendLine($"글자크기={fontSize}");
+                sb.AppendLine($"글자크기={Fmt(fontSize)}");
                 sb.AppendLine();
                 sb.AppendLine();
 
@@ -215,11 +218,11 @@ namespace muse_dash_test
                 sb.AppendLine("#  공중 = 위쪽 줄, 지상 = 아래쪽 줄, 대기 = 안 눌린 상태");
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"공중색상={airColorName}");
-                sb.AppendLine($"공중투명도={airAlpha}");
+                sb.AppendLine($"공중투명도={Fmt(airAlpha)}");
                 sb.AppendLine($"지상색상={groundColorName}");
-                sb.AppendLine($"지상투명도={groundAlpha}");
+                sb.AppendLine($"지상투명도={Fmt(groundAlpha)}");
                 sb.AppendLine($"대기색상={inactiveColorName}");
-                sb.AppendLine($"대기투명도={inactiveAlpha}");
+                sb.AppendLine($"대기투명도={Fmt(inactiveAlpha)}");
                 sb.AppendLine();
                 sb.AppendLine();
 
@@ -233,11 +236,11 @@ namespace muse_dash_test
                 sb.AppendLine("#  판정바반응형   : true면 ms 숫자 대신 '퍼펙트!', '조금 빨라요!' 같은 말로 표시합니다");
                 sb.AppendLine(ThinRule);
                 sb.AppendLine($"판정바표시={showBar.ToString().ToLower()}");
-                sb.AppendLine($"판정바가로크기={barWidth}");
-                sb.AppendLine($"판정바세로크기={barHeight}");
-                sb.AppendLine($"판정바하단여백={barOffsetFromBottom}");
-                sb.AppendLine($"판정바글자크기={barFontSize}");
-                sb.AppendLine($"판정바틱유지시간={tickDuration}");
+                sb.AppendLine($"판정바가로크기={Fmt(barWidth)}");
+                sb.AppendLine($"판정바세로크기={Fmt(barHeight)}");
+                sb.AppendLine($"판정바하단여백={Fmt(barOffsetFromBottom)}");
+                sb.AppendLine($"판정바글자크기={Fmt(barFontSize)}");
+                sb.AppendLine($"판정바틱유지시간={Fmt(tickDuration)}");
                 sb.AppendLine($"판정바반응형={barResponsive.ToString().ToLower()}");
                 sb.AppendLine();
                 sb.AppendLine();
