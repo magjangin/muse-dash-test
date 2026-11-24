@@ -3,6 +3,27 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [0.16.3] - 감사 8차·패치 Prepare 일관화·핫패스 비용·로케일 수정
+
+게임 동작을 바꾸는 기능 추가는 없습니다. (`v0.16.2`는 별도 태그·릴리즈를 올리지 않았으므로, 아래 `0.16.2` 항목도 이번 `v0.16.3` 배포에 함께 포함됩니다.)
+
+### 업데이트 내성
+- `PatchInstaller`가 패치 클래스의 `Prepare()` / `[HarmonyPrepare]`를 일반 설치(`ApplyAll`)와 부분 복구(`ApplySurvivingMethodPatches`) 양쪽에서 일관되게 검사하도록 보강했습니다. `Prepare()`가 `false`를 돌려주거나 예외를 던진 패치는 대상 검사·적용·집계에서 안전하게 제외됩니다.
+
+### 병목
+- 매 노트 타격마다 불리는 `AbstractFeverManager.AddFever` 훅에서 `Verbose` 로그가 꺼져 있으면 `DateTime.UtcNow` 시계 조회를 건너뛰고 Postfix를 즉시 반환하도록 줄였습니다.
+- 진단 전용 훅 `PnlMenu_OnEnable_DebugPatch`에 `Prepare()`를 붙여 `Verbose`가 꺼져 있을 때는 훅 자체를 걸지 않습니다.
+- `CollabEndTimeDumpPatch`가 `Verbose`가 꺼져 있을 때 `AlbumJsonIndexDefine`의 정적 프로퍼티 60여 개를 리플렉션으로 읽던 시작 시 비용을 제거했습니다.
+- `MouseTouchBridgePatch`(매 프레임 불리는 입력·커서 훅 8개)에 `Prepare() => ModConfig.EnableMobileTouch`를 붙여 `EnableMobileTouch=false`일 때 훅 자체를 걸지 않도록 했습니다.
+- `SpineActionController.PlayByKey` 핫패스(`GhostNoteAlphaHold`, `NoteAnimationSyncPatch`)와 `KeysoundProbe.OnUnityPlayOneShot`의 null 비교를 관리 비교(`is null` / `is not null`)로 바꿨습니다.
+
+### 버그 수정
+- `InputOverlay.WriteConfigFile`이 실수 설정값(`판정바틱유지시간` 등)을 시스템 로케일로 쓰던 문제를 `CultureInfo.InvariantCulture`로 고쳤습니다(쉼표 소수점 OS에서 `1,2`로 저장돼 `TryParseFloat`가 못 읽던 왕복 불일치 해소).
+- `GhostNoteAlphaHold`의 복사·붙여넣기 예외 로그 라벨을 실제 메서드 이름으로 바로잡았습니다.
+
+### 문서
+- `README.md`, `docs/architecture/AUDIT_2026-11-14.md`, `AGENTS.md`를 최신 기능·릴리즈 자동화(`tools/release.ps1`·`CHANGELOG.md`)·감사 8차 결과에 맞게 갱신했습니다.
+
 ## [0.16.2] - 감사 7차·설정 핫리로드 누락 수정·노트 경로 비용
 
 게임 동작을 바꾸는 기능 추가는 없습니다.

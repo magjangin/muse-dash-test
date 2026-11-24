@@ -12,6 +12,8 @@ namespace muse_dash_test.Patches.UI.Menu
     [HarmonyLib.HarmonyPatch(typeof(PnlMenu), nameof(PnlMenu.OnEnable))]
     public class PnlMenu_OnEnable_DebugPatch
     {
+        public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
         public static void Postfix(PnlMenu __instance)
         {
             if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;

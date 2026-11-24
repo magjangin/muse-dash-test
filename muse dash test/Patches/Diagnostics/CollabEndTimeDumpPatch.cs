@@ -75,13 +75,14 @@ namespace muse_dash_test
                     return;
                 }
 
-                var nameMap = BuildJsonIndexNameMap();
-
-                ModLogger.Msg($"[CollabEndTime] DlcUIExtensionInfo {list.Count}건 로드됨 (AlbumJsonIndexDefine {nameMap.Count}건)");
                 if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
                 {
+                    ModLogger.Msg($"[CollabEndTime] DlcUIExtensionInfo {list.Count}건 로드됨");
                     return;
                 }
+
+                var nameMap = BuildJsonIndexNameMap();
+                ModLogger.Msg($"[CollabEndTime] DlcUIExtensionInfo {list.Count}건 로드됨 (AlbumJsonIndexDefine {nameMap.Count}건)");
 
                 for (int i = 0; i < list.Count; i++)
                 {

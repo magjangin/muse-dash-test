@@ -33,7 +33,7 @@
   * 인게임 HUD 스코어 컴포넌트(`ChangeScoreValue`)로부터 뮤즈 대시 메인 서체인 `LuckiestGuy-Regular` 등의 **프리미엄 시그니처 폰트를 실시간 추출/캐싱**하여 결과창에 완벽히 연동시켰으며, 입체적인 3D 섀도우 및 검은색 아웃라인(`Outline`) 효과까지 그대로 재현해 인게임 정체성을 지켰습니다.
 
 * **ModConfig Feature Toggle System (개별 기능 온/오프 제어 시스템) [v0.9.3]** ✅
-  * `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 카테고리를 통해 13가지 개별 기능(커스텀 차트, 히든 해금 표시, 입력 오버레이, 판정바, 디스코드 RPC, 체력바, AP 패치, AP 효과음, 오토플레이, 강제 올퍼펙트, 배틀 미디어, Spine 스킨, 모바일 터치)을 자유롭게 활성화/비활성화할 수 있고, `EnableVerboseLog`/`LogLevel`로 로그 수준도 정할 수 있습니다.
+  * `UserData/MelonPreferences.cfg` 파일의 `[muse-dash-custom-chart-features]` 카테고리를 통해 14가지 개별 기능(커스텀 차트, 커스텀 태그, 히든 해금 표시, 입력 오버레이, 판정바, 디스코드 RPC, 체력바, AP 패치, AP 효과음, 오토플레이, 강제 올퍼펙트, 배틀 미디어, Spine 스킨, 모바일 터치)을 자유롭게 활성화/비활성화할 수 있고, `EnableVerboseLog`/`ForceChristmas`/`LogLevel`도 정할 수 있습니다.
 
 * ~~**Real-Time FavGirl Swapper (인게임/준비화면 실시간 캐릭터 & 스킨 스왑)**~~ 🗑️ **제거됨**
   * 스킬 캐릭터와 외형 캐릭터를 따로 고르는 이 기능이 **2026년 9월 25일 업데이트로 바닐라(게임 본편)에 정식으로 들어가서, 모드로 할 필요가 없어졌습니다.**
@@ -91,10 +91,11 @@
 * **커스텀 태그 끄기 (`EnableCustomTag`) [v0.16.0]** ✅
   * `MelonPreferences.cfg`의 `EnableCustomTag=false`면 곡 선택창의 '실험 모드' 태그·가상 앨범·곡을 만들지 않습니다(게임을 새로 켜야 반영).
 
-* **감사 6·7차: 업데이트 내성과 병목 [v0.16.1 ~ v0.16.2]** ✅
-  * 패치 클래스 하나가 적용 중 실패해도 메서드별로 다시 걸어 실패한 메서드만 빠집니다.
-  * `config.txt`를 메모장 등이 저장하는 도중에 읽어 실패해도, 같은 변경을 1초 간격으로 다시 읽습니다(예전에는 다음 저장까지 반영되지 않았음).
-  * 진단 전용 훅(노트마다 불리는 `SpineActionController.Awake`)은 필요한 설정일 때만 겁니다.
+* **감사 6~8차: 업데이트 내성·병목·로케일 [v0.16.1 ~ v0.16.3]** ✅
+  * 패치 클래스 하나가 적용 중 실패해도 메서드별로 다시 걸어 실패한 메서드만 빠지며, `Prepare()` 비활성 패치를 일반·부분 복구 경로 모두에서 일관되게 제외합니다.
+  * `config.txt`를 메모장 등이 저장하는 도중에 읽어 실패해도 같은 변경을 1초 간격으로 다시 읽고, 실수 설정값은 OS 로케일과 무관하게 `InvariantCulture`로 저장합니다.
+  * 진단·옵션 전용 훅(`Patch_SkinNameProbe`, `PnlMenu_OnEnable_DebugPatch`, `MouseTouchBridgePatch`)은 필요한 설정일 때만 걸고, 매 타격·시작 경로의 불필요한 시계 조회·리플렉션·Unity null 비교 비용을 줄였습니다.
+  * `tools/release.ps1`과 `CHANGELOG.md`로 버전·CI·Release 빌드·로직 테스트·GitHub 릴리즈 배포를 자동화했습니다.
 
 ---
 ## ✅ Verified Results (검증된 실험 결과)
@@ -183,7 +184,7 @@
 │   │   ├── GameBgmSource.cs  # 배틀·메뉴 공용 게임 BGM AudioSource 단일 조회
 │   │   ├── GameVersionCheck.cs # 시작 시 게임 버전·GameAssembly.dll 크기 검증 경고
 │   │   ├── ModLogger.cs      # 모드 로그의 단일 창구 & 레벨 동적 제어
-│   │   ├── ModConfig.cs      # MelonPreferences 기반 13개 개별 기능 및 LogLevel 제어
+│   │   ├── ModConfig.cs      # MelonPreferences 기반 14개 개별 기능 및 LogLevel 제어
 │   │   ├── SafeAccess.cs     # 진단/방어적 프로퍼티 조회 공통 예외 래퍼
 │   │   ├── TextNormalizer.cs # 영문 축약형 공백 분리 자동 정규화
 │   │   └── ...
@@ -214,19 +215,21 @@
 │   │   │   ├── ModReflection.cs
 │   │   │   └── MusicInfoWrapper.cs
 │   │   ├── Database/         # 런타임 차트 및 세이브 데이터 관련 패치
-│   │   │   ├── Save/         # 세이브 가상 데이터 클렌징 (오염 방지)
-│   │   │   │   └── SaveDataManagerPatch.cs
+│   │   │   ├── Save/         # 세이브 가상 데이터 클렌징 및 마지막 선택 바닐라 보호
+│   │   │   │   ├── SaveDataManagerPatch.cs
+│   │   │   │   └── SaveSelectionGuard.cs
 │   │   │   └── Stage/        # 인메모리 차트 수명 주기 제어 및 BMS 주입
 │   │   │       ├── DBStageInfoPatch.cs
 │   │   │       └── DBStageInfoExperimentChart*.cs
-│   │   ├── Diagnostics/      # 판정 오프셋/딜레이 추적, 헬스 체크
+│   │   ├── Diagnostics/      # 판정 오프셋/딜레이 추적, 키음 계측, 헬스 체크
 │   │   │   ├── CollabEndTimeDumpPatch.cs
 │   │   │   ├── DiscordManagerDebugPatch.cs
 │   │   │   ├── GlobalOffsetDiagnostics.cs
 │   │   │   ├── HwaChartDiagnostics.cs
+│   │   │   ├── KeysoundProbe*.cs  # 키음 누락 관찰 계측 (배틀 중 F8 덤프)
 │   │   │   ├── OffsetHookPatches.cs
-│   │   │   ├── PatchHealthCheck.cs
-│   │   │   └── PatchInstaller.cs  # 패치 적용 (게임 빌드에서 컴파일 안 되는 패치는 걸지 않음)
+│   │   │   ├── PatchHealthCheck*.cs
+│   │   │   └── PatchInstaller.cs  # 패치 적용 (JIT 실패·대상 누락·Prepare 비활성 격리)
 │   │   ├── Hwa/              # Hwa 리소스, 매니페스트, BGM 스왑, 동기화
 │   │   │   ├── HwaManifest.cs
 │   │   │   ├── HwaManifestLoader.cs
@@ -311,8 +314,10 @@
 │
 ├── SignatureDumper/          # 게임의 Il2Cpp 어셈블리를 시그니처 스텁 .cs로 덤프하는 도구 (결과는 gitignore된 Decompiled/)
 ├── scripts/                  # 진행도 초기화(reset_progress.bat), 씬 구조 조사(scene_survey.py)
+├── tools/                    # 릴리즈 검증·빌드·태그·GitHub 배포 자동화(release.ps1)
 │
 ├── build.bat                 # MSBuild 자동 추적 및 모드 파일(DLL) 빌드/배포 스크립트
+├── CHANGELOG.md              # 버전별 변경 이력 (tools/release.ps1 릴리즈 노트 원본)
 ├── run-logic-tests.bat       # BMS 로직 테스트 실행 스크립트
 └── README.md                 # 본 프로젝트 소개 파일
 ```

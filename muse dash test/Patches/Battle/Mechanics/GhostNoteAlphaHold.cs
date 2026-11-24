@@ -53,7 +53,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+                ModLogger.Verbose($"[GhostNoteAlphaHold] IsEnabledForCurrentSong 조회 예외: {ex.GetType().Name}: {ex.Message}");
             }
 
             return InputOverlay.showGhostNotes;
@@ -71,7 +71,7 @@ namespace muse_dash_test
         /// </summary>
         internal static bool IsGhost(SpineActionController controller)
         {
-            if (controller == null) return false;
+            if (controller is null) return false;
 
             try
             {
@@ -87,7 +87,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+                ModLogger.Verbose($"[GhostNoteAlphaHold] IsGhost(m_MusicData) 조회 예외: {ex.GetType().Name}: {ex.Message}");
             }
 
             try
@@ -97,7 +97,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+                ModLogger.Verbose($"[GhostNoteAlphaHold] IsGhost(gameObject) 조회 예외: {ex.GetType().Name}: {ex.Message}");
             }
 
             return false;
@@ -265,7 +265,7 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
-                ModLogger.Verbose($"[GhostNoteAlphaHold] ShouldShowGhostNotes 조회 예외: {ex.GetType().Name}: {ex.Message}");
+                ModLogger.Verbose($"[GhostNoteAlphaHold] SkeletonNameOf 조회 예외: {ex.GetType().Name}: {ex.Message}");
             }
 
             return ObjectNameOf(controller);

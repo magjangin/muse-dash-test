@@ -232,7 +232,7 @@ namespace muse_dash_test
             {
                 unityReached = true;
                 unityAllowed = allowed;
-                unityClipName = clip != null ? clip.name : "(null clip)";
+                unityClipName = clip is not null ? clip.name : "(null clip)";
             }
             catch (Exception ex)
             {

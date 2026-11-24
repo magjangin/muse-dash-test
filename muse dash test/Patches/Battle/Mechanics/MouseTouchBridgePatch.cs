@@ -19,6 +19,12 @@ namespace muse_dash_test.Patches.Battle.Mechanics
     [HarmonyPatch]
     public static class MouseTouchBridgePatch
     {
+        /// <summary>
+        /// <c>MelonPreferences.cfg</c>의 <c>EnableMobileTouch</c>가 꺼져 있으면 매 프레임 호출되는 입력·커서 훅 8개를
+        /// 아예 설치하지 않습니다. 켜져 있으면(기본값) <c>config.txt</c>의 <c>모바일터치조작</c>으로 실시간 전환합니다.
+        /// </summary>
+        public static bool Prepare() => ModConfig.EnableMobileTouch;
+
         private static bool _btn0IsAir = true;
         private static bool _btn1IsAir = false;
 
