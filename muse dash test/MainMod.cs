@@ -49,6 +49,7 @@ namespace muse_dash_test
             // 메서드는 그대로인데 동작이 바뀐 업데이트는 위 점검이 못 잡습니다. 버전이 다르면 한 줄 경고를 남깁니다.
             FeatureGuard.Run("Init.GameVersionCheck", LogGameVersionCheck, maxConsecutiveFailures: 0);
             FeatureGuard.Run("Init.GameBinaryCheck", LogGameBinaryCheck, maxConsecutiveFailures: 0);
+            FeatureGuard.Run("Init.LoaderVersionCheck", LogLoaderVersionCheck, maxConsecutiveFailures: 0);
 
             // 초기화 단계의 각 기능을 독립적으로 격리합니다. 한 기능의 실패가 뒤따르는
             // 다른 기능의 초기화를 막지 않도록 FeatureGuard로 분리합니다.
@@ -120,6 +121,17 @@ namespace muse_dash_test
             string path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath) ?? string.Empty, "GameAssembly.dll");
             long size = System.IO.File.Exists(path) ? new System.IO.FileInfo(path).Length : 0;
             string message = GameVersionCheck.DescribeBinaryMismatch(size);
+            if (message != null) ModLogger.Warning($"[GameVersion] {message}");
+        }
+
+        /// <summary>
+        /// MelonLoader 버전을 검증 버전과 비교합니다. 로더 업데이트는 게임 버전·바이너리 크기를 바꾸지 않아
+        /// 위 두 검사로는 드러나지 않습니다. 어셈블리 버전을 읽으므로 로더 내부 API(BuildInfo 등)에 기대지 않습니다.
+        /// </summary>
+        private static void LogLoaderVersionCheck()
+        {
+            Version loaderVersion = typeof(MelonMod).Assembly.GetName().Version;
+            string message = GameVersionCheck.DescribeLoaderMismatch(loaderVersion?.ToString());
             if (message != null) ModLogger.Warning($"[GameVersion] {message}");
         }
 

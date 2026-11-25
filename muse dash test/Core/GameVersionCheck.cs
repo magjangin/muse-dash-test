@@ -26,6 +26,34 @@ namespace muse_dash_test
         public const long VerifiedGameAssemblySize = 67470336L;
 
         /// <summary>
+        /// 이 모드를 실기로 검증한 MelonLoader 버전입니다(<c>MelonLoader.dll</c> 어셈블리 버전 0.7.3.0).
+        /// 로더가 바뀌면 Il2CppInterop 생성 어셈블리(<c>Il2CppAssemblies</c>)가 새로 만들어지고, 게임은 그대로여도
+        /// 래퍼 타입·필드 접근이 달라질 수 있습니다. 게임 버전 경고만으로는 이 경우를 못 잡아 따로 비교합니다.
+        /// </summary>
+        public const string VerifiedLoaderVersion = "0.7.3";
+
+        /// <summary>
+        /// 실행 중인 MelonLoader 버전이 검증 버전과 다르면 설명 문장을, 같거나 읽지 못했으면 null을 돌려줍니다.
+        /// 어셈블리 버전의 네 번째 자리(0)는 <see cref="Evaluate"/>가 빠진 자리를 0으로 채우므로 같게 봅니다.
+        /// </summary>
+        public static string DescribeLoaderMismatch(string runtimeLoaderVersion, string verifiedLoaderVersion = VerifiedLoaderVersion)
+        {
+            Result result = Evaluate(runtimeLoaderVersion, verifiedLoaderVersion);
+            switch (result)
+            {
+                case Result.Match:
+                case Result.Unknown:
+                    return null;
+                case Result.Newer:
+                case Result.Older:
+                    return $"MelonLoader {runtimeLoaderVersion?.Trim()}은(는) 검증 버전 {verifiedLoaderVersion}과 다릅니다. " +
+                           "로더가 바뀌면 Il2Cpp 래퍼가 다시 생성되므로, 이상 동작을 보면 [PatchInstaller]/[PatchHealth] 경고부터 확인하십시오.";
+                default:
+                    return $"MelonLoader 버전 '{runtimeLoaderVersion}'을(를) 검증 버전 {verifiedLoaderVersion}과 비교할 수 없습니다.";
+            }
+        }
+
+        /// <summary>
         /// 실행 중인 <c>GameAssembly.dll</c> 크기가 검증 때와 다르면 설명 문장을, 같거나 읽지 못했으면(&lt;= 0) null을 돌려줍니다.
         /// 크기만 비교하는 값싼 지문이라 같다고 해서 동일 빌드를 보장하지는 않지만, 다르면 확실히 다른 빌드입니다.
         /// </summary>

@@ -64,5 +64,25 @@ namespace muse_dash_test.LogicTests
             Assert.True(GameVersionCheck.TryParseNumericVersion(GameVersionCheck.VerifiedGameVersion, out _),
                 "VerifiedGameVersion은 숫자 버전이어야 비교가 됩니다.");
         }
+
+        public static void DescribeLoaderMismatch_SameOrAssemblyFourPart_ReturnsNull()
+        {
+            Assert.Null(GameVersionCheck.DescribeLoaderMismatch("0.7.3", "0.7.3"));
+            // typeof(MelonMod).Assembly.GetName().Version은 네 자리(0.7.3.0)로 나옵니다.
+            Assert.Null(GameVersionCheck.DescribeLoaderMismatch("0.7.3.0", "0.7.3"));
+            Assert.Null(GameVersionCheck.DescribeLoaderMismatch(null, "0.7.3"));
+        }
+
+        public static void DescribeLoaderMismatch_Different_MentionsBothVersions()
+        {
+            string text = GameVersionCheck.DescribeLoaderMismatch("0.7.4.0", "0.7.3");
+            Assert.True(text != null && text.Contains("0.7.4") && text.Contains("0.7.3"), text);
+        }
+
+        public static void VerifiedLoaderVersion_IsNumeric()
+        {
+            Assert.True(GameVersionCheck.TryParseNumericVersion(GameVersionCheck.VerifiedLoaderVersion, out _),
+                "VerifiedLoaderVersion은 숫자 버전이어야 비교가 됩니다.");
+        }
     }
 }

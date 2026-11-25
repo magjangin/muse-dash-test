@@ -275,7 +275,7 @@ namespace muse_dash_test.Patches
             for (int i = 0; i < fcTransform.childCount; i++)
             {
                 var child = fcTransform.GetChild(i);
-                if (child != null && child.name.StartsWith("Img"))
+                if (child != null && child.name.StartsWith("Img", StringComparison.Ordinal))
                 {
                     child.gameObject.SetActive(true);
                 }

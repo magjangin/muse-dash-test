@@ -3,6 +3,17 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [0.16.5] - 감사 10차·MelonLoader 버전 경고·문화권 무관 문자열 비교
+
+게임 동작을 바꾸는 기능 추가는 없습니다.
+
+### 업데이트 내성
+- 시작할 때 MelonLoader 버전을 검증 버전(0.7.3)과 비교해 다르면 `[GameVersion]` 경고 한 줄을 남깁니다. 로더가 바뀌면 Il2Cpp 래퍼 어셈블리가 다시 만들어지는데, 게임 버전·`GameAssembly.dll` 크기 검사로는 이 경우가 드러나지 않았습니다. 버전은 `MelonLoader.dll`의 어셈블리 버전으로 읽어 로더 내부 API에 기대지 않습니다. 기능은 끄지 않습니다.
+- `config.txt`의 키·참/거짓 값 해석과 메뉴 BGM 소스 이름 매칭이 실행 PC의 문화권(`ToLower()`)을 따르던 것을 문화권 무관(`ToLowerInvariant()`)으로 바꿨습니다. 터키어 등 대소문자 규칙이 다른 로케일에서 `I`가 다른 글자로 바뀌어 매칭이 어긋날 수 있었습니다. `config.txt`에 쓰는 `true`/`false`도 같은 방식으로 씁니다.
+
+### 병목
+- 노트 uid 접두 판정(`uid.StartsWith("0002")` 등, 채보 주입 때 노트마다 호출)과 그 밖의 리터럴 접두 비교 26곳을 서수 비교(`StringComparison.Ordinal`)로 바꿨습니다. 기본 `StartsWith(string)`은 문화권 비교라 ICU를 거쳐 느리고, 로케일에 따라 결과가 달라질 수 있습니다.
+
 ## [0.16.4] - 감사 9차·BMS 감시 오류 복구·키음 계측 비용·코드 레퍼런스 전수화
 
 게임 동작을 바꾸는 기능 추가는 없습니다.

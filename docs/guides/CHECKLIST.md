@@ -274,6 +274,7 @@
 - [ ] **경고가 없어도 동작이 바뀌었을 수 있다고 보았는가?** 6.7.0은 메서드를 지우지 않고 `BGM_OneShot` 소스를 새로 만들었고,
       경고 하나 없이 배틀 BGM이 겹쳤습니다(1절 "이름 부분 일치" 항목). `SignatureDumper`로 새로 덤프해 이전 덤프와 비교하십시오.
 - [ ] **실기 검증을 마친 뒤 `GameVersionCheck.VerifiedGameVersion`과 AGENTS.md 1항의 버전을 함께 올렸는가?**
+      MelonLoader를 올렸다면 `GameVersionCheck.VerifiedLoaderVersion`도 함께 올립니다(로더만 바꿔도 Il2Cpp 래퍼가 다시 생성됩니다).
       `GameAssembly.dll` 크기 지문(`VerifiedGameAssemblySize`)도 같이 올립니다. 버전 번호는 그대로인데
       바이너리만 바뀐 핫픽스는 `[GameVersion] GameAssembly.dll 크기…` 경고로만 드러납니다(2026-11-16 추가).
       (2026-11-14: 버전 경고를 추가했습니다. 그 전까지는 업데이트 여부를 MelonLoader 머리말의 `Game Version` 줄로만 알 수 있었습니다.)
