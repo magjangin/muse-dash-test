@@ -25,5 +25,9 @@ jobs:
       - name: Run Logic Tests
         run: dotnet run --project "muse dash test.LogicTests/muse dash test.LogicTests.csproj" --configuration Release
 
+      - name: Check CODE_REFERENCE covers every source file
+        shell: pwsh
+        run: ./tools/check-code-reference.ps1
+
       - name: Build SignatureDumper (net8.0)
         run: dotnet build "SignatureDumper/SignatureDumper.csproj" -f net8.0 --configuration Release

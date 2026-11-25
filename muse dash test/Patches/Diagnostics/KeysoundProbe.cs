@@ -86,6 +86,7 @@ namespace muse_dash_test
             insideKeysound = false;
             attackEffectDepth = 0;
             keysoundsInAttackEffect = 0;
+            clipNameByPointer.Clear();
             ClearEvents();
         }
 
@@ -232,12 +233,30 @@ namespace muse_dash_test
             {
                 unityReached = true;
                 unityAllowed = allowed;
-                unityClipName = clip is not null ? clip.name : "(null clip)";
+                unityClipName = ClipNameOf(clip);
             }
             catch (Exception ex)
             {
                 LogErrorOnce("OnUnityPlayOneShot", ex);
             }
+        }
+
+        /// <summary>
+        /// 클립(네이티브 포인터)별 이름 캐시입니다. 이 계측은 상시 켜져 있고 키음마다 불리는데, <c>clip.name</c>은 읽을 때마다
+        /// IL2CPP 문자열을 관리 문자열로 복사(할당)합니다. 키음 클립은 몇 가지가 계속 재사용되므로 클립마다 한 번만 읽습니다.
+        /// 포인터는 에셋이 해제된 뒤 재사용될 수 있어 배틀마다(<see cref="Reset"/>) 비웁니다(<c>AllPerfectSound</c>와 같은 방식).
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<IntPtr, string> clipNameByPointer =
+            new System.Collections.Generic.Dictionary<IntPtr, string>();
+
+        private static string ClipNameOf(AudioClip clip)
+        {
+            if (clip is null) return "(null clip)";
+            IntPtr pointer = clip.Pointer;
+            if (clipNameByPointer.TryGetValue(pointer, out string cached)) return cached;
+            string name = clip.name ?? "(unnamed)";
+            clipNameByPointer[pointer] = name;
+            return name;
         }
 
         private static AudioSource SourceFor(AttacksController controller, int type)

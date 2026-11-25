@@ -60,7 +60,10 @@ namespace muse_dash_test
                 if (IsGameBgmSource(__instance))
                 {
                     string selectedUid = CustomPlaySession.Current.LastKnownMusicUid;
-                    string clipNameForLog = value != null ? value.name : "(null)";
+                    // 로그에만 쓰는 이름입니다. 읽을 때마다 IL2CPP 문자열이 복사되므로 Verbose일 때만 읽습니다.
+                    string clipNameForLog = ModLogger.IsLevelEnabled(ModLogLevel.Verbose)
+                        ? (value != null ? value.name : "(null)")
+                        : null;
 
                     // MD는 단일 씬(UISystem_PC) 구조라 씬 이름으로는 "곡 선택/준비 화면을 벗어났는지"를 구분할 수 없다.
                     // 대신 곡 선택(PnlStage)/준비(PnlPreparation) 패널이 실제로 활성 상태인지를 직접 확인한다.

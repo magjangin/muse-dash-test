@@ -128,6 +128,10 @@ $testOut | Select-Object -Last 5 | ForEach-Object { Write-Host $_ }
 if ($testExit -ne 0) { throw "로직 테스트 실패 (종료 코드 $testExit)" }
 $testLine = $testOut | Where-Object { $_ -match '^총 \d+개 테스트' } | Select-Object -Last 1
 
+Step '문서 대조(CODE_REFERENCE)'
+& (Join-Path $PSScriptRoot 'check-code-reference.ps1')
+if ($LASTEXITCODE -ne 0) { throw "CODE_REFERENCE.md에 없는 소스 파일이 있습니다(위 목록)." }
+
 # ---------------------------------------------------------------- 4. 산출물
 Step '산출물'
 $dist = Join-Path $root 'dist'

@@ -91,11 +91,12 @@
 * **커스텀 태그 끄기 (`EnableCustomTag`) [v0.16.0]** ✅
   * `MelonPreferences.cfg`의 `EnableCustomTag=false`면 곡 선택창의 '실험 모드' 태그·가상 앨범·곡을 만들지 않습니다(게임을 새로 켜야 반영).
 
-* **감사 6~8차: 업데이트 내성·병목·로케일 [v0.16.1 ~ v0.16.3]** ✅
+* **감사 6~9차: 업데이트 내성·병목·로케일 [v0.16.1 ~ v0.16.4]** ✅
   * 패치 클래스 하나가 적용 중 실패해도 메서드별로 다시 걸어 실패한 메서드만 빠지며, `Prepare()` 비활성 패치를 일반·부분 복구 경로 모두에서 일관되게 제외합니다.
   * `config.txt`를 메모장 등이 저장하는 도중에 읽어 실패해도 같은 변경을 1초 간격으로 다시 읽고, 실수 설정값은 OS 로케일과 무관하게 `InvariantCulture`로 저장합니다.
   * 진단·옵션 전용 훅(`Patch_SkinNameProbe`, `PnlMenu_OnEnable_DebugPatch`, `MouseTouchBridgePatch`)은 필요한 설정일 때만 걸고, 매 타격·시작 경로의 불필요한 시계 조회·리플렉션·Unity null 비교 비용을 줄였습니다.
   * `tools/release.ps1`과 `CHANGELOG.md`로 버전·CI·Release 빌드·로직 테스트·GitHub 릴리즈 배포를 자동화했습니다.
+  * 채보 실시간 감시가 감시 버퍼 넘침·중단을 스스로 복구하고(전체 재로드 예약·감시 재시작), 재로드 콜백이 겹쳐 옛 채보가 캐시를 덮지 않게 했습니다. 모든 소스 파일이 코드 레퍼런스에 있는지 CI가 확인합니다.
 
 ---
 ## ✅ Verified Results (검증된 실험 결과)
