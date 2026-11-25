@@ -222,7 +222,7 @@ namespace muse_dash_test
         {
             // 씬 전환 노트(0004xx)는 UID 중간 2자리가 "04"라 아래 샌드백 규칙(Substring(2,2)=="04")과
             // 충돌합니다. prefix "0004"를 가장 먼저 가로채 SceneToggle(type 9)로 고정하고 조기 반환합니다.
-            if (info.Uid != null && info.Uid.StartsWith("0004"))
+            if (info.Uid != null && info.Uid.StartsWith("0004", StringComparison.Ordinal))
             {
                 info.NoteType = 9; // SceneToggle (= NoteTypes.SceneToggle)
                 return;
@@ -260,12 +260,12 @@ namespace muse_dash_test
                 return;
             }
 
-            if (lowerName.Contains("heart") || lowerName.Contains("hp") || (info.Uid != null && info.Uid.StartsWith("0002")))
+            if (lowerName.Contains("heart") || lowerName.Contains("hp") || (info.Uid != null && info.Uid.StartsWith("0002", StringComparison.Ordinal)))
             {
                 info.NoteType = 6;
                 info.KeyAudio = "sfx_hp";
             }
-            else if (lowerName.Contains("score") || lowerName.Contains("note") || (info.Uid != null && info.Uid.StartsWith("0003")))
+            else if (lowerName.Contains("score") || lowerName.Contains("note") || (info.Uid != null && info.Uid.StartsWith("0003", StringComparison.Ordinal)))
             {
                 info.NoteType = 7;
                 info.KeyAudio = "sfx_score";

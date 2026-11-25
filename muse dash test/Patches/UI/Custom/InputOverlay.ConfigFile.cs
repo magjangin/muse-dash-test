@@ -205,7 +205,7 @@ namespace muse_dash_test
                 sb.AppendLine($"키세로크기={Fmt(keyHeight)}");
                 sb.AppendLine($"키간격={Fmt(spacing)}");
                 sb.AppendLine($"하단여백={Fmt(offsetFromBottom)}");
-                sb.AppendLine($"오버레이표시={showOverlay.ToString().ToLower()}");
+                sb.AppendLine($"오버레이표시={showOverlay.ToString().ToLowerInvariant()}");
                 sb.AppendLine($"글자크기={Fmt(fontSize)}");
                 sb.AppendLine();
                 sb.AppendLine();
@@ -235,13 +235,13 @@ namespace muse_dash_test
                 sb.AppendLine("#  판정바틱유지시간 : 지나간 판정 눈금이 남아 있는 시간(초)");
                 sb.AppendLine("#  판정바반응형   : true면 ms 숫자 대신 '퍼펙트!', '조금 빨라요!' 같은 말로 표시합니다");
                 sb.AppendLine(ThinRule);
-                sb.AppendLine($"판정바표시={showBar.ToString().ToLower()}");
+                sb.AppendLine($"판정바표시={showBar.ToString().ToLowerInvariant()}");
                 sb.AppendLine($"판정바가로크기={Fmt(barWidth)}");
                 sb.AppendLine($"판정바세로크기={Fmt(barHeight)}");
                 sb.AppendLine($"판정바하단여백={Fmt(barOffsetFromBottom)}");
                 sb.AppendLine($"판정바글자크기={Fmt(barFontSize)}");
                 sb.AppendLine($"판정바틱유지시간={Fmt(tickDuration)}");
-                sb.AppendLine($"판정바반응형={barResponsive.ToString().ToLower()}");
+                sb.AppendLine($"판정바반응형={barResponsive.ToString().ToLowerInvariant()}");
                 sb.AppendLine();
                 sb.AppendLine();
 
@@ -254,9 +254,9 @@ namespace muse_dash_test
                 sb.AppendLine("#  강제퍼펙트   : 오토플레이가 아닙니다. 입력은 직접 하되 '기록되는 판정'만 Perfect로 올립니다.");
                 sb.AppendLine($"#  값 형식      : {onOff}");
                 sb.AppendLine(ThinRule);
-                sb.AppendLine($"오토플레이={forceAutoPlay.ToString().ToLower()}");
-                sb.AppendLine($"피버충전금지={blockFever.ToString().ToLower()}");
-                sb.AppendLine($"강제퍼펙트={forcePerfect.ToString().ToLower()}");
+                sb.AppendLine($"오토플레이={forceAutoPlay.ToString().ToLowerInvariant()}");
+                sb.AppendLine($"피버충전금지={blockFever.ToString().ToLowerInvariant()}");
+                sb.AppendLine($"강제퍼펙트={forcePerfect.ToString().ToLowerInvariant()}");
                 sb.AppendLine();
                 sb.AppendLine();
 
@@ -278,9 +278,9 @@ namespace muse_dash_test
                 sb.AppendLine("#           '크리스마스' 값을 따릅니다. 곡을 새로 시작할 때 반영됩니다.");
                 sb.AppendLine($"#  값 형식 : {onOff}");
                 sb.AppendLine(ThinRule);
-                sb.AppendLine($"시네마={enableCinema.ToString().ToLower()}");
-                sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLower()}");
-                sb.AppendLine($"{ChristmasOfficialKeyText}={christmasOnOfficialSongs.ToString().ToLower()}");
+                sb.AppendLine($"시네마={enableCinema.ToString().ToLowerInvariant()}");
+                sb.AppendLine($"{GhostNotesKeyText}={showGhostNotes.ToString().ToLowerInvariant()}");
+                sb.AppendLine($"{ChristmasOfficialKeyText}={christmasOnOfficialSongs.ToString().ToLowerInvariant()}");
                 sb.AppendLine();
                 sb.AppendLine();
 
@@ -292,7 +292,7 @@ namespace muse_dash_test
                 sb.AppendLine("#                   (좌우/상하 분할 모드, 되돌리기 반전 설정은 인게임 설정창에서 직접 조절 가능)");
                 sb.AppendLine($"#  값 형식        : {onOff}");
                 sb.AppendLine(ThinRule);
-                sb.AppendLine($"모바일터치조작={enableMobileTouch.ToString().ToLower()}");
+                sb.AppendLine($"모바일터치조작={enableMobileTouch.ToString().ToLowerInvariant()}");
                 sb.AppendLine();
                 sb.AppendLine();
 
@@ -304,7 +304,7 @@ namespace muse_dash_test
                 sb.AppendLine("#                 (게임 데이터에 적힌 방식만 보여줍니다. 누를 횟수나 '특수 조건'의 내용은 나오지 않습니다)");
                 sb.AppendLine($"#  값 형식      : {onOff}");
                 sb.AppendLine(ThinRule);
-                sb.AppendLine($"히든해금표시={showHiddenGuide.ToString().ToLower()}");
+                sb.AppendLine($"히든해금표시={showHiddenGuide.ToString().ToLowerInvariant()}");
                 sb.AppendLine();
                 sb.AppendLine();
 
@@ -316,7 +316,7 @@ namespace muse_dash_test
                 sb.AppendLine("#                       배틀 중에는 이 파일을 읽지 않으므로 다음 판부터 반영됩니다.");
                 sb.AppendLine($"#  값 형식            : {onOff}");
                 sb.AppendLine(ThinRule);
-                sb.AppendLine($"{CharacterSkinKeyText}={enableCharacterSkin.ToString().ToLower()}");
+                sb.AppendLine($"{CharacterSkinKeyText}={enableCharacterSkin.ToString().ToLowerInvariant()}");
 
                 AtomicFile.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true));
                 ModLogger.Msg($"[InputOverlay] {reasonLog}: {configPath}");

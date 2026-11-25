@@ -137,14 +137,14 @@ namespace muse_dash_test
                 selectedSource = FindActiveSource(IsLikelySoundtrackSource);
                 if (selectedSource != null)
                 {
-                    ModLogger.Verbose($"[MenuBGM] 1단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
+                    ModLogger.Verbose($"[MenuBGM] 1단계 매칭 성공: GO={selectedSource.gameObject.name.ToLowerInvariant()}, Clip={selectedSource.clip.name}");
                     return selectedSource;
                 }
 
                 selectedSource = FindActiveSource(IsPlayingNonEffectSource);
                 if (selectedSource != null)
                 {
-                    ModLogger.Verbose($"[MenuBGM] 2단계 매칭 성공: GO={selectedSource.gameObject.name.ToLower()}, Clip={selectedSource.clip.name}");
+                    ModLogger.Verbose($"[MenuBGM] 2단계 매칭 성공: GO={selectedSource.gameObject.name.ToLowerInvariant()}, Clip={selectedSource.clip.name}");
                     return selectedSource;
                 }
 
@@ -172,8 +172,8 @@ namespace muse_dash_test
         {
             if (source.clip == null || !source.isPlaying) return false;
 
-            string clipName = source.clip.name.ToLower();
-            string goName = source.gameObject.name.ToLower();
+            string clipName = source.clip.name.ToLowerInvariant();
+            string goName = source.gameObject.name.ToLowerInvariant();
             return clipName.Contains("demo") || clipName.Contains("music") || clipName.Contains("bgm") || goName.Contains("music") || goName.Contains("bgm");
         }
 
@@ -181,7 +181,7 @@ namespace muse_dash_test
         {
             if (source.clip == null || !source.isPlaying) return false;
 
-            string clipName = source.clip.name.ToLower();
+            string clipName = source.clip.name.ToLowerInvariant();
             return !clipName.Contains("click") && !clipName.Contains("sfx") && !clipName.Contains("button");
         }
     }

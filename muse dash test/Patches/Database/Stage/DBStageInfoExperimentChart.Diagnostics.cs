@@ -2,6 +2,7 @@
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
 using muse_dash_test;
+using System;
 
 // 실험 차트 디버깅용 덤프/로깅 헬퍼. 게임 로직에는 영향을 주지 않습니다.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
@@ -63,11 +64,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             // 표준 NoteType (0:None ~ 17:SceneHideOff) 범위 및 모드 표준 UID 패턴인지 검사
             bool isStandardType = noteTypeVal <= 17;
             bool isKnownUidPrefix = isStandardType && (
-                uid.StartsWith("0001") || uid.StartsWith("0002") || uid.StartsWith("0003") ||
-                uid.StartsWith("0004") || uid.StartsWith("0017") ||
-                (uid.Length >= 6 && (uid.StartsWith("01") || uid.StartsWith("02") || uid.StartsWith("03") ||
-                                     uid.StartsWith("04") || uid.StartsWith("05") || uid.StartsWith("06") ||
-                                     uid.StartsWith("07") || uid.StartsWith("08") || uid.StartsWith("09")))
+                uid.StartsWith("0001", StringComparison.Ordinal) || uid.StartsWith("0002", StringComparison.Ordinal) || uid.StartsWith("0003", StringComparison.Ordinal) ||
+                uid.StartsWith("0004", StringComparison.Ordinal) || uid.StartsWith("0017", StringComparison.Ordinal) ||
+                (uid.Length >= 6 && (uid.StartsWith("01", StringComparison.Ordinal) || uid.StartsWith("02", StringComparison.Ordinal) || uid.StartsWith("03", StringComparison.Ordinal) ||
+                                     uid.StartsWith("04", StringComparison.Ordinal) || uid.StartsWith("05", StringComparison.Ordinal) || uid.StartsWith("06", StringComparison.Ordinal) ||
+                                     uid.StartsWith("07", StringComparison.Ordinal) || uid.StartsWith("08", StringComparison.Ordinal) || uid.StartsWith("09", StringComparison.Ordinal)))
             );
 
             // 표준 노트(기본 몬스터/블록/홀드/보스/HP/점수/씬체인지)가 아닌 새로운 노트인 경우

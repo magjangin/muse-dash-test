@@ -1,6 +1,7 @@
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
 using muse_dash_test;
+using System;
 
 // UID 해석(프리팹/오디오/dt/pathway), MusicData/NoteConfigData 복제, 수치 정규화 헬퍼.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
@@ -238,7 +239,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         if (note?.noteData == null) return false;
 
         string uid = note.noteData.uid ?? "";
-        return note.noteData.type == NoteTypes.SceneToggle || uid.StartsWith("0004");
+        return note.noteData.type == NoteTypes.SceneToggle || uid.StartsWith("0004", StringComparison.Ordinal);
     }
 
     // 게임 노트 수치의 두 가지 반올림 정밀도 도메인:

@@ -2,6 +2,7 @@ using MelonLoader;
 using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
 using muse_dash_test;
+using System;
 
 // 실험 차트 핵심 파이프라인: 원본 노트 복제 → 스펙 적용 → 노트 삽입.
 // (보조 로직은 같은 partial 클래스의 .Bms / .Resolve / .Sorting / .Diagnostics 파일로 분리되어 있습니다.)
@@ -130,11 +131,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             string uid = note.noteData.uid ?? string.Empty;
 
             // 추가 진단 집계 (유형 매칭 또는 UID 접두사 검사)
-            if (type == NoteTypes.Heart || uid.StartsWith("0002"))
+            if (type == NoteTypes.Heart || uid.StartsWith("0002", StringComparison.Ordinal))
             {
                 heartCount++;
             }
-            if (type == NoteTypes.Blue || uid.StartsWith("0003"))
+            if (type == NoteTypes.Blue || uid.StartsWith("0003", StringComparison.Ordinal))
             {
                 blueNoteCount++;
             }
@@ -147,11 +148,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             {
                 totalGears++;
             }
-            else if (type == NoteTypes.Heart || uid.StartsWith("0002"))
+            else if (type == NoteTypes.Heart || uid.StartsWith("0002", StringComparison.Ordinal))
             {
                 totalHearts++;
             }
-            else if (type == NoteTypes.Blue || uid.StartsWith("0003"))
+            else if (type == NoteTypes.Blue || uid.StartsWith("0003", StringComparison.Ordinal))
             {
                 totalBlueNotes++;
             }

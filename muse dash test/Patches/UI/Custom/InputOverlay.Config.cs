@@ -240,7 +240,7 @@ namespace muse_dash_test
                 foreach (string line in lines)
                 {
                     string trimmed = line.Trim();
-                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#"))
+                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#", StringComparison.Ordinal))
                         continue;
 
                     int idx = trimmed.IndexOf('=');
@@ -250,7 +250,7 @@ namespace muse_dash_test
                     string val = trimmed.Substring(idx + 1).Trim();
 
                     // 키의 띄어쓰기는 무시합니다. '공식곡에서도 고스트 노트 보이기'처럼 읽기 좋게 적어도 되게.
-                    switch (StripSpaces(key).ToLower())
+                    switch (StripSpaces(key).ToLowerInvariant())
                     {
                         case "키가로크기":
                             TryParseFloat(val, ref keyWidth);
@@ -377,7 +377,7 @@ namespace muse_dash_test
         /// </summary>
         private static bool ParseBool(string val, string key, bool fallback)
         {
-            switch (val.ToLower().Trim())
+            switch (val.Trim().ToLowerInvariant())
             {
                 case "true":
                 case "on":

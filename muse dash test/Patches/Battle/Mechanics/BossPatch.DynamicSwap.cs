@@ -16,7 +16,7 @@ public class Boss_Play_Patch
 
             ModLogger.Verbose($"Il2Cpp.Boss.Play 호출: key={key}, playAnimator={playAnimator}");
 
-            if (key != null && key.StartsWith("swap:"))
+            if (key != null && key.StartsWith("swap:", StringComparison.Ordinal))
             {
                 var parts = key.Split(':');
                 if (parts.Length >= 3 && int.TryParse(parts[2], out int newScene))

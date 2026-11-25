@@ -148,7 +148,7 @@ namespace muse_dash_test
 
             string name = key.ToString();
             // 알파벳 숫자는 그대로 표시
-            if (name.StartsWith("Alpha")) name = name.Substring(5);
+            if (name.StartsWith("Alpha", StringComparison.Ordinal)) name = name.Substring(5);
             else if (name == "UpArrow") name = "↑";
             else if (name == "DownArrow") name = "↓";
             else if (name == "LeftArrow") name = "←";
