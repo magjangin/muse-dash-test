@@ -15,15 +15,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '8.0.x'
 
       - name: Run Logic Tests
         run: dotnet run --project "muse dash test.LogicTests/muse dash test.LogicTests.csproj" --configuration Release
+
+      - name: Check CODE_REFERENCE covers every source file
+        shell: pwsh
+        run: ./tools/check-code-reference.ps1
 
       - name: Build SignatureDumper (net8.0)
         run: dotnet build "SignatureDumper/SignatureDumper.csproj" -f net8.0 --configuration Release

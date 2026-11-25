@@ -348,7 +348,7 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 * `ShouldApplyExperimentChart`: 현재 곡이 커스텀 곡인지 여부를 판단하는 단일 관문 역할을 수행합니다.
 
 ### 📂 [Core/ModConfig.cs](../../muse%20dash%20test/Core/ModConfig.cs)
-`UserData/MelonPreferences.cfg`와 연동하여 13가지 모드 기능의 개별 온/오프 상태와 진단 로그 레벨을 관리합니다.
+`UserData/MelonPreferences.cfg`와 연동하여 14가지 `Enable*` 기능 토글, `EnableVerboseLog`·`ForceChristmas`, 진단 로그 레벨(`LogLevel`)을 관리합니다.
 
 ---
 
@@ -362,4 +362,123 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
   * Discord Rich Presence 연동 및 JIT 격리 (`DiscordPresenceManager.cs`)
   * 진행바 세터 메서드 동적 폴백 및 타임라인 동기화 (`ProgressBarPatch.cs`)
   * 다중 난이도 BMS 채보 및 리소스 수명 주기 관리 (`HwaResourceManager.cs`)
-  * 전역 세션 및 기능 토글 모듈 (`CustomPlaySession.cs`, `ModConfig.cs`)
+  * 전역 세션 및 기능 토글 모듈 (`CustomPlaySession.cs`, `ModConfig.cs`)* **전체 파일 목록은 아래 12절이 기준입니다.** 위 2~10절은 주요 파일만 자세히 다루고, 나머지 파일은 12절에 한 줄씩 있습니다. 새 `.cs` 파일을 만들면 12절에 한 줄을 추가하십시오. CI(`Logic Tests`)가 `tools/check-code-reference.ps1`로 모든 소스 파일 이름이 이 문서나 `ARCHITECTURE.md`에 있는지 확인하고, 빠지면 실패합니다(2026-11-25 감사 9차: 소스 161개 중 73개가 이 문서에 없었습니다).
+
+---
+
+## 12. 전체 파일 지도
+
+2~10절에서 따로 다루지 않은 파일의 한 줄 역할입니다. 경로는 `muse dash test/` 기준입니다. 자세한 설계 의도는 각 파일 머리 주석과 [AGENTS.md](../../AGENTS.md) 3항을 보십시오.
+
+### `Bms/` — 채보 해석(게임 비의존, 로직 테스트 대상)
+| 파일 | 역할 |
+| --- | --- |
+| `BmsParser.Lexer.cs` | BMS 줄 단위 토큰화(주석 줄 판정, 헤더·채널 분리). `BmsParser`의 partial |
+| `BmsModels.cs` | 파서 결과 모델(노트·BPM 변경·마디 길이)과 같은 틱의 변경 적용 순서 |
+| `BmsWavParser.cs` | `#WAV` 정의에서 uid·dt를 읽음. 폴더 접두를 `\`·`/` 둘 다 직접 자름(CHECKLIST 1절), 보스 발사체 속도 2·3 uid → 속도 1 매핑 |
+| `BmsDtTable.cs` | 노트 계열별 dt 권장표·허용 범위(5번 씬 발사체 전용 값 포함, AGENTS.md 3항) |
+| `BmsFileNames.cs` | BMS 파일 이름 판정(임시 파일 제외, 난이도 접미 등) |
+| `BmsHostMaps.cs` | 숙주 곡에 없는 난이도일 때 대신 불러올 차트 에셋 난이도 결정(`0-4`·`0-0` Master NRE 방지) |
+| `BmsChartSet.cs` · `BmsNoteMatcher.cs` · `BmsBossSwapPlanner.cs` | 난이도별 채보 묶음·재로드 병합, 노트 uid 매칭, 보스 스왑 계획 |
+
+### `Core/` — 공용 기반
+| 파일 | 역할 |
+| --- | --- |
+| `ModInfo.cs` | 모드 버전의 단일 출처(`MelonInfo`·어셈블리 버전이 읽음, `CHANGELOG.md`와 함께 올림) |
+| `ModLogMessageHandler.cs` | 보간 문자열 로그 핸들러. 레벨이 꺼져 있으면 문자열을 만들지 않음 |
+| `GameVersionCheck.cs` | 검증 버전(6.7.0)·`GameAssembly.dll` 크기 지문과 비교해 업데이트 경고 한 줄 |
+| `AtomicFile.cs` | 임시 파일에 쓰고 이름 바꾸기로 덮어쓰는 안전 저장(기록·설정·플래그) |
+| `EmbeddedResource.cs` | 어셈블리에 박은 리소스(태그 아이콘)를 게임 폴더로 꺼냄(짧은 읽기 방지) |
+| `SafeAccess.cs` | 진단·방어적 조회의 예외 삼킴 + Verbose 원인 기록 |
+| `AccuracyMath.cs` | 커스텀 곡 정확도 수식(게임 비의존) |
+| `PlayRecordMerge.cs` | 이전 기록과 새 판을 합치는 규칙(최고 기록과 달성 배지 분리) |
+| `CustomRecordStore.Serialization.cs` | 커스텀 기록 JSON 직렬화와 채보 지문 필드 |
+| `MusicDecimalText.cs` | 게임 `Decimal.ToString()` 결과를 로케일 무관하게 double로 되돌림 |
+| `HiddenUnlockText.cs` | 히든 해금 데이터 → 곡 선택창 한 줄 문구 규칙 |
+| `SaveSelectionRules.cs` | 세이브 '마지막 선택'이 모드 전용 태그·앨범·곡이면 바닐라 값으로 바꾸는 규칙 |
+| `UnlockAllMasterGuard.cs` | 표시용으로 강제한 `IsUnlockAllMaster` 원래 값을 캡처해 저장 때 원복 |
+| `HealthBarFinder.cs` | 배틀 체력바 오브젝트 탐색(이름 후보 + 캐시) |
+| `CustomContentIds.cs` · `CustomPlaySession.cs` · `SongAudioFiles.cs` · `GameBgmSource.cs` | 가상 uid 규칙, 현재 곡 세션, 곡 폴더 음원 선택, 게임 BGM 소스 참조(이름으로 찾지 않음) |
+
+### `Patches/Battle/`
+| 파일 | 역할 |
+| --- | --- |
+| `Mechanics/BossPatch.DynamicSwap.cs` | 보스 동적 스왑과 꺼진 보스 오브젝트 재활성화 |
+| `Mechanics/NoteAnimationSyncPatch.cs` | 늦게 스폰된 Spine 노트의 비행 애니메이션 시각 보정(`PlayByKey("in")`) |
+| `UI/AllPerfectSound.cs` | AP일 때 풀콤보 효과음 뮤트(`AudioSource.PlayOneShot` 전역 훅, 클립별 판정 캐시) |
+| `UI/BattleStartSyncPatch.cs` | 커스텀 BGM/BGA 주입을 레디·고 뒤로, 재생을 `FixedOffset` 시점으로 |
+| `UI/HwaBattleMediaController.Video.cs` | BGA 영상 쿼드·`VideoPlayer` 준비(공유 머티리얼) |
+| `UI/ExperimentHitPointInstaller.cs` · `ExperimentHitPointInstaller.Candidates.cs` | 실험 차트에서 빠지는 HitPoints 프리팹 설치와 후보 탐색 |
+| `UI/PnlVictoryLoggingPatch.cs` | 결과 화면 수명 주기 관찰 로그 |
+
+### `Patches/Common/`
+| 파일 | 역할 |
+| --- | --- |
+| `Il2CppWrapperBase.cs` | IL2CPP 객체를 리플렉션으로 감싸는 래퍼 베이스(멤버 캐시) |
+| `AlbumsInfoWrapper.cs` | `DBConfigAlbums.AlbumsInfo` 래퍼 |
+
+### `Patches/Database/`
+| 파일 | 역할 |
+| --- | --- |
+| `Save/SaveSelectionGuard.cs` | `DataManager.Save` 전후로 세이브 '마지막 선택'을 바닐라 값으로 바꿨다 되돌림 |
+| `Stage/DBStageInfoExperimentChart.DtTable.cs` | 노트 dt를 권장표와 대조·보정(`dt를 권장 표로 고치기`) |
+
+### `Patches/Diagnostics/`
+| 파일 | 역할 |
+| --- | --- |
+| `PatchHealthCheck.Targets.cs` | 헬스체크 대상 계산(클래스·메서드 어트리뷰트 합성) |
+| `OffsetHookPatches.cs` | 커스텀 곡 오프셋·딜레이 주입 |
+| `GlobalOffsetDiagnostics.cs` | 전역 오프셋 값을 씬 전환 때 한 번 기록(Verbose) |
+| `HwaChartDiagnostics.cs` | WAV 매핑 샘플·보스 스왑 후보(Verbose 전용) |
+| `KeysoundProbe.cs` · `KeysoundProbe.Report.cs` | 키음 누락 관찰 계측, F8 덤프·배틀 요약(동작 불변) |
+| `CollabEndTimeDumpPatch.cs` | 콜라보 DLC 종료일 진단 덤프(Verbose) |
+| `DiscordManagerDebugPatch.cs` | 게임 DiscordManager 상태 갱신 가로채기, 홈 복귀 시 "In Menu" |
+
+### `Patches/Hwa/`
+| 파일 | 역할 |
+| --- | --- |
+| `AudioManager_PlayBgm_Patch.cs` | 곡 선택·준비 화면에서 게임이 커스텀 메뉴 BGM을 끊거나 바꾸지 못하게 방어 |
+| `AudioSource_SetClip_Patch.cs` | 게임 BGM 소스의 `clip` 대입 감시·차단, 곡 선택 컨텍스트 판정 |
+| `HwaMenuBgmController.SourceAndMemory.cs` | 메뉴 미리듣기 소스 탐색과 밀려난 스트리밍 클립의 유예 해제 |
+| `HwaManifest.cs` · `HwaManifestLoader.cs` | 곡 `info.txt` 모델과 파서 |
+| `HwaResourceManager.Bms.cs` · `HwaResourceManager.Watcher.cs` | 채보 로드, BMS 파일 실시간 감시(디바운스·재시도·감시 오류 시 전체 재로드) |
+
+### `Patches/Sandbox/` · `Patches/Scene/`
+| 파일 | 역할 |
+| --- | --- |
+| `Sandbox/OfflineCustomSandbox.cs` | `OFFLINE_SANDBOX.txt`로 오프라인 샌드박스(DLC 허용 등) 켜고 끄기 |
+| `Sandbox/OfflineNetworkSandboxPatch.cs` | 샌드박스 중 외부 서버 요청 차단·로컬 랭킹 |
+| `Scene/ChristmasFestivalPatch.cs` | 크리스마스 연출 강제(곡 `info.txt`·`ForceChristmas`) |
+| `Scene/GameMusicScenePatch.cs` · `GameMusicScenePreLoadEnemyPatch.cs` · `GameMusicSceneRunPatch.cs` | 씬 로드·노트 풀·씬 슬롯 관찰(진단) |
+| `Scene/GameMusicSceneInitPatch.cs` | 씬 배경 스왑 중 노트 무변형 보호(`IsIgnoreCurrentNoteChecking`)와 `InitTimer` 총 시간 확장 |
+| `Scene/SceneFlowPatch.cs` | `SceneChangeController.ChangeScene`/`ChangeNote` 흐름 관찰 로그 |
+| `Scene/SceneDiagnosticLogger.cs` · `ScenePatchHelpers.cs` | 씬 진단 로그 묶음, 씬 패치 공용 헬퍼 |
+
+### `Patches/UI/`
+| 파일 | 역할 |
+| --- | --- |
+| `Custom/InputOverlay.Colors.cs` · `InputOverlay.ConfigFile.cs` · `InputOverlay.Config.cs` · `InputOverlay.Patches.cs` · `InputOverlay.Render.cs` | 키 오버레이 색 텍스처, `config.txt` 쓰기·표준화, 읽기·핫리로드, 입력 훅, 그리기 |
+| `Custom/Tags/CustomTagPatch.LocalizationPatches.cs` | 가상 곡 `MusicInfo.GetLocal` 제목·작곡가 응답 |
+| `Custom/Tags/SelectedSongLocalizationScope.cs` | 제목 조회 판정에 쓸 '그리는 중인 곡' 스코프 |
+| `Custom/Tags/Support/CustomTagRegistryDebug.cs` | 복제한 `MusicExInfo` 필드 열거(Verbose 전용) |
+| `Menu/PnlHomeDebugPatch.cs` | 메인 메뉴 진입 시 BGM 상태 추적(Verbose일 때만 훅) |
+| `Menu/PnlMenuBgmStopPatch.cs` | 메인 메뉴로 나가면 커스텀 메뉴 BGM 정지 |
+| `Music/MusicStageCellPatch.cs` · `CoverImageManager.cs` | 곡 디스크 셀 커버를 곡 폴더 `cover.png`로 교체, 커버 캐시 |
+| `Music/MusicButtonAreaTitlePatch.cs` · `PnlMusicOverride.cs` | 곡 제목·아티스트·디자이너 텍스트 덮어쓰기 |
+| `Music/PnlMusicTagPatch.cs` | 곡 태그 목록(`PnlMusicTag.RefreshScrollViewItem`) 갱신 훅 |
+| `Music/PnlMusicDiagnostics.AudioClip.cs` · `PnlMusicDiagnostics.Extraction.cs` | 미리듣기 클립 진단과 현재 곡 추출 |
+| `Pnl/PnlStagePatchHelper.TextDebug.cs` | 곡 선택 화면이 들고 있는 곡 UID 직접 읽기(세션 값이 빌 때만) |
+| `Stage/HiddenUnlockGuide.cs` · `HiddenUnlockGuide.Placement.cs` | 히든 해금 조건 한 줄 표시와 배치(마스크·캔버스 순서, CHECKLIST 1절) |
+| `Stage/PnlPreparationPatch.cs` · `PnlRecordPatch.cs` · `PnlStagePatch.cs` | 곡 준비(`OnEnable`·최고 기록 다운로드)·기록(`RefreshRecord`)·곡 선택 화면 훅 |
+| `Stage/PnlRankHookPatch.cs` · `RankCellHookPatch.cs` | 랭킹 패널 호출 관찰, 11위 이하 셀 숨김 |
+| `Welcome/DisableUpdateNoticePatch.cs` | 버전 점검·업데이트 안내창 차단(모드 프리패스, AGENTS.md 상단 참고) |
+
+### `Spine/` · 기타
+| 파일 | 역할 |
+| --- | --- |
+| `CustomSkinInjector.cs` | 스킨 세트 폴더 해석, 원본 머티리얼을 복사한 런타임 아틀라스·`SkeletonDataAsset` 생성·캐시 |
+| `NoteSkinInjector.cs` · `NoteSkinRules.cs` | 크리스마스 곡 노트 스킨 주입과 그 규칙(배율·이름) |
+| `SkinFolderRules.cs` | 스킨 종류별 폴더 규칙·캐릭터 역할(`main`/`ghost`) |
+| `Patch_Inject_BlackGirlBattle.cs` | `SpineActionController.Init`/`OnControllerStart` Postfix 캐릭터·노트 스킨 주입(`InjectHelper`) |
+| `Patch_SpineActionContract.cs` · `Patch_SkinNameProbe.cs` | 프리팹 액션 계약서 덤프, 스킨 이름 진단(Verbose) |
+| `Properties/AssemblyInfo.cs` | 어셈블리 버전(`ModInfo.AssemblyVersion`) |

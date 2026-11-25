@@ -29,6 +29,17 @@ namespace muse_dash_test
         private static readonly Dictionary<string, int> reloadRetryCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         private static System.Threading.Timer bmsReloadTimer;
 
+        // 재로드 콜백이 도는 중인지. System.Threading.Timer는 콜백이 끝나기 전에 Change로 다시 맞추면 콜백을
+        // 다른 스레드풀 스레드에서 겹쳐 부를 수 있습니다. 같은 곡을 두 스레드가 동시에 읽어 합치면 늦게 끝난 쪽
+        // (더 옛 내용일 수 있음)이 캐시를 덮으므로, 도는 중에 온 예약은 콜백이 끝난 뒤 한 번 더 돌게 미룹니다.
+        private static bool bmsReloadRunning;
+
+        /// <summary>
+        /// 감시 버퍼 크기(바이트). 기본 8KB는 에디터가 여러 파일을 한꺼번에 저장하거나 곡 폴더를 통째로 복사할 때
+        /// 넘칠 수 있고, 넘치면 그 사이 변경 알림이 사라집니다. 최대값 64KB로 둡니다.
+        /// </summary>
+        private const int BmsWatcherBufferSize = 64 * 1024;
+
         public static void InitializeBmsWatcher()
         {
             try
@@ -50,13 +61,15 @@ namespace muse_dash_test
                     Path = HwaFolderPath,
                     Filter = "*.bms",
                     IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
+                    InternalBufferSize = BmsWatcherBufferSize
                 };
 
                 bmsWatcher.Changed += OnBmsFileChanged;
                 bmsWatcher.Created += OnBmsFileChanged;
                 bmsWatcher.Deleted += OnBmsFileChanged;
                 bmsWatcher.Renamed += OnBmsFileRenamed;
+                bmsWatcher.Error += OnBmsWatcherError;
 
                 bmsWatcher.EnableRaisingEvents = true;
                 ModLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 폴더 감시 시작: {HwaFolderPath}");
@@ -77,6 +90,42 @@ namespace muse_dash_test
             // 이름을 바꾸면 옛 경로가 속한 곡도 바뀐 것입니다. 옛 경로와 새 경로를 모두 처리합니다.
             HandleBmsFileEvent(e.OldFullPath);
             HandleBmsFileEvent(e.FullPath);
+        }
+
+        /// <summary>
+        /// 감시자 자체의 오류입니다. 예전에는 이 이벤트를 받지 않아, 버퍼가 넘치면(<see cref="InternalBufferOverflowException"/>)
+        /// 그 사이의 채보 저장이 로그 한 줄 없이 반영되지 않았습니다. 어느 파일이 바뀌었는지 알 수 없으므로 모든 곡을 다시
+        /// 읽도록 예약하고(<see cref="BmsChartSet.MergeReload"/>가 읽지 못한 칸은 옛 채보를 유지), 감시가 멈췄으면 다시 겁니다.
+        /// </summary>
+        private static void OnBmsWatcherError(object sender, ErrorEventArgs e)
+        {
+            try
+            {
+                Exception ex = e?.GetException();
+                ModLogger.Warning($"[HwaResourceManager.BmsWatcher] 폴더 감시 오류({ex?.GetType().Name ?? "알 수 없음"}: {ex?.Message}). 모든 곡의 채보를 다시 읽도록 예약합니다.");
+
+                string[] uidsSnapshot;
+                lock (virtualUids)
+                {
+                    uidsSnapshot = virtualUids.ToArray();
+                }
+                foreach (var uid in uidsSnapshot)
+                {
+                    ScheduleBmsReload(uid, BmsReloadQuietPeriod);
+                }
+
+                // 버퍼 넘침은 감시를 멈추지 않지만, 폴더가 지워지거나 접근이 끊기면 감시가 꺼집니다. 그때만 다시 겁니다.
+                var watcher = sender as FileSystemWatcher;
+                if (watcher != null && ReferenceEquals(watcher, bmsWatcher) && !watcher.EnableRaisingEvents)
+                {
+                    ModLogger.Warning("[HwaResourceManager.BmsWatcher] 폴더 감시가 멈춰 다시 시작합니다.");
+                    InitializeBmsWatcher();
+                }
+            }
+            catch (Exception handlerEx)
+            {
+                ModLogger.Error($"[HwaResourceManager.BmsWatcher] 감시 오류 처리 실패: {handlerEx.Message}");
+            }
         }
 
         private static void HandleBmsFileEvent(string filePath)
@@ -145,20 +194,37 @@ namespace muse_dash_test
             string[] uids;
             lock (bmsReloadLock)
             {
+                if (bmsReloadRunning)
+                {
+                    // 앞 콜백이 아직 읽는 중입니다. 예약은 pendingReloadUids에 남겨 두고 조금 뒤 다시 봅니다.
+                    bmsReloadTimer?.Change(BmsReloadQuietPeriod, System.Threading.Timeout.InfiniteTimeSpan);
+                    return;
+                }
+                bmsReloadRunning = true;
                 uids = new string[pendingReloadUids.Count];
                 pendingReloadUids.CopyTo(uids);
                 pendingReloadUids.Clear();
             }
 
-            foreach (var uid in uids)
+            try
             {
-                try
+                foreach (var uid in uids)
                 {
-                    ReloadBmsChartForUid(uid);
+                    try
+                    {
+                        ReloadBmsChartForUid(uid);
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLogger.Error($"[HwaResourceManager.BmsWatcher] 재로드 중 오류: uid={uid}, {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
+            }
+            finally
+            {
+                lock (bmsReloadLock)
                 {
-                    ModLogger.Error($"[HwaResourceManager.BmsWatcher] 재로드 중 오류: uid={uid}, {ex.Message}");
+                    bmsReloadRunning = false;
                 }
             }
         }
