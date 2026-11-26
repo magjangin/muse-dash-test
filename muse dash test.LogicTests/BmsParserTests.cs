@@ -324,5 +324,21 @@ namespace muse_dash_test.LogicTests
                     $"노트 시각이 참조 구현과 다릅니다: tick={note.Tick}, sweep={note.Time}, calculateTime={expected}");
             }
         }
+        // #WAVETABLE 등 WAV 접두를 가진 비-WAV 헤더가 있어도 2자리 셀 폭을 유지해야 합니다.
+        public static void ParseText_IgnoresNonWavPrefixMetadataWhenDetectingCellWidth()
+        {
+            var chart = BmsParser.ParseText("""
+                #BPM 120
+                #WAVETABLE custom_wavetable_data
+                #WAV01 sample.wav
+                #00113:01000100
+                """);
+
+            Assert.Equal(2, chart.Notes.Count);
+            Assert.Equal("01", chart.Notes[0].RawValue);
+            Assert.Equal("01", chart.Notes[1].RawValue);
+            Assert.Equal(1.0f, chart.Notes[0].Tick);
+            Assert.Equal(1.5f, chart.Notes[1].Tick);
+        }
     }
 }

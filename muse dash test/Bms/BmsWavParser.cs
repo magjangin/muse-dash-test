@@ -96,7 +96,6 @@ namespace muse_dash_test
             if (uidMatch.Success)
             {
                 info.Uid = uidMatch.Groups[1].Value;
-                info.PrefabName = NormalizePrefabName(nameWithoutExt, info.Uid);
             }
 
             // 2. Parse dt (e.g. _dt0.7 or _dt1.2)
@@ -107,9 +106,9 @@ namespace muse_dash_test
                 {
                     info.Dt = Math.Round(parsedDt, 3, MidpointRounding.AwayFromZero);
                 }
-
-                info.PrefabName = NormalizePrefabName(nameWithoutExt, info.Uid);
             }
+
+            info.PrefabName = NormalizePrefabName(nameWithoutExt, info.Uid);
 
             // 3. Skeleton mapping for special gameplay notes & audios
             string lowerName = nameWithoutExt.ToLowerInvariant();

@@ -24,9 +24,16 @@ namespace muse_dash_test
             finally
             {
                 // 성공하면 임시 파일은 이미 이름이 바뀌어 없습니다. 실패했을 때만 남은 찌꺼기를 지웁니다.
-                if (File.Exists(tempPath))
+                // 찌꺼기 삭제 실패(일시적 파일 잠금 등)가 원래의 예외를 덮어쓰지 않도록 격리합니다.
+                try
                 {
-                    File.Delete(tempPath);
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch
+                {
                 }
             }
         }

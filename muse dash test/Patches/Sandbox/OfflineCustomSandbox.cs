@@ -85,13 +85,18 @@ namespace muse_dash_test
                 return false;
             }
 
-            foreach (string rawLine in File.ReadAllLines(FlagFilePath, System.Text.Encoding.UTF8))
+            using (var fs = new FileStream(FlagFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fs, System.Text.Encoding.UTF8))
             {
-                string line = rawLine.Trim();
-                if (line.StartsWith(FlagKey + "="))
+                string rawLine;
+                while ((rawLine = reader.ReadLine()) != null)
                 {
-                    string val = line.Substring((FlagKey + "=").Length).Trim();
-                    return val.Equals(ValueOn, StringComparison.OrdinalIgnoreCase);
+                    string line = rawLine.Trim();
+                    if (line.StartsWith(FlagKey + "=", StringComparison.Ordinal))
+                    {
+                        string val = line.Substring((FlagKey + "=").Length).Trim();
+                        return val.Equals(ValueOn, StringComparison.OrdinalIgnoreCase);
+                    }
                 }
             }
 
