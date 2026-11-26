@@ -25,7 +25,7 @@ namespace muse_dash_test
             try
             {
                 string url = __instance?.url;
-                if (!string.IsNullOrEmpty(url) && (url.Contains("peropero.net") || url.Contains("thinkingdata")))
+                if (!string.IsNullOrEmpty(url) && (url.IndexOf("peropero.net", StringComparison.OrdinalIgnoreCase) >= 0 || url.IndexOf("thinkingdata", StringComparison.OrdinalIgnoreCase) >= 0))
                 {
                     ModLogger.Msg($"[OfflineSandbox.Network] 🛡️ 외부 서버 요청 원천 차단 (오프라인 격리): {url}");
                     try

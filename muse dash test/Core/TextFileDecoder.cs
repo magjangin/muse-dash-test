@@ -39,10 +39,21 @@ namespace muse_dash_test
         {
             byte[] bytes;
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var ms = new MemoryStream())
             {
-                fs.CopyTo(ms);
-                bytes = ms.ToArray();
+                long length = fs.Length;
+                if (length > int.MaxValue) throw new IOException($"파일 크기가 너무 큽니다: {path} ({length} bytes)");
+                bytes = new byte[(int)length];
+                int totalRead = 0;
+                while (totalRead < bytes.Length)
+                {
+                    int read = fs.Read(bytes, totalRead, bytes.Length - totalRead);
+                    if (read == 0) break;
+                    totalRead += read;
+                }
+                if (totalRead != bytes.Length)
+                {
+                    Array.Resize(ref bytes, totalRead);
+                }
             }
             return Decode(bytes, out encodingName);
         }

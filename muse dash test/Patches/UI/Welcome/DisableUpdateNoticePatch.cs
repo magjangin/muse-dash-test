@@ -27,7 +27,7 @@ namespace muse_dash_test.Patches.UI.Welcome
             public static bool Prefix(ref bool __result)
             {
                 __result = false;
-                ModLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.CheckNeedUpdate() 호출 감지 ➔ 강제로 false(업데이트 불필요) 반환!");
+                ModLogger.Verbose("[UI.UpdateNotice] 🛡️ VersionHelper.CheckNeedUpdate() 호출 감지 ➔ 강제로 false(업데이트 불필요) 반환!");
                 return false; // 원본 실행 건너뛰기
             }
         }
@@ -43,7 +43,7 @@ namespace muse_dash_test.Patches.UI.Welcome
                 try
                 {
                     VersionHelper.s_NeedUpdateValue = false;
-                    ModLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.CheckVersion() 호출 감지 ➔ 네트워크 서버 요청 차단 및 s_NeedUpdateValue=false 갱신!");
+                    ModLogger.Verbose("[UI.UpdateNotice] 🛡️ VersionHelper.CheckVersion() 호출 감지 ➔ 네트워크 서버 요청 차단 및 s_NeedUpdateValue=false 갱신!");
                     callback?.Invoke(false);
                 }
                 catch (Exception ex)
@@ -62,7 +62,7 @@ namespace muse_dash_test.Patches.UI.Welcome
         {
             public static bool Prefix()
             {
-                ModLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.CheckUpdateStateAndShowConfirm() 호출 차단!");
+                ModLogger.Verbose("[UI.UpdateNotice] 🛡️ VersionHelper.CheckUpdateStateAndShowConfirm() 호출 차단!");
                 return false;
             }
         }
@@ -72,7 +72,7 @@ namespace muse_dash_test.Patches.UI.Welcome
         {
             public static bool Prefix()
             {
-                ModLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.ShowUpdateTip() 호출 차단!");
+                ModLogger.Verbose("[UI.UpdateNotice] 🛡️ VersionHelper.ShowUpdateTip() 호출 차단!");
                 return false;
             }
         }
@@ -82,7 +82,7 @@ namespace muse_dash_test.Patches.UI.Welcome
         {
             public static bool Prefix()
             {
-                ModLogger.Msg("[UI.UpdateNotice] 🛡️ VersionHelper.ShowUpdateConfirmPopup() 호출 차단!");
+                ModLogger.Verbose("[UI.UpdateNotice] 🛡️ VersionHelper.ShowUpdateConfirmPopup() 호출 차단!");
                 return false;
             }
         }
@@ -97,7 +97,7 @@ namespace muse_dash_test.Patches.UI.Welcome
             public static bool Prefix(ref bool isRecommendVersionReleased)
             {
                 isRecommendVersionReleased = false;
-                ModLogger.Msg("[UI.UpdateNotice] 🛡️ WelcomeSelect.OnGetRecommendVersion() 호출 감지 ➔ isRecommendVersionReleased = false 전달!");
+                ModLogger.Verbose("[UI.UpdateNotice] 🛡️ WelcomeSelect.OnGetRecommendVersion() 호출 감지 ➔ isRecommendVersionReleased = false 전달!");
                 return true;
             }
         }

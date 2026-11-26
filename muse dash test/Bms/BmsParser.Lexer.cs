@@ -120,6 +120,17 @@ namespace muse_dash_test
                 }
 
                 string rawKey = key.Substring(3);
+                // BMS 표준에서 WAV 키는 2자리 또는 3자리 영숫자(Base36)입니다.
+                // #WAVETABLE 등 WAV로 시작하는 임의의 비-WAV 헤더 키로 인해 셀 폭이 4 이상으로 오판되는 것을 방지합니다.
+                if (rawKey.Length != 2 && rawKey.Length != 3)
+                {
+                    continue;
+                }
+                if (!IsAlphanumeric(rawKey))
+                {
+                    continue;
+                }
+
                 if (rawKey.Length > width)
                 {
                     width = rawKey.Length;
@@ -127,6 +138,15 @@ namespace muse_dash_test
             }
 
             return width;
+        }
+
+        private static bool IsAlphanumeric(string str)
+        {
+            for (int i = 0; i < str.Length; i++)
+            {
+                if (!char.IsLetterOrDigit(str[i])) return false;
+            }
+            return true;
         }
 
         private static bool IsZeroCell(string data, int offset, int width)

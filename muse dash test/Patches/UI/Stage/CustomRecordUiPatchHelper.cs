@@ -23,11 +23,11 @@ namespace muse_dash_test
 
         // 점수 표시값: 게임에서 읽어 저장한 실제 점수를 천 단위 구분으로 표시합니다.
         public static string FormatScore(CustomRecordStore.PlayRecord r)
-            => r.score.ToString("N0");
+            => r.score.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
 
         // 정확도 표시값: 저장값은 0~1(GetAccuracy)이라 백분율(×100)로 변환해 표시합니다.
         public static string FormatAccuracy(CustomRecordStore.PlayRecord r)
-            => $"{r.accuracy * 100f:0.00}%";
+            => (r.accuracy * 100f).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + "%";
 
         public static void ApplyCustomRecordToPnlStage(PnlStage stage, MusicInfo musicInfo)
         {

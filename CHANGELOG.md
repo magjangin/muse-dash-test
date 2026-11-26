@@ -3,6 +3,25 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [0.16.7] - 감사 12차·기록 조회 병목 해소·아카이브 구버전 호환·BMS 파서 내성
+
+게임 동작을 바꾸는 기능 추가는 없습니다.
+
+### 병목 해소
+- 곡 선택/준비 화면에서 슬롯마다 불리는 `CustomRecordStore.LoadResult` 안에서 `ChartFingerprint.ForUid`를 최대 4회 중복 호출하던 것을 1회 계산 후 전달하도록 개선했습니다. 동일 파일에 대한 불필요한 `FileInfo` 파일시스템 메타데이터 질의가 제거되었습니다.
+- `TextFileDecoder.ReadAllText`가 `MemoryStream` 버퍼 복사를 거치던 것을 파일 크기 기반 직접 배열 할당 읽기로 전환해 대형 채보 읽기 시 버퍼 재할당 및 GC 압박을 줄였습니다.
+
+### 업데이트 내성·안정성
+- 채보 지문 보관소(`RecordArchive`) 복원 시 폴더 키 보관본이 없을 경우 레거시 `uid` 키 보관본(`record/archive/{uid}_{diff}.{fingerprint}.json`)도 확인하도록 보강했습니다. 폴더 명칭 도입 이전이나 과도기에 보관된 옛 기록도 안전하게 복원됩니다.
+- 오프라인 플래그(`OFFLINE_SANDBOX.txt`) 및 기록 파일(`record/*.json`) 읽기를 공유 읽기 모드(`FileShare.ReadWrite`)로 전환하여 외부 에디터나 클라우드 동기화 툴이 파일을 열고 있을 때 발생할 수 있는 파일 잠금 충돌(`IOException`)을 방지했습니다. `OFFLINE_SANDBOX.txt` 파싱에 `StringComparison.Ordinal`을 적용했습니다.
+- `AtomicFile.WriteAllText`의 `finally` 정리 과정에서 임시 파일(`.tmp`) 삭제 실패 시 원본 예외나 성공 상태가 덮어써지지 않도록 안전하게 격리했습니다.
+- BMS 파서(`BmsParser.Lexer`)가 `#WAV` 접두를 가진 비-WAV 헤더(예: `#WAVETABLE` 등)를 만났을 때 셀 폭을 비정상적으로 확장하여 마디 파싱을 망가뜨리던 문제를 해결했습니다. 이제 표준 Base36 규격(2 또는 3자리 영숫자)만 WAV 키로 인식합니다.
+- `BmsWavParser`에서 `_dt`가 있는 노트 파싱 시 `NormalizePrefabName`을 불필요하게 2회 중복 호출하던 것을 1회로 정리했습니다.
+
+### 로케일·로그 최적화
+- `CustomRecordUiPatchHelper`의 점수(`FormatScore`, 천 단위 구분 `N0`) 및 정확도(`FormatAccuracy`, `0.00%`) 포맷에 `CultureInfo.InvariantCulture`를 적용하여 유럽 등 쉼표 소수점 OS 환경에서도 일관된 UI 문자열을 보장합니다.
+- 타이틀 및 메뉴 전환 시 반복 호출되던 `DisableUpdateNoticePatch` 버전 체크 훅의 로그 레벨을 `Msg`에서 `Verbose`로 하향하여 콘솔을 깔끔하게 유지합니다.
+
 ## [0.16.6] - 감사 11차·채보별 기록 보관·BMS/info.txt 인코딩 판별
 
 ### 기록

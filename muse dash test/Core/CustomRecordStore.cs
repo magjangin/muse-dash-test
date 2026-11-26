@@ -297,9 +297,13 @@ namespace muse_dash_test
         /// </summary>
         private static bool BelongsToCurrentChart(PlayRecord record, string uid, int difficulty, string filePath, bool warn = true)
         {
+            return BelongsToCurrentChartWithFingerprint(record, uid, difficulty, filePath, ChartFingerprint.ForUid(uid, difficulty), warn);
+        }
+
+        private static bool BelongsToCurrentChartWithFingerprint(PlayRecord record, string uid, int difficulty, string filePath, string current, bool warn = true)
+        {
             if (record == null) return false;
 
-            string current = ChartFingerprint.ForUid(uid, difficulty);
             if (current == null) return true; // 지문 계산 실패 → 판정 불가, 통과
 
             if (string.IsNullOrEmpty(record.chartFingerprint))
@@ -348,14 +352,17 @@ namespace muse_dash_test
                 // 보관본을 호출자가 고쳐도 다음 조회에 번지지 않도록 사본을 돌려줍니다.
                 var record = RecordCache.GetOrLoad(filePath, ReadRecordFile, out bool readFromDisk)?.Clone();
 
-                if (!BelongsToCurrentChart(record, uid, difficulty, filePath, warn: false))
+                // 슬롯 1회 조회 안에서 지문 계산과 파일 메타데이터 확인을 1회로 한정합니다.
+                string currentFingerprint = ChartFingerprint.ForUid(uid, difficulty);
+
+                if (!BelongsToCurrentChartWithFingerprint(record, uid, difficulty, filePath, currentFingerprint, warn: false))
                 {
                     // 본 파일이 다른 채보의 것이면, 지금 채보로 예전에 남긴 기록이 보관소에 있는지 먼저 봅니다
                     // (채보를 갈아끼웠다가 되돌린 경우). 없을 때만 "표시하지 않음" 경고를 남깁니다.
-                    PlayRecord archived = TryLoadArchived(uid, difficulty);
+                    PlayRecord archived = TryLoadArchived(uid, difficulty, currentFingerprint);
                     if (archived != null) return archived;
 
-                    BelongsToCurrentChart(record, uid, difficulty, filePath, warn: true);
+                    BelongsToCurrentChartWithFingerprint(record, uid, difficulty, filePath, currentFingerprint, warn: true);
                     return null;
                 }
 
@@ -376,16 +383,27 @@ namespace muse_dash_test
         /// <summary>
         /// 지금 채보 지문의 보관본(<c>record/archive/</c>)을 읽습니다. 없거나 지문이 맞지 않으면 null입니다.
         /// </summary>
-        private static PlayRecord TryLoadArchived(string uid, int difficulty)
+        private static PlayRecord TryLoadArchived(string uid, int difficulty, string currentFingerprint = null)
         {
-            string current = ChartFingerprint.ForUid(uid, difficulty);
+            string current = currentFingerprint ?? ChartFingerprint.ForUid(uid, difficulty);
             if (string.IsNullOrEmpty(current)) return null;
 
-            string archivePath = RecordArchive.PathFor(RecordPathFor(ResolveRecordKey(uid), difficulty), current);
+            string recordKey = ResolveRecordKey(uid);
+            string archivePath = RecordArchive.PathFor(RecordPathFor(recordKey, difficulty), current);
             if (archivePath == null) return null;
 
+            // 폴더 키 보관본이 아직 없고 recordKey != uid인 경우, uid 키 보관본도 확인(구버전 호환)
+            if (!File.Exists(archivePath) && !string.Equals(recordKey, uid, StringComparison.Ordinal))
+            {
+                string legacyArchivePath = RecordArchive.PathFor(RecordPathFor(uid, difficulty), current);
+                if (legacyArchivePath != null && File.Exists(legacyArchivePath))
+                {
+                    archivePath = legacyArchivePath;
+                }
+            }
+
             var archived = RecordCache.GetOrLoad(archivePath, ReadRecordFile, out bool readFromDisk)?.Clone();
-            if (archived == null || !BelongsToCurrentChart(archived, uid, difficulty, archivePath, warn: false)) return null;
+            if (archived == null || !BelongsToCurrentChartWithFingerprint(archived, uid, difficulty, archivePath, current, warn: false)) return null;
 
             if (readFromDisk)
             {
