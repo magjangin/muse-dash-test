@@ -26,11 +26,13 @@ namespace muse_dash_test
                 throw new ArgumentException("filePath is null or empty.", nameof(filePath));
             }
 
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var sr = new StreamReader(fs, Encoding.UTF8))
+            // UTF-8만 가정하면 CP949·Shift-JIS로 저장된 BMS의 #TITLE·#WAV 파일 이름이 대체 문자로 깨집니다(TextFileDecoder 참고).
+            string text = TextFileDecoder.ReadAllText(filePath, out string encodingName);
+            if (TextFileDecoder.IsLegacyEncoding(encodingName))
             {
-                return ParseText(sr.ReadToEnd(), filePath);
+                ModLogger.Verbose($"[BmsParser] UTF-8이 아닌 BMS를 {encodingName}(으)로 읽었습니다: {filePath}");
             }
+            return ParseText(text, filePath);
         }
 
         public static BmsChart ParseText(string text, string sourcePath = null)

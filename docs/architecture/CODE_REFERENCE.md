@@ -386,8 +386,10 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 | --- | --- |
 | `ModInfo.cs` | 모드 버전의 단일 출처(`MelonInfo`·어셈블리 버전이 읽음, `CHANGELOG.md`와 함께 올림) |
 | `ModLogMessageHandler.cs` | 보간 문자열 로그 핸들러. 레벨이 꺼져 있으면 문자열을 만들지 않음 |
-| `GameVersionCheck.cs` | 검증 버전(6.7.0)·`GameAssembly.dll` 크기 지문과 비교해 업데이트 경고 한 줄 |
+| `GameVersionCheck.cs` | 검증 버전(6.7.0)·`GameAssembly.dll` 크기 지문·MelonLoader 버전(0.7.3)과 비교해 업데이트 경고 한 줄 |
 | `AtomicFile.cs` | 임시 파일에 쓰고 이름 바꾸기로 덮어쓰는 안전 저장(기록·설정·플래그) |
+| `RecordArchive.cs` | 채보가 바뀐 슬롯의 옛 기록을 `record/archive/{파일}.{지문}.json`으로 보관하는 규칙(되돌리면 복원) |
+| `TextFileDecoder.cs` | BMS·`info.txt`를 BOM → 엄격 UTF-8 → CP949 → Shift-JIS 순으로 가려 읽음(메모장 ANSI 저장 대비) |
 | `EmbeddedResource.cs` | 어셈블리에 박은 리소스(태그 아이콘)를 게임 폴더로 꺼냄(짧은 읽기 방지) |
 | `SafeAccess.cs` | 진단·방어적 조회의 예외 삼킴 + Verbose 원인 기록 |
 | `AccuracyMath.cs` | 커스텀 곡 정확도 수식(게임 비의존) |

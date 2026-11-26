@@ -192,6 +192,7 @@ namespace muse_dash_test
                     finalPerfect, finalGreat, finalMiss, finalScore, finalMaxCombo, finalAccuracy,
                     finalIsFullCombo, finalIsAllPerfect, updatedPlayCount, finalSavedAt, fingerprint, recordKey);
 
+                ArchiveIfDifferentChart(filePath, fingerprint);
                 KeepBackupBeforeOverwrite(filePath);
 
                 // 쓰는 도중 크래시가 나도 옛 기록이 잘리지 않도록 임시 파일을 거쳐 교체합니다(AtomicFile 참고).
@@ -212,6 +213,31 @@ namespace muse_dash_test
             catch (Exception ex)
             {
                 ModLogger.Error($"[CustomRecordStore] 기록 저장 중 예외: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// 덮을 기록 파일이 다른 채보의 것이면 <c>record/archive/</c>에 지문별로 보관합니다(<see cref="RecordArchive"/>).
+        /// 채보를 갈아끼웠다가 되돌렸을 때 <see cref="LoadResult"/>가 이 보관본을 찾아 옛 기록을 다시 보여줍니다.
+        /// 보관 실패가 기록 저장을 막지 않도록 예외는 경고로만 남깁니다.
+        /// </summary>
+        private static void ArchiveIfDifferentChart(string filePath, string newFingerprint)
+        {
+            try
+            {
+                var current = RecordCache.GetOrLoad(filePath, ReadRecordFile, out _);
+                if (current == null) return;
+
+                string archived = RecordArchive.ArchiveCopy(filePath, current.chartFingerprint, newFingerprint);
+                if (archived != null)
+                {
+                    RecordCache.Invalidate(archived);
+                    ModLogger.Msg($"[CustomRecordStore] 다른 채보의 기록을 덮기 전에 보관했습니다 → {archived} (보관 지문={current.chartFingerprint}, 새 지문={newFingerprint}, score={current.score})");
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[CustomRecordStore] 다른 채보 기록 보관에 실패했습니다(저장은 계속합니다): {filePath}, {ex.Message}");
             }
         }
 
@@ -269,7 +295,7 @@ namespace muse_dash_test
         /// <para>판정에 실패했을 때(지문 계산 예외)는 <b>통과시킵니다</b>. 일시적인 파일 읽기 실패로
         /// 멀쩡한 기록을 숨기는 쪽이 더 나쁘기 때문입니다.</para>
         /// </summary>
-        private static bool BelongsToCurrentChart(PlayRecord record, string uid, int difficulty, string filePath)
+        private static bool BelongsToCurrentChart(PlayRecord record, string uid, int difficulty, string filePath, bool warn = true)
         {
             if (record == null) return false;
 
@@ -278,7 +304,7 @@ namespace muse_dash_test
 
             if (string.IsNullOrEmpty(record.chartFingerprint))
             {
-                WarnOnce(uid, difficulty,
+                if (warn) WarnOnce(uid, difficulty,
                     $"[CustomRecordStore] 채보 지문이 없는 옛 기록이라 표시하지 않습니다 → {filePath} "
                     + "(v0.10.1 이하에서 저장된 기록입니다. 이 채보를 한 번 플레이하면 지문과 함께 새로 기록됩니다. 파일은 지우지 않았습니다.)");
                 return false;
@@ -286,7 +312,7 @@ namespace muse_dash_test
 
             if (!string.Equals(record.chartFingerprint, current, StringComparison.OrdinalIgnoreCase))
             {
-                WarnOnce(uid, difficulty,
+                if (warn) WarnOnce(uid, difficulty,
                     $"[CustomRecordStore] 다른 채보의 기록이라 표시하지 않습니다 → {filePath} "
                     + $"(기록 지문={record.chartFingerprint}, 현재 채보 지문={current}, 기록 노트수={record.noteCount}). "
                     + "이 슬롯의 BMS가 바뀌었거나 곡 폴더 순번이 밀린 것입니다.");
@@ -322,7 +348,16 @@ namespace muse_dash_test
                 // 보관본을 호출자가 고쳐도 다음 조회에 번지지 않도록 사본을 돌려줍니다.
                 var record = RecordCache.GetOrLoad(filePath, ReadRecordFile, out bool readFromDisk)?.Clone();
 
-                if (!BelongsToCurrentChart(record, uid, difficulty, filePath)) return null;
+                if (!BelongsToCurrentChart(record, uid, difficulty, filePath, warn: false))
+                {
+                    // 본 파일이 다른 채보의 것이면, 지금 채보로 예전에 남긴 기록이 보관소에 있는지 먼저 봅니다
+                    // (채보를 갈아끼웠다가 되돌린 경우). 없을 때만 "표시하지 않음" 경고를 남깁니다.
+                    PlayRecord archived = TryLoadArchived(uid, difficulty);
+                    if (archived != null) return archived;
+
+                    BelongsToCurrentChart(record, uid, difficulty, filePath, warn: true);
+                    return null;
+                }
 
                 // 파일을 실제로 읽었을 때만 남깁니다. 패널 갱신마다 찍으면 이 로그 자체가 콘솔·디스크 I/O가 됩니다.
                 if (readFromDisk)
@@ -336,6 +371,27 @@ namespace muse_dash_test
                 ModLogger.Error($"[CustomRecordStore] 기록 로드 중 예외 (uid={uid}, diff={difficulty}): {ex}");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 지금 채보 지문의 보관본(<c>record/archive/</c>)을 읽습니다. 없거나 지문이 맞지 않으면 null입니다.
+        /// </summary>
+        private static PlayRecord TryLoadArchived(string uid, int difficulty)
+        {
+            string current = ChartFingerprint.ForUid(uid, difficulty);
+            if (string.IsNullOrEmpty(current)) return null;
+
+            string archivePath = RecordArchive.PathFor(RecordPathFor(ResolveRecordKey(uid), difficulty), current);
+            if (archivePath == null) return null;
+
+            var archived = RecordCache.GetOrLoad(archivePath, ReadRecordFile, out bool readFromDisk)?.Clone();
+            if (archived == null || !BelongsToCurrentChart(archived, uid, difficulty, archivePath, warn: false)) return null;
+
+            if (readFromDisk)
+            {
+                ModLogger.Msg($"[CustomRecordStore] 지금 채보의 보관 기록을 불러왔습니다 → {archivePath} (playCount={archived.playCount}, score={archived.score})");
+            }
+            return archived;
         }
     }
 }

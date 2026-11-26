@@ -152,6 +152,11 @@
       Linux·Android에서는 `\`가 구분자가 아니라 폴더 이름까지 파일 이름으로 남습니다. `'\'`와 `'/'`를 직접 자르십시오.
       (2026-11-23: `BmsWavParser.ParseWavName`이 ubuntu CI에서 UID를 못 읽어 테스트 23개가 실패. Windows에서는 멀쩡해 몰랐습니다.)
 
+- [ ] **사용자가 만든 텍스트 파일을 UTF-8 고정으로 읽지 않았는가?**
+      메모장 'ANSI'(CP949)나 일본 BMS(Shift-JIS)로 저장된 파일은 UTF-8로 읽으면 한글이 대체 문자로 바뀌고, 한글 키는 조용히 무시됩니다.
+      `TextFileDecoder.ReadAllText`를 쓰십시오(BOM → 엄격 UTF-8 → CP949 → Shift-JIS).
+      (`config.txt`는 일찍이 CP949 폴백을 넣었지만 BMS·`info.txt`는 2026-11-26 감사 11차 전까지 UTF-8 고정이었습니다.)
+
 - [ ] **`FileSystemWatcher`·`Threading.Timer`를 쓰면 오류 이벤트와 콜백 겹침을 처리했는가?**
       감시자는 `Error`(버퍼 넘침 `InternalBufferOverflowException`, 폴더 접근 끊김)를 받지 않으면 그 사이 변경이 로그 없이 사라집니다.
       `Threading.Timer`는 콜백이 끝나기 전에 `Change`하면 다른 스레드에서 콜백을 겹쳐 부릅니다.

@@ -47,7 +47,13 @@ namespace muse_dash_test
                 ModLogger.Verbose($"[HwaResourceManager] manifest 읽기 대상: {preferred}");
 
                 var manifest = new HwaManifest { SourcePath = preferred };
-                foreach (var rawLine in File.ReadAllLines(preferred))
+                // 메모장 'ANSI'(CP949)로 저장한 info.txt도 한글 키를 읽도록 인코딩을 가려 읽습니다(TextFileDecoder 참고).
+                string manifestText = TextFileDecoder.ReadAllText(preferred, out string manifestEncoding);
+                if (TextFileDecoder.IsLegacyEncoding(manifestEncoding))
+                {
+                    ModLogger.Msg($"[HwaResourceManager] info.txt를 UTF-8이 아닌 {manifestEncoding}(으)로 읽었습니다: {preferred}");
+                }
+                foreach (var rawLine in ReadLines(manifestText))
                 {
                     if (TryParseManifestLine(rawLine, out string key, out string value))
                     {
@@ -193,6 +199,19 @@ namespace muse_dash_test
             // 어떤 항목에도 걸리지 않은 줄은 오타일 가능성이 높습니다. 예전에는 조용히 버려서
             // "설정을 적었는데 반영이 안 된다"는 증상만 남았습니다.
             ModLogger.Warning($"[HwaResourceManager] info.txt에서 알 수 없는 설정 키를 건너뜁니다: '{key}' (값: '{value}')");
+        }
+
+        /// <summary>CRLF·LF·CR 어느 줄바꿈이든 한 줄씩 돌려줍니다(<c>File.ReadAllLines</c>와 같은 규칙).</summary>
+        private static System.Collections.Generic.IEnumerable<string> ReadLines(string text)
+        {
+            using (var reader = new StringReader(text ?? string.Empty))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    yield return line;
+                }
+            }
         }
 
         private static bool TryApplyDifficultyBms(HwaManifest manifest, string normalizedKey, string value)

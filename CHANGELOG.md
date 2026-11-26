@@ -3,6 +3,15 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [0.16.6] - 감사 11차·채보별 기록 보관·BMS/info.txt 인코딩 판별
+
+### 기록
+- 곡 폴더의 BMS를 갈아끼운 뒤 한 판 하면, 덮기 직전의 옛 채보 기록을 `record/archive/{곡 폴더}_{난이도}.{채보 지문}.json`으로 보관합니다. 예전에는 처음 덮을 때의 원본 하나만 `.bak`으로 남아, A → B → C로 바꾸면 B의 최고 기록이 사라졌습니다.
+- 채보를 예전 것으로 되돌리면 그 채보의 보관 기록을 찾아 결과창·기록 카드·곡 선택 화면에 다시 보여주고, 다음 판부터 그 기록에 이어서 최고 기록·플레이 횟수를 쌓습니다. 예전에는 되돌려도 "다른 채보의 기록이라 표시하지 않습니다"로 빈 기록부터 시작했습니다.
+
+### 인코딩
+- BMS 채보와 곡 폴더의 `info.txt`를 UTF-8로만 읽던 것을, BOM(UTF-8/UTF-16) → UTF-8 → CP949 → Shift-JIS 순으로 가려 읽습니다(`TextFileDecoder`). 메모장에서 'ANSI'로 저장한 `info.txt`의 한글 키(`난이도N bms`, `크리스마스 …`, `dt를 권장 표로 고치기`)가 깨져 조용히 무시되거나, CP949·Shift-JIS BMS의 `#TITLE`·`#WAV` 파일 이름이 깨질 수 있었습니다. 올바른 UTF-8 파일은 예전과 똑같이 읽힙니다. UTF-8이 아닌 `info.txt`를 읽으면 로그에 한 줄 남깁니다.
+
 ## [0.16.5] - 감사 10차·MelonLoader 버전 경고·문화권 무관 문자열 비교
 
 게임 동작을 바꾸는 기능 추가는 없습니다.
