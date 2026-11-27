@@ -37,24 +37,7 @@ namespace muse_dash_test
         /// <summary>파일을 읽어 문자열로 돌려줍니다. 다른 프로그램이 쓰는 중이어도 읽을 수 있게 공유 모드로 엽니다.</summary>
         public static string ReadAllText(string path, out string encodingName)
         {
-            byte[] bytes;
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                long length = fs.Length;
-                if (length > int.MaxValue) throw new IOException($"파일 크기가 너무 큽니다: {path} ({length} bytes)");
-                bytes = new byte[(int)length];
-                int totalRead = 0;
-                while (totalRead < bytes.Length)
-                {
-                    int read = fs.Read(bytes, totalRead, bytes.Length - totalRead);
-                    if (read == 0) break;
-                    totalRead += read;
-                }
-                if (totalRead != bytes.Length)
-                {
-                    Array.Resize(ref bytes, totalRead);
-                }
-            }
+            byte[] bytes = AtomicFile.ReadAllBytesShared(path);
             return Decode(bytes, out encodingName);
         }
 

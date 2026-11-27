@@ -19,7 +19,7 @@ namespace muse_dash_test
         }
 
         public static bool IsVirtualSong(string uid) =>
-            !string.IsNullOrEmpty(uid) && uid.StartsWith(VirtualSongPrefix, StringComparison.Ordinal) && uid != AlbumUid;
+            !string.IsNullOrEmpty(uid) && uid.StartsWith(VirtualSongPrefix, StringComparison.Ordinal) && !string.Equals(uid, AlbumUid, StringComparison.Ordinal);
 
         public static bool IsVirtualContent(string uid) =>
             !string.IsNullOrEmpty(uid) && uid.StartsWith(VirtualSongPrefix, StringComparison.Ordinal);

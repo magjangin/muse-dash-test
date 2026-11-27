@@ -168,7 +168,7 @@ namespace muse_dash_test
             }
             catch (Exception ex) { ModLogger.Verbose($"[InputOverlay.Config] 무시된 예외: {ex.Message}"); }
 
-            byte[] bytes = File.ReadAllBytes(configPath);
+            byte[] bytes = AtomicFile.ReadAllBytesShared(configPath);
 
             // UTF-8 BOM은 Encoding.UTF8.GetString이 걷어내지 않아 첫 글자로 남습니다(U+FEFF).
             // 이 텍스트를 다시 UTF8Encoding(true)로 쓰는 경로(이름 이관/중복 정리)가 있으므로,

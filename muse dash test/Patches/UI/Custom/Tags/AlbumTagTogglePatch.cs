@@ -44,7 +44,7 @@ namespace muse_dash_test
                 // 2. 물리 파일이 존재하면 로드 진행
                 if (File.Exists(pngPath))
                 {
-                    byte[] fileData = File.ReadAllBytes(pngPath);
+                    byte[] fileData = AtomicFile.ReadAllBytesShared(pngPath);
                     Texture2D texture = new Texture2D(2, 2);
                     
                     if (UnityEngine.ImageConversion.LoadImage(texture, fileData))
@@ -138,7 +138,7 @@ namespace muse_dash_test
             try
             {
                 var tagInfo = __instance.tagInfo;
-                if (tagInfo != null && tagInfo.tagUid == CustomTagRegistry.TagUidString)
+                if (tagInfo != null && string.Equals(tagInfo.tagUid, CustomTagRegistry.TagUidString, StringComparison.Ordinal))
                 {
                     Texture2D customTexture = AlbumTagToggle_Init_Patch.GetCustomTexture();
                     if (customTexture != null)
@@ -168,7 +168,7 @@ namespace muse_dash_test
             try
             {
                 var tagInfo = __instance.tagInfo;
-                if (tagInfo != null && tagInfo.tagUid == CustomTagRegistry.TagUidString)
+                if (tagInfo != null && string.Equals(tagInfo.tagUid, CustomTagRegistry.TagUidString, StringComparison.Ordinal))
                 {
                     Texture2D customTexture = AlbumTagToggle_Init_Patch.GetCustomTexture();
                     if (customTexture != null && __instance.m_IconImg != null)

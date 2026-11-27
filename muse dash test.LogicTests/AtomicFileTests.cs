@@ -57,6 +57,43 @@ namespace muse_dash_test.LogicTests
             });
         }
 
+        public static void ReadAllBytesShared_CanReadWhileFileIsOpenedWithReadWriteShare()
+        {
+            WithTempDir(dir =>
+            {
+                string path = Path.Combine(dir, "shared_read.bin");
+                byte[] expected = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+                File.WriteAllBytes(path, expected);
+
+                // 외부 프로세스가 쓰기 가능한 공유 모드로 열고 있는 상황 시뮬레이션
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+                {
+                    byte[] read = AtomicFile.ReadAllBytesShared(path);
+                    Assert.Equal(expected.Length, read.Length);
+                    for (int i = 0; i < expected.Length; i++)
+                    {
+                        Assert.Equal(expected[i], read[i]);
+                    }
+                }
+            });
+        }
+
+        public static void ReadAllTextShared_CanReadWhileFileIsOpenedWithReadWriteShare()
+        {
+            WithTempDir(dir =>
+            {
+                string path = Path.Combine(dir, "shared_read.txt");
+                string expected = "동시 접근 테스트 텍스트 1234";
+                File.WriteAllText(path, expected, Encoding.UTF8);
+
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+                {
+                    string read = AtomicFile.ReadAllTextShared(path, Encoding.UTF8);
+                    Assert.Equal(expected, read);
+                }
+            });
+        }
+
         private static void WithTempDir(Action<string> body)
         {
             string dir = Path.Combine(Path.GetTempPath(), "atomicfile-tests-" + Guid.NewGuid().ToString("N"));
