@@ -133,11 +133,11 @@ namespace muse_dash_test
                     typeResolvedFromUid = true;
                 }
 
-                if (XxyyTransitionMap.ContainsKey(xxyy))
+                ApplyBossTransitionFromXxyy(info, xxyy);
+                if (info.NoteType == 0 && info.BossAction != null)
                 {
                     typeResolvedFromUid = true;
                 }
-                ApplyBossTransitionFromXxyy(info, xxyy);
 
                 // 4. 보스 발사체 (xx=06/07/08, Type 1) 및 보스 톱니 (xx=09, Type 2) 처리
                 if (xx == "06" || xx == "07" || xx == "08" || xx == "09")

@@ -157,8 +157,7 @@ public class GameMusicScene_InitTimer_Patch
     {
         try
         {
-            if (!ScenePatchHelpers.IsSixDigitUid(uid)) return;
-            if (uid.Substring(2, 2) != "17") return;
+            if (!ScenePatchHelpers.IsGhostNoteUid(uid)) return;
             if (!loggedGhostUids.Add(uid)) return;
 
             var nd = note.noteData;

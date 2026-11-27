@@ -15,6 +15,9 @@ namespace muse_dash_test.LogicTests
         public static void IsTempFile_TreatsBackupSuffixAsTemp()
         {
             Assert.True(BmsFileNames.IsTempFile("chart.bms~"));
+            Assert.True(BmsFileNames.IsTempFile("chart.bms.tmp"));
+            Assert.True(BmsFileNames.IsTempFile("chart.bms.temp"));
+            Assert.True(BmsFileNames.IsTempFile("chart.TMP"));
         }
 
         public static void IsTempFile_TreatsTempWordAsTemp()
