@@ -34,6 +34,7 @@
     <Compile Include="..\muse dash test\Core\CustomRecordStore.Serialization.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\CustomContentIds.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Core\SaveSelectionRules.cs" Link="UnderTest\%(Filename)%(Extension)" />
+    <Compile Include="..\muse dash test\Core\TagRefreshRules.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Spine\NoteSkinRules.cs" Link="UnderTest\%(Filename)%(Extension)" />
     <Compile Include="..\muse dash test\Spine\SkinFolderRules.cs" Link="UnderTest\%(Filename)%(Extension)" />
   </ItemGroup>

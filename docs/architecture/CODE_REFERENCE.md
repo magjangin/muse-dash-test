@@ -398,6 +398,7 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 | `MusicDecimalText.cs` | 게임 `Decimal.ToString()` 결과를 로케일 무관하게 double로 되돌림 |
 | `HiddenUnlockText.cs` | 히든 해금 데이터 → 곡 선택창 한 줄 문구 규칙 |
 | `SaveSelectionRules.cs` | 세이브 '마지막 선택'이 모드 전용 태그·앨범·곡이면 바닐라 값으로 바꾸는 규칙 |
+| `TagRefreshRules.cs` | `RefreshStageDisplayMusics` 원본을 막을지: 1999는 항상, -1(지금 태그)은 지금 태그가 1999일 때만 |
 | `UnlockAllMasterGuard.cs` | 표시용으로 강제한 `IsUnlockAllMaster` 원래 값을 캡처해 저장 때 원복 |
 | `HealthBarFinder.cs` | 배틀 체력바 오브젝트 탐색(이름 후보 + 캐시) |
 | `CustomContentIds.cs` · `CustomPlaySession.cs` · `SongAudioFiles.cs` · `GameBgmSource.cs` | 가상 uid 규칙, 현재 곡 세션, 곡 폴더 음원 선택, 게임 BGM 소스 참조(이름으로 찾지 않음) |

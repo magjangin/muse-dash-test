@@ -3,6 +3,11 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [미발행] - 곡 선택 화면 진입 직후 목록이 비던 문제 수정
+
+### 고친 것
+- 곡 선택 화면에 들어가면 ALL 태그인데도 곡 목록이 0곡으로 비어 있던 문제를 고쳤습니다(태그 패널에서 곡을 눌러야 채워졌음). 원인은 커스텀 태그(1999) NRE를 막는 `MusicTagManager_RefreshStageDisplayMusics_Patch`가 게임의 "지금 태그로 갱신"(`-1`)까지 막은 것입니다. 이제 `-1`은 지금 태그가 커스텀일 때만 막습니다(`TagRefreshRules`). 실기 확인(2026-11-27): 진입 직후 803곡, 커스텀 태그 16곡 선택·그 상태로 재진입 시 오류 0건.
+
 ## [0.16.9] - 감사 14차·보스 전환 맵 2중 조회 해소·고스트 판정 힙 할당 방지·임시 채보 필터 강화
 
 게임 동작을 바꾸는 기능 추가는 없습니다.
