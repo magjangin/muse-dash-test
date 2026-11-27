@@ -97,21 +97,21 @@ namespace muse_dash_test.Patches.Battle.Mechanics
 
         #region StandloneController Patches
 
-        [HarmonyPatch(typeof(StandloneController), nameof(StandloneController.GetButtonDown))]
+        [HarmonyPatch(typeof(StandloneController), nameof(StandloneController.GetButtonDown), new Type[] { typeof(MDButtonType) })]
         [HarmonyPostfix]
         public static void Standlone_GetButtonDown_Postfix(StandloneController __instance, MDButtonType buttonName, ref List<int> __result)
         {
             InjectButtonDown(buttonName, ref __result);
         }
 
-        [HarmonyPatch(typeof(StandloneController), nameof(StandloneController.GetButton))]
+        [HarmonyPatch(typeof(StandloneController), nameof(StandloneController.GetButton), new Type[] { typeof(MDButtonType) })]
         [HarmonyPostfix]
         public static void Standlone_GetButton_Postfix(StandloneController __instance, MDButtonType buttonName, ref List<int> __result)
         {
             InjectButtonHold(buttonName, ref __result);
         }
 
-        [HarmonyPatch(typeof(StandloneController), nameof(StandloneController.GetButtonUp))]
+        [HarmonyPatch(typeof(StandloneController), nameof(StandloneController.GetButtonUp), new Type[] { typeof(MDButtonType) })]
         [HarmonyPostfix]
         public static void Standlone_GetButtonUp_Postfix(StandloneController __instance, MDButtonType buttonName, ref List<int> __result)
         {

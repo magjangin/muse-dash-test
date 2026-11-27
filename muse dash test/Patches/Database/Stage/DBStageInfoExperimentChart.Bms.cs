@@ -1,5 +1,7 @@
+using System;
 using MelonLoader;
 using muse_dash_test;
+using System.Globalization;
 
 // BMS 차트(BmsChart) → 실험 노트 스펙(ExperimentNoteSpec) 변환 및 보스 등장/퇴장 자동 스왑 로직.
 public partial class DBStageInfo_SetRuntimeMusicData_Patch
@@ -100,7 +102,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (!string.IsNullOrEmpty(spec.BossAction) && muse_dash_test.HwaResourceManager.TryGetCachedHwaScene(activeUid, out int manifestScene))
         {
-            spec.Scene = $"scene_{manifestScene:00}";
+            spec.Scene = $"scene_{manifestScene.ToString("00", CultureInfo.InvariantCulture)}";
         }
 
         if (!string.IsNullOrWhiteSpace(spec.BossAction))
@@ -150,7 +152,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     public static string ResolveSceneToggleIbmsId(string uid)
     {
         string yy = UidCode.Yy(uid);
-        if (yy != null && int.TryParse(yy, out int sceneInfo)
+        if (yy != null && int.TryParse(yy, NumberStyles.Integer, CultureInfo.InvariantCulture, out int sceneInfo)
             && SceneToggleIbmsIdByScene.TryGetValue(sceneInfo, out string ibmsId))
         {
             return ibmsId;
@@ -336,12 +338,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return string.Empty;
         }
 
-        if (!int.TryParse(UidCode.Scene(uid), out int scene))
+        if (!int.TryParse(uid.AsSpan(0, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out int scene))
         {
             return string.Empty;
         }
 
-        return $"{scene:00}01_boss";
+        return $"{scene.ToString("00", CultureInfo.InvariantCulture)}01_boss";
     }
 
     public static int TryInferBossSceneFromUid(string uid)
@@ -351,7 +353,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             return -1;
         }
 
-        if (int.TryParse(UidCode.Scene(uid), out int scene))
+        if (int.TryParse(uid.AsSpan(0, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out int scene))
         {
             return scene;
         }

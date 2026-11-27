@@ -6,6 +6,8 @@ using System;
 [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.Run))]
 public class GameMusicScene_Run_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     // 배틀 중 30프레임마다 반복되는 관찰용 덤프입니다. 여기가 하드코딩 true라
     // 릴리스 플레이 내내 돌고 있었습니다. 사용자가 끄고 켤 수 있게 로그 레벨에 묶습니다.
     private static bool EnableVerboseSceneDump => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
@@ -56,12 +58,14 @@ public class GameMusicScene_Run_Patch
             var list = db != null ? db.musicList : null;
             if (list == null) { ModLogger.Verbose("[GameMusicScene.Run]   >> musicList = (null)"); return; }
 
-            var hist = new System.Collections.Generic.SortedDictionary<string, int>();
-            var firstNonNull = new System.Collections.Generic.List<string>();
+            var hist = new System.Collections.Generic.SortedDictionary<string, int>(StringComparer.Ordinal);
+            var firstNonNull = new System.Collections.Generic.List<string>(6);
             int nullCount = 0;
             for (int i = 0; i < list.Count; i++)
             {
-                string uid = SafeAccess.Get(() => list[i]?.noteData?.uid, null);
+                var note = list[i];
+                var noteData = note?.noteData;
+                string uid = noteData?.uid;
                 if (string.IsNullOrEmpty(uid)) { nullCount++; continue; }
                 string zz = uid.Length >= 2 ? uid.Substring(0, 2) : uid;
                 hist[zz] = hist.TryGetValue(zz, out int c) ? c + 1 : 1;

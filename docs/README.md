@@ -1,6 +1,6 @@
 ﻿# 📚 문서 목차 (Docs Index)
 
-`muse-dash-custom-chart` 문서는 읽는 목적에 따라 아래 6개 폴더로 나뉘어 있습니다.
+`muse-dash-custom-chart` 문서는 읽는 목적에 따라 아래 7개 폴더(`archive/` 과거 검토 보존분 포함)로 나뉘어 있습니다.
 처음 왔다면 **getting-started → architecture → guides** 순서로 읽는 것을 권장합니다.
 
 ---
@@ -63,6 +63,8 @@
 | [NOTE_COLOR_TINTING.md](experiments/NOTE_COLOR_TINTING.md) | 노트 종류별 색조(Tint) 변조 가능성 실측 (참고용 코드, 현재 모드에는 포함되지 않음) |
 | [HIDDEN_SHEET_LOGIC.md](experiments/HIDDEN_SHEET_LOGIC.md) | 숨겨진 채보 발동 방식(자켓 길게 누르기·연타·난이도 전환 순서·날짜), 안내 팝업/팁 시스템(mopemope 빨간 글씨 이스터에그 포함) 및 플레이 시 _map4 교체 경로 ISIL 판독 (조사만) |
 | [CHARACTER_SKILL_IDEAS.md](experiments/CHARACTER_SKILL_IDEAS.md) | 불량소녀 린·라봇-233 횟수 999, 유메 톱니 부수기 아이디어와 ISIL·실측 기록 (보류, 코드는 로컬 브랜치에만) |
+| [ACHIEVEMENT_CARD_LOGIC.md](experiments/ACHIEVEMENT_CARD_LOGIC.md) | 업적·프로필 카드 데이터 및 표시 경로 분석 |
+| [CUSTOM_ROLE_SLOT_EXPERIMENT.md](experiments/CUSTOM_ROLE_SLOT_EXPERIMENT.md) | 커스텀 캐릭터 슬롯 확장 가능성 조사 및 실험 메모 |
 
 ## 🔮 muse-dash-2/ — 차기작 대비 분석
 

@@ -8,6 +8,8 @@ namespace muse_dash_test
     public static partial class CustomRecordStore
     {
         internal const string NoChartFingerprint = "none";
+        private static readonly char[] LineSplitChars = { '\n', '\r' };
+        private static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
 
         public class PlayRecord
         {
@@ -48,12 +50,13 @@ namespace muse_dash_test
         internal static PlayRecord ParseJson(string json)
         {
             var record = new PlayRecord();
-            var lines = json.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var ci = CultureInfo.InvariantCulture;
+            var lines = json.Split(LineSplitChars, StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
                 var clean = line.Trim();
-                if (!clean.Contains(":")) continue;
-                var idx = clean.IndexOf(':');
+                int idx = clean.IndexOf(':');
+                if (idx < 0) continue;
                 var key = clean.Substring(0, idx).Replace("\"", "").Trim();
                 var val = clean.Substring(idx + 1).Trim().TrimEnd(',');
 
@@ -63,37 +66,37 @@ namespace muse_dash_test
                         record.uid = val.Replace("\"", "").Trim();
                         break;
                     case "noteCount":
-                        int.TryParse(val, out record.noteCount);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.noteCount);
                         break;
                     case "standard":
-                        int.TryParse(val, out record.standard);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.standard);
                         break;
                     case "gears":
-                        int.TryParse(val, out record.gears);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.gears);
                         break;
                     case "hearts":
-                        int.TryParse(val, out record.hearts);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.hearts);
                         break;
                     case "blueNotes":
-                        int.TryParse(val, out record.blueNotes);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.blueNotes);
                         break;
                     case "perfect":
-                        int.TryParse(val, out record.perfect);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.perfect);
                         break;
                     case "great":
-                        int.TryParse(val, out record.great);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.great);
                         break;
                     case "miss":
-                        int.TryParse(val, out record.miss);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.miss);
                         break;
                     case "score":
-                        int.TryParse(val, out record.score);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.score);
                         break;
                     case "maxCombo":
-                        int.TryParse(val, out record.maxCombo);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.maxCombo);
                         break;
                     case "accuracy":
-                        float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out record.accuracy);
+                        float.TryParse(val, NumberStyles.Float, ci, out record.accuracy);
                         break;
                     case "isFullCombo":
                         record.isFullCombo = val.Equals("true", StringComparison.OrdinalIgnoreCase);
@@ -102,7 +105,7 @@ namespace muse_dash_test
                         record.isAllPerfect = val.Equals("true", StringComparison.OrdinalIgnoreCase);
                         break;
                     case "playCount":
-                        int.TryParse(val, out record.playCount);
+                        int.TryParse(val, NumberStyles.Integer, ci, out record.playCount);
                         break;
                     case "savedAtUtc":
                         record.savedAtUtc = val.Replace("\"", "").Trim();
@@ -128,23 +131,23 @@ namespace muse_dash_test
             int playCount, string savedAtUtc, string chartFingerprint, string songFolder)
         {
             var ci = CultureInfo.InvariantCulture;
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(384);
             sb.Append('{').Append('\n');
             sb.Append("  \"uid\": \"").Append(EscapeJson(uid)).Append("\",\n");
-            sb.Append("  \"noteCount\": ").Append(noteCount).Append(",\n");
-            sb.Append("  \"standard\": ").Append(standard).Append(",\n");
-            sb.Append("  \"gears\": ").Append(gears).Append(",\n");
-            sb.Append("  \"hearts\": ").Append(hearts).Append(",\n");
-            sb.Append("  \"blueNotes\": ").Append(blueNotes).Append(",\n");
-            sb.Append("  \"perfect\": ").Append(perfect).Append(",\n");
-            sb.Append("  \"great\": ").Append(great).Append(",\n");
-            sb.Append("  \"miss\": ").Append(miss).Append(",\n");
-            sb.Append("  \"score\": ").Append(score).Append(",\n");
-            sb.Append("  \"maxCombo\": ").Append(maxCombo).Append(",\n");
+            sb.Append("  \"noteCount\": ").Append(noteCount.ToString(ci)).Append(",\n");
+            sb.Append("  \"standard\": ").Append(standard.ToString(ci)).Append(",\n");
+            sb.Append("  \"gears\": ").Append(gears.ToString(ci)).Append(",\n");
+            sb.Append("  \"hearts\": ").Append(hearts.ToString(ci)).Append(",\n");
+            sb.Append("  \"blueNotes\": ").Append(blueNotes.ToString(ci)).Append(",\n");
+            sb.Append("  \"perfect\": ").Append(perfect.ToString(ci)).Append(",\n");
+            sb.Append("  \"great\": ").Append(great.ToString(ci)).Append(",\n");
+            sb.Append("  \"miss\": ").Append(miss.ToString(ci)).Append(",\n");
+            sb.Append("  \"score\": ").Append(score.ToString(ci)).Append(",\n");
+            sb.Append("  \"maxCombo\": ").Append(maxCombo.ToString(ci)).Append(",\n");
             sb.Append("  \"accuracy\": ").Append(accuracy.ToString("0.000000", ci)).Append(",\n");
             sb.Append("  \"isFullCombo\": ").Append(isFullCombo ? "true" : "false").Append(",\n");
             sb.Append("  \"isAllPerfect\": ").Append(isAllPerfect ? "true" : "false").Append(",\n");
-            sb.Append("  \"playCount\": ").Append(playCount).Append(",\n");
+            sb.Append("  \"playCount\": ").Append(playCount.ToString(ci)).Append(",\n");
             sb.Append("  \"savedAtUtc\": \"").Append(string.IsNullOrEmpty(savedAtUtc) ? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", ci) : savedAtUtc).Append("\",\n");
             sb.Append("  \"chartFingerprint\": \"").Append(EscapeJson(string.IsNullOrEmpty(chartFingerprint) ? NoChartFingerprint : chartFingerprint)).Append("\",\n");
             sb.Append("  \"songFolder\": \"").Append(EscapeJson(songFolder)).Append("\"\n");
@@ -160,7 +163,8 @@ namespace muse_dash_test
 
         internal static string SanitizeFileName(string uid)
         {
-            foreach (char c in Path.GetInvalidFileNameChars())
+            if (string.IsNullOrEmpty(uid) || uid.IndexOfAny(InvalidFileNameChars) < 0) return uid;
+            foreach (char c in InvalidFileNameChars)
             {
                 uid = uid.Replace(c, '_');
             }

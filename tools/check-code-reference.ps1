@@ -18,10 +18,15 @@ $docPaths = @(
 
 $docText = ($docPaths | ForEach-Object { Get-Content -LiteralPath $_ -Raw -Encoding utf8 }) -join "`n"
 
+# 파일명(.cs 포함) 단위로 대조합니다. 확장자를 뺀 부분 문자열로만 찾으면 CustomTagPatch.cs 가
+# CustomTagPatch.AlbumPatches.cs 에, MusicInfoWrapper.cs 가 MusicInfoWrapper.listIndex 에 묻혀 누락됩니다.
 $missing = Get-ChildItem -LiteralPath $sourceRoot -Recurse -Filter '*.cs' -File |
     Where-Object { $_.FullName -notmatch '[\\/](obj|bin)[\\/]' } |
-    ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) } |
-    Where-Object { -not $docText.Contains($_) } |
+    ForEach-Object { $_.Name } |
+    Where-Object {
+        $escaped = [regex]::Escape($_)
+        $docText -notmatch "(?<![A-Za-z0-9_.])$escaped(?![A-Za-z0-9_])"
+    } |
     Sort-Object -Unique
 
 if ($missing) {

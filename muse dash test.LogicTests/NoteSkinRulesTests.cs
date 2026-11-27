@@ -58,6 +58,8 @@ namespace muse_dash_test.LogicTests
             Assert.Equal("fb", NoteSkinRules.AtlasTextureName("\n\n", "fb"));
             Assert.Equal("fb", NoteSkinRules.AtlasTextureName("size: 2,2\n", "fb"));
             Assert.Equal("page", NoteSkinRules.AtlasTextureName("﻿page.png\n", "fb"));
+            Assert.Equal("0411_road", NoteSkinRules.AtlasTextureName("sub\\0411_road.png\nsize: 2,2\n", "fb"));
+            Assert.Equal("0411_road", NoteSkinRules.AtlasTextureName("sub/0411_road.png\nsize: 2,2\n", "fb"));
         }
 
         public static void RuntimeScale_DoublesOriginalLikeCharacterSkins()

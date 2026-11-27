@@ -98,7 +98,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.SceneFestival))]
+    [HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.SceneFestival), new Type[] { typeof(string) })]
     internal static class GameMusicScene_SceneFestival_Patch
     {
         private static void Postfix(string sceneFestivalName, ref string __result)
@@ -119,7 +119,7 @@ namespace muse_dash_test
         }
     }
 
-    [HarmonyPatch(typeof(Il2Cpp.Boss), nameof(Il2Cpp.Boss.BossFestival))]
+    [HarmonyPatch(typeof(Il2Cpp.Boss), nameof(Il2Cpp.Boss.BossFestival), new Type[] { typeof(string) })]
     internal static class Boss_BossFestival_Patch
     {
         private static void Postfix(string bossFestivalName, ref string __result)

@@ -55,14 +55,14 @@ namespace muse_dash_test
             marks = 0;
         }
 
-        private static int BeginEvent(string key, int type, int frame, EventFlags flags)
+        private static int BeginEvent(string key, int type, int frame, float deltaTime, EventFlags flags)
         {
             int index = eventNext;
             events[index] = new KeysoundEvent
             {
                 GameTime = GameTime(),
                 Frame = frame,
-                DeltaTime = Time.unscaledDeltaTime,
+                DeltaTime = deltaTime,
                 Key = key,
                 Type = type,
                 Flags = flags,
@@ -86,7 +86,7 @@ namespace muse_dash_test
 
         private static void RecordAttackWithoutKeysound(int id, string key)
         {
-            int index = BeginEvent(key, 0, Time.frameCount, EventFlags.AttackWithoutKeysound);
+            int index = BeginEvent(key, 0, Time.frameCount, Time.unscaledDeltaTime, EventFlags.AttackWithoutKeysound);
             events[index].Clip = "note#" + id;
         }
 

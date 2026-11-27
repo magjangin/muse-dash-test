@@ -28,5 +28,11 @@ namespace muse_dash_test
         {
             return s_captured ? s_originalValue : false;
         }
+
+        internal static void ResetForTests()
+        {
+            s_captured = false;
+            s_originalValue = false;
+        }
     }
 }

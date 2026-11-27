@@ -10,20 +10,18 @@ namespace muse_dash_test.Patches.UI.Stage
     /// 즉각 해당 셀 오브젝트를 비활성화하여 랭킹창 표시 한도를 상위 10개(Top 10)로 완벽 제어하는 패치 클래스입니다.
     /// </summary>
     // [회귀 조사 결과] 이 훅을 비활성화해도 결과창 전환 문제는 그대로였다 → 무죄. 재활성화함.
-    [HarmonyLib.HarmonyPatch(typeof(RankCell), nameof(RankCell.SetValue))]
+    [HarmonyLib.HarmonyPatch(typeof(RankCell), nameof(RankCell.SetValue), new Type[] { typeof(int), typeof(string), typeof(int), typeof(float) })]
     public class RankCell_SetValue_HookPatch
     {
         public static void Prefix(RankCell __instance, int number, string nickName, int score, float acc)
         {
+            if (number > 10 || !ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
             try
             {
                 string uid = CustomPlaySession.Current.LastKnownMusicUid;
-
                 float displayAcc = acc * 100f;
-                if (number <= 10)
-                {
-                    ModLogger.Verbose($"🎯 [RankCell.SetValue] Number={number:D2}, NickName='{nickName}', Score={score:N0}, Acc={displayAcc:F2}% (UID={uid ?? "unknown"})");
-                }
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                ModLogger.Verbose($"🎯 [RankCell.SetValue] Number={number.ToString("D2", inv)}, NickName='{nickName}', Score={score.ToString("N0", inv)}, Acc={displayAcc.ToString("F2", inv)}% (UID={uid ?? "unknown"})");
             }
             catch (Exception ex) { ModLogger.Verbose($"[RankCellHook] 무시된 예외: {ex.Message}"); }
         }

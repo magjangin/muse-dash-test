@@ -1,5 +1,7 @@
 using MelonLoader;
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace muse_dash_test
@@ -29,12 +31,12 @@ namespace muse_dash_test
     {
         private static int _depth;
         private static int _frame;
-        private static readonly HashSet<string> _loggedRefusals = new HashSet<string>();
+        private static readonly HashSet<string> _loggedRefusals = new HashSet<string>(StringComparer.Ordinal);
 
         private static string _drawingUid;
 
         /// <summary>지금 선택 곡 한 곡을 그리는 중이라 인덱스 기반 조회에 답해도 되는지 여부입니다.</summary>
-        public static bool IsActive => _depth > 0 && Time.frameCount == _frame;
+        public static bool IsActive => _depth > 0 && TryGetFrameCount() == _frame;
 
         /// <summary>
         /// 스코프 안에서 지금 그리는 곡의 uid. 모르면 null(호출자는 세션의 선택 곡으로 대신합니다).
@@ -52,11 +54,12 @@ namespace muse_dash_test
 
         public static void Enter()
         {
+            int now = TryGetFrameCount();
             // 프레임이 넘어갔다면 짝이 맞지 않은 채 남은 깊이이므로 버립니다(스코프 고착 방지).
-            if (_depth > 0 && Time.frameCount != _frame) _depth = 0;
+            if (_depth > 0 && now != _frame) _depth = 0;
             if (_depth == 0) _drawingUid = null;
 
-            _frame = Time.frameCount;
+            _frame = now;
             _depth++;
         }
 
@@ -64,6 +67,21 @@ namespace muse_dash_test
         {
             if (_depth > 0) _depth--;
         }
+
+        private static int TryGetFrameCount()
+        {
+            try
+            {
+                return ReadFrameCountCore();
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int ReadFrameCountCore() => Time.frameCount;
 
         /// <summary>
         /// 스코프 밖이라 가로채지 않고 원본에 넘긴 조회를 호출자별 1회만 기록합니다.

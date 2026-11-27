@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 namespace muse_dash_test
@@ -109,7 +110,15 @@ namespace muse_dash_test
                 return false;
             }
 
-            return int.TryParse(uid.Substring(0, 2), out scene);
+            uint d0 = (uint)(uid[0] - '0');
+            uint d1 = (uint)(uid[1] - '0');
+            if (d0 <= 9 && d1 <= 9)
+            {
+                scene = (int)(d0 * 10 + d1);
+                return true;
+            }
+
+            return int.TryParse(uid.AsSpan(0, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out scene);
         }
 
         private static bool TryParseSceneName(string sceneName, out int scene)
@@ -126,8 +135,7 @@ namespace muse_dash_test
                 return false;
             }
 
-            string value = sceneName.Substring(prefix.Length);
-            return int.TryParse(value, out scene);
+            return int.TryParse(sceneName.AsSpan(prefix.Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out scene);
         }
 
         private static bool TryParseHitPointScene(string name, out int scene)
@@ -144,14 +152,14 @@ namespace muse_dash_test
                 return false;
             }
 
-            string value = name.Substring(prefix.Length);
-            int cloneIndex = value.IndexOf("(Clone)", StringComparison.OrdinalIgnoreCase);
+            ReadOnlySpan<char> value = name.AsSpan(prefix.Length);
+            int cloneIndex = value.IndexOf("(Clone)".AsSpan(), StringComparison.OrdinalIgnoreCase);
             if (cloneIndex >= 0)
             {
-                value = value.Substring(0, cloneIndex);
+                value = value.Slice(0, cloneIndex);
             }
 
-            return int.TryParse(value, out scene);
+            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out scene);
         }
 
         private static void AddSceneCandidate(List<SceneCandidate> candidates, int scene, string source)

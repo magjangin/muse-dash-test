@@ -20,7 +20,8 @@ namespace muse_dash_test
     {
         // 오프셋/딜레이 getter는 배틀 중 매우 빈번하게 호출됩니다. 동일 컨텍스트(곡/메서드)당
         // 로그를 1회만 출력해 매 호출 MelonLogger I/O로 인한 로그 폭발 및 프레임 드랍을 방지합니다.
-        private static readonly System.Collections.Generic.HashSet<string> loggedOnce = new System.Collections.Generic.HashSet<string>();
+        private static readonly System.Collections.Generic.HashSet<string> loggedOnce =
+            new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
 
         // 해당 key가 처음 출력되는 경우에만 true를 반환합니다. (HashSet.Add는 신규 추가 시 true)
         private static bool LogOnce(string key) => loggedOnce.Add(key);
@@ -61,6 +62,9 @@ namespace muse_dash_test
         private static readonly System.Diagnostics.Stopwatch fallbackClock = System.Diagnostics.Stopwatch.StartNew();
         private static string cachedFallbackUid;
         private static long cachedFallbackAtMs = long.MinValue;
+        private static bool hasCachedDelayDecimal;
+        private static double cachedDelaySource;
+        private static Il2CppSystem.Decimal cachedDelayDecimal;
 
         /// <summary>
         /// 폴백 UID 캐시를 버립니다. 씬이 바뀌면 곡도 바뀔 수 있으므로
@@ -70,6 +74,7 @@ namespace muse_dash_test
         {
             cachedFallbackUid = null;
             cachedFallbackAtMs = long.MinValue;
+            hasCachedDelayDecimal = false;
         }
 
         // 현재 로드된 가상 곡의 UID를 안전하게 조회하는 헬퍼 메서드
@@ -170,10 +175,18 @@ namespace muse_dash_test
                     {
                         double customDelay = manifest.Delay.Value;
                         bool shouldLogDelay = ShouldLogFor(ref lastDelayUid, uid, "delay:");
-                        string originalStr = shouldLogDelay && __result != null ? __result.ToString() : "null";
-                        
-                        __result = (Il2CppSystem.Decimal)customDelay;
-                        
+                        string originalStr = shouldLogDelay ? __result.ToString() : null;
+
+                        // (Il2CppSystem.Decimal)double 변환은 매 호출 il2cpp_runtime_invoke(op_Explicit) 박싱을 일으키므로,
+                        // 값이 바뀔 때만 변환해 재사용합니다(delay getter는 프레임당 수차례 호출됨).
+                        if (!hasCachedDelayDecimal || cachedDelaySource != customDelay)
+                        {
+                            cachedDelayDecimal = (Il2CppSystem.Decimal)customDelay;
+                            cachedDelaySource = customDelay;
+                            hasCachedDelayDecimal = true;
+                        }
+                        __result = cachedDelayDecimal;
+
                         if (shouldLogDelay)
                             ModLogger.Msg($"[OffsetInject] DBStageInfo.delay Getter 오버라이드 완료. 곡={uid}, 기존={originalStr} -> 주입={customDelay}");
                     }

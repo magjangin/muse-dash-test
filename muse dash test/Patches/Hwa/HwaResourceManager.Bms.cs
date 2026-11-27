@@ -69,13 +69,11 @@ namespace muse_dash_test
         public static bool TryGetSongDirectory(string uid, out string songDir)
         {
             songDir = null;
-            if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))
+            var manifest = GetManifest(uid);
+            if (manifest != null && !string.IsNullOrEmpty(manifest.SourcePath))
             {
-                if (!string.IsNullOrEmpty(manifest.SourcePath))
-                {
-                    songDir = Path.GetDirectoryName(manifest.SourcePath);
-                    return true;
-                }
+                songDir = Path.GetDirectoryName(manifest.SourcePath);
+                return !string.IsNullOrEmpty(songDir);
             }
             return false;
         }

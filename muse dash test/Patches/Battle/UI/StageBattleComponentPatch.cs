@@ -13,6 +13,8 @@ namespace muse_dash_test
     [HarmonyLib.HarmonyPatch(typeof(StageBattleComponent), nameof(StageBattleComponent.LoadMusicData))]
     public class StageBattleComponent_LoadMusicData_Patch
     {
+        public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
         public static void Postfix(StageBattleComponent __instance)
         {
             try

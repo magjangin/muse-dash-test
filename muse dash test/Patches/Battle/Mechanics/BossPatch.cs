@@ -86,13 +86,14 @@ public class Boss_InitBossObject_Patch
                         CustomPlaySession.Current.IsDynamicBossSwap = true;
                         try
                         {
+                            bool forceChristmas = ChristmasFestival.ShouldForceForCurrentSong(out _);
                             foreach (var ev in swapEvents)
                             {
                                 if (ev?.InWav != null && !string.IsNullOrWhiteSpace(ev.InWav.BossName) && ev.InWav.BossScene >= 0)
                                 {
                                     string bossName = ev.InWav.BossName;
                                     int sceneId = ev.InWav.BossScene;
-                                    if (ChristmasFestival.ShouldForceForCurrentSong(out _) && (bossName == ChristmasFestival.Boss05 || sceneId == 5))
+                                    if (forceChristmas && (bossName == ChristmasFestival.Boss05 || sceneId == 5))
                                     {
                                         bossName = ChristmasFestival.Boss05Christmas;
                                         sceneId = 5;

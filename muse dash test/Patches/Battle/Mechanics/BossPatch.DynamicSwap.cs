@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using muse_dash_test;
 
 // Il2Cpp.Boss 후킹: Play(string key, bool playAnimator = true) — 동적 보스 교체(swap) 처리
@@ -19,7 +20,7 @@ public class Boss_Play_Patch
             if (key != null && key.StartsWith("swap:", StringComparison.Ordinal))
             {
                 var parts = key.Split(':');
-                if (parts.Length >= 3 && int.TryParse(parts[2], out int newScene))
+                if (parts.Length >= 3 && int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out int newScene))
                 {
                     string newName = parts[1];
                     if (ChristmasFestival.ShouldForceForCurrentSong(out _) && (newName == ChristmasFestival.Boss05 || newScene == 5))

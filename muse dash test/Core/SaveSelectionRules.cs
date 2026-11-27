@@ -23,7 +23,7 @@ namespace muse_dash_test
         public static readonly string[] Keys = { TagIndexKey, AlbumUidKey, MusicUidKey };
 
         /// <summary>바닐라 기본값: 첫 태그, 기본 앨범(<c>music_package_0</c> = Default Music, 곡 <c>0-x</c>), 그 앨범의 첫 곡.</summary>
-        public static readonly IReadOnlyDictionary<string, string> VanillaDefaults = new Dictionary<string, string>
+        public static readonly IReadOnlyDictionary<string, string> VanillaDefaults = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             { TagIndexKey, "0" },
             { AlbumUidKey, "music_package_0" },

@@ -37,8 +37,9 @@ namespace muse_dash_test
 
         public static void ResetState()
         {
-            long currentMem = GC.GetTotalMemory(false);
-            string clipDesc = DescribeAudioClip(injectedClip);
+            bool logInfo = ModLogger.IsLevelEnabled(ModLogLevel.Info);
+            long currentMem = logInfo ? GC.GetTotalMemory(false) : 0L;
+            string clipDesc = logInfo ? DescribeAudioClip(injectedClip) : null;
             battleMediaInjectionStarted = false;
             gameMusicStarted = false;
             videoStartedAtMusic = false;
@@ -55,7 +56,10 @@ namespace muse_dash_test
             ProgressBarPatch.BeginBattle(); // 지난 배틀의 '끝까지 채움'이 새 배틀 GetTimeProgress에 남지 않게
             KeysoundProbe.Reset();
             HwaSyncManager.ResetCache();
-            ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, 은퇴 대기={retiredClips.Count}개, ManagedHeap={currentMem / 1048576f:F2}MB)");
+            if (logInfo)
+            {
+                ModLogger.Msg($"[HwaBattleMediaController.Memory] ResetState 상태 초기화 완료 (추적 클립={clipDesc}, 은퇴 대기={retiredClips.Count}개, ManagedHeap={currentMem / 1048576f:F2}MB)");
+            }
         }
 
         private static AudioSource GetFallbackBgmSource()
@@ -278,9 +282,10 @@ namespace muse_dash_test
                 }
 
                 clip.name = Path.GetFileName(oggPath);
-                ModLogger.Msg($"[HwaBattleMediaController] 로드한 클립 정보: {DescribeAudioClip(clip)}");
-
-                string beforeState = DescribeAudioSource(targetSource);
+                if (ModLogger.IsLevelEnabled(ModLogLevel.Info))
+                {
+                    ModLogger.Msg($"[HwaBattleMediaController] 로드한 클립 정보: {DescribeAudioClip(clip)}");
+                }
 
                 RetireClip(injectedClip);
                 targetSource.clip = clip;
@@ -298,8 +303,11 @@ namespace muse_dash_test
                 DestroyUnreferencedRetiredClips("new battle BGM applied");
                 ProgressBarPatch.OnCustomAudioClipLoaded(clip.length);
 
-                long heapMem = GC.GetTotalMemory(false);
-                ModLogger.Msg($"[HwaBattleMediaController.Memory] 배틀 BGM 주입 완료 (ManagedHeap={heapMem / 1048576f:F2}MB): loadedClip={DescribeAudioClip(clip)}");
+                if (ModLogger.IsLevelEnabled(ModLogLevel.Info))
+                {
+                    long heapMem = GC.GetTotalMemory(false);
+                    ModLogger.Msg($"[HwaBattleMediaController.Memory] 배틀 BGM 주입 완료 (ManagedHeap={heapMem / 1048576f:F2}MB): loadedClip={DescribeAudioClip(clip)}");
+                }
             }
             finally
             {

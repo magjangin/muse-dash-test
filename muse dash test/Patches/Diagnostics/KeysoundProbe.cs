@@ -52,6 +52,7 @@ namespace muse_dash_test
 
         // 이번 PlayOneShot 호출 안에서 AudioSource.PlayOneShot까지 갔는지(AllPerfectSound 훅이 알려 줌).
         private static bool insideKeysound;
+        private static int keysoundFrame;
         private static bool unityHookAlive;
         private static bool unityReached;
         private static bool unityAllowed;
@@ -98,20 +99,22 @@ namespace muse_dash_test
                 if (attackEffectDepth > 0) keysoundsInAttackEffect++;
                 if (string.IsNullOrEmpty(keyAudio) || keyAudio == "0") emptyKey++;
 
-                insideKeysound = true;
-                unityReached = false;
-                unityAllowed = true;
-                unityClipName = null;
-
                 int type = keyAudio == "sfx_forte_2" || keyAudio == "sfx_forte_3" || keyAudio == "sfx_piano_2"
                     ? (int)AttacksController.KeyAudioType.Bass
                     : (int)audioType;
                 if (type < 0 || type >= TypeCount) return;
+
+                int frame = Time.frameCount;
+                insideKeysound = true;
+                keysoundFrame = frame;
+                unityReached = false;
+                unityAllowed = true;
+                unityClipName = null;
+
                 callsByType[type]++;
 
                 EventFlags flags = EventFlags.None;
                 string previousKey = null;
-                int frame = Time.frameCount;
                 if (lastFrameByType[type] == frame)
                 {
                     sameFrameByType[type]++;
@@ -147,7 +150,8 @@ namespace muse_dash_test
                     flags |= EventFlags.VolumeZero;
                 }
 
-                if (Time.unscaledDeltaTime > HitchSeconds)
+                float unscaledDt = Time.unscaledDeltaTime;
+                if (unscaledDt > HitchSeconds)
                 {
                     hitches++;
                     flags |= EventFlags.Hitch;
@@ -155,7 +159,7 @@ namespace muse_dash_test
 
                 if (attackEffectDepth > 0) flags |= EventFlags.FromAttackEffect;
 
-                pendingEvent = BeginEvent(keyAudio, type, frame, flags);
+                pendingEvent = BeginEvent(keyAudio, type, frame, unscaledDt, flags);
                 if ((flags & EventFlags.SameFrameDifferentKey) != 0 && sameFrameDifferentKey <= MaxLinesPerKind)
                 {
                     ModLogger.Verbose($"[KeysoundProbe] 같은 프레임 다른 키음: '{previousKey}'가 '{keyAudio}'에 묻혀 안 울림 ({TypeName(type)}, t={GameTime():F3}s)");
@@ -231,6 +235,11 @@ namespace muse_dash_test
             if (!insideKeysound) return;
             try
             {
+                if (keysoundFrame != Time.frameCount)
+                {
+                    insideKeysound = false;
+                    return;
+                }
                 unityReached = true;
                 unityAllowed = allowed;
                 unityClipName = ClipNameOf(clip);

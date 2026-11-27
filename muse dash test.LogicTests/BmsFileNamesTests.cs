@@ -61,5 +61,22 @@ namespace muse_dash_test.LogicTests
             Assert.True(BmsFileNames.IsTempFile(""));
             Assert.True(BmsFileNames.IsTempFile("   "));
         }
+
+        public static void TryResolveInSongFolder_AcceptsSubpathsAndRejectsEscapesOrRoots()
+        {
+            string songDir = Path.Combine(Path.GetTempPath(), "md_song_folder_test");
+            Assert.True(BmsFileNames.TryResolveInSongFolder(songDir, "easy.bms", out string resolved));
+            Assert.Equal(Path.GetFullPath(Path.Combine(songDir, "easy.bms")), resolved);
+
+            Assert.True(BmsFileNames.TryResolveInSongFolder(songDir, @"charts\hard.BMS", out string subResolved));
+            Assert.Equal(Path.GetFullPath(Path.Combine(songDir, "charts", "hard.BMS")), subResolved);
+
+            Assert.False(BmsFileNames.TryResolveInSongFolder(songDir, "../outside.bms", out _));
+            Assert.False(BmsFileNames.TryResolveInSongFolder(songDir, @"..\outside.bms", out _));
+            Assert.False(BmsFileNames.TryResolveInSongFolder(songDir, @"C:\evil\chart.bms", out _));
+            Assert.False(BmsFileNames.TryResolveInSongFolder(songDir, @"\\server\share\chart.bms", out _));
+            Assert.False(BmsFileNames.TryResolveInSongFolder(songDir, "notes.txt", out _));
+            Assert.False(BmsFileNames.TryResolveInSongFolder(songDir, "   ", out _));
+        }
     }
 }

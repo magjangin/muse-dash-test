@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using MelonLoader;
 
@@ -31,14 +32,21 @@ namespace muse_dash_test
         {
             try
             {
-                var stage = Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage;
-                if (stage != null) return stage.selectedDifficulty;
+                int diff = ReadBattleDifficulty();
+                if (diff > 0) return diff;
             }
             catch (Exception ex)
             {
                 ModLogger.Warning($"[CustomRecordStore] 배틀 난이도 해석 실패, 1로 폴백: {ex.Message}");
             }
             return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int ReadBattleDifficulty()
+        {
+            var stage = Il2CppAssets.Scripts.Database.GlobalDataBase.s_DbBattleStage;
+            return stage != null ? stage.selectedDifficulty : 1;
         }
 
         /// <summary>
@@ -50,14 +58,21 @@ namespace muse_dash_test
         {
             try
             {
-                var musicTag = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag;
-                if (musicTag != null && musicTag.selectedDiffTglIndex > 0) return musicTag.selectedDiffTglIndex;
+                int diff = ReadSelectedDifficulty();
+                if (diff > 0) return diff;
             }
             catch (Exception ex)
             {
                 ModLogger.Warning($"[CustomRecordStore] 선택 난이도 해석 실패, 배틀 난이도로 대신합니다: {ex.Message}");
             }
             return ResolveBattleDifficulty();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int ReadSelectedDifficulty()
+        {
+            var musicTag = Il2CppAssets.Scripts.Database.GlobalDataBase.dbMusicTag;
+            return musicTag != null ? musicTag.selectedDiffTglIndex : 0;
         }
 
         /// <summary>

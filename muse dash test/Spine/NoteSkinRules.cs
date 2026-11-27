@@ -19,6 +19,8 @@ namespace muse_dash_test
     public static class NoteSkinRules
     {
         private const string SkeletonDataSuffix = "_SkeletonData";
+        private static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
+        private static readonly char[] PathSeparators = { '\\', '/' };
 
         /// <summary>
         /// 스킨 파일 좌표가 원본의 몇 분의 1인지에 대한 관행값입니다. 커스텀 캐릭터 스킨과 같은 관행을 따릅니다.
@@ -48,7 +50,7 @@ namespace muse_dash_test
             if (name.Length == 0) return null;
 
             // 세트 이름이 경로를 벗어나지 못하게 합니다(에셋 이름은 게임 데이터지만 파일 경로로 쓰이므로).
-            if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name == "." || name == "..") return null;
+            if (name.IndexOfAny(InvalidFileNameChars) >= 0 || name == "." || name == "..") return null;
 
             return name;
         }
@@ -71,7 +73,9 @@ namespace muse_dash_test
                     string trimmed = line.Trim().TrimStart((char)0xFEFF);
                     if (trimmed.Length == 0) continue;
                     if (trimmed.IndexOf(':') >= 0) return fallback; // 페이지 이름 없이 속성 줄부터 나오면 형식이 다릅니다.
-                    string name = Path.GetFileNameWithoutExtension(trimmed);
+                    int lastSep = trimmed.LastIndexOfAny(PathSeparators);
+                    string pageFile = lastSep >= 0 ? trimmed.Substring(lastSep + 1) : trimmed;
+                    string name = Path.GetFileNameWithoutExtension(pageFile);
                     return string.IsNullOrEmpty(name) ? fallback : name;
                 }
             }

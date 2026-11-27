@@ -44,8 +44,20 @@ $dllName = 'muse-dash-custom-chart.dll'
 function Step($msg) { Write-Host "`n== $msg" -ForegroundColor Cyan }
 function Invoke-Native {
     param([string]$What, [string]$Exe, [string[]]$Arguments)
-    & $Exe @Arguments
+    # Windows PowerShell 5.1 은 $ErrorActionPreference='Stop' 일 때 외부 명령(git push 등)의 stderr 진행 줄을
+    # NativeCommandError 종료 예외로 승격해 $LASTEXITCODE 확인 전에 죽입니다(2026-11-25 v0.16.5 사고).
+    & {
+        $ErrorActionPreference = 'Continue'
+        & $Exe @Arguments
+    }
     if ($LASTEXITCODE -ne 0) { throw "$What 실패 (종료 코드 $LASTEXITCODE)" }
+}
+function Invoke-Captured {
+    param([string]$Exe, [string[]]$Arguments)
+    & {
+        $ErrorActionPreference = 'Continue'
+        & $Exe @Arguments 2>&1 | ForEach-Object { "$_" }
+    }
 }
 function Write-Utf8NoBom($path, $text) {
     # Windows PowerShell 5.1 의 Set-Content -Encoding utf8 은 BOM 을 붙여 gh 릴리즈 노트 첫 글자가 깨질 수 있음
@@ -97,10 +109,12 @@ if ($Publish) {
     if ($SkipCiCheck) { $ciLine = 'CI 확인 생략(-SkipCiCheck)' }
     else {
         # CHECKLIST 4절: CI 는 만든 날부터 빨간불이었는데 릴리즈 4개가 그대로 나갔습니다(2026-11-23).
-        $runs = gh run list --repo $repo --commit $head --workflow 'Logic Tests' --json status,conclusion,url | ConvertFrom-Json
+        $runsJson = Invoke-Captured gh @('run', 'list', '--repo', $repo, '--commit', $head, '--workflow', 'Logic Tests', '--json', 'status,conclusion,url')
+        if ($LASTEXITCODE -ne 0) { throw "gh run list 실패 (종료 코드 $LASTEXITCODE): $($runsJson -join ' ')" }
+        $runs = ($runsJson -join "`n") | ConvertFrom-Json
         $done = @($runs | Where-Object { $_.status -eq 'completed' })
         if (-not $done) { throw "HEAD($($head.Substring(0, 7)))의 CI(Logic Tests) 완료 기록이 없습니다. 끝날 때까지 기다리거나 -SkipCiCheck." }
-        if (@($done | Where-Object { $_.conclusion -ne 'success' })) { throw "HEAD 의 CI 가 실패했습니다: $($done[0].url)" }
+        if ($done[0].conclusion -ne 'success') { throw "HEAD 의 최신 CI 가 실패했습니다($($done[0].conclusion)): $($done[0].url)" }
         $ciLine = "CI(Logic Tests) 통과: $($done[0].url)"
         Write-Host $ciLine
     }
@@ -111,7 +125,7 @@ $gameArgs = @()
 if ($GamePath) { $gameArgs = @("-p:GamePath=$GamePath") }
 
 Step 'Release 빌드 (게임 Mods 폴더로 복사하지 않음)'
-$buildOut = & dotnet (@('build', 'muse dash test\muse dash test.csproj', '-c', 'Release', '-p:SkipDeploy=true', '-nologo') + $gameArgs) 2>&1 | ForEach-Object { "$_" }
+$buildOut = Invoke-Captured dotnet (@('build', 'muse dash test\muse dash test.csproj', '-c', 'Release', '-p:SkipDeploy=true', '-nologo') + $gameArgs)
 $buildExit = $LASTEXITCODE
 $buildOut | ForEach-Object { Write-Host $_ }
 if ($buildExit -ne 0) { throw "빌드 실패 (종료 코드 $buildExit)" }
@@ -119,10 +133,10 @@ $warnLine = $buildOut | Where-Object { $_ -match '^\s*\d+\s+(Warning|경고)' } 
 $dll = Get-ChildItem (Join-Path $root 'muse dash test\bin\Release') -Recurse -Filter $dllName | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $dll) { throw "DLL 없음: muse dash test\bin\Release\**\$dllName" }
 $fileVer = $dll.VersionInfo.FileVersion
-if ($fileVer -and -not $fileVer.StartsWith($version)) { throw "빌드된 DLL 버전($fileVer)이 $version 과 다릅니다." }
+if ($fileVer -and ($fileVer -ne $version) -and (-not $fileVer.StartsWith("$version.", [StringComparison]::Ordinal))) { throw "빌드된 DLL 버전($fileVer)이 $version 과 다릅니다." }
 
 Step '로직 테스트'
-$testOut = & dotnet run --project 'muse dash test.LogicTests\muse dash test.LogicTests.csproj' -c Release 2>&1 | ForEach-Object { "$_" }
+$testOut = Invoke-Captured dotnet @('run', '--project', 'muse dash test.LogicTests\muse dash test.LogicTests.csproj', '-c', 'Release')
 $testExit = $LASTEXITCODE
 $testOut | Select-Object -Last 5 | ForEach-Object { Write-Host $_ }
 if ($testExit -ne 0) { throw "로직 테스트 실패 (종료 코드 $testExit)" }
@@ -136,6 +150,9 @@ if ($LASTEXITCODE -ne 0) { throw "CODE_REFERENCE.md에 없는 소스 파일이 �
 Step '산출물'
 $dist = Join-Path $root 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
+Get-ChildItem -LiteralPath $dist -Filter 'notes-v*.md' -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -ne "notes-$tag.md" } |
+    Remove-Item -Force -ErrorAction SilentlyContinue
 $distDll = Join-Path $dist $dllName
 Copy-Item $dll.FullName $distDll -Force
 $dllHash = (Get-FileHash $distDll -Algorithm SHA256).Hash.ToLowerInvariant()

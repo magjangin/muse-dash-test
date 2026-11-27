@@ -1,17 +1,18 @@
 using MelonLoader;
+using System;
 using System.Collections.Generic;
 
 namespace muse_dash_test
 {
     internal static class SceneDiagnosticLogger
     {
-        private static readonly Dictionary<string, int> LastLogFrameByKey = new Dictionary<string, int>();
+        private static readonly Dictionary<string, int> LastLogFrameByKey = new Dictionary<string, int>(StringComparer.Ordinal);
 
         public static bool EnableLogs { get; set; } = true;
 
         public static bool ShouldLog(string key, int minIntervalFrames = 1)
         {
-            if (!EnableLogs) return false;
+            if (!EnableLogs || !ModLogger.IsLevelEnabled(ModLogLevel.Info)) return false;
 
             int frame = GetFrameCount();
             if (!LastLogFrameByKey.TryGetValue(key, out int lastFrame) || frame - lastFrame >= minIntervalFrames)

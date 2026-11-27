@@ -84,7 +84,7 @@ namespace muse_dash_test
         internal static void OnSettingChanged(bool enabled)
         {
             ModLogger.Msg($"[ForcePerfect] 강제퍼펙트 설정이 {(enabled ? "켜짐" : "꺼짐")}으로 변경되었습니다. (오토플레이와는 무관하며 판정 값만 바뀝니다)");
-            if (enabled && activeStageBattle != null && activeStageBattle.TryGetTarget(out var comp))
+            if (ModConfig.EnableForcePerfect && enabled && activeStageBattle != null && activeStageBattle.TryGetTarget(out var comp))
             {
                 PromoteTimeNodeOrders(comp);
             }
@@ -187,6 +187,8 @@ namespace muse_dash_test
     [HarmonyLib.HarmonyPatch(typeof(Il2CppFormulaBase.StageBattleComponent), nameof(Il2CppFormulaBase.StageBattleComponent.InitTimeNodeOrder))]
     public class StageBattleComponent_InitTimeNodeOrder_ForcePerfect_Patch
     {
+        public static bool Prepare() => ModConfig.EnableForcePerfect;
+
         public static void Postfix(Il2CppFormulaBase.StageBattleComponent __instance)
         {
             try
@@ -209,6 +211,7 @@ namespace muse_dash_test
     [HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameTouchPlay), nameof(Il2CppGameLogic.GameTouchPlay.TouchResult))]
     public class GameTouchPlay_TouchResult_ForcePerfect_Patch
     {
+        public static bool Prepare() => ModConfig.EnableForcePerfect;
         public static void Prefix(int idx, ref byte resultCode)
         {
             try

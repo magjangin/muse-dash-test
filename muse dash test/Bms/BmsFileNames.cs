@@ -10,6 +10,7 @@ namespace muse_dash_test
     {
         /// <summary>낱말로 쓰였을 때만 임시 파일로 볼 표식들.</summary>
         private static readonly string[] TempWords = { "temp", "tmp" };
+        private static readonly char[] PathSeparators = { '\\', '/' };
 
         /// <summary>
         /// 편집기/동기화 도구가 만든 임시 파일이라 채보 후보에서 제외해야 하는지 판정합니다.
@@ -24,7 +25,8 @@ namespace muse_dash_test
         {
             if (string.IsNullOrWhiteSpace(filePath)) return true;
 
-            string fileName = Path.GetFileName(filePath);
+            int lastSep = filePath.LastIndexOfAny(PathSeparators);
+            string fileName = lastSep >= 0 ? filePath.Substring(lastSep + 1) : filePath;
             if (string.IsNullOrWhiteSpace(fileName)) return true;
 
             // 편집기·동기화 도구는 임시본임을 이름 '앞'에 표시합니다.
@@ -55,7 +57,17 @@ namespace muse_dash_test
             if (string.IsNullOrWhiteSpace(songDir) || string.IsNullOrWhiteSpace(configuredName)) return false;
 
             string name = configuredName.Trim();
-            if (Path.IsPathRooted(name)) return false;
+            if (Path.IsPathRooted(name)
+                || name.StartsWith("\\", StringComparison.Ordinal)
+                || name.StartsWith("/", StringComparison.Ordinal)
+                || (name.Length >= 2 && char.IsLetter(name[0]) && name[1] == ':'))
+            {
+                return false;
+            }
+            if (Path.DirectorySeparatorChar != '\\' && name.IndexOf('\\') >= 0)
+            {
+                name = name.Replace('\\', Path.DirectorySeparatorChar);
+            }
             if (!string.Equals(Path.GetExtension(name), ".bms", StringComparison.OrdinalIgnoreCase)) return false;
 
             try

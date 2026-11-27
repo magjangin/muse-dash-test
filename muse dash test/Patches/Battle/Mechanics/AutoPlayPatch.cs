@@ -12,6 +12,8 @@ namespace muse_dash_test
     [HarmonyLib.HarmonyPatch(typeof(DBSkill), nameof(DBSkill.SetAutoPlay))]
     public class DBSkill_SetAutoPlay_Patch
     {
+        public static bool Prepare() => ModConfig.EnableAutoPlay;
+
         public static void Prefix(DBSkill __instance, ref bool enable)
         {
             if (!ModConfig.EnableAutoPlay) return;

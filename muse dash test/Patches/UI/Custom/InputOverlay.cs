@@ -151,12 +151,48 @@ namespace muse_dash_test
         // (제네릭 Il2Cpp Dictionary/List는 컴파일 타임 타입을 알 수 없어 메서드 기반 리플렉션으로 접근)
         // ==========================================
 
+        private static System.Reflection.MethodInfo SafeGetSingleParamMethod(Type type, string methodName, Type preferredParamType)
+        {
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+            var exact = type.GetMethod(methodName, flags, null, new[] { preferredParamType }, null);
+            if (exact != null) return exact;
+
+            foreach (var candidate in type.GetMethods(flags))
+            {
+                if (string.Equals(candidate.Name, methodName, StringComparison.Ordinal) && candidate.GetParameters().Length == 1)
+                {
+                    return candidate;
+                }
+            }
+            return null;
+        }
+
+        private static System.Reflection.PropertyInfo SafeGetCurrentProperty(Type enumeratorType)
+        {
+            const System.Reflection.BindingFlags declared =
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly;
+            try
+            {
+                var prop = enumeratorType.GetProperty("Current", declared);
+                if (prop != null) return prop;
+            }
+            catch (System.Reflection.AmbiguousMatchException) { }
+
+            foreach (var p in enumeratorType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                if (string.Equals(p.Name, "Current", StringComparison.Ordinal) && p.GetIndexParameters().Length == 0)
+                {
+                    return p;
+                }
+            }
+            return null;
+        }
+
         private static bool TryDictContainsKey(object dict, string key, out bool contains)
         {
             contains = false;
             if (dict == null || key == null) return false;
-            var type = dict.GetType();
-            var containsKey = type.GetMethod("ContainsKey", new[] { typeof(string) }) ?? type.GetMethod("ContainsKey");
+            var containsKey = SafeGetSingleParamMethod(dict.GetType(), "ContainsKey", typeof(string));
             if (containsKey == null) return false;
             contains = (bool)containsKey.Invoke(dict, new object[] { key });
             return true;
@@ -177,8 +213,7 @@ namespace muse_dash_test
                     return false;
                 }
 
-                var type = dict.GetType();
-                var getItem = type.GetMethod("get_Item", new[] { typeof(string) }) ?? type.GetMethod("get_Item");
+                var getItem = SafeGetSingleParamMethod(dict.GetType(), "get_Item", typeof(string));
                 if (getItem == null) return false;
 
                 value = getItem.Invoke(dict, new object[] { key });
@@ -207,8 +242,9 @@ namespace muse_dash_test
                 var enumerator = keysObj.GetType().GetMethod("GetEnumerator", Type.EmptyTypes)?.Invoke(keysObj, null);
                 if (enumerator == null) return result;
 
-                var moveNext = enumerator.GetType().GetMethod("MoveNext", Type.EmptyTypes);
-                var current = enumerator.GetType().GetProperty("Current");
+                var enumType = enumerator.GetType();
+                var moveNext = enumType.GetMethod("MoveNext", Type.EmptyTypes);
+                var current = SafeGetCurrentProperty(enumType);
                 if (moveNext == null || current == null) return result;
 
                 while ((bool)moveNext.Invoke(enumerator, null))
@@ -261,8 +297,7 @@ namespace muse_dash_test
             try
             {
                 var countObj = ModReflection.GetValue(listObj, "Count", silent: true);
-                var type = listObj.GetType();
-                var getItem = type.GetMethod("get_Item", new[] { typeof(int) }) ?? type.GetMethod("get_Item");
+                var getItem = SafeGetSingleParamMethod(listObj.GetType(), "get_Item", typeof(int));
                 if (!(countObj is int count) || getItem == null) return;
 
                 var indexArg = new object[1];

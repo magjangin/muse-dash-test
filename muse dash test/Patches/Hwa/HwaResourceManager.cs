@@ -14,8 +14,8 @@ namespace muse_dash_test
     public static partial class HwaResourceManager
     {
         public static readonly string HwaFolderPath = Path.Combine(MelonLoader.Utils.MelonEnvironment.GameRootDirectory, "hwa");
-        private static readonly Dictionary<string, HwaManifest> cachedManifests = new Dictionary<string, HwaManifest>();
-        private static readonly Dictionary<string, BmsChartSet> cachedBmsCharts = new Dictionary<string, BmsChartSet>();
+        private static readonly Dictionary<string, HwaManifest> cachedManifests = new Dictionary<string, HwaManifest>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, BmsChartSet> cachedBmsCharts = new Dictionary<string, BmsChartSet>(StringComparer.Ordinal);
         private static readonly Dictionary<string, int[]> hostMapsByUid = new Dictionary<string, int[]>(StringComparer.Ordinal);
         private static readonly List<string> virtualUids = new List<string>();
 
@@ -55,7 +55,10 @@ namespace muse_dash_test
 
         private static void ClearCaches()
         {
-            cachedManifests.Clear();
+            lock (cachedManifests)
+            {
+                cachedManifests.Clear();
+            }
             lock (cachedBmsCharts)
             {
                 cachedBmsCharts.Clear();
@@ -64,9 +67,13 @@ namespace muse_dash_test
             {
                 virtualUids.Clear();
             }
-            customClaimedUids.Clear();
+            lock (customClaimedUids)
+            {
+                customClaimedUids.Clear();
+            }
             CoverImageManager.ClearCache();
             ChartFingerprint.ClearCache();
+            SongAudioFiles.ClearCache();
         }
 
         /// <summary>
@@ -115,7 +122,10 @@ namespace muse_dash_test
 
             BmsChartSet bmsCharts = LoadHwaBmsChartSet(dir, manifest);
 
-            cachedManifests[uid] = manifest;
+            lock (cachedManifests)
+            {
+                cachedManifests[uid] = manifest;
+            }
             if (bmsCharts != null)
             {
                 lock (cachedBmsCharts)
@@ -133,13 +143,20 @@ namespace muse_dash_test
             {
                 virtualUids.Add(uid);
             }
-            customClaimedUids.Add(uid);
+            lock (customClaimedUids)
+            {
+                customClaimedUids.Add(uid);
+            }
 
             // 매니페스트가 순정 슬롯을 숙주로 지정했다면(uid: 66-0 등) 그 uid도 커스텀으로 인식되게 등록.
             if (!string.IsNullOrWhiteSpace(manifest.Uid))
             {
-                customClaimedUids.Add(manifest.Uid.Trim());
-                ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 숙주 uid '{manifest.Uid.Trim()}'를 커스텀 곡으로 등록했습니다.");
+                string trimmedHostUid = manifest.Uid.Trim();
+                lock (customClaimedUids)
+                {
+                    customClaimedUids.Add(trimmedHostUid);
+                }
+                ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 숙주 uid '{trimmedHostUid}'를 커스텀 곡으로 등록했습니다.");
             }
 
             ModConfig.VerboseLog($"[HwaResourceManager] [{uid}] 등록 완료: {HwaManifestLoader.DescribeManifest(manifest)}");
@@ -172,7 +189,7 @@ namespace muse_dash_test
             for (int i = 0; i < 3; i++)
             {
                 string uid = CustomContentIds.CreateVirtualSongUid(i);
-                cachedManifests[uid] = new HwaManifest
+                var testManifest = new HwaManifest
                 {
                     SourcePath = Path.Combine(HwaFolderPath, "info.txt"),
                     Title = $"화영왕 {i + 1}",
@@ -181,18 +198,28 @@ namespace muse_dash_test
                     Difficulty1 = 2 + i,
                     Difficulty2 = 5 + i
                 };
+                lock (cachedManifests)
+                {
+                    cachedManifests[uid] = testManifest;
+                }
                 lock (virtualUids)
                 {
                     virtualUids.Add(uid);
                 }
-                customClaimedUids.Add(uid);
+                lock (customClaimedUids)
+                {
+                    customClaimedUids.Add(uid);
+                }
             }
         }
 
         public static bool IsRegisteredCustomHostUid(string uid)
         {
-            if (string.IsNullOrEmpty(uid)) return false;
-            return !CustomContentIds.IsVirtualSong(uid) && customClaimedUids.Contains(uid);
+            if (string.IsNullOrEmpty(uid) || CustomContentIds.IsVirtualSong(uid)) return false;
+            lock (customClaimedUids)
+            {
+                return customClaimedUids.Contains(uid);
+            }
         }
 
         public sealed class CustomChartSelectionDecision
@@ -259,16 +286,17 @@ namespace muse_dash_test
 
         public static HwaManifest GetManifest(string uid)
         {
-            if (uid != null && cachedManifests.TryGetValue(uid, out var manifest))
+            if (uid == null) return null;
+            lock (cachedManifests)
             {
-                return manifest;
+                return cachedManifests.TryGetValue(uid, out var manifest) ? manifest : null;
             }
-            return null;
         }
 
         public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum)
         {
-            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
+            HwaManifest manifest = GetManifest(uid);
+            if (manifest == null)
             {
                 sourceUid = null;
                 sourceTitle = null;
@@ -286,17 +314,44 @@ namespace muse_dash_test
 
         public static bool TryGetCachedHwaSearchTerms(string uid, out string sourceUid, out string sourceTitle, out string sourceArtist, out string sourceAlbum, out string description)
         {
-            if (!TryGetCachedHwaSearchTerms(uid, out sourceUid, out sourceTitle, out sourceArtist, out sourceAlbum))
+            HwaManifest manifest = GetManifest(uid);
+            if (manifest == null)
+            {
+                sourceUid = null;
+                sourceTitle = null;
+                sourceArtist = null;
+                sourceAlbum = null;
+                description = string.Empty;
+                return false;
+            }
+
+            sourceUid = manifest.Uid;
+            sourceTitle = manifest.Title;
+            sourceArtist = manifest.Artist;
+            sourceAlbum = manifest.Album;
+            description = HwaManifestLoader.DescribeManifest(manifest);
+            return true;
+        }
+
+        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5)
+        {
+            return TryGetHwaPrimarySongCore(GetManifest(uid), out title, out artist, out levelDesigner, out diff1, out diff2, out diff3, out diff4, out diff5);
+        }
+
+        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
+        {
+            HwaManifest manifest = GetManifest(uid);
+            if (!TryGetHwaPrimarySongCore(manifest, out title, out artist, out levelDesigner, out diff1, out diff2, out diff3, out diff4, out diff5))
             {
                 description = string.Empty;
                 return false;
             }
 
-            description = HwaManifestLoader.DescribeManifest(cachedManifests[uid]);
+            description = HwaManifestLoader.DescribeManifest(manifest);
             return true;
         }
 
-        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5)
+        private static bool TryGetHwaPrimarySongCore(HwaManifest manifest, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5)
         {
             title = null;
             artist = null;
@@ -307,7 +362,7 @@ namespace muse_dash_test
             diff4 = 0;
             diff5 = 0;
 
-            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
+            if (manifest == null)
             {
                 return false;
             }
@@ -333,23 +388,12 @@ namespace muse_dash_test
             return true;
         }
 
-        public static bool TryGetHwaPrimarySong(string uid, out string title, out string artist, out string levelDesigner, out int diff1, out int diff2, out int diff3, out int diff4, out int diff5, out string description)
-        {
-            if (!TryGetHwaPrimarySong(uid, out title, out artist, out levelDesigner, out diff1, out diff2, out diff3, out diff4, out diff5))
-            {
-                description = string.Empty;
-                return false;
-            }
-
-            description = HwaManifestLoader.DescribeManifest(cachedManifests[uid]);
-            return true;
-        }
-
         public static bool TryGetCachedHwaScene(string uid, out int scene)
         {
             scene = default;
 
-            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest) || !manifest.Scene.HasValue)
+            HwaManifest manifest = GetManifest(uid);
+            if (manifest == null || !manifest.Scene.HasValue)
             {
                 return false;
             }

@@ -178,12 +178,14 @@ public class PnlReportCard_RefreshBestRecord_Patch
 
             if (musicInfo != null && instance.starObjs != null && instance.starTxtValues != null)
             {
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                var numStyles = System.Globalization.NumberStyles.Integer;
                 int[] levels = {
-                    int.TryParse(musicInfo.difficulty1, out int l1) ? l1 : 0,
-                    int.TryParse(musicInfo.difficulty2, out int l2) ? l2 : 0,
-                    int.TryParse(musicInfo.difficulty3, out int l3) ? l3 : 0,
-                    int.TryParse(musicInfo.difficulty4, out int l4) ? l4 : 0,
-                    int.TryParse(musicInfo.difficulty5, out int l5) ? l5 : 0
+                    int.TryParse(musicInfo.difficulty1, numStyles, inv, out int l1) ? l1 : 0,
+                    int.TryParse(musicInfo.difficulty2, numStyles, inv, out int l2) ? l2 : 0,
+                    int.TryParse(musicInfo.difficulty3, numStyles, inv, out int l3) ? l3 : 0,
+                    int.TryParse(musicInfo.difficulty4, numStyles, inv, out int l4) ? l4 : 0,
+                    int.TryParse(musicInfo.difficulty5, numStyles, inv, out int l5) ? l5 : 0
                 };
 
                 ModLogger.Verbose($"[PnlReportCard.RefreshBestRecord] 난이도 매핑: starObjs={instance.starObjs.Count}, starTxtValues={instance.starTxtValues.Count}, diff={difficulty}");
@@ -203,7 +205,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
                     if (i < instance.starTxtValues.Count && instance.starTxtValues[i] != null)
                     {
                         int lvl = (i < levels.Length) ? levels[i] : 0;
-                        instance.starTxtValues[i].text = lvl > 0 ? lvl.ToString() : "?";
+                        instance.starTxtValues[i].text = lvl > 0 ? lvl.ToString(inv) : "?";
                     }
                     else if (i < instance.starTxtValues.Count)
                     {
@@ -237,7 +239,7 @@ public class PnlReportCard_RefreshBestRecord_Patch
             else ModLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtCombo가 null입니다.");
 
             // 기록 패널(CustomRecordUiPatchHelper)과 같은 규칙으로 저장된 플레이/클리어 횟수를 씁니다.
-            if (instance.txtTotalPassCountValue != null) instance.txtTotalPassCountValue.text = (record.playCount > 0 ? record.playCount : 1).ToString();
+            if (instance.txtTotalPassCountValue != null) instance.txtTotalPassCountValue.text = (record.playCount > 0 ? record.playCount : 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
             else ModLogger.Warning("[PnlReportCard.RefreshBestRecord.Debug] txtTotalPassCountValue가 null입니다.");
 
             if (instance.imgFc != null) instance.imgFc.gameObject.SetActive(record.isFullCombo);

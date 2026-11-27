@@ -14,8 +14,9 @@ namespace muse_dash_test
         /// 래퍼가 감싸고 있는 원본 Unmanaged/IL2CPP 객체 인스턴스입니다.
         /// </summary>
         public object RawObject { get; }
-        private static readonly HashSet<string> LoggedFailures = new HashSet<string>();
+        private static readonly HashSet<string> LoggedFailures = new HashSet<string>(StringComparer.Ordinal);
         private static readonly Dictionary<Type, System.Reflection.MethodInfo> AddMaskMethodCache = new Dictionary<Type, System.Reflection.MethodInfo>();
+        private static readonly Type[] AddMaskParamTypes = { typeof(string), typeof(Il2CppSystem.Object) };
         private static readonly object CacheLock = new object();
 
         /// <summary>
@@ -43,7 +44,7 @@ namespace muse_dash_test
                 Type targetType = typeof(T);
                 Type underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
                 if (underlying.IsInstanceOfType(val)) return (T)val;
-                return (T)Convert.ChangeType(val, underlying);
+                return (T)Convert.ChangeType(val, underlying, System.Globalization.CultureInfo.InvariantCulture);
             }
             catch (Exception ex)
             {
@@ -94,9 +95,21 @@ namespace muse_dash_test
                 {
                     if (!AddMaskMethodCache.TryGetValue(type, out method))
                     {
-                        method = type.GetMethod(
-                            GameBindings.Il2CppCollection.AddMaskValue,
-                            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        const System.Reflection.BindingFlags flags =
+                            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                        method = type.GetMethod(GameBindings.Il2CppCollection.AddMaskValue, flags, null, AddMaskParamTypes, null);
+                        if (method == null)
+                        {
+                            foreach (var candidate in type.GetMethods(flags))
+                            {
+                                if (string.Equals(candidate.Name, GameBindings.Il2CppCollection.AddMaskValue, StringComparison.Ordinal)
+                                    && candidate.GetParameters().Length == 2)
+                                {
+                                    method = candidate;
+                                    break;
+                                }
+                            }
+                        }
                         AddMaskMethodCache[type] = method;
                     }
 

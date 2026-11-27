@@ -274,32 +274,41 @@ namespace muse_dash_test
 
         private static IEnumerator MonitorAudioSource(AudioSource source, string uid, string clipName, int generation)
         {
+            if (source == null || source.gameObject == null) yield break;
             ModLogger.Verbose($"[MenuBGM.Monitor] 모니터링 시작: GO={source.gameObject.name}, targetClip={clipName}");
             int i = 0;
             while (true)
             {
                 yield return new WaitForSeconds(5.0f);
-                if (generation != monitorGeneration)
+                try
                 {
-                    ModLogger.Verbose("[MenuBGM.Monitor] 모니터링 세대가 변경되어 종료합니다.");
+                    if (generation != monitorGeneration)
+                    {
+                        ModLogger.Verbose("[MenuBGM.Monitor] 모니터링 세대가 변경되어 종료합니다.");
+                        yield break;
+                    }
+
+                    if (source == null || source.gameObject == null)
+                    {
+                        ModLogger.Verbose("[MenuBGM.Monitor] AudioSource가 파괴되어 모니터링을 종료합니다.");
+                        yield break;
+                    }
+
+                    string currentClip = source.clip != null ? source.clip.name : "(null)";
+                    if (!string.Equals(currentClip, clipName, StringComparison.Ordinal) || CustomPlaySession.Current.LastKnownMusicUid != uid)
+                    {
+                        ModLogger.Verbose($"[MenuBGM.Monitor] 대상 클립 또는 선택 곡이 변경되어 모니터링을 종료합니다. (현재 클립: {currentClip})");
+                        yield break;
+                    }
+
+                    ModLogger.Verbose($"[MenuBGM.Monitor] T+{i * 5.0f:F1}s - Playing: {source.isPlaying}, Vol: {source.volume:F4}, Mute: {source.mute}, Clip: {currentClip}, Time: {source.time:F2}");
+                    i++;
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.Verbose($"[MenuBGM.Monitor] 모니터링 예외로 종료합니다: {ex.GetType().Name}: {ex.Message}");
                     yield break;
                 }
-
-                if (source == null)
-                {
-                    ModLogger.Warning("[MenuBGM.Monitor] AudioSource가 파괴되었습니다.");
-                    yield break;
-                }
-
-                string currentClip = source.clip != null ? source.clip.name : "(null)";
-                if (currentClip != clipName || CustomPlaySession.Current.LastKnownMusicUid != uid)
-                {
-                    ModLogger.Verbose($"[MenuBGM.Monitor] 대상 클립 또는 선택 곡이 변경되어 모니터링을 종료합니다. (현재 클립: {currentClip})");
-                    yield break;
-                }
-
-                ModLogger.Verbose($"[MenuBGM.Monitor] T+{i*5.0f:F1}s - Playing: {source.isPlaying}, Vol: {source.volume:F4}, Mute: {source.mute}, Clip: {currentClip}, Time: {source.time:F2}");
-                i++;
             }
         }
     }

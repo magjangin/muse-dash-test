@@ -26,6 +26,11 @@ namespace muse_dash_test
                 {
                     if (m.Name == "PlayBGM" || m.Name == "StopBGM")
                     {
+                        var ps = m.GetParameters();
+                        if (ps.Length > 0 && ps[ps.Length - 1].IsDefined(typeof(ParamArrayAttribute), false))
+                        {
+                            continue;
+                        }
                         methods.Add(m);
                     }
                 }
@@ -38,7 +43,7 @@ namespace muse_dash_test
         }
 
         [HarmonyPrefix]
-        public static bool Prefix(MethodBase __originalMethod, object[] __args)
+        public static bool Prefix(MethodBase __originalMethod)
         {
             try
             {
@@ -54,12 +59,11 @@ namespace muse_dash_test
 
                 if (inStageSelectionContext || isVirtualLoading)
                 {
-                    string methodName = __originalMethod != null ? __originalMethod.Name : "(unknown)";
-                    string argInfo = (__args != null && __args.Length > 0 && __args[0] != null) 
-                        ? __args[0].ToString() 
-                        : "none";
-
-                    ModLogger.Verbose($"[MenuBGM.Patch] 가상 곡 활성화 중 AudioManager.{methodName} 차단! (selectedUid={selectedUid}, arg={argInfo})");
+                    if (ModLogger.IsLevelEnabled(ModLogLevel.Verbose))
+                    {
+                        string methodName = __originalMethod != null ? __originalMethod.Name : "(unknown)";
+                        ModLogger.Verbose($"[MenuBGM.Patch] 가상 곡 활성화 중 AudioManager.{methodName} 차단! (selectedUid={selectedUid})");
+                    }
 
                     EnsureCustomBgmPlaying();
                     return false;

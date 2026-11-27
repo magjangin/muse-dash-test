@@ -27,7 +27,7 @@ Il2Cpp.Boss.InitBossObject: ... 적용 -> name=..., scene=...   (보스가 있�
 | `[PatchInstaller] … 패치를 걸지 않았습니다` | Warning | 게임 업데이트로 그 패치 본문이 현재 게임에서 컴파일되지 않습니다. 뒤의 예외 메시지가 사라진 멤버 이름입니다. |
 | `[PatchInstaller] … 클래스 단위 적용이 실패해 메서드별로 다시 걸었습니다` | Warning | 컴파일·대상 해석은 통과했지만 Harmony가 거는 단계에서 실패했습니다(원본 파라미터 이름이 바뀐 경우 등). 걸린 일부를 걷어내고 메서드별로 다시 걸어, 실패한 메서드만 빠집니다. 괄호 안이 실패 원인입니다. |
 | `[Sync.BGA] 음악 시작에 맞춰 BGA 재생 시작` / `오차가 커서 시크` | Info | BGA 영상이 BGM 위치에서 시작됐다는 곡당 한 줄 / 0.5초 넘게 어긋나 시크했다는 이상 징후입니다. 30초마다 나오는 `최근 30초 BGA-BGM 오차` 요약은 **Verbose**입니다(2026-11-23부터). |
-| `[GameVersion] 게임 6.7.0 (검증 버전과 같음)` | Info | 실행 중인 게임 버전이 모드를 실기 검증한 버전과 일치합니다. 버전이나 `GameAssembly.dll` 크기가 다르면 Warning으로 바뀌며 [CHECKLIST.md](CHECKLIST.md) 5절을 확인해야 합니다. |
+| `[GameVersion] 게임 6.7.0 (검증 버전과 같음)` | Info | 실행 중인 게임 버전과 MelonLoader 버전(0.7.3)이 모드를 실기 검증한 환경과 일치합니다. 게임 버전, `GameAssembly.dll` 크기, 또는 MelonLoader 버전이 다르면 Warning으로 바뀌며 [CHECKLIST.md](CHECKLIST.md) 5절을 확인해야 합니다. |
 | `모드가 로드되었습니다.` | Info | MelonLoader가 DLL을 정상 로드했습니다. |
 | `씬이 로드되었습니다` | Info | Unity 씬 전환이 감지됐습니다. |
 | `DBStageInfo.SetRuntimeMusicData 호출됨` | Info | 게임이 런타임 차트 데이터를 만들었습니다(공식곡도 찍힙니다). |
@@ -245,8 +245,8 @@ LevelDesignerNameTextObjectNames
 
 올 퍼펙트(All Perfect) 판정이나 결과 화면의 골드 배너 연출이 동작하지 않는 경우 아래 로그와 설정을 점검하십시오.
 
-> [!WARNING]
-> **`EnableAPMod = false`(MelonPreferences)이면 결과 화면 훅(`PnlVictory2dManager.OnShowVictory`)이 첫 줄에서 통째로 끝납니다.** AP 배너뿐 아니라 **커스텀 곡 기록 저장(`record/*.json`)과 결과 화면 진입 시 미디어 정지도 그 훅 안에 있어서 함께 건너뜁니다**(현재 동작). 또 `AddScore`/`IsFullCombo` 훅의 `TaskStageTarget` 캐싱도 꺼집니다. 커스텀 곡 기록이 저장되지 않는다면 먼저 이 값이 `true`인지 확인하세요. 반대로 정확도 오버라이드(`GetAccuracy`/`GetTrueAccuracy`/`GetTrueAccuracyNew` 패치)는 이 설정과 무관하게 커스텀 차트를 적용하는 판이면 항상 동작합니다.
+> [!NOTE]
+> **`EnableAPMod = false`(MelonPreferences)이면 `"ALL PERFECT !"` 골드 배너 교체와 `AddScore`/`IsFullCombo` 훅만 건너뜁니다.** 커스텀 차트 정확도 오버라이드(`GetAccuracy`/`GetTrueAccuracy`/`GetTrueAccuracyNew` 패치 및 `ActiveTarget` 확보), 결과 화면 진입 시 상태 정리(`HywStageManager.MarkStageEnded`), 그리고 **커스텀 곡 기록 저장(`CustomRecordStore.SaveResult`)** 은 `EnableAPMod`를 꺼도 정상 동작합니다.
 
 ### 1. 정확도 디버그 로그 확인
 이 로그는 `GetAccuracy`가 불릴 때마다 찍히므로 **`LogLevel = "Verbose"`일 때만** 나옵니다(아래 “수동 로그 레벨 설정” 절 참고). Verbose로 바꾼 뒤 플레이가 끝날 때 콘솔에 아래와 같은 로그가 남는지 확인합니다.
@@ -287,7 +287,7 @@ LogLevel = "Auto" # "Auto", "Silent", "Error", "Warning", "Info", "Verbose"
 
 | 값 | 설명 | 출력 대상 |
 |---|---|---|
-| **`Auto`** (기본값) | 기기 자동 판별 | UMPC는 `Error`, 일반 PC는 `Info` (또는 `VerboseLog=true` 시 `Verbose`) |
+| **`Auto`** (기본값) | 기기 자동 판별 | UMPC는 `Error`, 일반 PC는 `Info` (또는 `EnableVerboseLog=true` 시 `Verbose`) |
 | **`Silent`** | 완전 음소거 | 에러/경고/메시지 포함 전체 차단 |
 | **`Error`** | 오류 전용 | 치명적인 예외 및 크래시 오류만 출력 |
 | **`Warning`** | 경고 + 오류 | 경고 및 에러만 출력 |
@@ -301,7 +301,7 @@ LogLevel = "Auto" # "Auto", "Silent", "Error", "Warning", "Info", "Verbose"
 | --- | --- | --- |
 | `DBStageInfo_SetRuntimeMusicData_Patch.DebugExperimentNotes` (`DBStageInfoPatch.cs`) | `false` | `true`로 바꾸고 다시 빌드하면 노트 생성 전후 상태를 Info로 자세히 출력하고 호출 스택까지 남깁니다. |
 | `SpineActionContract.DumpEnabled` (`Spine/Patch_SpineActionContract.cs`) | `false` | `true`로 바꾸고 다시 빌드하면 배틀 캐릭터의 액션·애니메이션 목록을 `spine contract/` 폴더에 txt로 덤프합니다. 꺼져 있으면 폴더도 만들지 않습니다. |
-| `GameMusicScene_InitTimer_Patch` / `GameMusicScene_PreLoadEnemy_Patch`의 `EnableDebugLogs` | `true`(하드코딩) | 씬 변형·풀 빌드 진단 로그(Info)입니다. 로그 수준으로 끌 수 없습니다. |
+| `GameMusicScene_InitTimer_Patch` / `GameMusicScene_PreLoadEnemy_Patch`의 `EnableDebugLogs` | `true`(하드코딩) | 씬 변형·풀 빌드 진단 로그(Info)입니다. `LogLevel`을 `Warning`/`Error`/`Silent`로 내리면 함께 꺼집니다. |
 
 > `DumpMusicList`는 스위치가 아니라 함수입니다. 공식곡을 로드할 때마다 원본 차트의 미등록 노트를 훑습니다(README의 "특수 기믹 곡 스캔" 조사용). Info에는 미등록 노트가 있을 때만 `서치 완료` 요약 한 줄이 남고, 고유 타입별 상세 줄은 Verbose입니다. 이전 문서가 안내하던 `DumpStageBattleComponentProperties`/`DumpStageInfo`는 코드에서 제거되었습니다. 노트 상세 덤프(`StageBattleMusicDataDump`)는 호출하는 곳 없이 남아 있다가 지웠습니다. `StageBattleComponent`를 리플렉션으로 전부 훑는 진단이라 [CHECKLIST.md](CHECKLIST.md)의 "깊게 훑는 진단" 항목에 걸리기도 합니다. 꼭 필요하면 커밋 `e896584`의 `StageBattleComponentPatch.cs`에서 되살리되, 기본값 off로 두십시오.
 
@@ -339,7 +339,7 @@ set GAME_PATH=D:\Steam\steamapps\common\Muse Dash    ← build.bat용 (실행 �
 - MelonLoader가 설치되어 있고, 게임을 한 번 실행해 `Il2CppAssemblies`가 생성되었는지
 - `MelonLoader\net6`와 `MelonLoader\Il2CppAssemblies` 폴더가 있는지
 
-빌드가 끝나면 csproj의 `DeployToMods` 타깃이 DLL을 `$(GamePath)\Mods`로 복사합니다. **복사에 실패해도 `[AutoDeploy] Successfully deployed` 메시지는 찍히므로**(`ContinueOnError="WarnAndContinue"`), `Mods` 폴더에 실제로 파일이 있는지 눈으로 확인하세요.
+빌드가 끝나면 csproj의 `DeployToMods` 타깃이 DLL을 `$(GamePath)\Mods`로 복사합니다. 복사에 실패하면 `[AutoDeploy] 배포 실패` 경고가 찍히지만(게임 실행 중 파일 잠금 등), 빌드 후 `Mods` 폴더에 실제로 최신 DLL이 들어갔는지 눈으로 확인하는 습관을 권장합니다.
 
 ## 변경 후 기본 확인 순서
 

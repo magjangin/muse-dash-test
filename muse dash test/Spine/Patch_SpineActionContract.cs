@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Il2Cpp;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
@@ -21,18 +22,21 @@ namespace muse_dash_test
         /// (const가 아니라 static readonly인 건, const면 아래 코드가 도달 불가로 잡혀 경고가 나기 때문입니다.)
         /// </summary>
         private static readonly bool DumpEnabled = false;
+        internal static bool IsDumpEnabled => DumpEnabled;
 
         /// <summary>계약서 텍스트가 떨어지는 폴더. 게임 루트의 "spine contract".</summary>
         public static readonly string ContractDirectory =
             Path.Combine(MelonEnvironment.GameRootDirectory, "spine contract");
 
         private const string TargetNameFragment = "battle";
-        private static readonly HashSet<string> DumpedObjects = new HashSet<string>();
+        private static readonly HashSet<string> DumpedObjects = new HashSet<string>(StringComparer.Ordinal);
+        private static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
         private static bool hasWarnedWriteFailure;
         private static readonly UTF8Encoding Utf8Bom = new UTF8Encoding(true);
 
         public static void DumpSupply(SpineActionController sac)
         {
+            if (!DumpEnabled || sac is null) return;
             try
             {
                 DumpSupplyCore(sac);
@@ -43,9 +47,9 @@ namespace muse_dash_test
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void DumpSupplyCore(SpineActionController sac)
         {
-            if (!DumpEnabled) return;
             if (sac == null) return;
 
             string objName = sac.gameObject.name;
@@ -196,7 +200,7 @@ namespace muse_dash_test
             try
             {
                 Directory.CreateDirectory(ContractDirectory);
-                File.WriteAllText(Path.Combine(ContractDirectory, fileName), content, Utf8Bom);
+                AtomicFile.WriteAllText(Path.Combine(ContractDirectory, fileName), content, Utf8Bom);
             }
             catch (Exception ex)
             {
@@ -211,10 +215,9 @@ namespace muse_dash_test
         private static string MakeSafeFileName(string name)
         {
             var sb = new StringBuilder(name.Length);
-            var invalid = Path.GetInvalidFileNameChars();
             foreach (var c in name)
             {
-                sb.Append(Array.IndexOf(invalid, c) >= 0 ? '_' : c);
+                sb.Append(Array.IndexOf(InvalidFileNameChars, c) >= 0 ? '_' : c);
             }
             return sb.ToString();
         }

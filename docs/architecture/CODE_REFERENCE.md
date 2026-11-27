@@ -33,10 +33,10 @@ graph TD
 
 ### 📂 [MainMod.cs](../../muse%20dash%20test/MainMod.cs)
 MelonLoader 모드 진입점 클래스입니다.
-* **`OnInitializeMelon()`**: 첫 줄에서 `PatchInstaller`로 패치를 겁니다(깨진 패치를 걸지 않기 위해 MelonLoader의 자동 `PatchAll`이 아닙니다). 이어서 커스텀 차트 정보가 담긴 `info.txt`(manifest)를 선읽기(Preload)하고 `hwa` 폴더 구조를 자동 정비합니다.
-* **`OnUpdate()`**: 매 프레임 `FeatureGuard`로 격리한 다섯 가지 작업을 돌립니다 — `config.txt` 핫리로드 확인(`InputOverlay.LoadConfigIfNeeded`), 배틀 동기화(`HwaSyncManager`), 배틀 스테이지 감지와 체력바 워터마크 재적용(`HywStageManager`, 0.1초 주기), 실험 스테이지 갱신, 히트포인트 설치. (Discord Presence는 매 프레임이 아니라 이벤트마다 보냅니다.)
+* **`OnInitializeMelon()`**: 먼저 `DeviceDetector.Detect()`와 `ModConfig.Load()`를 실행해 패치 클래스의 `Prepare()`가 하드웨어·설정·로그 레벨을 읽을 수 있게 한 뒤, `PatchInstaller.ApplyAll`로 패치를 겁니다(깨진 패치를 걸지 않기 위해 MelonLoader의 자동 `PatchAll`이 아닙니다). 이어서 `FeatureGuard` 격리 아래 `PatchHealthCheck.Run`, `GameVersionCheck`, `OfflineCustomSandbox`, `HwaResourceManager`(매니페스트·채보 선읽기 및 `hwa` 폴더 감시), 스킨/태그 초기화 등을 수행합니다.
+* **`OnUpdate()`**: 매 프레임 `FeatureGuard`로 격리한 작업들을 돌립니다 — `config.txt` 핫리로드 확인(`InputOverlay.LoadConfigIfNeeded`), 배틀 동기화(`HwaSyncManager`), 배틀 스테이지 감지와 체력바 워터마크 재적용(`HywStageManager`, 0.1초 주기), 실험 스테이지 갱신, 히트포인트 설치, 그리고 배틀 중 F8 키음 진단 덤프(`KeysoundProbe.PollDumpKey`). (Discord Presence는 매 프레임이 아니라 이벤트마다 보냅니다.)
 * **`OnGUI()`**: 배틀 중 `Repaint` 이벤트에서만 입력 오버레이와 판정바를 그립니다.
-* **`OnSceneWasLoaded()`**: 씬 로드 로그를 남기고, `FeatureGuard.RearmAll()`로 자동 비활성화된 기능에 재시도 기회를 주며, 입력 오버레이·히트포인트·결과 화면 캐시·오프셋 UID 캐시를 초기화합니다.
+* **`OnSceneWasLoaded()`**: 씬 로드 로그를 남기고, `FeatureGuard.RearmAll()`로 자동 비활성화된 기능에 재시도 기회를 주며, 입력 오버레이·히트포인트·결과 화면 캐시·오프셋 UID 캐시·Discord 상태 캐시(`DiscordManagerDebugPatch.ResetCache`)를 초기화합니다.
 
 ### 📂 [Bms/BmsParser.cs](../../muse%20dash%20test/Bms/BmsParser.cs)
 인게임 차트에 쓰이는 BMS(Be-Music Source) 형태의 노트를 해석하고 분석하기 위한 파서 모듈입니다. BMS 데이터 포맷 규격을 디코딩하여 곡 분석 작업을 보조합니다.
@@ -362,7 +362,9 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
   * Discord Rich Presence 연동 및 JIT 격리 (`DiscordPresenceManager.cs`)
   * 진행바 세터 메서드 동적 폴백 및 타임라인 동기화 (`ProgressBarPatch.cs`)
   * 다중 난이도 BMS 채보 및 리소스 수명 주기 관리 (`HwaResourceManager.cs`)
-  * 전역 세션 및 기능 토글 모듈 (`CustomPlaySession.cs`, `ModConfig.cs`)* **전체 파일 목록은 아래 12절이 기준입니다.** 위 2~10절은 주요 파일만 자세히 다루고, 나머지 파일은 12절에 한 줄씩 있습니다. 새 `.cs` 파일을 만들면 12절에 한 줄을 추가하십시오. CI(`Logic Tests`)가 `tools/check-code-reference.ps1`로 모든 소스 파일 이름이 이 문서나 `ARCHITECTURE.md`에 있는지 확인하고, 빠지면 실패합니다(2026-11-25 감사 9차: 소스 161개 중 73개가 이 문서에 없었습니다).
+  * 전역 세션 및 기능 토글 모듈 (`CustomPlaySession.cs`, `ModConfig.cs`)
+* **별도 하위 프로젝트**: 게임 비의존 순수 로직 단위 테스트는 `muse dash test.LogicTests/`에, 오프라인 정적 시그니처 덤퍼는 `SignatureDumper/SignatureDumper.cs`에 분리되어 있습니다.
+* **전체 파일 목록은 아래 12절이 기준입니다.** 위 2~10절은 주요 파일만 자세히 다루고, 나머지 파일은 12절에 한 줄씩 있습니다. 새 `.cs` 파일을 만들면 12절에 한 줄을 추가하십시오. CI(`Logic Tests`)가 `tools/check-code-reference.ps1`로 모든 소스 파일 이름(`.cs` 단위)이 이 문서나 `ARCHITECTURE.md`에 있는지 확인하고, 빠지면 실패합니다(2026-11-25 감사 9차: 소스 161개 중 73개가 이 문서에 없었습니다).
 
 ---
 
@@ -418,7 +420,7 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 | 파일 | 역할 |
 | --- | --- |
 | `Il2CppWrapperBase.cs` | IL2CPP 객체를 리플렉션으로 감싸는 래퍼 베이스(멤버 캐시) |
-| `AlbumsInfoWrapper.cs` | `DBConfigAlbums.AlbumsInfo` 래퍼 |
+| `AlbumsInfoWrapper.cs` · `MusicInfoWrapper.cs` | `DBConfigAlbums.AlbumsInfo` 및 `MusicInfo` 래퍼(`listIndex`·난이도·마스크 접근) |
 
 ### `Patches/Database/`
 | 파일 | 역할 |
@@ -445,6 +447,7 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 | `HwaMenuBgmController.SourceAndMemory.cs` | 메뉴 미리듣기 소스 탐색과 밀려난 스트리밍 클립의 유예 해제 |
 | `HwaManifest.cs` · `HwaManifestLoader.cs` | 곡 `info.txt` 모델과 파서 |
 | `HwaResourceManager.Bms.cs` · `HwaResourceManager.Watcher.cs` | 채보 로드, BMS 파일 실시간 감시(디바운스·재시도·감시 오류 시 전체 재로드) |
+| `HwaSyncManager.cs` | 배틀 중 진행바 매 프레임 동기화와 BGA 영상 드리프트 속도 미세 조절·시크 |
 
 ### `Patches/Sandbox/` · `Patches/Scene/`
 | 파일 | 역할 |
@@ -461,16 +464,16 @@ MelonLoader의 기본 자동 패치(`PatchAll`)를 대체하여 모드의 모든
 | 파일 | 역할 |
 | --- | --- |
 | `Custom/InputOverlay.Colors.cs` · `InputOverlay.ConfigFile.cs` · `InputOverlay.Config.cs` · `InputOverlay.Patches.cs` · `InputOverlay.Render.cs` | 키 오버레이 색 텍스처, `config.txt` 쓰기·표준화, 읽기·핫리로드, 입력 훅, 그리기 |
-| `Custom/Tags/CustomTagPatch.LocalizationPatches.cs` | 가상 곡 `MusicInfo.GetLocal` 제목·작곡가 응답 |
+| `Custom/Tags/CustomTagPatch.cs` · `Custom/Tags/CustomTagPatch.LocalizationPatches.cs` | 커스텀 태그 등록 진입·`RefreshStageDisplayMusics` 보호 훅과 가상 곡 `MusicInfo.GetLocal` 제목·작곡가 응답 |
 | `Custom/Tags/SelectedSongLocalizationScope.cs` | 제목 조회 판정에 쓸 '그리는 중인 곡' 스코프 |
-| `Custom/Tags/Support/CustomTagRegistryDebug.cs` | 복제한 `MusicExInfo` 필드 열거(Verbose 전용) |
+| `Custom/Tags/Support/CustomTagRegistrySupport.cs` · `Custom/Tags/Support/CustomTagRegistryDebug.cs` | 가상 앨범·가상 곡 복제·주입 헬퍼와 복제한 `MusicExInfo` 필드 열거(Verbose 전용) |
 | `Menu/PnlHomeDebugPatch.cs` | 메인 메뉴 진입 시 BGM 상태 추적(Verbose일 때만 훅) |
 | `Menu/PnlMenuBgmStopPatch.cs` | 메인 메뉴로 나가면 커스텀 메뉴 BGM 정지 |
 | `Music/MusicStageCellPatch.cs` · `CoverImageManager.cs` | 곡 디스크 셀 커버를 곡 폴더 `cover.png`로 교체, 커버 캐시 |
 | `Music/MusicButtonAreaTitlePatch.cs` · `PnlMusicOverride.cs` | 곡 제목·아티스트·디자이너 텍스트 덮어쓰기 |
 | `Music/PnlMusicTagPatch.cs` | 곡 태그 목록(`PnlMusicTag.RefreshScrollViewItem`) 갱신 훅 |
 | `Music/PnlMusicDiagnostics.AudioClip.cs` · `PnlMusicDiagnostics.Extraction.cs` | 미리듣기 클립 진단과 현재 곡 추출 |
-| `Pnl/PnlStagePatchHelper.TextDebug.cs` | 곡 선택 화면이 들고 있는 곡 UID 직접 읽기(세션 값이 빌 때만) |
+| `Pnl/PnlStagePatchHelper.cs` · `Pnl/PnlStagePatchHelper.TextDebug.cs` | 곡 선택 화면 태그 제목·검색·진단 헬퍼와 현재 곡 UID 직접 읽기(세션 값이 빌 때만) |
 | `Stage/HiddenUnlockGuide.cs` · `HiddenUnlockGuide.Placement.cs` | 히든 해금 조건 한 줄 표시와 배치(마스크·캔버스 순서, CHECKLIST 1절) |
 | `Stage/PnlPreparationPatch.cs` · `PnlRecordPatch.cs` · `PnlStagePatch.cs` | 곡 준비(`OnEnable`·최고 기록 다운로드)·기록(`RefreshRecord`)·곡 선택 화면 훅 |
 | `Stage/PnlRankHookPatch.cs` · `RankCellHookPatch.cs` | 랭킹 패널 호출 관찰, 11위 이하 셀 숨김 |

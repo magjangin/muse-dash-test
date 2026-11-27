@@ -84,9 +84,9 @@ namespace muse_dash_test
 
         private static void CleanAchievementLists(Il2CppSystem.Collections.Generic.Dictionary<string, IData> datas)
         {
-            if (!datas.ContainsKey("Achievement")) return;
+            if (!datas.TryGetValue("Achievement", out IData achData)) return;
 
-            var fields = datas["Achievement"]?.fields;
+            var fields = achData?.fields;
             if (fields == null) return;
 
             // 2-1. highest 최고 기록 리스트 클렌징
@@ -104,10 +104,7 @@ namespace muse_dash_test
             string fieldKey,
             string logLabel)
         {
-            if (!fields.ContainsKey(fieldKey)) return;
-
-            var listVar = fields[fieldKey];
-            if (listVar == null) return;
+            if (!fields.TryGetValue(fieldKey, out IVariable listVar) || listVar == null) return;
 
             var dataList = VariableUtils.GetResult<Il2CppSystem.Collections.Generic.List<IData>>(listVar);
             if (dataList == null) return;
@@ -124,10 +121,7 @@ namespace muse_dash_test
             string[] passKeys = { "easy_pass", "hard_pass", "master_pass" };
             foreach (var pk in passKeys)
             {
-                if (!fields.ContainsKey(pk)) continue;
-
-                var passVar = fields[pk];
-                if (passVar == null) continue;
+                if (!fields.TryGetValue(pk, out IVariable passVar) || passVar == null) continue;
 
                 var passList = VariableUtils.GetResult<Il2CppSystem.Collections.Generic.List<string>>(passVar);
                 if (passList == null) continue;
@@ -215,20 +209,16 @@ namespace muse_dash_test
 
                 // 2. 제네릭 IData fields 기반 Fallback 대조
                 var fields = item.fields;
-                if (fields != null && fields.ContainsKey("uid"))
+                if (fields != null && fields.TryGetValue("uid", out IVariable uidVar) && uidVar != null)
                 {
-                    var uidVar = fields["uid"];
-                    if (uidVar != null)
+                    var valObj = VariableUtils.GetResult<Il2CppSystem.Object>(uidVar);
+                    if (valObj != null)
                     {
-                        var valObj = VariableUtils.GetResult<Il2CppSystem.Object>(uidVar);
-                        if (valObj != null)
+                        string uid = valObj.ToString();
+                        if (CustomContentIds.IsVirtualContent(uid))
                         {
-                            string uid = valObj.ToString();
-                            if (CustomContentIds.IsVirtualContent(uid))
-                            {
-                                list.RemoveAt(i);
-                                removedCount++;
-                            }
+                            list.RemoveAt(i);
+                            removedCount++;
                         }
                     }
                 }

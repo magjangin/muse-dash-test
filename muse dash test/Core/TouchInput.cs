@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using MelonLoader;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -97,43 +98,13 @@ namespace muse_dash_test
 
         /// <summary>
         /// 새 Input System에서 접점을 읽습니다. Touchscreen 디바이스가 없으면 false를 반환합니다.
+        /// JIT 시점의 InputSystem 멤버 해석 예외도 잡을 수 있도록 실제 접근은 NoInlining 헬퍼로 분리합니다.
         /// </summary>
         private static bool TryReadInputSystem()
         {
             try
             {
-                var screen = Touchscreen.current;
-                if (screen == null) return false;
-
-                var touches = screen.touches;
-                int slotCount = touches.Count;
-
-                for (int i = 0; i < slotCount; i++)
-                {
-                    var t = touches[i];
-                    if (t == null) continue;
-
-                    bool began = t.press.wasPressedThisFrame;
-                    bool ended = t.press.wasReleasedThisFrame;
-                    bool held = t.press.isPressed;
-
-                    // 눌리지도, 떼어지지도, 유지되지도 않은 슬롯은 비어 있는 것입니다.
-                    if (!began && !ended && !held) continue;
-
-                    _contacts.Add(new TouchContact
-                    {
-                        // 게임에 넘기는 식별자는 슬롯 인덱스를 씁니다.
-                        // Input System의 touchId는 단조 증가하여 값이 무한정 커지므로 부적합합니다.
-                        Id = i,
-                        Position = t.position.ReadValue(),
-                        Began = began,
-                        Held = held,
-                        Ended = ended
-                    });
-                }
-
-                ActiveBackend = "InputSystem";
-                return true;
+                return ReadInputSystemCore();
             }
             catch (Exception ex)
             {
@@ -146,6 +117,43 @@ namespace muse_dash_test
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool ReadInputSystemCore()
+        {
+            var screen = Touchscreen.current;
+            if (screen == null) return false;
+
+            var touches = screen.touches;
+            int slotCount = touches.Count;
+
+            for (int i = 0; i < slotCount; i++)
+            {
+                var t = touches[i];
+                if (t == null) continue;
+
+                bool began = t.press.wasPressedThisFrame;
+                bool ended = t.press.wasReleasedThisFrame;
+                bool held = t.press.isPressed;
+
+                // 눌리지도, 떼어지지도, 유지되지도 않은 슬롯은 비어 있는 것입니다.
+                if (!began && !ended && !held) continue;
+
+                _contacts.Add(new TouchContact
+                {
+                    // 게임에 넘기는 식별자는 슬롯 인덱스를 씁니다.
+                    // Input System의 touchId는 단조 증가하여 값이 무한정 커지므로 부적합합니다.
+                    Id = i,
+                    Position = t.position.ReadValue(),
+                    Began = began,
+                    Held = held,
+                    Ended = ended
+                });
+            }
+
+            ActiveBackend = "InputSystem";
+            return true;
+        }
+
         /// <summary>
         /// 레거시 UnityEngine.Input 폴백입니다. Windows 스탠드얼론에서는 동작하지 않습니다.
         /// </summary>
@@ -153,29 +161,7 @@ namespace muse_dash_test
         {
             try
             {
-                int count = Input.touchCount;
-                if (count <= 0)
-                {
-                    ActiveBackend = "없음";
-                    return;
-                }
-
-                for (int i = 0; i < count; i++)
-                {
-                    Touch touch = Input.GetTouch(i);
-                    var phase = touch.phase;
-
-                    _contacts.Add(new TouchContact
-                    {
-                        Id = touch.fingerId,
-                        Position = touch.position,
-                        Began = phase == UnityEngine.TouchPhase.Began,
-                        Held = phase == UnityEngine.TouchPhase.Moved || phase == UnityEngine.TouchPhase.Stationary,
-                        Ended = phase == UnityEngine.TouchPhase.Ended || phase == UnityEngine.TouchPhase.Canceled
-                    });
-                }
-
-                ActiveBackend = "Legacy";
+                ReadLegacyCore();
             }
             catch (Exception ex)
             {
@@ -185,6 +171,34 @@ namespace muse_dash_test
                     ModLogger.Warning($"[TouchInput] 레거시 판독 실패: {ex.GetType().Name}: {ex.Message}");
                 }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ReadLegacyCore()
+        {
+            int count = Input.touchCount;
+            if (count <= 0)
+            {
+                ActiveBackend = "없음";
+                return;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                Touch touch = Input.GetTouch(i);
+                var phase = touch.phase;
+
+                _contacts.Add(new TouchContact
+                {
+                    Id = touch.fingerId,
+                    Position = touch.position,
+                    Began = phase == UnityEngine.TouchPhase.Began,
+                    Held = phase == UnityEngine.TouchPhase.Moved || phase == UnityEngine.TouchPhase.Stationary,
+                    Ended = phase == UnityEngine.TouchPhase.Ended || phase == UnityEngine.TouchPhase.Canceled
+                });
+            }
+
+            ActiveBackend = "Legacy";
         }
     }
 }

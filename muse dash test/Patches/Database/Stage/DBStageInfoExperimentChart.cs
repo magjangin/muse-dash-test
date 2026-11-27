@@ -3,6 +3,7 @@ using Il2CppAssets.Scripts.Database;
 using Il2CppGameLogic;
 using muse_dash_test;
 using System;
+using System.Globalization;
 
 // 실험 차트 핵심 파이프라인: 원본 노트 복제 → 스펙 적용 → 노트 삽입.
 // (보조 로직은 같은 partial 클래스의 .Bms / .Resolve / .Sorting / .Diagnostics 파일로 분리되어 있습니다.)
@@ -125,22 +126,25 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         for (int i = 1; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            if (note?.noteData == null) continue;
+            var noteData = note?.noteData;
+            if (noteData == null) continue;
 
-            int type = (int)note.noteData.type;
-            string uid = note.noteData.uid ?? string.Empty;
+            int type = (int)noteData.type;
+            string uid = noteData.uid ?? string.Empty;
 
             // 추가 진단 집계 (유형 매칭 또는 UID 접두사 검사)
-            if (type == NoteTypes.Heart || uid.StartsWith("0002", StringComparison.Ordinal))
+            bool isHeart = type == NoteTypes.Heart || uid.StartsWith("0002", StringComparison.Ordinal);
+            bool isBlue = type == NoteTypes.Blue || uid.StartsWith("0003", StringComparison.Ordinal);
+            if (isHeart)
             {
                 heartCount++;
             }
-            if (type == NoteTypes.Blue || uid.StartsWith("0003", StringComparison.Ordinal))
+            if (isBlue)
             {
                 blueNoteCount++;
             }
 
-            if (type == NoteTypes.Boss || type == NoteTypes.SceneToggle || IsSceneToggleNote(note))
+            if (type == NoteTypes.Boss || type == NoteTypes.SceneToggle || uid.StartsWith("0004", StringComparison.Ordinal))
             {
                 continue;
             }
@@ -148,11 +152,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             {
                 totalGears++;
             }
-            else if (type == NoteTypes.Heart || uid.StartsWith("0002", StringComparison.Ordinal))
+            else if (isHeart)
             {
                 totalHearts++;
             }
-            else if (type == NoteTypes.Blue || uid.StartsWith("0003", StringComparison.Ordinal))
+            else if (isBlue)
             {
                 totalBlueNotes++;
             }
@@ -200,10 +204,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         DebugSpec("[ExperimentDebug] spec", spec);
         DebugNote("[ExperimentDebug] template before spec", template);
 
+        bool needLabel = DebugExperimentNotes || ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
         for (int i = 0; i < count; i++)
         {
             double tick = spec.StartTick + (spec.Interval * i);
-            string label = $"{spec.Label} #{i + 1}/{count}";
+            string label = needLabel ? $"{spec.Label} #{i + 1}/{count}" : spec.Label;
 
             if (spec.IsLong)
             {
@@ -221,9 +226,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     {
         var note = CloneMusicData(template);
         MoveNote(ref note, musicList.Count, tick, length, spec);
-        DebugNote($"[ExperimentDebug] {label} after MoveNote", note);
+        if (DebugExperimentNotes) DebugNote($"[ExperimentDebug] {label} after MoveNote", note);
         ApplyNoteSpec(ref note, spec);
-        DebugNote($"[ExperimentDebug] {label} after ApplyNoteSpec", note);
+        if (DebugExperimentNotes) DebugNote($"[ExperimentDebug] {label} after ApplyNoteSpec", note);
         ResetRuntimeFlags(ref note);
         musicList.Add(note);
         LogInsertedNote(label, note);
@@ -235,18 +240,20 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         int longPressCount = (int)System.Math.Ceiling(length / LongMiddleStep);
         int middleCount = System.Math.Max(0, longPressCount - 1);
         int endIndex = startIndex + middleCount + 1;
+        var startTickDecimal = (Il2CppSystem.Decimal)startTick;
+        bool logInserted = ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
 
         var start = CloneMusicData(template);
         MoveNote(ref start, startIndex, startTick, length, spec);
-        DebugNote($"[ExperimentDebug] {label} start after MoveNote", start);
+        if (DebugExperimentNotes) DebugNote($"[ExperimentDebug] {label} start after MoveNote", start);
         ApplyNoteSpec(ref start, spec);
-        DebugNote($"[ExperimentDebug] {label} start after ApplyNoteSpec", start);
+        if (DebugExperimentNotes) DebugNote($"[ExperimentDebug] {label} start after ApplyNoteSpec", start);
         ResetRuntimeFlags(ref start);
-        start.longPressPTick = (Il2CppSystem.Decimal)startTick;
+        start.longPressPTick = startTickDecimal;
         start.endIndex = endIndex;
         start.longPressNum = longPressCount;
         musicList.Add(start);
-        LogInsertedNote(label + " start", start);
+        if (logInserted) LogInsertedNote(label + " start", start);
 
         for (int i = 1; i <= middleCount; i++)
         {
@@ -256,7 +263,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             ApplyNoteSpec(ref middle, spec);
             ResetRuntimeFlags(ref middle);
             middle.isLongPressing = true;
-            middle.longPressPTick = (Il2CppSystem.Decimal)startTick;
+            middle.longPressPTick = startTickDecimal;
             middle.endIndex = endIndex;
             middle.longPressNum = longPressCount;
             musicList.Add(middle);
@@ -264,22 +271,25 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         var end = CloneMusicData(template);
         MoveNote(ref end, musicList.Count, startTick + length, 0.0, spec);
-        DebugNote($"[ExperimentDebug] {label} end after MoveNote", end);
+        if (DebugExperimentNotes) DebugNote($"[ExperimentDebug] {label} end after MoveNote", end);
         ApplyNoteSpec(ref end, spec);
-        DebugNote($"[ExperimentDebug] {label} end after ApplyNoteSpec", end);
+        if (DebugExperimentNotes) DebugNote($"[ExperimentDebug] {label} end after ApplyNoteSpec", end);
         ResetRuntimeFlags(ref end);
         end.isLongPressEnd = true;
-        end.longPressPTick = (Il2CppSystem.Decimal)startTick;
+        end.longPressPTick = startTickDecimal;
         end.endIndex = endIndex;
         end.longPressNum = longPressCount;
         musicList.Add(end);
-        LogInsertedNote(label + " end", end);
+        if (logInserted) LogInsertedNote(label + " end", end);
     }
 
     public static void ApplyNoteSpec(ref MusicData note, ExperimentNoteSpec spec)
     {
-        DebugMsg($"[ExperimentDebug] ApplyNoteSpec begin label={spec.Label}");
-        DebugNote("[ExperimentDebug] ApplyNoteSpec input", note);
+        if (DebugExperimentNotes)
+        {
+            DebugMsg($"[ExperimentDebug] ApplyNoteSpec begin label={spec.Label}");
+            DebugNote("[ExperimentDebug] ApplyNoteSpec input", note);
+        }
 
         var noteData = CloneNoteConfigData(note.noteData) ?? new NoteConfigData();
         var configData = CloneMusicConfigData(note.configData);
@@ -323,7 +333,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
         if (!string.IsNullOrEmpty(uid))
         {
-            if (int.TryParse(uid, out int parsedNoteUid))
+            if (int.TryParse(uid, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedNoteUid))
             {
                 noteData.noteUid = parsedNoteUid;
             }
@@ -355,10 +365,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             noteData.speed = (int)System.Math.Round(spec.Speed);
         }
-        else if (UidCode.Speed(uid) >= 2)
+        else
         {
-            // 공식 노트의 speed 필드는 uid 속도 자리와 늘 같았습니다. 복제 원본(속도 1) 값을 남기지 않습니다.
-            noteData.speed = UidCode.Speed(uid);
+            int uidSpeed = UidCode.Speed(uid);
+            if (uidSpeed >= 2)
+            {
+                // 공식 노트의 speed 필드는 uid 속도 자리와 늘 같았습니다. 복제 원본(속도 1) 값을 남기지 않습니다.
+                noteData.speed = uidSpeed;
+            }
         }
 
         // des is intentionally not overridden by spec
@@ -372,8 +386,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         note.noteData = noteData;
         note.configData = configData;
 
-        DebugMsg($"[ExperimentDebug] ApplyNoteSpec resolved uid={uid}, noteType={noteType}, pathway={pathway}, scene={noteData.scene}, prefab={noteData.prefab_name}, keyAudio={noteData.key_audio}");
-        DebugNote("[ExperimentDebug] ApplyNoteSpec output", note);
+        if (DebugExperimentNotes)
+        {
+            DebugMsg($"[ExperimentDebug] ApplyNoteSpec resolved uid={uid}, noteType={noteType}, pathway={pathway}, scene={noteData.scene}, prefab={noteData.prefab_name}, keyAudio={noteData.key_audio}");
+            DebugNote("[ExperimentDebug] ApplyNoteSpec output", note);
+        }
     }
 
     public static void MoveNote(ref MusicData note, int objId, double tick, double length, ExperimentNoteSpec spec)
@@ -411,24 +428,37 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         }
     }
 
+    private static bool hasCachedZeroDecimal;
+    private static Il2CppSystem.Decimal cachedZeroDecimal;
+
     public static void ResetRuntimeFlags(ref MusicData note)
     {
+        if (!hasCachedZeroDecimal)
+        {
+            cachedZeroDecimal = (Il2CppSystem.Decimal)0.0;
+            hasCachedZeroDecimal = true;
+        }
+
         note.doubleIdx = 0;
         note.isDouble = false;
         note.isLongPressing = false;
         note.isLongPressEnd = false;
-        note.longPressPTick = (Il2CppSystem.Decimal)0.0;
+        note.longPressPTick = cachedZeroDecimal;
         note.endIndex = 0;
         note.longPressNum = 0;
 
-        if (IsSceneToggleNote(note))
+        var noteData = note.noteData;
+        if (noteData != null)
         {
-            note.doubleIdx = -1;
-        }
-
-        if (note.noteData?.type == NoteTypes.Boss && !string.IsNullOrWhiteSpace(note.noteData.boss_action))
-        {
-            note.doubleIdx = -1;
+            string uid = noteData.uid ?? string.Empty;
+            if (noteData.type == NoteTypes.SceneToggle || uid.StartsWith("0004", StringComparison.Ordinal))
+            {
+                note.doubleIdx = -1;
+            }
+            else if (noteData.type == NoteTypes.Boss && !string.IsNullOrWhiteSpace(noteData.boss_action))
+            {
+                note.doubleIdx = -1;
+            }
         }
     }
 }

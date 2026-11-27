@@ -11,6 +11,7 @@ namespace muse_dash_test
     public static partial class HwaResourceManager
     {
         private static FileSystemWatcher bmsWatcher = null;
+        private static readonly object watcherInitLock = new object();
 
         /// <summary>
         /// 마지막 변경 뒤 이 시간 동안 같은 곡에 새 변경이 없을 때 한 번 다시 읽습니다(디바운스).
@@ -42,41 +43,44 @@ namespace muse_dash_test
 
         public static void InitializeBmsWatcher()
         {
-            try
+            lock (watcherInitLock)
             {
-                if (bmsWatcher != null)
+                try
                 {
-                    bmsWatcher.EnableRaisingEvents = false;
-                    bmsWatcher.Dispose();
-                    bmsWatcher = null;
+                    if (bmsWatcher != null)
+                    {
+                        bmsWatcher.EnableRaisingEvents = false;
+                        bmsWatcher.Dispose();
+                        bmsWatcher = null;
+                    }
+
+                    if (!Directory.Exists(HwaFolderPath))
+                    {
+                        return;
+                    }
+
+                    bmsWatcher = new FileSystemWatcher
+                    {
+                        Path = HwaFolderPath,
+                        Filter = "*.bms",
+                        IncludeSubdirectories = true,
+                        NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
+                        InternalBufferSize = BmsWatcherBufferSize
+                    };
+
+                    bmsWatcher.Changed += OnBmsFileChanged;
+                    bmsWatcher.Created += OnBmsFileChanged;
+                    bmsWatcher.Deleted += OnBmsFileChanged;
+                    bmsWatcher.Renamed += OnBmsFileRenamed;
+                    bmsWatcher.Error += OnBmsWatcherError;
+
+                    bmsWatcher.EnableRaisingEvents = true;
+                    ModLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 폴더 감시 시작: {HwaFolderPath}");
                 }
-
-                if (!Directory.Exists(HwaFolderPath))
+                catch (Exception ex)
                 {
-                    return;
+                    ModLogger.Error($"[HwaResourceManager.BmsWatcher] BMS 폴더 감시 설정 실패: {ex.Message}");
                 }
-
-                bmsWatcher = new FileSystemWatcher
-                {
-                    Path = HwaFolderPath,
-                    Filter = "*.bms",
-                    IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
-                    InternalBufferSize = BmsWatcherBufferSize
-                };
-
-                bmsWatcher.Changed += OnBmsFileChanged;
-                bmsWatcher.Created += OnBmsFileChanged;
-                bmsWatcher.Deleted += OnBmsFileChanged;
-                bmsWatcher.Renamed += OnBmsFileRenamed;
-                bmsWatcher.Error += OnBmsWatcherError;
-
-                bmsWatcher.EnableRaisingEvents = true;
-                ModLogger.Msg($"[HwaResourceManager.BmsWatcher] BMS 실시간 폴더 감시 시작: {HwaFolderPath}");
-            }
-            catch (Exception ex)
-            {
-                ModLogger.Error($"[HwaResourceManager.BmsWatcher] BMS 폴더 감시 설정 실패: {ex.Message}");
             }
         }
 
@@ -236,7 +240,8 @@ namespace muse_dash_test
         /// </summary>
         public static bool ReloadBmsChartForUid(string uid)
         {
-            if (uid == null || !cachedManifests.TryGetValue(uid, out var manifest))
+            HwaManifest manifest = GetManifest(uid);
+            if (manifest == null)
             {
                 return false;
             }

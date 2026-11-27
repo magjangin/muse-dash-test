@@ -14,6 +14,8 @@ namespace muse_dash_test.Patches.UI.Setting
     [HarmonyPatch(typeof(PnlPlaySetting), nameof(PnlPlaySetting.OnAwake))]
     public static class PnlPlaySetting_MobileInputPatch
     {
+        public static bool Prepare() => ModConfig.EnableMobileTouch;
+
         public static void Postfix(PnlPlaySetting __instance)
         {
             try
@@ -72,6 +74,8 @@ namespace muse_dash_test.Patches.UI.Setting
     [HarmonyPatch(typeof(PnlInputMobile))]
     public static class PnlInputMobile_LifecyclePatch
     {
+        public static bool Prepare() => ModConfig.EnableMobileTouch;
+
         [HarmonyPatch(nameof(PnlInputMobile.Awake))]
         [HarmonyPostfix]
         public static void Awake_Postfix(PnlInputMobile __instance)
@@ -87,21 +91,21 @@ namespace muse_dash_test.Patches.UI.Setting
             }
         }
 
-        [HarmonyPatch(nameof(PnlInputMobile.SetAutoFever))]
+        [HarmonyPatch(nameof(PnlInputMobile.SetAutoFever), new Type[] { typeof(bool) })]
         [HarmonyPostfix]
         public static void SetAutoFever_Postfix(bool autoFever)
         {
             ModLogger.Msg($"📱 [PnlInputMobile] 오토 피버(AutoFever) 설정 변경됨: {autoFever}");
         }
 
-        [HarmonyPatch(nameof(PnlInputMobile.SetTouchReverse))]
+        [HarmonyPatch(nameof(PnlInputMobile.SetTouchReverse), new Type[] { typeof(bool) })]
         [HarmonyPostfix]
         public static void SetTouchReverse_Postfix(bool reverse)
         {
             ModLogger.Msg($"📱 [PnlInputMobile] 터치 좌우 반전(TouchReverse) 설정 변경됨: {reverse}");
         }
 
-        [HarmonyPatch(nameof(PnlInputMobile.SetLeftRight))]
+        [HarmonyPatch(nameof(PnlInputMobile.SetLeftRight), new Type[] { typeof(bool) })]
         [HarmonyPostfix]
         public static void SetLeftRight_Postfix(bool leftRight)
         {

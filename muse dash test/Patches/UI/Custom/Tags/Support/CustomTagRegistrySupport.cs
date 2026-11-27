@@ -17,22 +17,13 @@ namespace muse_dash_test
     {
         internal static Il2CppSystem.Collections.Generic.Dictionary<string, string> CreateTagLanguages(out string defaultName)
         {
-            var languages = new Dictionary<string, string>
-            {
-                { "Korean", "실험 모드" },
-                { "English", "Experiment Mod" },
-                { "Japanese", "実験モード" },
-                { "ChineseSimplified", "实验模式" },
-                { "ChineseTraditional", "實驗模式" }
-            };
-
-            var il2CppLanguages = new Il2CppSystem.Collections.Generic.Dictionary<string, string>(languages.Count);
-            foreach (var kvp in languages)
-            {
-                il2CppLanguages.Add(kvp.Key, kvp.Value);
-            }
-
-            defaultName = languages.TryGetValue("English", out string eng) ? eng : "Experiment Mod";
+            defaultName = "Experiment Mod";
+            var il2CppLanguages = new Il2CppSystem.Collections.Generic.Dictionary<string, string>(5);
+            il2CppLanguages.Add("Korean", "실험 모드");
+            il2CppLanguages.Add("English", defaultName);
+            il2CppLanguages.Add("Japanese", "実験モード");
+            il2CppLanguages.Add("ChineseSimplified", "实验模式");
+            il2CppLanguages.Add("ChineseTraditional", "實驗模式");
             return il2CppLanguages;
         }
 
@@ -76,9 +67,10 @@ namespace muse_dash_test
 
                     if (originalInfo != null)
                     {
-                        string primaryName = $"화영왕 {uid.Substring(CustomContentIds.VirtualSongPrefix.Length)}";
-                        string primaryAuthor = $"화영왕 {uid.Substring(CustomContentIds.VirtualSongPrefix.Length)}";
-                        string primaryLevelDesigner = $"화영왕 {uid.Substring(CustomContentIds.VirtualSongPrefix.Length)}";
+                        string defaultLabel = $"화영왕 {uid.Substring(CustomContentIds.VirtualSongPrefix.Length)}";
+                        string primaryName = defaultLabel;
+                        string primaryAuthor = defaultLabel;
+                        string primaryLevelDesigner = defaultLabel;
                         int primaryDiff1 = 2;
                         int primaryDiff2 = 5;
                         int primaryDiff3 = 0;

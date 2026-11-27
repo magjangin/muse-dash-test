@@ -84,7 +84,7 @@ public class GameMusicScene_IsIgnoreCurrentNoteChecking_Patch
 public class GameMusicScene_InitTimer_Patch
 {
     private static bool EnableDebugLogs => true;
-    private static readonly HashSet<string> loggedGhostUids = new HashSet<string>();
+    private static readonly HashSet<string> loggedGhostUids = new HashSet<string>(StringComparer.Ordinal);
 
     private static void LogDebug(string message)
     {
@@ -133,7 +133,7 @@ public class GameMusicScene_InitTimer_Patch
     {
         if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose) || list == null) return;
 
-        var zzCounts = new SortedDictionary<string, int>();
+        var zzCounts = new SortedDictionary<string, int>(StringComparer.Ordinal);
         loggedGhostUids.Clear();
 
         for (int i = 0; i < list.Count; i++)
@@ -141,11 +141,12 @@ public class GameMusicScene_InitTimer_Patch
             try
             {
                 var note = list[i];
-                if (note == null || note.noteData == null) continue;
+                var noteData = note?.noteData;
+                if (noteData == null) continue;
 
-                string uid = note.noteData.uid;
+                string uid = noteData.uid;
                 ScenePatchHelpers.CountZz(zzCounts, uid);
-                LogGhostNoteIfNeeded(note, uid, note.noteData.prefab_name);
+                LogGhostNoteIfNeeded(note, uid);
             }
             catch (Exception ex) { ModLogger.Verbose($"[GameMusicScene.GhostLog] 무시된 예외: {ex.Message}"); }
         }
@@ -153,7 +154,7 @@ public class GameMusicScene_InitTimer_Patch
         LogDebug($"[GameMusicScene.InitTimer] 무변형 순수 BMS zz 분포: {ScenePatchHelpers.FormatZzCounts(zzCounts)}");
     }
 
-    private static void LogGhostNoteIfNeeded(Il2CppGameLogic.MusicData note, string uid, string prefab)
+    private static void LogGhostNoteIfNeeded(Il2CppGameLogic.MusicData note, string uid)
     {
         try
         {
@@ -161,7 +162,10 @@ public class GameMusicScene_InitTimer_Patch
             if (!loggedGhostUids.Add(uid)) return;
 
             var nd = note.noteData;
-            ModLogger.Msg($"[GameMusicScene.InitTimer.Ghost] uid={uid}, prefab={prefab ?? "(null)"}, scene={nd.scene ?? "(null)"}, " +
+            if (nd == null) return;
+
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            ModLogger.Msg($"[GameMusicScene.InitTimer.Ghost] uid={uid}, prefab={nd.prefab_name ?? "(null)"}, scene={nd.scene ?? "(null)"}, " +
                           $"type={nd.type}, pathway={nd.pathway}, tick={note.tick}, showTick={note.showTick}, dt={note.dt}");
         }
         catch (Exception ex) { ModLogger.Verbose($"[GameMusicScene.GhostLog] 무시된 예외: {ex.Message}"); }

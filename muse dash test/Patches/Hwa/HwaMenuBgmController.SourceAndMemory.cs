@@ -41,7 +41,8 @@ namespace muse_dash_test
 
         private static IEnumerator SweepRetiredClipsAfterGrace()
         {
-            yield return new WaitForSeconds(RetireGraceSeconds + 0.5f);
+            // RetiredAt 판정이 Time.realtimeSinceStartup(비배율 벽시계)을 쓰므로 코루틴 대기도 실시간 기준으로 맞춥니다.
+            yield return new WaitForSecondsRealtime(RetireGraceSeconds + 0.5f);
             DestroyUnreferencedRetiredClips("retire grace elapsed");
         }
 
@@ -49,7 +50,8 @@ namespace muse_dash_test
         {
             if (retiredMenuClips.Count == 0) return;
 
-            AudioSource activeSource = FindMenuAudioSource();
+            // 배틀 진입 등으로 메뉴 BGM 소스가 비활성화된 상태에서 전체 씬 FindObjectsOfType 스캔이 돌지 않도록 직접 참조만 확인합니다.
+            AudioSource activeSource = GameBgmSource.TryGetWithNameFallback(out _);
             IntPtr activeClipPtr = (activeSource != null && activeSource.clip != null)
                 ? activeSource.clip.Pointer
                 : IntPtr.Zero;

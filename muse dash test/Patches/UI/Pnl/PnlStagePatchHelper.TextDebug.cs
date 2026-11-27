@@ -106,7 +106,7 @@ public static partial class PnlStagePatchHelper
         return null;
     }
 
-    private static readonly string[] ExperimentModeTitles = { "\uc2e4\ud5d8 \ubaa8\ub4dc", "Experiment Mod", "\u5b9e\u9a8c\u6a21\u5f0f", "\u5be6\u9a57\u6a21\u5f0f", "\u5b9f\u9a13\u30e2\u30fc\u30c9" };
+    private static readonly string[] NormalizedExperimentModeTitles = { "\uc2e4\ud5d8\ubaa8\ub4dc", "experimentmod", "\u5b9e\u9a8c\u6a21\u5f0f", "\u5be6\u9a57\u6a21\u5f0f", "\u5b9f\u9a13\u30e2\u30fc\u30c9" };
 
     public static bool IsExperimentModeTitle(string title)
     {
@@ -121,9 +121,9 @@ public static partial class PnlStagePatchHelper
             return false;
         }
 
-        foreach (var candidate in ExperimentModeTitles)
+        foreach (var candidate in NormalizedExperimentModeTitles)
         {
-            if (NormalizeExperimentModeTitle(candidate) == normalized)
+            if (string.Equals(candidate, normalized, StringComparison.Ordinal))
             {
                 return true;
             }

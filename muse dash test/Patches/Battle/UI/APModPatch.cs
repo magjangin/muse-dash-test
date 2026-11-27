@@ -19,6 +19,15 @@ namespace muse_dash_test.Patches
             ActiveTarget = null;
             AttemptedFontCache = false;
         }
+
+        internal static void RememberTarget(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget instance, string source)
+        {
+            if (instance is null) return;
+            var current = ActiveTarget;
+            if (current is not null && current.Pointer == instance.Pointer) return;
+            ActiveTarget = instance;
+            ModLogger.Verbose($"[APMod] {source}를 통해 TaskStageTarget 캐싱 완료. Pointer={instance.Pointer}");
+        }
     }
 
     // 플레이 중 점수가 갱신될 때 TaskStageTarget 인스턴스를 캐싱합니다.
@@ -27,14 +36,12 @@ namespace muse_dash_test.Patches
     {
         public static void Prefix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance)
         {
-            if (!ModConfig.EnableAPMod) return;
             try
             {
-                if (VictoryDataCache.ActiveTarget != __instance)
-                {
-                    VictoryDataCache.ActiveTarget = __instance;
-                    ModLogger.Verbose($"[APMod] AddScore를 통해 TaskStageTarget 캐싱 완료. Pointer={__instance.Pointer}");
-                }
+                // 커스텀 곡 기록 저장(TrySaveCustomRecord)과 AP 효과음(AllPerfectSound)은 EnableAPMod가 꺼져 있어도
+                // ActiveTarget을 쓰므로, 게이트 앞에서 포인터 비교로 1회만 캐싱합니다.
+                VictoryDataCache.RememberTarget(__instance, "AddScore");
+                if (!ModConfig.EnableAPMod) return;
 
                 // HUD에서 게임플레이용 꾸밈 폰트를 캐싱합니다.
                 if (VictoryDataCache.PremiumFont == null && !VictoryDataCache.AttemptedFontCache)
@@ -98,11 +105,7 @@ namespace muse_dash_test.Patches
         {
             try
             {
-                if (VictoryDataCache.ActiveTarget != __instance)
-                {
-                    VictoryDataCache.ActiveTarget = __instance;
-                    ModLogger.Verbose($"[APMod] GetAccuracy를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
-                }
+                VictoryDataCache.RememberTarget(__instance, "GetAccuracy");
 
                 // 아래 진단 로그는 게임 원래 값과 비교하려는 것이므로, 덮어쓰기 '전에' 받아 둡니다.
                 float rawGetAccuracy = __result;
@@ -197,14 +200,9 @@ namespace muse_dash_test.Patches
     {
         public static void Postfix(Il2CppAssets.Scripts.GameCore.HostComponent.TaskStageTarget __instance, bool __result)
         {
-            if (!ModConfig.EnableAPMod) return;
             try
             {
-                if (VictoryDataCache.ActiveTarget != __instance)
-                {
-                    VictoryDataCache.ActiveTarget = __instance;
-                    ModLogger.Verbose($"[APMod] IsFullCombo를 통해 TaskStageTarget 캐싱 완료 ({__result}). Pointer={__instance.Pointer}");
-                }
+                VictoryDataCache.RememberTarget(__instance, "IsFullCombo");
             }
             catch (Exception ex)
             {

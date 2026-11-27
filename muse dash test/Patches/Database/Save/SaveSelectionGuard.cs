@@ -15,7 +15,7 @@ namespace muse_dash_test
     internal static class SaveSelectionGuard
     {
         // 이번 실행에서 본 마지막 바닐라 선택(셋 다 바닐라였던 때). 모드를 뺀 뒤 그 곡으로 돌아가게 합니다.
-        private static readonly Dictionary<string, string> lastVanilla = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> lastVanilla = new Dictionary<string, string>(StringComparer.Ordinal);
 
         // 저장 뒤 되돌릴 값(키 → 읽어 둔 원래 값의 문자열). 되돌릴 때 키의 형식(int/문자열)에 맞춰 다시 만듭니다.
         private static readonly List<KeyValuePair<IVariable, KeyValuePair<string, string>>> pendingRestore =
@@ -33,8 +33,8 @@ namespace muse_dash_test
                 var account = (DataObject)dataManager["Account"];
                 if (account == null) return;
 
-                var current = new Dictionary<string, string>();
-                var variables = new Dictionary<string, IVariable>();
+                var current = new Dictionary<string, string>(StringComparer.Ordinal);
+                var variables = new Dictionary<string, IVariable>(StringComparer.Ordinal);
                 foreach (string key in SaveSelectionRules.Keys)
                 {
                     IVariable variable = account[key];
@@ -70,7 +70,7 @@ namespace muse_dash_test
                 }
 
                 string summary = string.Join(", ", replaced);
-                if (summary != lastLoggedSelection)
+                if (!string.Equals(summary, lastLoggedSelection, StringComparison.Ordinal))
                 {
                     lastLoggedSelection = summary;
                     ModLogger.Msg($"[SaveSelectionGuard] 모드 전용 선택을 바닐라 값으로 저장합니다(저장 뒤 되돌림): {summary}");

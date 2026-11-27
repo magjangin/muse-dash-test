@@ -107,9 +107,15 @@ namespace muse_dash_test
             return difficulty >= 1 && difficulty <= MaxDifficulty;
         }
 
+        private static readonly char[] PathSeparators = { '\\', '/' };
+
         private static string NameOf(BmsChart chart)
         {
-            return chart == null ? "(없음)" : Path.GetFileName(chart.SourcePath) ?? "(이름 없음)";
+            if (chart == null) return "(없음)";
+            if (string.IsNullOrEmpty(chart.SourcePath)) return "(이름 없음)";
+            int sep = chart.SourcePath.LastIndexOfAny(PathSeparators);
+            string fileName = sep >= 0 ? chart.SourcePath.Substring(sep + 1) : chart.SourcePath;
+            return string.IsNullOrEmpty(fileName) ? "(이름 없음)" : fileName;
         }
     }
 }

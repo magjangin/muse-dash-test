@@ -124,5 +124,5 @@ VideoPlayer가 투사되는 Quad(`VideoBackgroundQuad`)를 카메라 앞에 고�
    $env:GAME_PATH = 'D:\Games\Muse Dash'; .\build.bat
    ```
    `build.bat`는 끝날 때 `pause`로 멈추므로 자동화에는 `dotnet build`를 쓰세요(`-p:GamePath="..."`로 경로 지정).
-3. **배포**: 빌드하면 DLL(`muse-dash-custom-chart.dll`)이 `<게임>\Mods`로 **자동 복사**됩니다(csproj의 `DeployToMods`, `build.bat`도 한 번 더 복사). 손으로 옮길 필요는 없지만, **복사가 실패해도 "복사 완료" 메시지는 그대로 찍히니** 게임 폴더의 DLL 수정 시각·크기가 방금 빌드와 같은지 직접 확인하세요([CHECKLIST.md](../guides/CHECKLIST.md)). 게임이 켜져 있으면 DLL이 잠겨 있어 복사가 실패합니다.
+3. **배포**: 빌드하면 DLL(`muse-dash-custom-chart.dll`)이 `<게임>\Mods`로 **자동 복사**됩니다(csproj의 `DeployToMods`, `build.bat`도 한 번 더 복사). 복사에 실패하면 `[AutoDeploy] 배포 실패` 경고가 찍히지만, 게임이 켜져 있으면 DLL이 잠겨 복사가 실패하므로 게임 폴더의 DLL 수정 시각·크기가 방금 빌드와 같은지 직접 확인하세요([CHECKLIST.md](../guides/CHECKLIST.md)).
 4. **실행**: 게임의 **"실험 모드"** 태그 탭 ➡️ **"실험 앨범"**에서 주입된 곡들을 선택해 채보 실험과 연출 테스트를 즉각 수행할 수 있습니다.

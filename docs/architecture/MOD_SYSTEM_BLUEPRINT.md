@@ -10,8 +10,9 @@
 
 ```mermaid
 graph TD
-    MelonLoader[MelonLoader 초기화] --> MainMod[MainMod: 0.10.7 로드]
-    MainMod --> Diagnostics[PatchHealthCheck: 모드 로드 시 패치 무결성 검사]
+    MelonLoader[MelonLoader 초기화] --> MainMod["MainMod 로드 (ModInfo.Version)"]
+    MainMod --> PatchInst["PatchInstaller: Prepare/사전 JIT 검증 후 패치 적용"]
+    PatchInst --> Diagnostics[PatchHealthCheck: 모드 로드 시 패치 무결성 검사]
     MainMod --> Preload[HwaResourceManager: hwa 폴더 & info.txt 메타 선읽기]
     
     subgraph 1. 데이터베이스 및 앨범 주입
@@ -45,7 +46,7 @@ graph TD
 
 모드가 타겟팅하는 원작 게임(`Assembly-CSharp.dll`)의 핵심 클래스와 후킹 목적을 명시합니다.
 
-> ⚠️ **이 표는 전체 목록이 아니라 대표 후킹만 추린 것입니다.** 보스·노트 변형, 레코드 UI, 결과 화면, 진단 훅 등은 빠져 있습니다. 전체 후킹은 [CODE_REFERENCE.md](CODE_REFERENCE.md)와 `Patches/` 폴더, 그리고 시작 시 로그의 `PatchHealthCheck` 결과를 보세요. 메서드 이름은 대부분 `GameBindings`의 상수로 관리됩니다.
+> ⚠️ **이 표는 전체 목록이 아니라 대표 후킹만 추린 것입니다.** 보스·노트 변형, 레코드 UI, 결과 화면, 진단 훅 등은 빠져 있습니다. 전체 후킹은 [CODE_REFERENCE.md](CODE_REFERENCE.md)와 `Patches/` 폴더, 그리고 시작 시 로그의 `PatchHealthCheck` 결과를 보세요. 모든 패치 대상은 각 패치 클래스에서 컴파일 검증형 `typeof(...)` + `nameof(...)`로 직접 지정하며, `GameBindings`에는 `nameof`를 쓸 수 없는 리플렉션 전용 문자열만 둡니다.
 
 | 후킹 대상 클래스 및 메서드 | 패치 타입 | 구현 파일 | 주요 역할 및 유지보수적 목적 |
 | :--- | :---: | :--- | :--- |
@@ -60,7 +61,7 @@ graph TD
 | `ChangeHealthValue.OnGameStart/OnHpRateChange/OnHpDeduct/OnHpAdd` | **Postfix** | [ChangeHealthValuePatch.cs](../../muse%20dash%20test/Patches/UI/Custom/HpMod/ChangeHealthValuePatch.cs) | 체력바 텍스트를 `made in 화영왕` 워터마크로 교체 (`EnableHpTextMod` 켜짐 + 커스텀 차트 적용 중일 때만). 체력 값이나 사망 판정은 건드리지 않습니다 |
 | `PnlStage.RefreshDiffUI(MusicInfo)` | **Prefix/Postfix** | [PnlStagePatch.cs](../../muse%20dash%20test/Patches/UI/Stage/PnlStagePatch.cs) | 곡 선택 시 난이도 UI를 갱신하고, 가상 곡이면 `HwaMenuBgmController.TriggerMenuBgmChange`로 메뉴 BGM을 핫스왑 (같은 메서드에 [HiddenUnlockGuide.cs](../../muse%20dash%20test/Patches/UI/Stage/HiddenUnlockGuide.cs)의 패치도 붙어 있음) |
 | `PnlPreparation.OnEnable` | **Postfix** | [PnlPreparationPatch.cs](../../muse%20dash%20test/Patches/UI/Stage/PnlPreparationPatch.cs) | 준비 화면 진입 시 가상 곡이면 BGM 핫스왑을 트리거하고 커스텀 기록 UI를 적용 |
-| `AudioSource.clip` (setter) | **Prefix** | [HwaMenuBgmController.cs](../../muse%20dash%20test/Patches/Hwa/HwaMenuBgmController.cs) | 이름이 `BGM`인 AudioSource에 게임이 클립을 덮어쓰려 할 때, 핫스왑 중인 커스텀 BGM을 지켜 냄 |
+| `AudioSource.clip` (setter) | **Prefix** | [AudioSource_SetClip_Patch.cs](../../muse%20dash%20test/Patches/Hwa/AudioSource_SetClip_Patch.cs) | `GameBgmSource`(`AudioManager.bgm`) 참조 비교로 게임이 커스텀 BGM 위에 클립을 덮어쓰려 할 때 방어 |
 | `PnlPlaySetting.OnAwake` | **Postfix** | [PnlInputMobilePatch.cs](../../muse%20dash%20test/Patches/UI/Setting/PnlInputMobilePatch.cs) | PC 입력 설정 클릭 시 모바일 전용 터치 조작 설정창(`PnlInputMobile`) 강제 복원 |
 | `StandloneController.GetButtonDown/GetButton/GetButtonUp` | **Postfix** | [MouseTouchBridgePatch.cs](../../muse%20dash%20test/Patches/Battle/Mechanics/MouseTouchBridgePatch.cs) | 마우스 클릭/터치를 공중/지상으로 변환 주입 및 상호 배타적 필터링으로 PC 키 충돌 차단 |
 
@@ -141,6 +142,14 @@ $$\text{Accuracy (All-Object)} = \min\left(1.0, \frac{\text{Perfect} + \text{Gre
 │ 3. 3단계 난이도 클리어 리스트 정화                     │
 │    - easy_pass, hard_pass, master_pass 리스트 순회      │
 │    - 가상 UIDs 발견 시 리스트에서 RemoveAt             │
+└────────────────────────────────────────────────────────┘
+      │
+      ▼
+┌────────────────────────────────────────────────────────┐
+│ 4. 마지막 선택 및 마스터 해금 플래그 일시 원복         │
+│    - SaveSelectionGuard: 커스텀 태그(1999)/앨범/곡이면 │
+│      저장 동안만 바닐라 값으로 교체 (Postfix에서 복원) │
+│    - UnlockAllMasterGuard: IsUnlockAllMaster 원본 복원 │
 └────────────────────────────────────────────────────────┘
       │
       ▼

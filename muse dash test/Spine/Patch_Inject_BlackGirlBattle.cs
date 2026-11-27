@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MelonLoader;
 using Il2Cpp;
@@ -13,7 +15,7 @@ namespace muse_dash_test
     internal static class InjectHelper
     {
         // GameObject 이름 -> skin test/character 폴더의 파일 베이스 이름({baseName}.png/.atlas/.json)
-        private static readonly Dictionary<string, string> TargetToBaseName = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> TargetToBaseName = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             { "black_girl_battle(Clone)", "char_3_black" },
             { "black_girl_battle_ghost(Clone)", "char_3_black" },
@@ -38,52 +40,62 @@ namespace muse_dash_test
             // 배틀 중에는 config.txt를 다시 읽지 않으므로 판 도중에 바뀌지 않습니다(LoadConfigIfNeeded).
             // 이 함수는 노트가 생길 때마다(SpineActionController.Init) 불리므로, 이름(IL2CPP 문자열 마샬링)을 읽기 전에 봅니다.
             if (!InputOverlay.enableCharacterSkin) return;
-            if (instance == null) return;
+            if (instance is null) return;
 
             try
             {
-                var go = instance.gameObject;
-                if (go == null) return;
-                string objName = go.name;
-                if (objName == null || !TargetToBaseName.TryGetValue(objName, out var baseName)) return;
-
-                var ska = instance.skeletonAnimation;
-                if (ska == null)
-                {
-                    ModLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
-                    return;
-                }
-
-                // 원본 아틀라스 머티리얼을 그대로 복사해 텍스처만 바꿉니다. 분신(_ghost)은 전용 셰이더로 반투명 하늘색으로
-                // 그려지는데, 이 머티리얼을 버리면 본체처럼 불투명하게 나옵니다(PrimaryMaterialOf 주석).
-                // OnControllerStart에서 다시 불릴 때는 이미 우리 에셋이라 원본을 읽지 않고 캐시(역할별)를 씁니다.
-                var current = ska.skeletonDataAsset;
-                Material source = current != null && !CustomSkinInjector.IsCachedAsset(current)
-                    ? CustomSkinInjector.PrimaryMaterialOf(current)
-                    : null;
-                string role = SkinFolderRules.CharacterRole(objName);
-
-                var customAsset = CustomSkinInjector.GetOrBuild(baseName, role, source);
-                if (customAsset == null)
-                {
-                    ModLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
-                    return;
-                }
-
-                ska.skeletonDataAsset = customAsset;
-                ska.Initialize(true);
-                ModLogger.Msg($"[Inject] {objName}에 {baseName} 스킨 주입 완료 ({role}, {CustomSkinInjector.DescribeMaterial(CustomSkinInjector.PrimaryMaterialOf(customAsset))})");
+                TryInjectCore(instance);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ModLogger.Warning($"[Inject] 캐릭터 스킨 주입 예외: {ex.Message}");
             }
-        }    }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void TryInjectCore(SpineActionController instance)
+        {
+            if (instance == null) return;
+            var go = instance.gameObject;
+            if (go == null) return;
+            string objName = go.name;
+            if (objName == null || !TargetToBaseName.TryGetValue(objName, out var baseName)) return;
+
+            var ska = instance.skeletonAnimation;
+            if (ska == null)
+            {
+                ModLogger.Msg("[Inject] skeletonAnimation이 null이라 주입 스킵");
+                return;
+            }
+
+            // 원본 아틀라스 머티리얼을 그대로 복사해 텍스처만 바꿉니다. 분신(_ghost)은 전용 셰이더로 반투명 하늘색으로
+            // 그려지는데, 이 머티리얼을 버리면 본체처럼 불투명하게 나옵니다(PrimaryMaterialOf 주석).
+            // OnControllerStart에서 다시 불릴 때는 이미 우리 에셋이라 원본을 읽지 않고 캐시(역할별)를 씁니다.
+            var current = ska.skeletonDataAsset;
+            Material source = current != null && !CustomSkinInjector.IsCachedAsset(current)
+                ? CustomSkinInjector.PrimaryMaterialOf(current)
+                : null;
+            string role = SkinFolderRules.CharacterRole(objName);
+
+            var customAsset = CustomSkinInjector.GetOrBuild(baseName, role, source);
+            if (customAsset == null)
+            {
+                ModLogger.Msg($"[Inject] {baseName} customAsset이 null이라 주입 스킵");
+                return;
+            }
+
+            ska.skeletonDataAsset = customAsset;
+            ska.Initialize(true);
+            ModLogger.Msg($"[Inject] {objName}에 {baseName} 스킨 주입 완료 ({role}, {CustomSkinInjector.DescribeMaterial(CustomSkinInjector.PrimaryMaterialOf(customAsset))})");
+        }
+    }
 
     // 오브젝트가 처음 생성될 때(Init).
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.Init), typeof(int), typeof(int))]
     internal static class Patch_Inject_Init
     {
+        static bool Prepare() => ModConfig.EnableSpineSkin || SpineActionContract.IsDumpEnabled;
+
         static void Postfix(SpineActionController __instance, int idx, int curScene)
         {
             InjectHelper.TryInject(__instance);
@@ -102,6 +114,7 @@ namespace muse_dash_test
     [HarmonyPatch(typeof(SpineActionController), nameof(SpineActionController.OnControllerStart))]
     internal static class Patch_Inject_OnControllerStart
     {
+        static bool Prepare() => ModConfig.EnableSpineSkin || SpineActionContract.IsDumpEnabled;
         static void Postfix(SpineActionController __instance)
         {
             InjectHelper.TryInject(__instance);
