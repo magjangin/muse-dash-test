@@ -3,6 +3,18 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [0.16.9] - 감사 14차·보스 전환 맵 2중 조회 해소·고스트 판정 힙 할당 방지·임시 채보 필터 강화
+
+게임 동작을 바꾸는 기능 추가는 없습니다.
+
+### 병목 및 할당 최적화
+- `BmsWavParser`: `xxyy` 보스 전환 노트 판정 시 `XxyyTransitionMap.ContainsKey` 호출 후 `ApplyBossTransitionFromXxyy` 내부에서 다시 `XxyyTransitionMap.TryGetValue`를 호출하던 2중 딕셔너리 조회를 제거했습니다. `ApplyBossTransitionFromXxyy`를 직접 호출하고 결과 상태로 UID 해석 여부를 판별하여 핫패스 룩업을 절반으로 줄였습니다.
+- `GameMusicSceneInitPatch`: 씬 노트 로드 시 고스트 노트(`xx=17`) 검사 경로에서 `uid.Substring(2, 2) != "17"` 호출로 인해 매 노트마다 발생하던 `string` 힙 할당을 제거했습니다. `ScenePatchHelpers.IsGhostNoteUid`(`uid[2] == '1' && uid[3] == '7'`)를 도입하여 무할당 인덱스 검사로 최적화했습니다.
+- `CustomTagRegistrySupport`: 언어 맵의 기본 이름 조회 시 `languages.ContainsKey("English") ? languages["English"] : ...`의 2중 조회를 `languages.TryGetValue("English", out string eng)` 단일 조회로 단축했습니다.
+
+### 채보 파일 필터링 안정성
+- `BmsFileNames.IsTempFile`: 에디터나 다운로더/백업 툴이 남길 수 있는 `.tmp` 및 `.temp` 확장자 파일(`chart.bms.tmp`, `chart.bms.temp`, `*.TMP`)을 임시 파일로 명확히 감지하도록 필터를 보강했습니다.
+
 ## [0.16.8] - 감사 13차·공유 읽기 안정화·리스트 할당 최적화·로케일 보강
 
 게임 동작을 바꾸는 기능 추가는 없습니다.

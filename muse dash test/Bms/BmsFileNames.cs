@@ -31,6 +31,8 @@ namespace muse_dash_test
             if (fileName.StartsWith("~", StringComparison.Ordinal)) return true;   // 오피스/메모장 계열 잠금·임시본
             if (fileName.StartsWith("___", StringComparison.Ordinal)) return true; // 모드가 쓰는 표식
             if (fileName.StartsWith(".", StringComparison.Ordinal)) return true;   // 숨김 파일·동기화 부산물
+            if (fileName.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)) return true; // 임시 확장자
+            if (fileName.EndsWith(".temp", StringComparison.OrdinalIgnoreCase)) return true;
 
             // vim/gedit 계열 백업본(chart.bms~).
             if (fileName.EndsWith("~", StringComparison.Ordinal)) return true;

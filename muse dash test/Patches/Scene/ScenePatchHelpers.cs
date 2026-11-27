@@ -15,6 +15,11 @@ namespace muse_dash_test
             return true;
         }
 
+        public static bool IsGhostNoteUid(string uid)
+        {
+            return IsSixDigitUid(uid) && uid[2] == '1' && uid[3] == '7';
+        }
+
         public static void CountZz(SortedDictionary<string, int> counts, string uid)
         {
             if (string.IsNullOrEmpty(uid) || uid.Length < 2) return;

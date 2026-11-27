@@ -32,7 +32,7 @@ namespace muse_dash_test
                 il2CppLanguages.Add(kvp.Key, kvp.Value);
             }
 
-            defaultName = languages.ContainsKey("English") ? languages["English"] : "Experiment Mod";
+            defaultName = languages.TryGetValue("English", out string eng) ? eng : "Experiment Mod";
             return il2CppLanguages;
         }
 
