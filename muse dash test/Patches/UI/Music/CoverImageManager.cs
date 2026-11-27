@@ -72,7 +72,7 @@ namespace muse_dash_test
 
             try
             {
-                byte[] data = File.ReadAllBytes(coverPath);
+                byte[] data = AtomicFile.ReadAllBytesShared(coverPath);
                 var tex = new Texture2D(2, 2);
                 if (!ImageConversion.LoadImage(tex, data))
                 {
@@ -175,7 +175,7 @@ namespace muse_dash_test
     public static class MusicCellImageDiagnostics
     {
         // UID당 1회만 로깅해 스크롤 중 로그 폭발을 방지합니다.
-        private static readonly HashSet<string> loggedUids = new HashSet<string>();
+        private static readonly HashSet<string> loggedUids = new HashSet<string>(StringComparer.Ordinal);
         public static void Reset() => loggedUids.Clear();
 
         public static void LogCellImagesOnce(MusicButtonCell cell, string uid)

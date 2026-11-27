@@ -66,7 +66,7 @@ namespace muse_dash_test
 
                 var tagMusicList = CustomTagRegistrySupport.ToIl2CppStringList(musicList);
                 var displayMusicList = CustomTagRegistrySupport.ToIl2CppStringList(musicList);
-                info.SetTagUids(CustomTagRegistrySupport.ToIl2CppStringList(musicList));
+                info.SetTagUids(displayMusicList);
 
                 // 4. 가상 앨범 생성 및 주입
                 var albumInfo = CustomTagRegistrySupport.CreateAndInjectAlbumInfo();

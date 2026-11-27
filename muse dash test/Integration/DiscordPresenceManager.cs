@@ -140,7 +140,8 @@ namespace muse_dash_test
         {
             string statusText = isAllPerfect ? "ALL PERFECT!" : (isFullCombo ? "FULL COMBO!" : "CLEAR!");
             float displayAcc = accuracy <= 1.0f ? accuracy * 100f : accuracy;
-            string stateText = $"{title} [{statusText} | Acc: {displayAcc:F2}%]";
+            string accStr = displayAcc.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            string stateText = $"{title} [{statusText} | Acc: {accStr}%]";
             SendPresence(isPlaying: true, levelInfo: stateText);
         }
 

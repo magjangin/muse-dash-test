@@ -39,12 +39,7 @@ namespace muse_dash_test
 
         internal static PlayRecord ReadRecordFile(string filePath)
         {
-            string json;
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var reader = new StreamReader(fs, Encoding.UTF8))
-            {
-                json = reader.ReadToEnd();
-            }
+            string json = AtomicFile.ReadAllTextShared(filePath, Encoding.UTF8);
             var record = ParseJson(json);
             if (record != null && record.playCount <= 0) record.playCount = 1;
             return record;

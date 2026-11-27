@@ -3,6 +3,29 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [0.16.8] - 감사 13차·공유 읽기 안정화·리스트 할당 최적화·로케일 보강
+
+게임 동작을 바꾸는 기능 추가는 없습니다.
+
+### 파일 입출력 안정화 (공유 잠금 위반 방지)
+- `AtomicFile.ReadAllBytesShared` 및 `AtomicFile.ReadAllTextShared`(`FileShare.ReadWrite`)를 신설하고 모든 런타임 파일 읽기 경로에 일괄 적용했습니다.
+  - 적용 대상: `TextFileDecoder`, `CustomRecordStore.Serialization`, `CoverImageManager`(`cover.png`), `AlbumTagTogglePatch`(`tag_icon.png`), `InputOverlay.Config`(`config.txt`), `CustomSkinInjector`(`char/note *.atlas`, `*.png`, `*.json`).
+  - 외부 텍스트 에디터(메모장, VS Code 등), Spine 에디터, 그래픽 툴, 클라우드 동기화 또는 백업 프로그램이 쓰기 핸들을 쥐고 있어도 공유 위반 예외(`IOException`) 없이 안전하게 로드됩니다.
+
+### 병목 및 할당 최적화
+- `CustomTagRegistry.RegisterAll`: 가상 앨범 및 곡 등록 시 마샬링된 Il2Cpp 문자열 리스트(`displayMusicList`)를 `info.SetTagUids`에서 재사용하도록 개선했습니다. 매 실행 및 태그 갱신마다 불필요하게 4회씩 발생하던 무거운 네이티브 리스트 할당을 1회 줄였습니다.
+- `BmsNoteMatcher`: 차트 채널별 노트 분류 시 `notesByChannel.ContainsKey` 후 인덱서 접근(`notesByChannel[...]`)을 수행하던 2중 딕셔너리 조회를 `TryGetValue` 1회 조회로 단축했습니다.
+- `CoverImageManager`: `MusicCellImageDiagnostics`의 `loggedUids` `HashSet`에 `StringComparer.Ordinal`을 지정하여 불필요한 문화권 가중치 비교 연산을 제거했습니다.
+- `CustomContentIds.IsVirtualSong`: 가상 곡 식별 비교를 `!string.Equals(uid, AlbumUid, StringComparison.Ordinal)`로 최적화했습니다.
+- `AlbumTagTogglePatch`: 태그 UID 판정 시 `string.Equals(..., StringComparison.Ordinal)`을 적용했습니다.
+
+### 로케일·문화권 일관성
+- `DiscordPresenceManager`: 플레이 결과 리포트 시 정확도 포맷(`{displayAcc:F2}%`)에 `CultureInfo.InvariantCulture`를 적용하여 쉼표 표기 OS 환경에서도 온점 표기(`0.00%`)로 일관되게 전송되도록 보강했습니다.
+- `JudgmentBar`: 판정 오프셋 표시(`{offsetMs:F0} ms`)에 `CultureInfo.InvariantCulture`를 적용했습니다.
+
+### 테스트
+- `AtomicFileTests`에 파일이 `FileAccess.ReadWrite, FileShare.ReadWrite`로 열려 있는 동시성 상황에서의 바이트/텍스트 공유 읽기 검증 테스트 2종을 추가했습니다 (총 211개 로직 테스트 통과).
+
 ## [0.16.7] - 감사 12차·기록 조회 병목 해소·아카이브 구버전 호환·BMS 파서 내성
 
 게임 동작을 바꾸는 기능 추가는 없습니다.

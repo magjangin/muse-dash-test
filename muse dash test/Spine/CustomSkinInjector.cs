@@ -161,9 +161,9 @@ namespace muse_dash_test
                     ModLogger.Error(banner);
                 }
 
-                var atlasText = File.ReadAllText(atlasPath);
+                var atlasText = AtomicFile.ReadAllTextShared(atlasPath);
 
-                var pngBytes = File.ReadAllBytes(pngPath);
+                var pngBytes = AtomicFile.ReadAllBytesShared(pngPath);
                 var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                 // 아틀라스 페이지는 텍스처 이름으로 찾으므로 페이지 줄(0411_road.png → 0411_road)에 맞춥니다.
                 texture.name = NoteSkinRules.AtlasTextureName(atlasText, Path.GetFileNameWithoutExtension(pngPath));
@@ -176,7 +176,7 @@ namespace muse_dash_test
                 var atlasAsset = CreateAtlasAsset(label, atlasTextAsset, texture, materialPropertySource, out string materialLabel);
                 if (atlasAsset != null) atlasAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-                var jsonText = File.ReadAllText(jsonPath);
+                var jsonText = AtomicFile.ReadAllTextShared(jsonPath);
                 var skeletonTextAsset = new TextAsset(jsonText);
                 skeletonTextAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
@@ -284,7 +284,7 @@ namespace muse_dash_test
 
             try
             {
-                byte[] bytes = File.ReadAllBytes(jsonPath);
+                byte[] bytes = AtomicFile.ReadAllBytesShared(jsonPath);
                 if (bytes.Length == 0)
                 {
                     reason = "파일 크기가 0바이트입니다.";

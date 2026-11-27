@@ -37,5 +37,42 @@ namespace muse_dash_test
                 }
             }
         }
+
+        /// <summary>
+        /// 다른 프로세스(에디터, 클라우드 동기화, 백업)가 파일을 열고 있어도 공유 위반 없이 안전하게 바이트를 읽습니다.
+        /// </summary>
+        public static byte[] ReadAllBytesShared(string path)
+        {
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long length = fs.Length;
+                if (length > int.MaxValue) throw new IOException($"파일 크기가 너무 큽니다: {path} ({length} bytes)");
+                byte[] bytes = new byte[(int)length];
+                int totalRead = 0;
+                while (totalRead < bytes.Length)
+                {
+                    int read = fs.Read(bytes, totalRead, bytes.Length - totalRead);
+                    if (read == 0) break;
+                    totalRead += read;
+                }
+                if (totalRead != bytes.Length)
+                {
+                    System.Array.Resize(ref bytes, totalRead);
+                }
+                return bytes;
+            }
+        }
+
+        /// <summary>
+        /// 다른 프로세스가 파일을 열고 있어도 공유 위반 없이 안전하게 텍스트를 읽습니다.
+        /// </summary>
+        public static string ReadAllTextShared(string path, Encoding encoding = null)
+        {
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fs, encoding ?? Encoding.UTF8))
+            {
+                return reader.ReadToEnd();
+            }
+        }
     }
 }

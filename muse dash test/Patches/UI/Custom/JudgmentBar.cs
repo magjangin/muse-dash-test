@@ -147,7 +147,7 @@ namespace muse_dash_test
                 else
                 {
                     string sign = offsetMs >= 0f ? "+" : "";
-                    cachedMsText = $"{sign}{offsetMs:F0} ms";
+                    cachedMsText = $"{sign}{offsetMs.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)} ms";
                 }
 
                 // 역사 기록 추가 (잔상 틱용)

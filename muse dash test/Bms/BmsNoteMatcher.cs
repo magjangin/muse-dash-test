@@ -54,11 +54,12 @@ namespace muse_dash_test
             for (int i = 0; i < rawNotes.Count; i++)
             {
                 var note = rawNotes[i];
-                if (!notesByChannel.ContainsKey(note.Channel))
+                if (!notesByChannel.TryGetValue(note.Channel, out var list))
                 {
-                    notesByChannel[note.Channel] = new List<BmsNote>();
+                    list = new List<BmsNote>();
+                    notesByChannel[note.Channel] = list;
                 }
-                notesByChannel[note.Channel].Add(note);
+                list.Add(note);
             }
 
             // 2. 채널별로 틱 순서대로 순회하며 매칭을 가동합니다.
