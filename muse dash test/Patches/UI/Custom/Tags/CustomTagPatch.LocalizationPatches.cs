@@ -12,7 +12,7 @@ namespace muse_dash_test
         /// <summary>
         /// MusicInfo.GetLocal 호출 시 가상 곡의 LocalALBUMInfo(name, author)를 즉석 반환하여 로컬라이제이션 오버라이드를 차단합니다.
         /// </summary>
-        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.GetLocal))]
+        [HarmonyPatch(typeof(MusicInfo), nameof(MusicInfo.GetLocal), new Type[] { typeof(int) })]
         internal class MusicInfo_GetLocal_Patch
         {
             private static bool _loggedPrefixFailure;
@@ -58,7 +58,7 @@ namespace muse_dash_test
         /// DBConfigLocalALBUM.GetLocalAlbumInfoByIndex 쿼리 시 가상 곡의 LocalALBUMInfo를 즉석 응답합니다.
         /// 단, 해당 가상 곡의 행 번호(BaseDataObject.listIndex)를 대상으로 한 조회만 가로챕니다.
         /// </summary>
-        [HarmonyPatch(typeof(DBConfigLocalALBUM), nameof(DBConfigLocalALBUM.GetLocalAlbumInfoByIndex))]
+        [HarmonyPatch(typeof(DBConfigLocalALBUM), nameof(DBConfigLocalALBUM.GetLocalAlbumInfoByIndex), new Type[] { typeof(int) })]
         internal class DBConfigLocalALBUM_GetLocalAlbumInfoByIndex_Patch
         {
             /// <summary>

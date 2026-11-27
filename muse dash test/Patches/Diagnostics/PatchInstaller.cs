@@ -42,6 +42,14 @@ namespace muse_dash_test
                     bool isPatchClass = type.IsDefined(typeof(HarmonyAttribute), true);
                     if (!isPatchClass) continue;
 
+                    // Prepare()가 false를 돌려주면 설정/로그 레벨로 비활성화된 패치이므로
+                    // 불필요한 사전 JIT 컴파일·대상 검사·적용·카운트에서 모두 먼저 제외합니다.
+                    if (!ShouldApplyByPrepare(type))
+                    {
+                        disabledByPrepare++;
+                        continue;
+                    }
+
                     if (TryFindUncompilablePatchMethod(type, out MethodInfo broken, out Exception jitError))
                     {
                         // 다중 메서드 정적 패치 클래스에서 일부 메서드만 JIT에 실패한 경우:
@@ -63,14 +71,6 @@ namespace muse_dash_test
                         ModLogger.Warning(
                             $"[PatchInstaller] '{type.Name}' 패치를 걸지 않았습니다. {broken.Name}이(가) 현재 게임 빌드에서 " +
                             $"컴파일되지 않습니다(게임 업데이트로 참조 멤버가 사라졌을 수 있음): {jitError.GetType().Name}: {jitError.Message}");
-                        continue;
-                    }
-
-                    // Prepare()가 false를 돌려주면 설정/로그 레벨로 비활성화된 패치이므로
-                    // 대상 검사·적용·카운트에서 모두 제외합니다(부분 복구 경로에서도 동일하게 지킵니다).
-                    if (!ShouldApplyByPrepare(type))
-                    {
-                        disabledByPrepare++;
                         continue;
                     }
 

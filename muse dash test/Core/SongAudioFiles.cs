@@ -20,6 +20,7 @@ namespace muse_dash_test
     public static class SongAudioFiles
     {
         private static readonly string[] BgmKeywords = { "bgm", "battle", "music", "song" };
+        private static readonly char[] PathSeparators = { '\\', '/' };
 
         /// <summary>
         /// 같은 곡 폴더를 다시 탐색하지 않는 유예 시간(ms). 곡 선택 휠을 오가거나 미리듣기→배틀로 넘어갈 때마다
@@ -28,8 +29,8 @@ namespace muse_dash_test
         /// </summary>
         internal const long CacheTtlMs = 30_000;
 
-        private static readonly System.Collections.Generic.Dictionary<string, (string path, long tickMs)> ResolveCache =
-            new System.Collections.Generic.Dictionary<string, (string path, long tickMs)>(StringComparer.OrdinalIgnoreCase);
+        private static readonly System.Collections.Generic.Dictionary<string, (string path, long tickMs, long dirWriteTicks)> ResolveCache =
+            new System.Collections.Generic.Dictionary<string, (string path, long tickMs, long dirWriteTicks)>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>캐시를 비웁니다(차트 폴더 재로드 등에서 즉시 반영하고 싶을 때).</summary>
         public static void ClearCache()
@@ -48,25 +49,33 @@ namespace muse_dash_test
                 }
 
                 long now = Environment.TickCount64;
+                long dirWriteTicks = Directory.GetLastWriteTimeUtc(songDir).Ticks;
                 lock (ResolveCache)
                 {
                     if (ResolveCache.TryGetValue(songDir, out var hit)
-                        && now - hit.tickMs < CacheTtlMs
-                        && hit.path != null && File.Exists(hit.path))
+                        && now - hit.tickMs < CacheTtlMs)
                     {
-                        return hit.path;
+                        if (hit.path != null)
+                        {
+                            if (File.Exists(hit.path)) return hit.path;
+                        }
+                        else if (hit.dirWriteTicks == dirWriteTicks)
+                        {
+                            return null;
+                        }
                     }
                 }
 
                 string[] oggFiles = Directory.GetFiles(songDir, "*.ogg", SearchOption.AllDirectories);
                 if (oggFiles.Length == 0)
                 {
+                    lock (ResolveCache) ResolveCache[songDir] = (null, now, dirWriteTicks);
                     return null;
                 }
 
                 string[] txtFiles = Directory.GetFiles(songDir, "*.txt", SearchOption.AllDirectories);
                 string picked = PickBgmOgg(oggFiles, txtFiles);
-                lock (ResolveCache) ResolveCache[songDir] = (picked, now);
+                lock (ResolveCache) ResolveCache[songDir] = (picked, now, dirWriteTicks);
                 return picked;
             }
             catch (Exception ex)
@@ -93,10 +102,10 @@ namespace muse_dash_test
             {
                 foreach (string txtFile in SortedCopy(txtFiles))
                 {
-                    string stem = Path.GetFileNameWithoutExtension(txtFile);
+                    string stem = FileNameWithoutExt(txtFile);
                     foreach (string oggFile in sortedOgg)
                     {
-                        if (string.Equals(Path.GetFileNameWithoutExtension(oggFile), stem, StringComparison.OrdinalIgnoreCase))
+                        if (string.Equals(FileNameWithoutExt(oggFile), stem, StringComparison.OrdinalIgnoreCase))
                         {
                             return oggFile;
                         }
@@ -106,7 +115,7 @@ namespace muse_dash_test
 
             foreach (string oggFile in sortedOgg)
             {
-                string lower = Path.GetFileNameWithoutExtension(oggFile).ToLowerInvariant();
+                string lower = FileNameWithoutExt(oggFile).ToLowerInvariant();
                 foreach (string keyword in BgmKeywords)
                 {
                     if (lower.Contains(keyword))
@@ -117,6 +126,14 @@ namespace muse_dash_test
             }
 
             return sortedOgg[0];
+        }
+
+        private static string FileNameWithoutExt(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return string.Empty;
+            int sep = path.LastIndexOfAny(PathSeparators);
+            string fileName = sep >= 0 ? path.Substring(sep + 1) : path;
+            return Path.GetFileNameWithoutExtension(fileName);
         }
 
         private static string[] SortedCopy(string[] source)

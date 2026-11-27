@@ -50,16 +50,19 @@ namespace muse_dash_test
             if (uid != null && uid.StartsWith("0004", StringComparison.Ordinal)) return DtFamily.FixedEvent;
             if (noteType == 9) return DtFamily.FixedEvent;
 
-            string xx = uid != null && uid.Length >= 4 ? uid.Substring(2, 2) : null;
-            int motionGroup = MotionGroup(uid);
-            bool projectile = (xx == "06" || xx == "07" || xx == "08") && (motionGroup == 0 || motionGroup == 1);
+            bool hasXx = uid != null && uid.Length >= 4;
+            bool hasYy = TryParseYy(uid, out int yy);
+            int motionGroup = hasYy ? (yy - 1) / 3 : -1;
+            bool projectile = hasXx
+                && uid[2] == '0' && (uid[3] == '6' || uid[3] == '7' || uid[3] == '8')
+                && (motionGroup == 0 || motionGroup == 1);
             if (projectile) return DtFamily.BossProjectile;
 
             // 보스 등장·퇴장·원거리 시작/끝(xx=01, boss_in/out/swap)은 dt=0인 빈 트리거입니다.
             if (noteType == 0 && !string.IsNullOrWhiteSpace(bossAction)) return DtFamily.FixedEvent;
-            if (xx == "01") return DtFamily.FixedEvent;
+            if (hasXx && uid[2] == '0' && uid[3] == '1') return DtFamily.FixedEvent;
 
-            if (Speed(uid) == 0) return DtFamily.None;
+            if (!hasYy) return DtFamily.None;
 
             switch (noteType)
             {
@@ -68,7 +71,7 @@ namespace muse_dash_test
             }
 
             // 보스 톱니(xx=09)는 공식 곡 dt가 발사체와 같아 보이지만(0.667, 속도 2) 실기 확정값이 없습니다.
-            if (xx == "09") return DtFamily.None;
+            if (hasXx && uid[2] == '0' && uid[3] == '9') return DtFamily.None;
 
             return DtFamily.Normal;
         }
@@ -77,15 +80,12 @@ namespace muse_dash_test
         public static int Speed(string uid)
             => TryParseYy(uid, out int yy) ? (yy - 1) % 3 + 1 : 0;
 
-        private static int MotionGroup(string uid)
-            => TryParseYy(uid, out int yy) ? (yy - 1) / 3 : -1;
-
         private static bool TryParseYy(string uid, out int yy)
         {
             yy = 0;
             if (uid == null || uid.Length < 6) return false;
-            if (uid.StartsWith("0004", StringComparison.Ordinal) || uid.Substring(2, 2) == "01") return false;
-            return int.TryParse(uid.Substring(4, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out yy) && yy >= 1 && yy <= 18;
+            if (uid.StartsWith("0004", StringComparison.Ordinal) || (uid[2] == '0' && uid[3] == '1')) return false;
+            return int.TryParse(uid.AsSpan(4, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out yy) && yy >= 1 && yy <= 18;
         }
 
         /// <summary>

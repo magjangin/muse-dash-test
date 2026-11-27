@@ -55,7 +55,7 @@ namespace muse_dash_test
                 while ((rawLine = reader.ReadLine()) != null)
                 {
                     var trimmedLine = rawLine.Trim();
-                    if (trimmedLine.Length == 0 || IsCommentLine(trimmedLine))
+                    if (trimmedLine.Length == 0 || trimmedLine[0] != '#' || IsCommentLine(trimmedLine))
                     {
                         continue;
                     }

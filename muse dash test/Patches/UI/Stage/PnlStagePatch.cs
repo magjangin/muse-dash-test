@@ -105,6 +105,8 @@ public class PnlStage_RefreshTagTitle_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnAddCollection), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnAddCollection_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
     {
         try
@@ -128,6 +130,8 @@ public class PnlStage_OnAddCollection_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnRemoveCollection), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnRemoveCollection_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
     {
         try
@@ -151,6 +155,8 @@ public class PnlStage_OnRemoveCollection_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnHideMusic), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnHideMusic_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
     {
         try
@@ -174,6 +180,8 @@ public class PnlStage_OnHideMusic_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.OnRemoveHideMusic), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_OnRemoveHideMusic_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
     {
         try
@@ -197,6 +205,8 @@ public class PnlStage_OnRemoveHideMusic_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.SetLikeAndHideTglState), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo), typeof(bool) })]
 public class PnlStage_SetLikeAndHideTglState_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo, bool isUnlock)
     {
         try
@@ -348,6 +358,8 @@ public class PnlStage_RefreshDiffUI_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.RefreshBg), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo), typeof(bool) })]
 public class PnlStage_RefreshBg_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo, bool hideText)
     {
         try
@@ -371,6 +383,8 @@ public class PnlStage_RefreshBg_Patch
 [HarmonyLib.HarmonyPatch(typeof(PnlStage), nameof(PnlStage.IsContainOffPlan), new Type[] { typeof(Il2CppAssets.Scripts.Database.MusicInfo) })]
 public class PnlStage_IsContainOffPlan_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
     public static void Prefix(PnlStage __instance, Il2CppAssets.Scripts.Database.MusicInfo musicInfo)
     {
         try

@@ -2,12 +2,13 @@ using MelonLoader;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 [assembly: MelonInfo(typeof(muse_dash_test.MainMod), "muse-dash-custom-chart", muse_dash_test.ModInfo.Version, "화영왕")]
 [assembly: MelonColor(255, 147, 112, 219)] // 모드 이름 색상: 보라색(MediumPurple #9370DB)
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
-// 패치는 MelonLoader가 아니라 OnInitializeMelon 첫 줄의 PatchInstaller가 겁니다(깨진 패치를 걸지 않기 위해).
+// 패치는 MelonLoader가 아니라 OnInitializeMelon 초반(기기 감지·설정 로드 직후)의 PatchInstaller가 겁니다(깨진 패치를 걸지 않기 위해).
 [assembly: HarmonyDontPatchAll]
 
 namespace muse_dash_test
@@ -40,7 +41,7 @@ namespace muse_dash_test
             }
 
             ModLogger.Msg("모드가 로드되었습니다.");
-            try { UnityEngine.Input.multiTouchEnabled = true; } catch (Exception ex) { ModLogger.Verbose($"[MainMod.Init] 무시된 예외: {ex.Message}"); }
+            try { EnableMultiTouch(); } catch (Exception ex) { ModLogger.Verbose($"[MainMod.Init] 무시된 예외: {ex.Message}"); }
             ModLogger.Msg("HywHpTextMod - 체력바 텍스트 모드가 성공적으로 연동 활성화되었습니다!");
 
             // 게임 업데이트로 깨진 패치 대상이 있는지 시작 시 점검하여 요약 로그로 표시합니다.
@@ -100,6 +101,12 @@ namespace muse_dash_test
 
             // Discord Rich Presence 초기화
             FeatureGuard.Run("Init.DiscordRPC", DiscordPresenceManager.Initialize, maxConsecutiveFailures: 0);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void EnableMultiTouch()
+        {
+            UnityEngine.Input.multiTouchEnabled = true;
         }
 
         private static void LogGameVersionCheck()

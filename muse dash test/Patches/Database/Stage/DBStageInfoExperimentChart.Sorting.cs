@@ -44,9 +44,13 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             references.MapNewIndex(runtimeNotes[i].ObjId, startIndex + i);
         }
 
-        while (musicList.Count > startIndex)
+        bool canOverwriteInPlace = musicList.Count == startIndex + runtimeNotes.Count;
+        if (!canOverwriteInPlace)
         {
-            musicList.RemoveAt(musicList.Count - 1);
+            while (musicList.Count > startIndex)
+            {
+                musicList.RemoveAt(musicList.Count - 1);
+            }
         }
 
         for (int i = 0; i < runtimeNotes.Count; i++)
@@ -76,7 +80,14 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 note.configData = configData;
             }
 
-            musicList.Add(note);
+            if (canOverwriteInPlace)
+            {
+                musicList[newIndex] = note;
+            }
+            else
+            {
+                musicList.Add(note);
+            }
         }
 
         ModLogger.Msg($"[ExperimentChart.Bms] 공식 방식 showTick 정렬 완료: notes={runtimeNotes.Count}, bossOffset={BossEventTickOffset}");
@@ -211,14 +222,13 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
             {
                 int noteIndex = group[i];
                 var note = musicList[noteIndex];
-                string exclusionReason = GetDoubleExclusionReason(note);
-
-                if (exclusionReason != null)
+                var noteData = note?.noteData;
+                if (noteData == null || noteData.type != NoteTypes.Normal || note.isLongPressing || note.isLongPressEnd)
                 {
                     continue;
                 }
 
-                if (note.noteData.pathway == 1)
+                if (noteData.pathway == 1)
                 {
                     airIndices.Add(noteIndex);
                 }
@@ -256,8 +266,9 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
 
     public static string GetDoubleExclusionReason(MusicData note)
     {
-        if (note?.noteData == null) return "missing-note-data";
-        if (note.noteData.type != NoteTypes.Normal) return $"type-{note.noteData.type}";
+        var noteData = note?.noteData;
+        if (noteData == null) return "missing-note-data";
+        if (noteData.type != NoteTypes.Normal) return "non-normal";
         if (note.isLongPressing) return "long-press-middle";
         if (note.isLongPressEnd) return "long-press-end";
         return null;

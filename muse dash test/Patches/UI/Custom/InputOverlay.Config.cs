@@ -198,7 +198,13 @@ namespace muse_dash_test
                 ModLogger.Warning($"[InputOverlay] CP949 디코딩 중 예외: {ex.Message}");
             }
 
-            return utf8Text;
+            // 3. 위 세 대표 키워드가 없는 축약형/수동 작성 파일(UTF-16 BOM, CP949 등)은 바이트 유효성 판별기로 디코딩합니다.
+            string decoded = TextFileDecoder.Decode(bytes, out string encodingName);
+            if (TextFileDecoder.IsLegacyEncoding(encodingName))
+            {
+                ModLogger.Msg($"[InputOverlay] config.txt를 {encodingName} 인코딩으로 인식하여 로드했습니다.");
+            }
+            return decoded;
         }
 
         /// <summary>키 비교용. 설정 파일에서는 띄어쓰기를 자유롭게 쓰게 두고, 코드에서는 붙여 쓴 이름 하나로 봅니다.</summary>

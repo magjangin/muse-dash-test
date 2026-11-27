@@ -17,7 +17,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
             Boss_InitBossObject_Patch.ResetPrewarmedScenes();
 
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
-            if (!EnableDebugLogs) return;
+            if (!EnableDebugLogs || !SceneDiagnosticLogger.ShouldLog("GameMusicScene.PreLoadEnemy.Prefix", 20)) return;
 
             int frame = SafeAccess.Get(() => UnityEngine.Time.frameCount, 0, "PreLoadEnemy.PRE.frame");
 
@@ -32,8 +32,7 @@ public class GameMusicScene_PreLoadEnemy_Patch
                 oriHead = DescribeCompact(db.oriMusicList);
             }
 
-            var summary = $"[PreLoadEnemy] PRE frame={frame}: musicList.Count={musicCount}, oriMusicList.Count={oriCount}\n[PreLoadEnemy]   musicList    {musicHead}\n[PreLoadEnemy]   oriMusicList {oriHead}";
-            SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Prefix", summary, 20);
+            ModLogger.Msg($"[PreLoadEnemy] PRE frame={frame}: musicList.Count={musicCount}, oriMusicList.Count={oriCount}\n[PreLoadEnemy]   musicList    {musicHead}\n[PreLoadEnemy]   oriMusicList {oriHead}");
         }
         catch (Exception ex) { ModLogger.Error($"[PreLoadEnemy] Prefix 예외: {ex}"); }
     }
@@ -44,32 +43,34 @@ public class GameMusicScene_PreLoadEnemy_Patch
         {
             if (!CustomPlaySession.Current.ShouldApplyExperimentChart) return;
 
-            if (EnableDebugLogs)
+            if (EnableDebugLogs && SceneDiagnosticLogger.ShouldLog("GameMusicScene.PreLoadEnemy.Postfix", 20))
             {
                 int preloadCount = SafeAccess.Get(() => __instance.preloads != null ? __instance.preloads.Count : -1, -1, "PreLoadEnemy.preloads.Count");
                 int objCtrlCount = SafeAccess.Get(() => __instance.objCtrls != null ? __instance.objCtrls.Count : -1, -1, "PreLoadEnemy.objCtrls.Count");
                 int preloads1Count = SafeAccess.Get(() => __instance.preloads1 != null ? __instance.preloads1.Count : -1, -1, "PreLoadEnemy.preloads1.Count");
 
                 var db = Il2CppAssets.Scripts.Database.GlobalDataBase.s_StageInfo;
-                var summary = $"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}\n[PreLoadEnemy] POST 무변형 musicList 유지 확인: {DescribeCompact(db != null ? db.musicList : null)}";
-                SceneDiagnosticLogger.Log("GameMusicScene.PreLoadEnemy.Postfix", summary, 20);
+                ModLogger.Msg($"[PreLoadEnemy] POST 풀 크기: preloads={preloadCount}, objCtrls={objCtrlCount}, preloads1={preloads1Count}\n[PreLoadEnemy] POST 무변형 musicList 유지 확인: {DescribeCompact(db != null ? db.musicList : null)}");
             }
         }
         catch (Exception ex) { ModLogger.Error($"[PreLoadEnemy] Postfix 예외: {ex}"); }
     }
 
     // 리스트 전체를 스캔: uid zz(앞2자리) 프리픽스 분포 + 첫 non-null uid 몇 개.
-    private static string DescribeCompact(Il2CppSystem.Collections.Generic.List<Il2CppGameLogic.MusicData> list)
+    // 람다(SafeAccess.Get) 대신 직접 접근하여 2,000노트 기준 수천 개의 클로저·박싱 할당을 막습니다.
+    internal static string DescribeCompact(Il2CppSystem.Collections.Generic.List<Il2CppGameLogic.MusicData> list)
     {
         try
         {
             if (list == null) return "(null)";
-            var hist = new System.Collections.Generic.SortedDictionary<string, int>();
-            var firstNonNull = new System.Collections.Generic.List<string>();
+            var hist = new System.Collections.Generic.SortedDictionary<string, int>(StringComparer.Ordinal);
+            var firstNonNull = new System.Collections.Generic.List<string>(4);
             int nullCount = 0;
             for (int i = 0; i < list.Count; i++)
             {
-                string uid = SafeAccess.Get(() => list[i]?.noteData?.uid, null);
+                var note = list[i];
+                var noteData = note?.noteData;
+                string uid = noteData?.uid;
                 if (string.IsNullOrEmpty(uid)) { nullCount++; continue; }
                 string zz = uid.Length >= 2 ? uid.Substring(0, 2) : uid;
                 hist[zz] = hist.TryGetValue(zz, out int c) ? c + 1 : 1;

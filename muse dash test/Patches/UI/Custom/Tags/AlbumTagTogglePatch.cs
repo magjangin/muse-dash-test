@@ -92,7 +92,7 @@ namespace muse_dash_test
             {
                 // 1. 해당 탭이 우리의 가상 탭인지 타입 안전(Type-Safe)하게 검증
                 var tagInfo = __instance.tagInfo;
-                if (tagInfo == null || tagInfo.tagUid != CustomTagRegistry.TagUidString)
+                if (tagInfo == null || !string.Equals(tagInfo.tagUid, CustomTagRegistry.TagUidString, StringComparison.Ordinal))
                 {
                     return;
                 }
@@ -129,7 +129,7 @@ namespace muse_dash_test
     /// <summary>
     /// 비동기적으로 아이콘 텍스처가 로드되어 지정될 때, 커스텀 텍스처로 대체해 주는 패치입니다.
     /// </summary>
-    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), nameof(Il2Cpp.AlbumTagToggle.SetIconAsync))]
+    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), nameof(Il2Cpp.AlbumTagToggle.SetIconAsync), new Type[] { typeof(Texture2D) })]
     public class AlbumTagToggle_SetIconAsync_Patch
     {
         public static bool Prefix(Il2Cpp.AlbumTagToggle __instance, ref Texture2D tex)
@@ -159,7 +159,7 @@ namespace muse_dash_test
     /// <summary>
     /// 토글 상태 변경(선택/비선택) 시 아이콘 텍스처 및 연출이 덮어쓰이는 문제를 방지하기 위한 패치입니다.
     /// </summary>
-    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), nameof(Il2Cpp.AlbumTagToggle.SetStateIcon))]
+    [HarmonyPatch(typeof(Il2Cpp.AlbumTagToggle), nameof(Il2Cpp.AlbumTagToggle.SetStateIcon), new Type[] { typeof(bool), typeof(bool) })]
     public class AlbumTagToggle_SetStateIcon_Patch
     {
         public static void Postfix(Il2Cpp.AlbumTagToggle __instance, bool weekFree, bool newAlbum)

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text;
 using MelonLoader;
 using MelonLoader.Utils;
 using Il2CppSpine.Unity;
@@ -53,22 +55,23 @@ namespace muse_dash_test
             }
         }
 
-        private static readonly Dictionary<string, SkeletonDataAsset> Cache = new Dictionary<string, SkeletonDataAsset>();
+        private static readonly Dictionary<string, SkeletonDataAsset> Cache = new Dictionary<string, SkeletonDataAsset>(StringComparer.Ordinal);
 
         /// <summary>이 주입기가 만들어 캐릭터에 씌운 에셋인지. 노트 스킨 주입기가 같은 오브젝트를 다시 바꾸지 않게 합니다.</summary>
         public static bool IsCachedAsset(SkeletonDataAsset asset)
         {
-            if (asset == null) return false;
+            if (asset is null || Cache.Count == 0) return false;
+            IntPtr ptr = asset.Pointer;
             foreach (var cached in Cache.Values)
             {
-                if (cached != null && cached.Pointer == asset.Pointer) return true;
+                if (cached is not null && cached.Pointer == ptr && cached != null) return true;
             }
             return false;
         }
 
         // 캐시 키(세트|역할)별로 처음 본 원본 머티리얼. 캐시가 비워진 뒤 다시 만들 때, 오브젝트가 이미 우리 에셋을 들고 있어
         // 원본 머티리얼을 다시 읽을 수 없으므로 여기서 꺼내 씁니다.
-        private static readonly Dictionary<string, Material> SourceMaterials = new Dictionary<string, Material>();
+        private static readonly Dictionary<string, Material> SourceMaterials = new Dictionary<string, Material>(StringComparer.Ordinal);
 
         /// <summary>
         /// 캐릭터 스킨 에셋을 만들거나 캐시에서 꺼냅니다. <paramref name="role"/>은 같은 세트를 다른 머티리얼로 그리는 오브젝트를
@@ -108,21 +111,29 @@ namespace muse_dash_test
         /// </summary>
         public static Material PrimaryMaterialOf(SkeletonDataAsset asset)
         {
+            if (asset is null) return null;
             try
             {
-                var atlases = asset?.atlasAssets;
-                if (atlases == null) return null;
-                for (int i = 0; i < atlases.Length; i++)
-                {
-                    var atlas = atlases[i];
-                    if (atlas == null) continue;
-                    var material = atlas.PrimaryMaterial;
-                    if (material != null) return material;
-                }
+                return PrimaryMaterialOfCore(asset);
             }
             catch (Exception ex)
             {
                 ModLogger.Verbose($"[CustomSkinInjector] 원본 머티리얼 조회 예외: {ex.GetType().Name}: {ex.Message}");
+                return null;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static Material PrimaryMaterialOfCore(SkeletonDataAsset asset)
+        {
+            var atlases = asset?.atlasAssets;
+            if (atlases == null) return null;
+            for (int i = 0; i < atlases.Length; i++)
+            {
+                var atlas = atlases[i];
+                if (atlas == null) continue;
+                var material = atlas.PrimaryMaterial;
+                if (material != null) return material;
             }
             return null;
         }
@@ -143,7 +154,9 @@ namespace muse_dash_test
                     return null;
                 }
 
-                if (CheckObfuscatedJson(jsonPath, label, out string warningMsg))
+                // 대용량(수백 KB~수 MB) 스킨 .json을 검사 때 한 번, 로드 때 한 번 두 번 읽지 않도록 1회만 읽고 디코딩합니다.
+                byte[] jsonBytes = AtomicFile.ReadAllBytesShared(jsonPath);
+                if (InspectSkinJsonBytes(jsonBytes, out string jsonText, out string warningMsg))
                 {
                     string banner = string.Format(
                         "\n================================================================================\n" +
@@ -176,8 +189,7 @@ namespace muse_dash_test
                 var atlasAsset = CreateAtlasAsset(label, atlasTextAsset, texture, materialPropertySource, out string materialLabel);
                 if (atlasAsset != null) atlasAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
-                var jsonText = AtomicFile.ReadAllTextShared(jsonPath);
-                var skeletonTextAsset = new TextAsset(jsonText);
+                var skeletonTextAsset = new TextAsset(jsonText ?? string.Empty);
                 skeletonTextAsset.hideFlags = HideFlags.DontUnloadUnusedAsset;
 
                 var skeletonDataAsset = SkeletonDataAsset.CreateRuntimeInstance(skeletonTextAsset, atlasAsset, true, scale);
@@ -285,46 +297,63 @@ namespace muse_dash_test
             try
             {
                 byte[] bytes = AtomicFile.ReadAllBytesShared(jsonPath);
-                if (bytes.Length == 0)
-                {
-                    reason = "파일 크기가 0바이트입니다.";
-                    return true;
-                }
-
-                // 1. 바이너리 / 암호화 / 비-JSON 헤더 탐색
-                int firstCharIdx = 0;
-                while (firstCharIdx < bytes.Length && (bytes[firstCharIdx] == ' ' || bytes[firstCharIdx] == '\t' || bytes[firstCharIdx] == '\r' || bytes[firstCharIdx] == '\n'))
-                {
-                    firstCharIdx++;
-                }
-
-                if (firstCharIdx >= bytes.Length || (bytes[firstCharIdx] != '{' && bytes[firstCharIdx] != '['))
-                {
-                    reason = $"JSON 시작 문자가 아닙니다 ('{{' 또는 '[' 대신 0x{bytes[firstCharIdx]:X2} 감지 -> 바이너리 .skel 또는 암호화 파일일 가능성 높음)";
-                    return true;
-                }
-
-                // 2. Spine 키 구성 검사 (bones, slots, skins, skeleton)
-                string text = System.Text.Encoding.UTF8.GetString(bytes);
-
-                bool hasBones = text.Contains("\"bones\"") || text.Contains("'bones'");
-                bool hasSlots = text.Contains("\"slots\"") || text.Contains("'slots'");
-                bool hasSkins = text.Contains("\"skins\"") || text.Contains("'skins'");
-                bool hasSkeleton = text.Contains("\"skeleton\"") || text.Contains("'skeleton'");
-
-                if (!hasBones && !hasSlots && !hasSkins && !hasSkeleton)
-                {
-                    reason = "Spine 핵심 필드(\"bones\", \"slots\", \"skins\", \"skeleton\")가 탐색되지 않았습니다. 변형/난독화된 JSON 구조입니다.";
-                    return true;
-                }
-
-                return false;
+                return InspectSkinJsonBytes(bytes, out _, out reason);
             }
             catch (Exception ex)
             {
                 reason = $"파일 탐색 예외: {ex.Message}";
                 return true;
             }
+        }
+
+        internal static bool InspectSkinJsonBytes(byte[] bytes, out string decodedText, out string reason)
+        {
+            decodedText = null;
+            reason = null;
+
+            if (bytes == null || bytes.Length == 0)
+            {
+                decodedText = string.Empty;
+                reason = "파일 크기가 0바이트입니다.";
+                return true;
+            }
+
+            // UTF-8 BOM(EF BB BF)으로 저장된 정상 JSON이 바이너리(0xEF)로 오탐되지 않도록 건너뜁니다.
+            int bomOffset = (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) ? 3 : 0;
+            decodedText = Encoding.UTF8.GetString(bytes, bomOffset, bytes.Length - bomOffset);
+
+            // 1. 바이너리 / 암호화 / 비-JSON 헤더 탐색
+            int firstCharIdx = bomOffset;
+            while (firstCharIdx < bytes.Length && (bytes[firstCharIdx] == ' ' || bytes[firstCharIdx] == '\t' || bytes[firstCharIdx] == '\r' || bytes[firstCharIdx] == '\n'))
+            {
+                firstCharIdx++;
+            }
+
+            if (firstCharIdx >= bytes.Length)
+            {
+                reason = "파일에 공백 문자만 있어 유효한 JSON 데이터가 없습니다.";
+                return true;
+            }
+
+            if (bytes[firstCharIdx] != '{' && bytes[firstCharIdx] != '[')
+            {
+                reason = $"JSON 시작 문자가 아닙니다 ('{{' 또는 '[' 대신 0x{bytes[firstCharIdx]:X2} 감지 -> 바이너리 .skel 또는 암호화 파일일 가능성 높음)";
+                return true;
+            }
+
+            // 2. Spine 키 구성 검사 (bones, slots, skins, skeleton)
+            bool hasBones = decodedText.IndexOf("\"bones\"", StringComparison.Ordinal) >= 0 || decodedText.IndexOf("'bones'", StringComparison.Ordinal) >= 0;
+            bool hasSlots = decodedText.IndexOf("\"slots\"", StringComparison.Ordinal) >= 0 || decodedText.IndexOf("'slots'", StringComparison.Ordinal) >= 0;
+            bool hasSkins = decodedText.IndexOf("\"skins\"", StringComparison.Ordinal) >= 0 || decodedText.IndexOf("'skins'", StringComparison.Ordinal) >= 0;
+            bool hasSkeleton = decodedText.IndexOf("\"skeleton\"", StringComparison.Ordinal) >= 0 || decodedText.IndexOf("'skeleton'", StringComparison.Ordinal) >= 0;
+
+            if (!hasBones && !hasSlots && !hasSkins && !hasSkeleton)
+            {
+                reason = "Spine 핵심 필드(\"bones\", \"slots\", \"skins\", \"skeleton\")가 탐색되지 않았습니다. 변형/난독화된 JSON 구조입니다.";
+                return true;
+            }
+
+            return false;
         }
     }
 }

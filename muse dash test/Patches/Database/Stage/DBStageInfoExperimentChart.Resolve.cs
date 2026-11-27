@@ -118,7 +118,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
     }
 
     private static readonly System.Collections.Generic.HashSet<string> LoggedOfficialNoteDiffs =
-        new System.Collections.Generic.HashSet<string>();
+        new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
 
     public static bool IsItemNoteType(int noteType)
         => noteType == NoteTypes.Blue || noteType == NoteTypes.Heart;

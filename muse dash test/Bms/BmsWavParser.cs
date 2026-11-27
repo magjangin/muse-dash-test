@@ -22,8 +22,10 @@ namespace muse_dash_test
 
     public static class BmsWavParser
     {
-        private static readonly Regex DtRegex = new Regex(@"_dt([0-9]+(?:\.[0-9]+)?)(?:\.wav)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex UidRegex = new Regex(@"^([0-9]{6})", RegexOptions.Compiled);
+        private static readonly Regex DtRegex = new Regex(@"_dt([0-9]+(?:\.[0-9]+)?)(?:\.wav)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private static readonly Regex UidRegex = new Regex(@"^([0-9]{6})", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex BossNameRegex = new Regex(@"([0-9]{4}_boss)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private static readonly Regex BossSceneRegex = new Regex(@"(?:scene|sc|s)([0-9]{1,2})", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         // 보스를 동반한 발사체/톱니 노트에서 파일명에 _dt 선언이 없을 때 쓰는 기본 선행 표시 시간.
         private const double BossProjectileDefaultDt = 0.7;
@@ -163,7 +165,7 @@ namespace muse_dash_test
         private static string SpeedOneProjectileXxyy(string xx, string xxyy)
         {
             if (xx != "06" && xx != "07" && xx != "08") return xxyy;
-            if (!int.TryParse(xxyy.Substring(2, 2), out int yy) || yy < 1 || yy > 6) return xxyy;
+            if (xxyy == null || xxyy.Length < 4 || !int.TryParse(xxyy.AsSpan(2, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out int yy) || yy < 1 || yy > 6) return xxyy;
 
             return xx + (yy <= 3 ? "01" : "04");
         }
@@ -290,13 +292,13 @@ namespace muse_dash_test
                 return;
             }
 
-            var bossNameMatch = Regex.Match(nameWithoutExt, @"([0-9]{4}_boss)", RegexOptions.IgnoreCase);
+            var bossNameMatch = BossNameRegex.Match(nameWithoutExt);
             if (bossNameMatch.Success)
             {
                 info.BossName = bossNameMatch.Groups[1].Value.ToLowerInvariant();
             }
 
-            var sceneMatch = Regex.Match(nameWithoutExt, @"(?:scene|sc|s)([0-9]{1,2})", RegexOptions.IgnoreCase);
+            var sceneMatch = BossSceneRegex.Match(nameWithoutExt);
             if (sceneMatch.Success && int.TryParse(sceneMatch.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int scene))
             {
                 info.BossScene = scene;

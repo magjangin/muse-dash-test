@@ -159,9 +159,8 @@ namespace muse_dash_test.Patches
             bool isFullCombo = VictoryDataCache.ActiveTarget.IsFullCombo();
             int greatCount = VictoryDataCache.ActiveTarget.m_GreatResult;
             int missCount = VictoryDataCache.ActiveTarget.m_MissResult;
-            float accuracy = VictoryDataCache.ActiveTarget.GetAccuracy();
 
-            ModLogger.Verbose($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={accuracy}");
+            ModLogger.Verbose($"[APMod.Debug.Victory] 판정 결과 확인 - FC={isFullCombo}, Great={greatCount}, Miss={missCount}, Accuracy={VictoryDataCache.ActiveTarget.GetAccuracy()}");
 
             return isFullCombo && greatCount == 0 && missCount == 0;
         }
@@ -176,7 +175,7 @@ namespace muse_dash_test.Patches
                 if (child == null) continue;
 
                 ModLogger.Verbose($"[APMod.Debug.Victory] 발견된 자식 오브젝트: index={i}, name='{child.name}', active={child.gameObject.activeSelf}");
-                if (child.name != "CustomAPText")
+                if (!string.Equals(child.name, "CustomAPText", StringComparison.Ordinal))
                 {
                     child.gameObject.SetActive(false);
                     hiddenCount++;

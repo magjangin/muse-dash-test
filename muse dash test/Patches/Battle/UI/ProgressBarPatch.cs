@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
@@ -58,13 +59,14 @@ namespace muse_dash_test
         {
             try
             {
+                var ci = CultureInfo.InvariantCulture;
                 float duration = GetEffectiveDuration();
                 bool hasRatio = TryGetCustomProgressRatio(out float ratio);
                 var bgm = HwaBattleMediaController.ActiveAudioSource;
-                string bgmTime = bgm != null && bgm.clip != null ? bgm.time.ToString("F2") + "s" : "(none)";
-                string gameClock = TryReadGameClock(out float clock) ? clock.ToString("F2") + "s" : "(none)";
-                return $"ratio={(hasRatio ? ratio.ToString("P1") : "(none)")}, game={gameClock}, bgm.time={bgmTime}, " +
-                       $"duration={duration:F2}s (audio={customAudioDuration:F2}s, chart={cachedChartDuration:F2}s)";
+                string bgmTime = bgm != null && bgm.clip != null ? bgm.time.ToString("F2", ci) + "s" : "(none)";
+                string gameClock = TryReadGameClock(out float clock) ? clock.ToString("F2", ci) + "s" : "(none)";
+                return $"ratio={(hasRatio ? ratio.ToString("P1", ci) : "(none)")}, game={gameClock}, bgm.time={bgmTime}, " +
+                       $"duration={duration.ToString("F2", ci)}s (audio={customAudioDuration.ToString("F2", ci)}s, chart={cachedChartDuration.ToString("F2", ci)}s)";
             }
             catch (Exception ex)
             {
@@ -255,20 +257,27 @@ namespace muse_dash_test
     {
         public static MethodBase TargetMethod()
         {
-            var exact = AccessTools.Method(typeof(PnlBattle), nameof(PnlBattle._MusicProgressInit_b__48_1), new Type[] { typeof(float) });
-            if (exact != null) return exact;
-
-            foreach (var m in typeof(PnlBattle).GetMethods(
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            try
             {
-                if (!m.Name.StartsWith("_MusicProgressInit_b__", StringComparison.Ordinal)) continue;
-                if (m.ReturnType != typeof(void)) continue;
-                var ps = m.GetParameters();
-                if (ps.Length == 1 && ps[0].ParameterType == typeof(float))
+                var exact = AccessTools.Method(typeof(PnlBattle), nameof(PnlBattle._MusicProgressInit_b__48_1), new Type[] { typeof(float) });
+                if (exact != null) return exact;
+
+                foreach (var m in typeof(PnlBattle).GetMethods(
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
                 {
-                    ModLogger.Msg($"[ProgressBarPatch] 게임 업데이트 폴백으로 진행바 세터 메서드를 해석했습니다: {m.Name}");
-                    return m;
+                    if (!m.Name.StartsWith("_MusicProgressInit_b__", StringComparison.Ordinal)) continue;
+                    if (m.ReturnType != typeof(void)) continue;
+                    var ps = m.GetParameters();
+                    if (ps.Length == 1 && ps[0].ParameterType == typeof(float))
+                    {
+                        ModLogger.Msg($"[ProgressBarPatch] 게임 업데이트 폴백으로 진행바 세터 메서드를 해석했습니다: {m.Name}");
+                        return m;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Warning($"[ProgressBarPatch] 진행바 세터 메서드 탐색 중 예외: {ex.GetType().Name}: {ex.Message}");
             }
 
             return null;

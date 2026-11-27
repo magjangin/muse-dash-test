@@ -141,10 +141,10 @@ namespace muse_dash_test
         /// 서로 다른 프리팹이라 `SkeletonData`도 따로인데, 애니메이션 이름은 같을 수 있습니다.
         /// 이름만으로 키를 잡으면 먼저 처리된 쪽 때문에 나머지가 "이미 했다"고 건너뛰어집니다.</para>
         /// </summary>
-        private static readonly Dictionary<string, float[]> originalAlphas = new Dictionary<string, float[]>();
+        private static readonly Dictionary<string, float[]> originalAlphas = new Dictionary<string, float[]>(StringComparer.Ordinal);
 
         /// <summary>캐시 키 → 지금 불투명으로 덮인 상태인가. 상태가 같으면 아무것도 하지 않습니다.</summary>
-        private static readonly Dictionary<string, bool> opaqueAnimations = new Dictionary<string, bool>();
+        private static readonly Dictionary<string, bool> opaqueAnimations = new Dictionary<string, bool>(StringComparer.Ordinal);
 
         /// <summary>
         /// 곡 시작/재시작 시 스켈레톤 캐시를 초기화하여, 새로 인스턴스화된 프리팹의 알파가 항상 정상 덮어씌워지도록 합니다.
@@ -160,11 +160,14 @@ namespace muse_dash_test
             try
             {
                 // 게이트 순서가 곧 성능입니다. PlayByKey는 캐릭터·모든 노트가 공유하는 뜨거운 경로라
-                // 대부분의 호출이 첫 줄에서 끝나야 합니다. 곡별 설정 조회는 진짜 고스트 노트일 때만 합니다.
+                // 대부분의 호출이 첫 줄에서 끝나야 합니다. 고스트 보이기 설정이 꺼져 있고 이번 배틀에서 덮어쓴
+                // 원본 알파도 없다면(기본 상태), 모든 노트의 m_MusicData 박싱·uid 마샬링 없이 순수 관리 코드만으로 돌아갑니다.
                 if (!string.Equals(actionKey, FlightActionKey, StringComparison.Ordinal)) return;
+                bool opaque = GhostNoteVisibility.IsEnabledForCurrentSong();
+                if (!opaque && originalAlphas.Count == 0) return;
                 if (!GhostNoteIdentity.IsGhost(__instance)) return;
 
-                ApplyToCurrentAnimation(__instance, GhostNoteVisibility.IsEnabledForCurrentSong());
+                ApplyToCurrentAnimation(__instance, opaque);
             }
             catch (Exception ex)
             {

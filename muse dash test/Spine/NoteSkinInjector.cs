@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using Il2Cpp;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSpine.Unity;
@@ -58,6 +59,9 @@ namespace muse_dash_test
         private static readonly Dictionary<string, List<string>> ContractVerdicts = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         private static readonly HashSet<string> WarnedContracts = new HashSet<string>(StringComparer.Ordinal);
         private static readonly Dictionary<PointerContractKey, CachedContractVerdict> PointerContracts = new Dictionary<PointerContractKey, CachedContractVerdict>();
+        // 원본 SkeletonDataAsset 포인터 → 해석된 커스텀 스킨(없으면 Asset=null). RevalidateSeconds 동안 노트별 이름·머티리얼 마샬링을 건너뜁니다.
+        private static readonly Dictionary<IntPtr, (SkeletonDataAsset Asset, string BaseName, float CheckedAt)> PointerAssets =
+            new Dictionary<IntPtr, (SkeletonDataAsset, string, float)>();
 
         private readonly struct PointerContractKey : IEquatable<PointerContractKey>
         {
@@ -115,79 +119,101 @@ namespace muse_dash_test
         public static void TryInject(SpineActionController sac)
         {
             if (!ModConfig.EnableSpineSkin) return;
-            if (sac == null) return;
+            if (sac is null) return;
 
             try
             {
-                if (!IsChristmasSong()) return;
-
-                var ska = sac.skeletonAnimation;
-                if (ska == null) return;
-
-                var original = ska.skeletonDataAsset;
-                if (original == null) return;
-                if (OwnAssets.Contains(original.Pointer)) return;
-                if (CustomSkinInjector.IsCachedAsset(original)) return;
-
-                string baseName = NoteSkinRules.BaseNameFromAssetName(original.name);
-                if (baseName == null) return;
-
-                // 원본 머티리얼(셰이더·속성)을 복사해 텍스처만 바꿉니다. 캐릭터 분신과 같은 이유입니다(CustomSkinInjector.PrimaryMaterialOf).
-                var custom = GetOrBuild(baseName, NoteSkinRules.RuntimeScale(original.scale), CustomSkinInjector.PrimaryMaterialOf(original));
-                if (custom == null) return;
-
-                var skeletonData = custom.GetSkeletonData(true);
-                if (skeletonData == null) return;
-
-                var actionData = sac.actionData;
-                var feverActionData = sac.m_FeverActionData;
-                var pointerKey = new PointerContractKey(
-                    custom.Pointer,
-                    original.Pointer,
-                    actionData != null ? actionData.Pointer : IntPtr.Zero,
-                    feverActionData != null ? feverActionData.Pointer : IntPtr.Zero);
-
-                string contractKey;
-                List<string> missing;
-                if (PointerContracts.TryGetValue(pointerKey, out var cachedVerdict))
-                {
-                    contractKey = cachedVerdict.Key;
-                    missing = cachedVerdict.Missing;
-                }
-                else
-                {
-                    var required = CollectRequiredAnimations(actionData, feverActionData);
-                    contractKey = custom.Pointer.ToInt64() + "|" + string.Join("\u0001", required);
-                    if (!ContractVerdicts.TryGetValue(contractKey, out missing))
-                    {
-                        missing = NoteSkinRules.FindMissingAnimations(required, n => skeletonData.FindAnimation(n) != null);
-                        ContractVerdicts[contractKey] = missing;
-                    }
-                    PointerContracts[pointerKey] = new CachedContractVerdict { Key = contractKey, Missing = missing };
-                }
-
-                if (missing.Count > 0)
-                {
-                    if (WarnedContracts.Add(contractKey))
-                    {
-                        ModLogger.Warning($"[NoteSkin] {baseName}: 프리팹 '{StripObjId(sac.gameObject.name)}'이(가) 부르는 애니메이션이 없어 원본 노트를 씁니다: {string.Join(", ", missing)}");
-                    }
-                    return;
-                }
-
-                ska.skeletonDataAsset = custom;
-                ska.Initialize(true);
-                sac.InitSkField(ska);
-
-                injectedCount++;
-                if (injectedCount == 1 || injectedCount % 200 == 0)
-                {
-                    ModLogger.Msg($"[NoteSkin] 노트 스킨 주입 {injectedCount}개째 ({baseName}, {StripObjId(sac.gameObject.name)})");
-                }
+                TryInjectCore(sac);
             }
             catch (Exception ex)
             {
                 ModLogger.Warning($"[NoteSkin] 주입 예외: {ex.Message}");
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void TryInjectCore(SpineActionController sac)
+        {
+            if (sac == null) return;
+            if (!IsChristmasSong()) return;
+
+            var ska = sac.skeletonAnimation;
+            if (ska == null) return;
+
+            var original = ska.skeletonDataAsset;
+            if (original == null) return;
+            IntPtr origPtr = original.Pointer;
+            if (OwnAssets.Contains(origPtr)) return;
+            if (CustomSkinInjector.IsCachedAsset(original)) return;
+
+            float now = Time.realtimeSinceStartup;
+            SkeletonDataAsset custom;
+            string baseName;
+            if (PointerAssets.TryGetValue(origPtr, out var ptrHit)
+                && now - ptrHit.CheckedAt < RevalidateSeconds
+                && (ptrHit.Asset is null || ptrHit.Asset != null))
+            {
+                custom = ptrHit.Asset;
+                baseName = ptrHit.BaseName;
+            }
+            else
+            {
+                baseName = NoteSkinRules.BaseNameFromAssetName(original.name);
+                custom = baseName != null
+                    ? GetOrBuild(baseName, NoteSkinRules.RuntimeScale(original.scale), CustomSkinInjector.PrimaryMaterialOf(original))
+                    : null;
+                PointerAssets[origPtr] = (custom, baseName, now);
+            }
+
+            if (custom == null) return;
+
+            var skeletonData = custom.GetSkeletonData(true);
+            if (skeletonData == null) return;
+
+            var actionData = sac.actionData;
+            var feverActionData = sac.m_FeverActionData;
+            var pointerKey = new PointerContractKey(
+                custom.Pointer,
+                origPtr,
+                actionData != null ? actionData.Pointer : IntPtr.Zero,
+                feverActionData != null ? feverActionData.Pointer : IntPtr.Zero);
+
+            string contractKey;
+            List<string> missing;
+            if (PointerContracts.TryGetValue(pointerKey, out var cachedVerdict))
+            {
+                contractKey = cachedVerdict.Key;
+                missing = cachedVerdict.Missing;
+            }
+            else
+            {
+                var required = CollectRequiredAnimations(actionData, feverActionData);
+                contractKey = custom.Pointer.ToInt64() + "|" + string.Join("\u0001", required);
+                if (!ContractVerdicts.TryGetValue(contractKey, out missing))
+                {
+                    missing = NoteSkinRules.FindMissingAnimations(required, n => skeletonData.FindAnimation(n) != null);
+                    ContractVerdicts[contractKey] = missing;
+                }
+                PointerContracts[pointerKey] = new CachedContractVerdict { Key = contractKey, Missing = missing };
+            }
+
+            if (missing.Count > 0)
+            {
+                if (WarnedContracts.Add(contractKey))
+                {
+                    ModLogger.Warning($"[NoteSkin] {baseName}: 프리팹 '{StripObjId(sac.gameObject.name)}'이(가) 부르는 애니메이션이 없어 원본 노트를 씁니다: {string.Join(", ", missing)}");
+                }
+                return;
+            }
+
+            ska.skeletonDataAsset = custom;
+            ska.Initialize(true);
+            sac.InitSkField(ska);
+
+            injectedCount++;
+            if (injectedCount == 1 || injectedCount % 200 == 0)
+            {
+                ModLogger.Msg($"[NoteSkin] 노트 스킨 주입 {injectedCount}개째 ({baseName}, {StripObjId(sac.gameObject.name)})");
             }
         }
 
@@ -251,6 +277,7 @@ namespace muse_dash_test
             ContractVerdicts.Clear();
             WarnedContracts.Clear();
             PointerContracts.Clear();
+            PointerAssets.Clear();
 
             SkeletonDataAsset asset = null;
             if (stamp != 0)

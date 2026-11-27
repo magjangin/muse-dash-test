@@ -68,7 +68,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             yy = 0;
             if (!HasLaneSpeedYy(uid)) return false;
-            return int.TryParse(Yy(uid), out yy) && yy >= 1 && yy <= 18;
+            uint d0 = (uint)(uid[4] - '0');
+            uint d1 = (uint)(uid[5] - '0');
+            if (d0 > 9 || d1 > 9) return false;
+            yy = (int)(d0 * 10 + d1);
+            return yy >= 1 && yy <= 18;
         }
 
         /// <summary>
@@ -80,7 +84,7 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         {
             if (uid == null || uid.Length < 6) return false;
             if (uid.StartsWith("0004", System.StringComparison.Ordinal)) return false;
-            return Xx(uid) != "01";
+            return !(uid[2] == '0' && uid[3] == '1');
         }
     }
 }

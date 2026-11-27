@@ -35,7 +35,7 @@ namespace muse_dash_test
             }
         }
 
-        [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumInfoByMusicInfo))]
+        [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumInfoByMusicInfo), new Type[] { typeof(MusicInfo) })]
         internal class DBConfigAlbums_GetAlbumInfoByMusicInfo_Patch
         {
             private static bool _loggedPrefixFailure;
@@ -63,7 +63,7 @@ namespace muse_dash_test
             }
         }
 
-        [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumsInfoByUid))]
+        [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumsInfoByUid), new Type[] { typeof(string) })]
         internal class DBConfigAlbums_GetAlbumsInfoByUid_Patch
         {
             private static bool _loggedPrefixFailure;
@@ -72,7 +72,7 @@ namespace muse_dash_test
             {
                 try
                 {
-                    if (uid == CustomTagRegistry.AlbumUidString && CustomTagRegistry.CustomAlbumInfo != null)
+                    if (string.Equals(uid, CustomTagRegistry.AlbumUidString, StringComparison.Ordinal) && CustomTagRegistry.CustomAlbumInfo != null)
                     {
                         __result = CustomTagRegistry.CustomAlbumInfo;
                         return false;
@@ -262,7 +262,7 @@ namespace muse_dash_test
             }
         }
 
-        [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumIndexByUid))]
+        [HarmonyPatch(typeof(DBConfigAlbums), nameof(DBConfigAlbums.GetAlbumIndexByUid), new Type[] { typeof(string) })]
         internal class DBConfigAlbums_GetAlbumIndexByUid_Patch
         {
             private static bool _loggedPrefixFailure;
@@ -271,7 +271,7 @@ namespace muse_dash_test
             {
                 try
                 {
-                    if (uid == CustomTagRegistry.AlbumUidString)
+                    if (string.Equals(uid, CustomTagRegistry.AlbumUidString, StringComparison.Ordinal))
                     {
                         __result = CustomTagRegistry.TagUid;
                         return false;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -34,7 +35,18 @@ namespace SignatureDumper
 
     public class AssemblySignatureDumper
     {
+        private static readonly HashSet<char> InvalidFileNameCharSet = BuildInvalidFileNameCharSet();
         private readonly SignatureDumperOptions _options;
+
+        private static HashSet<char> BuildInvalidFileNameCharSet()
+        {
+            var set = new HashSet<char>(Path.GetInvalidFileNameChars());
+            foreach (char extra in new[] { '<', '>', ':', '*', '?', '"', '|', '/', '\\' })
+            {
+                set.Add(extra);
+            }
+            return set;
+        }
 
         public AssemblySignatureDumper(SignatureDumperOptions options)
         {
@@ -53,7 +65,7 @@ namespace SignatureDumper
             string searchDir = _options.SearchDirectory ?? Path.GetDirectoryName(assemblyPath);
             string melonLoaderRoot = Directory.GetParent(searchDir)?.FullName;
 
-            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+            ResolveEventHandler resolveHandler = (sender, args) =>
             {
                 try
                 {
@@ -81,42 +93,50 @@ namespace SignatureDumper
                 return null;
             };
 
-            Assembly asm = Assembly.LoadFrom(assemblyPath);
-            Type[] types;
-
+            AppDomain.CurrentDomain.AssemblyResolve += resolveHandler;
             try
             {
-                types = asm.GetTypes();
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                types = ex.Types.Where(t => t != null).ToArray();
-                Console.WriteLine($"[SignatureDumper] Warning: Loaded {types.Length} types with some unresolved dependencies.");
-                foreach (var loaderEx in ex.LoaderExceptions.Where(e => e != null).Select(e => e.Message).Distinct().Take(5))
-                {
-                    Console.WriteLine($"[SignatureDumper]   LoaderException: {loaderEx}");
-                }
-            }
+                Assembly asm = Assembly.LoadFrom(assemblyPath);
+                Type[] types;
 
-            Console.WriteLine($"[SignatureDumper] Analyzing {types.Length} types...");
-
-            List<TypeSignatureInfo> infos = new List<TypeSignatureInfo>();
-
-            foreach (var type in types.OrderBy(t => t.Namespace).ThenBy(t => t.Name))
-            {
                 try
                 {
-                    infos.Add(AnalyzeType(type));
+                    types = asm.GetTypes();
                 }
-                catch (Exception ex)
+                catch (ReflectionTypeLoadException ex)
                 {
-                    Console.WriteLine($"[SignatureDumper] Error analyzing type '{type.FullName}': {ex.Message}");
+                    types = ex.Types.Where(t => t != null).ToArray();
+                    Console.WriteLine($"[SignatureDumper] Warning: Loaded {types.Length} types with some unresolved dependencies.");
+                    foreach (var loaderEx in ex.LoaderExceptions.Where(e => e != null).Select(e => e.Message).Distinct().Take(5))
+                    {
+                        Console.WriteLine($"[SignatureDumper]   LoaderException: {loaderEx}");
+                    }
                 }
-            }
 
-            Directory.CreateDirectory(_options.OutputDirectory);
-            WriteIndividualFiles(_options.OutputDirectory, infos);
-            Console.WriteLine($"[SignatureDumper] Generated {infos.Count} individual C# files in folder: {_options.OutputDirectory}");
+                Console.WriteLine($"[SignatureDumper] Analyzing {types.Length} types...");
+
+                List<TypeSignatureInfo> infos = new List<TypeSignatureInfo>(types.Length);
+
+                foreach (var type in types.OrderBy(t => t.Namespace).ThenBy(t => t.Name))
+                {
+                    try
+                    {
+                        infos.Add(AnalyzeType(type));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[SignatureDumper] Error analyzing type '{type.FullName}': {ex.Message}");
+                    }
+                }
+
+                Directory.CreateDirectory(_options.OutputDirectory);
+                WriteIndividualFiles(_options.OutputDirectory, infos);
+                Console.WriteLine($"[SignatureDumper] Generated {infos.Count} individual C# files in folder: {_options.OutputDirectory}");
+            }
+            finally
+            {
+                AppDomain.CurrentDomain.AssemblyResolve -= resolveHandler;
+            }
         }
 
         private TypeSignatureInfo AnalyzeType(Type type)
@@ -184,7 +204,7 @@ namespace SignatureDumper
                 string val = "";
                 if (field.IsLiteral && !field.IsInitOnly)
                 {
-                    try { val = $" = {field.GetRawConstantValue()}"; } catch { }
+                    try { val = $" = {FormatLiteralValue(field.GetRawConstantValue())}"; } catch { }
                 }
                 info.Fields.Add($"{mods} {fType} {field.Name}{val};");
             }
@@ -242,13 +262,20 @@ namespace SignatureDumper
 
             if (p.HasDefaultValue)
             {
-                if (p.DefaultValue == null) def = " = null";
-                else if (p.DefaultValue is string s) def = $" = \"{s}\"";
-                else if (p.DefaultValue is bool b) def = $" = {(b ? "true" : "false")}";
-                else def = $" = {p.DefaultValue}";
+                def = $" = {FormatLiteralValue(p.DefaultValue)}";
             }
 
             return $"{prefix}{typeName} {p.Name}{def}";
+        }
+
+        private static string FormatLiteralValue(object value)
+        {
+            if (value == null) return "null";
+            if (value is string s) return $"\"{s}\"";
+            if (value is bool b) return b ? "true" : "false";
+            if (value is float f) return f.ToString(CultureInfo.InvariantCulture) + "f";
+            if (value is IFormattable formattable) return formattable.ToString(null, CultureInfo.InvariantCulture);
+            return value.ToString();
         }
 
         private string GetFieldModifiers(FieldInfo f)
@@ -398,18 +425,10 @@ namespace SignatureDumper
 
         private string SanitizeFileName(string fileName)
         {
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(fileName.Length);
             foreach (char c in fileName)
             {
-                if (invalidChars.Contains(c) || c == '<' || c == '>' || c == ':' || c == '*' || c == '?' || c == '"' || c == '|' || c == '/')
-                {
-                    sb.Append('_');
-                }
-                else
-                {
-                    sb.Append(c);
-                }
+                sb.Append(InvalidFileNameCharSet.Contains(c) ? '_' : c);
             }
             return sb.ToString();
         }

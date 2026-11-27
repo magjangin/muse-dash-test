@@ -85,22 +85,53 @@ namespace muse_dash_test
                 return false;
             }
 
-            using (var fs = new FileStream(FlagFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var reader = new StreamReader(fs, System.Text.Encoding.UTF8))
+            // 메모장 ANSI(CP949) 저장 및 '=' 앞뒤 공백도 안전하게 인식합니다(TextFileDecoder 참고).
+            string text = TextFileDecoder.ReadAllText(FlagFilePath, out string encodingName);
+            if (TextFileDecoder.IsLegacyEncoding(encodingName))
+            {
+                ModLogger.Msg($"[OfflineSandbox] OFFLINE_SANDBOX.txt를 UTF-8이 아닌 {encodingName}(으)로 읽었습니다: {FlagFilePath}");
+            }
+
+            if (TryParseFlagText(text, out bool enabled))
+            {
+                return enabled;
+            }
+
+            ModLogger.Warning($"[OfflineSandbox] '{FlagKey}' 키를 찾지 못했습니다 → 비활성화 처리");
+            return false;
+        }
+
+        internal static bool TryParseFlagText(string text, out bool enabled)
+        {
+            enabled = false;
+            if (string.IsNullOrEmpty(text)) return false;
+
+            using (var reader = new StringReader(text))
             {
                 string rawLine;
                 while ((rawLine = reader.ReadLine()) != null)
                 {
                     string line = rawLine.Trim();
-                    if (line.StartsWith(FlagKey + "=", StringComparison.Ordinal))
+                    if (line.Length == 0 || line[0] == '#' || line.StartsWith("//", StringComparison.Ordinal))
                     {
-                        string val = line.Substring((FlagKey + "=").Length).Trim();
-                        return val.Equals(ValueOn, StringComparison.OrdinalIgnoreCase);
+                        continue;
                     }
+
+                    int eq = line.IndexOf('=');
+                    if (eq <= 0) continue;
+
+                    string key = line.Substring(0, eq).Trim();
+                    if (!string.Equals(key, FlagKey, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    string val = line.Substring(eq + 1).Trim();
+                    enabled = val.Equals(ValueOn, StringComparison.OrdinalIgnoreCase);
+                    return true;
                 }
             }
 
-            ModLogger.Warning($"[OfflineSandbox] '{FlagKey}' 키를 찾지 못했습니다 → 비활성화 처리");
             return false;
         }
 

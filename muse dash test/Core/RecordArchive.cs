@@ -20,6 +20,7 @@ namespace muse_dash_test
     public static class RecordArchive
     {
         public const string FolderName = "archive";
+        private static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
 
         /// <summary>
         /// 본 기록 파일 경로와 지문으로 보관본 경로를 만듭니다. 지문이 비었으면(지문 없는 옛 기록) null입니다.
@@ -63,7 +64,8 @@ namespace muse_dash_test
         private static string SanitizeFingerprint(string fingerprint)
         {
             string value = fingerprint.Trim();
-            foreach (char c in Path.GetInvalidFileNameChars())
+            if (value.IndexOfAny(InvalidFileNameChars) < 0) return value;
+            foreach (char c in InvalidFileNameChars)
             {
                 value = value.Replace(c, '_');
             }

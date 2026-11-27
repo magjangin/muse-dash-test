@@ -91,12 +91,11 @@
 * **커스텀 태그 끄기 (`EnableCustomTag`) [v0.16.0]** ✅
   * `MelonPreferences.cfg`의 `EnableCustomTag=false`면 곡 선택창의 '실험 모드' 태그·가상 앨범·곡을 만들지 않습니다(게임을 새로 켜야 반영).
 
-* **감사 6~9차: 업데이트 내성·병목·로케일 [v0.16.1 ~ v0.16.4]** ✅
-  * 패치 클래스 하나가 적용 중 실패해도 메서드별로 다시 걸어 실패한 메서드만 빠지며, `Prepare()` 비활성 패치를 일반·부분 복구 경로 모두에서 일관되게 제외합니다.
-  * `config.txt`를 메모장 등이 저장하는 도중에 읽어 실패해도 같은 변경을 1초 간격으로 다시 읽고, 실수 설정값은 OS 로케일과 무관하게 `InvariantCulture`로 저장합니다.
-  * 진단·옵션 전용 훅(`Patch_SkinNameProbe`, `PnlMenu_OnEnable_DebugPatch`, `MouseTouchBridgePatch`)은 필요한 설정일 때만 걸고, 매 타격·시작 경로의 불필요한 시계 조회·리플렉션·Unity null 비교 비용을 줄였습니다.
-  * `tools/release.ps1`과 `CHANGELOG.md`로 버전·CI·Release 빌드·로직 테스트·GitHub 릴리즈 배포를 자동화했습니다.
-  * 채보 실시간 감시가 감시 버퍼 넘침·중단을 스스로 복구하고(전체 재로드 예약·감시 재시작), 재로드 콜백이 겹쳐 옛 채보가 캐시를 덮지 않게 했습니다. 모든 소스 파일이 코드 레퍼런스에 있는지 CI가 확인합니다.
+* **감사 6~15차 및 ALL 태그 목록 수정: 업데이트 내성·병목·인코딩·아카이브 [v0.16.1 ~ v0.17.0]** ✅
+  * 곡 선택 화면 진입 직후 ALL 태그 목록이 0곡으로 비던 버그(`RefreshStageDisplayMusics(-1)` 오차단)를 수정했습니다(`TagRefreshRules`).
+  * 패치 클래스 일부 실패 시 메서드별 부분 복구, `Prepare()` 사전 판정 및 비활성·진단 전용 훅 미설치, `NoInlining` JIT 경계 격리, 명시적 파라미터 시그니처로 게임·로더 업데이트 내성을 강화했습니다(MelonLoader 0.7.3 버전 경고 포함).
+  * 채보를 교체할 때 옛 기록을 `record/archive/`에 채보 지문별로 자동 보관·복원하고(`RecordArchive`), BMS·`info.txt`·`OFFLINE_SANDBOX.txt`를 BOM → UTF-8 → CP949 → Shift-JIS 순으로 판별해 읽으며(`TextFileDecoder`), 모든 런타임 파일 읽기를 `FileShare.ReadWrite | FileShare.Delete` 공유 모드로 통일했습니다.
+  * 채보 주입·씬 프리로드·노트 스폰·타격 판정·오프셋·스킨 주입 핫패스의 불필요한 문자열·박싱·IL2CPP 마샬링 할당을 제거하고, `tools/release.ps1`(PowerShell 5.1 stderr 격리 포함)과 `tools/check-code-reference.ps1`로 릴리즈·문서 정합성을 자동 검증합니다.
 
 ---
 ## ✅ Verified Results (검증된 실험 결과)
@@ -346,6 +345,7 @@
 | `EnableSpineSkin` | `true` | Spine 커스텀 스킨 텍스처/아틀라스 런타임 주입 활성화 |
 | `EnableMobileTouch` | `true` | 모바일 터치 조작 모드 및 마우스-터치 브릿지 기능 활성화. 실제로 동작하려면 `config.txt`의 `모바일터치조작=true`도 필요합니다(기본 `false`, 둘 다 켜져 있어야 함) |
 | `EnableVerboseLog` | `false` | 진단 로그 상세 출력(`LogLevel`이 `Auto`일 때 Verbose로 올림). UMPC로 감지되면 `Auto`는 이 값과 무관하게 `Error`가 됩니다 |
+| `ForceChristmas` | `false` | 모든 곡에 크리스마스 테마 배경·보스·노트 스킨 조건을 강제 적용 |
 | `LogLevel` | `Auto` | `Auto`, `Silent`, `Error`, `Warning`, `Info`, `Verbose` 중 하나. 자세한 동작은 [LOGGING_AND_TROUBLESHOOTING.md](docs/guides/LOGGING_AND_TROUBLESHOOTING.md) |
 
 > 위 표의 `Enable*` 항목은 **MelonPreferences(기능 전체 스위치)** 이고, 게임 중 메모장으로 고쳐 저장하면 약 1초 안에 반영되는 **`save custom key/config.txt`**(키 오버레이·판정바·오토플레이·강제퍼펙트·피버충전금지·시네마·고스트 노트·모바일 터치·히든 해금 표시)는 별개입니다. 같은 기능에 스위치가 둘 있을 때는 **둘 다 켜져 있어야** 동작합니다(예: 판정바 = `EnableJudgmentBar` + `판정바표시`).
@@ -393,7 +393,7 @@ dotnet build "muse dash test\muse dash test.csproj" --configuration Debug -p:Gam
 ## 🧪 로직 테스트
 
 모드 본체는 IL2CPP 어셈블리(`Il2CppAssemblies`)를 참조하므로 게임 밖에서 로드할 수 없습니다.
-대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `Core/`의 `AccuracyMath`·`CustomRecordStore.Serialization`·`PlayRecordMerge`·`GameVersionCheck`·`TextNormalizer`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`·`NoteSkinRules`·`SkinFolderRules`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 194개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행하며, GitHub Actions CI [`.github/workflows/logic-tests.yml`](.github/workflows/logic-tests.yml)에서 푸시/PR마다 Windows 러너로 자동 실행됩니다.)
+대신 게임에 의존하지 않는 순수 로직(`Bms/` 전체, `HwaManifestLoader`, 오프셋 판정, `DBStageInfoExperimentChart.Schema`, `ScenePatchHelpers`, `Core/`의 `AccuracyMath`·`CustomRecordStore.Serialization`·`PlayRecordMerge`·`RecordArchive`·`ChartFingerprint`·`GameVersionCheck`·`TextFileDecoder`·`TextNormalizer`·`MusicDecimalText`·`SongAudioFiles`·`HiddenUnlockText`·`FileStampCache`·`AtomicFile`·`CustomContentIds`·`SaveSelectionRules`·`TagRefreshRules`·`SafeAccess`·`UnlockAllMasterGuard`, `Spine/`의 `NoteSkinRules`·`SkinFolderRules`)만 별도 테스트 프로젝트에 **소스 링크**해서 게임 없이 검증합니다. (현재 222개, 자체 러너라 `dotnet test`가 아니라 아래 명령으로 실행하며, GitHub Actions CI [`.github/workflows/logic-tests.yml`](.github/workflows/logic-tests.yml)에서 푸시/PR마다 Windows 러너로 자동 실행됩니다.)
 
 ```powershell
 .\run-logic-tests.bat

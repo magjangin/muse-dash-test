@@ -76,6 +76,12 @@ namespace muse_dash_test
     public static class HwaResourceManager
     {
         public static HwaManifest Manifest;
+        public static BmsChart StubChart;
         public static HwaManifest GetManifest(string uid) => Manifest;
+        public static bool TryGetCachedHwaBmsChart(string uid, int difficulty, out BmsChart chart)
+        {
+            chart = StubChart;
+            return chart != null;
+        }
     }
 }

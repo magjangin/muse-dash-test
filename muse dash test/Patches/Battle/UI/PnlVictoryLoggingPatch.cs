@@ -25,6 +25,12 @@ namespace muse_dash_test.Patches.Battle.UI
                 {
                     if (m.Name == "OnVictory" || m.Name == "Awake" || m.Name == "OnEnable" || m.Name == "Init" || m.Name == "Show" || m.Name == "SetResult")
                     {
+                        // Il2CppInterop이 편의용으로 만든 순수 관리 C# params 래퍼 오버로드는 제외합니다(네이티브 메서드만 후킹).
+                        var ps = m.GetParameters();
+                        if (ps.Length > 0 && ps[ps.Length - 1].IsDefined(typeof(ParamArrayAttribute), false))
+                        {
+                            continue;
+                        }
                         methods.Add(m);
                     }
                 }

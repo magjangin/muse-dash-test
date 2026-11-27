@@ -47,7 +47,7 @@ namespace muse_dash_test
         // ----------------------------------------------------------------------
         // 2. PnlRank 랭킹 조회 차단 및 로컬 독립 UI 전환
         // ----------------------------------------------------------------------
-        [HarmonyPatch(typeof(PnlRank), nameof(PnlRank.RefreshGeneral))]
+        [HarmonyPatch(typeof(PnlRank), nameof(PnlRank.RefreshGeneral), new Type[] { typeof(string) })]
         [HarmonyPrefix]
         public static bool PnlRank_RefreshGeneral_Prefix(PnlRank __instance, string uid)
         {

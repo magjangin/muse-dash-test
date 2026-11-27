@@ -47,7 +47,9 @@ namespace muse_dash_test
                     return true;
                 }
 
-                // 외부에서 파괴된 경우 캐시에서 제거 후 재로드 허용
+                // 외부에서 일부만 파괴된 경우 살아남은 네이티브 리소스도 정리 후 재로드 허용
+                if (existing.Sprite != null) UnityEngine.Object.Destroy(existing.Sprite);
+                if (existing.Texture != null) UnityEngine.Object.Destroy(existing.Texture);
                 if (existing.Node != null && existing.Node.List == lruList)
                 {
                     lruList.Remove(existing.Node);
@@ -70,10 +72,12 @@ namespace muse_dash_test
                 return false;
             }
 
+            Texture2D tex = null;
+            Sprite spr = null;
             try
             {
                 byte[] data = AtomicFile.ReadAllBytesShared(coverPath);
-                var tex = new Texture2D(2, 2);
+                tex = new Texture2D(2, 2);
                 if (!ImageConversion.LoadImage(tex, data))
                 {
                     ModLogger.Error($"[Cover] cover.png 디코딩 실패: {coverPath}");
@@ -87,7 +91,7 @@ namespace muse_dash_test
                 tex.name = $"CustomCoverTex_{uid}";
                 tex.hideFlags |= HideFlags.DontUnloadUnusedAsset; // 유니티 GC 방지
 
-                var spr = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                spr = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
                 spr.name = $"CustomCoverSprite_{uid}";
                 spr.hideFlags |= HideFlags.DontUnloadUnusedAsset;
 
@@ -106,6 +110,8 @@ namespace muse_dash_test
             }
             catch (Exception ex)
             {
+                if (spr != null) UnityEngine.Object.Destroy(spr);
+                if (tex != null) UnityEngine.Object.Destroy(tex);
                 ModLogger.Error($"[Cover] cover.png 로드 예외 uid='{uid}': {ex}");
                 missing.Add(uid);
                 return false;
@@ -188,8 +194,7 @@ namespace muse_dash_test
             {
                 if (cell == null) return;
                 string key = uid ?? "(null)";
-                if (loggedUids.Contains(key)) return;
-                loggedUids.Add(key);
+                if (!loggedUids.Add(key)) return;
 
                 var go = cell.gameObject;
                 if (go == null) return;
@@ -199,7 +204,7 @@ namespace muse_dash_test
                 foreach (var img in images)
                 {
                     if (img == null || img.gameObject == null) continue;
-                    if (img.gameObject.name != "ImgCover") continue;
+                    if (!string.Equals(img.gameObject.name, "ImgCover", StringComparison.Ordinal)) continue;
                     coverName = img.sprite != null ? img.sprite.name : "(null)";
                     break;
                 }

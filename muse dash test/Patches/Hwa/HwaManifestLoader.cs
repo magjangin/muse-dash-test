@@ -1,11 +1,43 @@
 ﻿using MelonLoader;
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace muse_dash_test
 {
     internal static class HwaManifestLoader
     {
+        private static readonly char[] ManifestSeparators = { ':', '=', '：' };
+        private static readonly string[][] DifficultyBmsTokens = BuildDifficultyBmsTokens();
+        private static readonly string[] ShowGhostTokens = { "고스트노트보이기", "고스트보이기", "노트보이기", "ghostnote" };
+        private static readonly string[] FixDtTokens = { "권장표", "권장dt", "dt보정", "recommendeddt", "fixdt" };
+        private static readonly string[] ChristmasTokens = { "크리스마스", "christmas", "xmas" };
+        private static readonly string[] AlbumTokens = { "가져올앨범", "앨범", "album" };
+        private static readonly string[] UidTokens = { "uid" };
+        private static readonly string[] CustomArtistTokens = { "커스텀아티스트", "customartist", "customauthor" };
+        private static readonly string[] LevelDesignerTokens = { "레벨디자이너", "leveldesigner" };
+        private static readonly string[] ArtistTokens = { "artist", "아티스트", "author" };
+        private static readonly string[] CustomTitleTokens = { "커스텀곡제목", "커스텀곡이름", "커스텀곡명", "customsongtitle", "customsongname", "customtitle" };
+        private static readonly string[] TitleTokens = { "곡이름", "곡명", "곡제목", "가져올곡", "song", "title", "music" };
+        private static readonly string[] SceneTokens = { "씬번호", "scene" };
+        private static readonly string[] Diff1Tokens = { "난이도1", "difficulty1" };
+        private static readonly string[] Diff2Tokens = { "난이도2", "difficulty2" };
+        private static readonly string[] Diff3Tokens = { "난이도3", "difficulty3" };
+        private static readonly string[] Diff4Tokens = { "난이도4", "difficulty4" };
+        private static readonly string[] Diff5Tokens = { "난이도5", "difficulty5" };
+        private static readonly string[] DelayTokens = { "delay", "지연" };
+        private static readonly string[] OffsetTokens = { "offset", "오프셋", "싱크" };
+
+        private static string[][] BuildDifficultyBmsTokens()
+        {
+            var table = new string[BmsChartSet.MaxDifficulty + 1][];
+            for (int d = 1; d <= BmsChartSet.MaxDifficulty; d++)
+            {
+                string ds = d.ToString(CultureInfo.InvariantCulture);
+                table[d] = new[] { $"난이도{ds}bms", $"난이도{ds}채보", $"difficulty{ds}bms", $"difficulty{ds}chart" };
+            }
+            return table;
+        }
         internal static HwaManifest LoadHwaManifest(string folderPath)
         {
             try
@@ -133,7 +165,7 @@ namespace muse_dash_test
                 return false;
             }
 
-            int separatorIndex = line.IndexOfAny(new[] { ':', '=', '：' });
+            int separatorIndex = line.IndexOfAny(ManifestSeparators);
 
             if (separatorIndex < 0)
             {
@@ -177,24 +209,24 @@ namespace muse_dash_test
 
             // "난이도1 bms"는 "난이도1"을 포함하므로 레벨 숫자 줄보다 먼저 봐야 합니다.
             if (TryApplyDifficultyBms(manifest, normalizedKey, value)) return;
-            if (TryApplyBool(normalizedKey, value, v => manifest.ShowGhostNotes = v, "고스트노트보이기", "고스트보이기", "노트보이기", "ghostnote")) return;
-            if (TryApplyBool(normalizedKey, value, v => manifest.FixDtToRecommended = v, "권장표", "권장dt", "dt보정", "recommendeddt", "fixdt")) return;
-            if (TryApplyBool(normalizedKey, value, v => manifest.ChristmasScene = v, "크리스마스", "christmas", "xmas")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.Album = v, "가져올앨범", "앨범", "album")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.Uid = v, "uid")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.CustomArtist = v, "커스텀아티스트", "customartist", "customauthor")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.LevelDesigner = v, "레벨디자이너", "leveldesigner")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.Artist = v, "artist", "아티스트", "author")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.CustomTitle = v, "커스텀곡제목", "커스텀곡이름", "커스텀곡명", "customsongtitle", "customsongname", "customtitle")) return;
-            if (TryApplyString(normalizedKey, value, v => manifest.Title = v, "곡이름", "곡명", "곡제목", "가져올곡", "song", "title", "music")) return;
-            if (TryApplyInt(normalizedKey, value, v => manifest.Scene = v, "씬번호", "scene")) return;
-            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty1 = v, "난이도1", "difficulty1")) return;
-            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty2 = v, "난이도2", "difficulty2")) return;
-            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty3 = v, "난이도3", "difficulty3")) return;
-            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty4 = v, "난이도4", "difficulty4")) return;
-            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty5 = v, "난이도5", "difficulty5")) return;
-            if (TryApplyDouble(normalizedKey, value, v => manifest.Delay = v, "delay", "지연")) return;
-            if (TryApplyDouble(normalizedKey, value, v => manifest.Offset = v, "offset", "오프셋", "싱크")) return;
+            if (TryApplyBool(normalizedKey, value, v => manifest.ShowGhostNotes = v, ShowGhostTokens)) return;
+            if (TryApplyBool(normalizedKey, value, v => manifest.FixDtToRecommended = v, FixDtTokens)) return;
+            if (TryApplyBool(normalizedKey, value, v => manifest.ChristmasScene = v, ChristmasTokens)) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.Album = v, AlbumTokens)) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.Uid = v, UidTokens)) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.CustomArtist = v, CustomArtistTokens)) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.LevelDesigner = v, LevelDesignerTokens)) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.Artist = v, ArtistTokens)) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.CustomTitle = v, CustomTitleTokens)) return;
+            if (TryApplyString(normalizedKey, value, v => manifest.Title = v, TitleTokens)) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Scene = v, SceneTokens)) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty1 = v, Diff1Tokens)) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty2 = v, Diff2Tokens)) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty3 = v, Diff3Tokens)) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty4 = v, Diff4Tokens)) return;
+            if (TryApplyInt(normalizedKey, value, v => manifest.Difficulty5 = v, Diff5Tokens)) return;
+            if (TryApplyDouble(normalizedKey, value, v => manifest.Delay = v, DelayTokens)) return;
+            if (TryApplyDouble(normalizedKey, value, v => manifest.Offset = v, OffsetTokens)) return;
 
             // 어떤 항목에도 걸리지 않은 줄은 오타일 가능성이 높습니다. 예전에는 조용히 버려서
             // "설정을 적었는데 반영이 안 된다"는 증상만 남았습니다.
@@ -218,7 +250,7 @@ namespace muse_dash_test
         {
             for (int difficulty = 1; difficulty <= BmsChartSet.MaxDifficulty; difficulty++)
             {
-                if (!ContainsAny(normalizedKey, $"난이도{difficulty}bms", $"난이도{difficulty}채보", $"difficulty{difficulty}bms", $"difficulty{difficulty}chart"))
+                if (!ContainsAny(normalizedKey, DifficultyBmsTokens[difficulty]))
                 {
                     continue;
                 }
@@ -306,7 +338,7 @@ namespace muse_dash_test
                 return null;
             }
 
-            if (int.TryParse(value.Trim(), out int parsed))
+            if (int.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
             {
                 return parsed;
             }
@@ -366,6 +398,7 @@ namespace muse_dash_test
                 return "(null)";
             }
 
+            var ci = CultureInfo.InvariantCulture;
             return "path=" + (manifest.SourcePath ?? "(null)")
                 + ", uid=" + (manifest.Uid ?? "(null)")
                 + ", title=" + (manifest.Title ?? "(null)")
@@ -374,15 +407,15 @@ namespace muse_dash_test
                 + ", customArtist=" + (manifest.CustomArtist ?? "(null)")
                 + ", levelDesigner=" + (manifest.LevelDesigner ?? "(null)")
                 + ", album=" + (manifest.Album ?? "(null)")
-                + ", scene=" + (manifest.Scene.HasValue ? manifest.Scene.Value.ToString() : "(null)")
-                + ", diff1=" + (manifest.Difficulty1.HasValue ? manifest.Difficulty1.Value.ToString() : "(null)")
-                + ", diff2=" + (manifest.Difficulty2.HasValue ? manifest.Difficulty2.Value.ToString() : "(null)")
-                + ", diff3=" + (manifest.Difficulty3.HasValue ? manifest.Difficulty3.Value.ToString() : "(null)")
-                + ", diff4=" + (manifest.Difficulty4.HasValue ? manifest.Difficulty4.Value.ToString() : "(null)")
-                + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString() : "(null)")
+                + ", scene=" + (manifest.Scene.HasValue ? manifest.Scene.Value.ToString(ci) : "(null)")
+                + ", diff1=" + (manifest.Difficulty1.HasValue ? manifest.Difficulty1.Value.ToString(ci) : "(null)")
+                + ", diff2=" + (manifest.Difficulty2.HasValue ? manifest.Difficulty2.Value.ToString(ci) : "(null)")
+                + ", diff3=" + (manifest.Difficulty3.HasValue ? manifest.Difficulty3.Value.ToString(ci) : "(null)")
+                + ", diff4=" + (manifest.Difficulty4.HasValue ? manifest.Difficulty4.Value.ToString(ci) : "(null)")
+                + ", diff5=" + (manifest.Difficulty5.HasValue ? manifest.Difficulty5.Value.ToString(ci) : "(null)")
                 + ", diffBms=[" + string.Join(", ", Array.ConvertAll(manifest.DifficultyBmsFiles, file => file ?? "-")) + "]"
-                + ", delay=" + (manifest.Delay.HasValue ? manifest.Delay.Value.ToString("F7") : "(null)")
-                + ", offset=" + (manifest.Offset.HasValue ? manifest.Offset.Value.ToString("F7") : "(null)")
+                + ", delay=" + (manifest.Delay.HasValue ? manifest.Delay.Value.ToString("F7", ci) : "(null)")
+                + ", offset=" + (manifest.Offset.HasValue ? manifest.Offset.Value.ToString("F7", ci) : "(null)")
                 + ", showGhostNotes=" + (manifest.ShowGhostNotes.HasValue ? manifest.ShowGhostNotes.Value.ToString() : "(null)")
                 + ", fixDtToRecommended=" + (manifest.FixDtToRecommended.HasValue ? manifest.FixDtToRecommended.Value.ToString() : "(null)")
                 + ", christmasScene=" + (manifest.ChristmasScene.HasValue ? manifest.ChristmasScene.Value.ToString() : "(null)");

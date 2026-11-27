@@ -56,10 +56,11 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
         for (int i = 0; i < musicList.Count; i++)
         {
             var note = musicList[i];
-            if (note?.noteData == null) continue;
+            var noteData = note?.noteData;
+            if (noteData == null) continue;
 
-            string uid = note.noteData.uid ?? string.Empty;
-            uint noteTypeVal = (uint)note.noteData.type;
+            string uid = noteData.uid ?? string.Empty;
+            uint noteTypeVal = (uint)noteData.type;
 
             // 표준 NoteType (0:None ~ 17:SceneHideOff) 범위 및 모드 표준 UID 패턴인지 검사
             bool isStandardType = noteTypeVal <= 17;
@@ -82,13 +83,12 @@ public partial class DBStageInfo_SetRuntimeMusicData_Patch
                 // 콘솔 중복 출력을 방지하며 고유한 신규 노트 타입/UID만 상세 출력
                 if (loggedUids.Add(key) && verbose)
                 {
-
-                    string ibmsId = SafeLogValue(() => note.noteData.ibms_id);
-                    string prefab = SafeLogValue(() => note.noteData.prefab_name);
-                    string bossAction = SafeLogValue(() => note.noteData.boss_action);
-                    string pathway = SafeLogValue(() => note.noteData.pathway);
-                    string keyAudio = SafeLogValue(() => note.noteData.key_audio);
-                    string scene = SafeLogValue(() => note.noteData.scene);
+                    string ibmsId = SafeLogValue(() => noteData.ibms_id);
+                    string prefab = SafeLogValue(() => noteData.prefab_name);
+                    string bossAction = SafeLogValue(() => noteData.boss_action);
+                    string pathway = SafeLogValue(() => noteData.pathway);
+                    string keyAudio = SafeLogValue(() => noteData.key_audio);
+                    string scene = SafeLogValue(() => noteData.scene);
                     string tick = SafeLogValue(() => note.tick);
                     string dt = SafeLogValue(() => note.dt);
                     string showTick = SafeLogValue(() => note.showTick);

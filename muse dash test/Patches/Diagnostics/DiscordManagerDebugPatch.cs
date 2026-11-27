@@ -13,6 +13,8 @@ namespace muse_dash_test
     [HarmonyPatch]
     public static class DiscordManagerDebugPatch
     {
+        public static bool Prepare() => ModConfig.EnableDiscordRPC || ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
         private static PnlBattle cachedPnlBattle;
 
         public static void ResetCache()
@@ -24,7 +26,14 @@ namespace muse_dash_test
         [HarmonyPrefix]
         public static void InitDiscord_Prefix(DiscordManager __instance)
         {
-            ModLogger.Msg($"[DiscordHook.InitDiscord] ⚓ DiscordManager.InitDiscord() 호출됨! Instance={__instance?.Pointer ?? IntPtr.Zero}");
+            try
+            {
+                ModLogger.Msg($"[DiscordHook.InitDiscord] ⚓ DiscordManager.InitDiscord() 호출됨! Instance={__instance?.Pointer ?? IntPtr.Zero}");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[DiscordHook.InitDiscord] 예외: {ex.Message}");
+            }
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.SetUpdateActivity))]
@@ -89,14 +98,28 @@ namespace muse_dash_test
         [HarmonyPostfix]
         public static void SetUpdateActivity_Postfix(DiscordManager __instance, bool isPlaying, string levelInfo)
         {
-            ModLogger.Verbose($"[DiscordHook.SetUpdateActivity.Postfix] SetUpdateActivity 처리 완료. 최종 levelInfo: '{levelInfo}'");
+            try
+            {
+                ModLogger.Verbose($"[DiscordHook.SetUpdateActivity.Postfix] SetUpdateActivity 처리 완료. 최종 levelInfo: '{levelInfo}'");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[DiscordHook.SetUpdateActivity.Postfix] 예외: {ex.Message}");
+            }
         }
 
         [HarmonyPatch(typeof(DiscordManager), nameof(DiscordManager.Destroy))]
         [HarmonyPrefix]
         public static void Destroy_Prefix()
         {
-            ModLogger.Msg("[DiscordHook.Destroy] 🛑 DiscordManager.Destroy() 호출됨");
+            try
+            {
+                ModLogger.Msg("[DiscordHook.Destroy] 🛑 DiscordManager.Destroy() 호출됨");
+            }
+            catch (Exception ex)
+            {
+                ModLogger.Verbose($"[DiscordHook.Destroy] 예외: {ex.Message}");
+            }
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 using MelonLoader;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 
 namespace muse_dash_test
@@ -82,7 +83,7 @@ namespace muse_dash_test
         /// <returns>조회된 값 객체. 대상이 null이거나 멤버 부재 시, 혹은 에러 발생 시 null을 반환합니다.</returns>
         public static object GetValue(object target, string memberName, bool silent = false)
         {
-            if (target == null) return null;
+            if (target == null || string.IsNullOrEmpty(memberName)) return null;
             Type type = target.GetType();
             var key = new MemberCacheKey(type, memberName);
             MemberInfo member = GetCachedMember(key);
@@ -122,7 +123,7 @@ namespace muse_dash_test
         /// <returns>성공적으로 값이 주입되었을 경우 true, 실패했을 경우 false를 반환합니다.</returns>
         public static bool SetValue(object target, string memberName, object value, bool silent = false)
         {
-            if (target == null) return false;
+            if (target == null || string.IsNullOrEmpty(memberName)) return false;
             Type type = target.GetType();
             var key = new MemberCacheKey(type, memberName);
             MemberInfo member = GetCachedMember(key);
@@ -204,7 +205,7 @@ namespace muse_dash_test
         {
             object value = GetValue(target, memberName, silent);
             if (value == null) return fallback;
-            try { return Convert.ToInt32(value); }
+            try { return Convert.ToInt32(value, CultureInfo.InvariantCulture); }
             catch { return fallback; }
         }
 
@@ -255,52 +256,82 @@ namespace muse_dash_test
         /// <param name="type">대상 클래스의 시스템 타입(Type)</param>
         /// <param name="memberName">스캔할 멤버의 영문 기준 명칭</param>
         /// <returns>검색에 성공한 PropertyInfo 또는 FieldInfo 인스턴스. 부재 시 null을 반환합니다.</returns>
+        private static PropertyInfo SafeGetNonIndexedProperty(Type type, string name, BindingFlags flags)
+        {
+            try
+            {
+                var prop = type.GetProperty(name, flags);
+                if (prop != null && prop.GetIndexParameters().Length == 0) return prop;
+            }
+            catch (AmbiguousMatchException)
+            {
+                // 파생 클래스의 new 프로퍼티나 인덱서 오버로드로 모호성이 발생하면 계층을 따라 가장 구체적인 선언부터 탐색합니다.
+                for (Type cur = type; cur != null; cur = cur.BaseType)
+                {
+                    foreach (var p in cur.GetProperties(flags | BindingFlags.DeclaredOnly))
+                    {
+                        if (string.Equals(p.Name, name, StringComparison.Ordinal) && p.GetIndexParameters().Length == 0)
+                            return p;
+                    }
+                }
+            }
+            return null;
+        }
+
         private static MemberInfo ResolveMember(Type type, string memberName)
         {
+            if (type == null || string.IsNullOrEmpty(memberName)) return null;
             const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-            // 텍스트 속성을 가질 리 없는 대표적인 Unity 핵심 타입들에 대한 'text' 조회 초고속 바이패스 필터
-            if (memberName == "text" && IsTextlessUnityType(type.FullName))
+            try
             {
-                return null;
+                // 텍스트 속성을 가질 리 없는 대표적인 Unity 핵심 타입들에 대한 'text' 조회 초고속 바이패스 필터
+                if (memberName == "text" && IsTextlessUnityType(type.FullName))
+                {
+                    return null;
+                }
+
+                // 패턴 1: 정확한 프로퍼티명
+                var prop = SafeGetNonIndexedProperty(type, memberName, flags);
+                if (prop != null) return prop;
+
+                // 패턴 2: 정확한 필드명
+                var field = type.GetField(memberName, flags);
+                if (field != null) return field;
+
+                // 패턴 3: C# 컴파일러 백킹 필드 패턴 (_[name]_k__BackingField)
+                string backingFieldName = $"_{memberName}_k__BackingField";
+                field = type.GetField(backingFieldName, flags);
+                if (field != null) return field;
+
+                // 패턴 4: Unity/PeroTools 등에서 많이 쓰이는 m_ 접두사 패턴 (필드 및 프로퍼티 자동 감지)
+                string mPrefixName1 = $"m_{memberName}";
+                field = type.GetField(mPrefixName1, flags);
+                if (field != null) return field;
+                prop = SafeGetNonIndexedProperty(type, mPrefixName1, flags);
+                if (prop != null) return prop;
+
+                string mPrefixName2 = $"m_{char.ToUpperInvariant(memberName[0])}{memberName.Substring(1)}";
+                field = type.GetField(mPrefixName2, flags);
+                if (field != null) return field;
+                prop = SafeGetNonIndexedProperty(type, mPrefixName2, flags);
+                if (prop != null) return prop;
+
+                // 패턴 5: 대소문자 구분 없는 폴백 스캔
+                foreach (var p in type.GetProperties(flags))
+                {
+                    if (p.GetIndexParameters().Length == 0 && string.Equals(p.Name, memberName, StringComparison.OrdinalIgnoreCase))
+                        return p;
+                }
+                foreach (var f in type.GetFields(flags))
+                {
+                    if (string.Equals(f.Name, memberName, StringComparison.OrdinalIgnoreCase))
+                        return f;
+                }
             }
-
-            // 패턴 1: 정확한 프로퍼티명
-            var prop = type.GetProperty(memberName, flags);
-            if (prop != null && prop.GetIndexParameters().Length == 0) return prop;
-
-            // 패턴 2: 정확한 필드명
-            var field = type.GetField(memberName, flags);
-            if (field != null) return field;
-
-            // 패턴 3: C# 컴파일러 백킹 필드 패턴 (_[name]_k__BackingField)
-            string backingFieldName = $"_{memberName}_k__BackingField";
-            field = type.GetField(backingFieldName, flags);
-            if (field != null) return field;
-
-            // 패턴 4: Unity/PeroTools 등에서 많이 쓰이는 m_ 접두사 패턴 (필드 및 프로퍼티 자동 감지)
-            string mPrefixName1 = $"m_{memberName}";
-            field = type.GetField(mPrefixName1, flags);
-            if (field != null) return field;
-            prop = type.GetProperty(mPrefixName1, flags);
-            if (prop != null && prop.GetIndexParameters().Length == 0) return prop;
-
-            string mPrefixName2 = $"m_{char.ToUpperInvariant(memberName[0])}{memberName.Substring(1)}";
-            field = type.GetField(mPrefixName2, flags);
-            if (field != null) return field;
-            prop = type.GetProperty(mPrefixName2, flags);
-            if (prop != null && prop.GetIndexParameters().Length == 0) return prop;
-
-            // 패턴 5: 대소문자 구분 없는 폴백 스캔
-            foreach (var p in type.GetProperties(flags))
+            catch (Exception ex)
             {
-                if (p.GetIndexParameters().Length == 0 && string.Equals(p.Name, memberName, StringComparison.OrdinalIgnoreCase))
-                    return p;
-            }
-            foreach (var f in type.GetFields(flags))
-            {
-                if (string.Equals(f.Name, memberName, StringComparison.OrdinalIgnoreCase))
-                    return f;
+                ModLogger.Verbose($"[ModReflection] ResolveMember({type.FullName}.{memberName}) 예외: {ex.GetType().Name}: {ex.Message}");
             }
 
             return null;
@@ -327,7 +358,7 @@ namespace muse_dash_test
                 return casted ?? value;
             }
 
-            return Convert.ChangeType(value, underlying);
+            return Convert.ChangeType(value, underlying, CultureInfo.InvariantCulture);
         }
     }
 }

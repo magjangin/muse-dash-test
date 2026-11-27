@@ -60,6 +60,8 @@ namespace muse_dash_test
             }
         }
 
+        private const string LowerHexChars = "0123456789abcdef";
+
         /// <summary>
         /// BMS 파일 내용의 SHA-256 앞 16자리를 돌려줍니다. 파일이 없으면 <see cref="NoChart"/>,
         /// 읽기에 실패하면 <c>null</c>입니다.
@@ -68,9 +70,11 @@ namespace muse_dash_test
         {
             try
             {
-                if (string.IsNullOrEmpty(path) || !File.Exists(path)) return NoChart;
+                if (string.IsNullOrEmpty(path)) return NoChart;
 
                 var info = new FileInfo(path);
+                if (!info.Exists) return NoChart;
+
                 lock (Cache)
                 {
                     if (Cache.TryGetValue(path, out CacheEntry cached)
@@ -82,13 +86,18 @@ namespace muse_dash_test
                 }
 
                 string fingerprint;
-                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                 using (var sha = SHA256.Create())
                 {
                     byte[] hash = sha.ComputeHash(stream);
-                    var sb = new StringBuilder(16);
-                    for (int i = 0; i < 8; i++) sb.Append(hash[i].ToString("x2"));
-                    fingerprint = sb.ToString();
+                    char[] hex = new char[16];
+                    for (int i = 0; i < 8; i++)
+                    {
+                        byte b = hash[i];
+                        hex[i * 2] = LowerHexChars[b >> 4];
+                        hex[i * 2 + 1] = LowerHexChars[b & 0x0F];
+                    }
+                    fingerprint = new string(hex);
                 }
 
                 lock (Cache)

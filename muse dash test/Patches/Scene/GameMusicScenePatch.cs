@@ -1,9 +1,10 @@
 using MelonLoader;
 using System;
+using System.Globalization;
 using muse_dash_test;
 
 // Il2CppGameLogic.GameMusicScene.LoadScene(string sceneName) 후킹
-[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.LoadScene))]
+[HarmonyLib.HarmonyPatch(typeof(Il2CppGameLogic.GameMusicScene), nameof(Il2CppGameLogic.GameMusicScene.LoadScene), new Type[] { typeof(string) })]
 public class GameMusicScene_LoadScene_Patch
 {
     public static void Prefix(Il2CppGameLogic.GameMusicScene __instance, ref string sceneName)
@@ -32,7 +33,7 @@ public class GameMusicScene_LoadScene_Patch
                 return;
             }
 
-            string redirectedSceneName = $"scene_{scene:00}";
+            string redirectedSceneName = $"scene_{scene.ToString("00", CultureInfo.InvariantCulture)}";
             ExperimentHitPointInstaller.RememberLoadSceneRedirect(sceneName, redirectedSceneName);
             ModLogger.Msg($"[GameMusicScene.LoadScene] scene 리다이렉션: {sceneName} -> {redirectedSceneName}");
             sceneName = redirectedSceneName;

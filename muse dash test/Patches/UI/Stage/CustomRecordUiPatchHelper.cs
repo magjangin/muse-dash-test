@@ -14,11 +14,11 @@ namespace muse_dash_test
         // 최대 콤보로 저장했고(neon: 888, 실제 863), 기록 병합은 큰 값을 유지하므로 표시에서 바로잡습니다.
         public static string FormatCombo(CustomRecordStore.PlayRecord r)
         {
-            if (!r.isFullCombo) return r.maxCombo.ToString();
+            if (!r.isFullCombo) return r.maxCombo.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
             int comboNotes = CustomRecordStore.ComboNoteCount(r.noteCount, r.hearts, r.blueNotes);
             int combo = r.maxCombo > 0 ? Math.Min(r.maxCombo, comboNotes) : comboNotes;
-            return combo.ToString();
+            return combo.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         // 점수 표시값: 게임에서 읽어 저장한 실제 점수를 천 단위 구분으로 표시합니다.
@@ -146,7 +146,7 @@ namespace muse_dash_test
                     if (pnlRecord.txtClear != null)
                     {
                         int playCount = record.playCount > 0 ? record.playCount : 1;
-                        pnlRecord.txtClear.text = playCount.ToString();
+                        pnlRecord.txtClear.text = playCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
                     }
 
                     if (pnlRecord.txtCombo != null)

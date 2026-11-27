@@ -3,6 +3,29 @@
 `tools/release.ps1`이 `## [<버전>]` 항목 본문을 GitHub 릴리즈 노트로 씁니다. 버전은 `muse dash test/Core/ModInfo.cs`의 `ModInfo.Version`과 같아야 합니다.
 v0.16.0 이전 이력은 [GitHub 릴리즈 목록](https://github.com/magjangin/muse-dash-test/releases)과 `git log --oneline`을 보십시오.
 
+## [0.17.0] - 곡 선택 ALL 태그 목록 0곡 버그 수정·감사 15차 업데이트 내성·병목·도구 전면 보강
+
+### 고친 것
+- **곡 선택 화면 진입 직후 ALL 태그 목록 0곡 버그 수정**: 곡 선택 화면에 들어가면 ALL 태그인데도 곡 목록이 0곡으로 비어 있던 문제를 고쳤습니다(태그 패널에서 곡을 눌러야 채워졌음). 원인은 커스텀 태그(`1999`) NRE를 막는 `MusicTagManager_RefreshStageDisplayMusics_Patch`가 게임의 "지금 태그로 갱신"(`-1`)까지 막은 것입니다. 이제 `-1`은 지금 태그가 커스텀(`1999`)일 때만 막습니다(`TagRefreshRules`). 실기 확인(2026-11-27): 진입 직후 803곡 정상 표시, 커스텀 태그 16곡 선택·그 상태로 재진입 시 오류 0건.
+- **`EnableAPMod=false` 기록 저장·효과음 연동 누락 수정**: `EnableAPMod`가 꺼져 있을 때 `AddScore`/`IsFullCombo` 훅이 빠져 `VictoryDataCache.ActiveTarget`이 비면서 커스텀 곡 플레이 기록 저장(`CustomRecordStore.SaveResult`)과 올 퍼펙트 효과음 제어가 함께 건너뛰어지던 문제를 고쳤습니다. 이제 `GetAccuracy` 패치가 `EnableAPMod`와 무관하게 `ActiveTarget`을 확보합니다.
+- **커스텀 Spine 스킨 JSON 난독화 검사 오류 수정**: `CustomSkinInjector`에서 공백만 있는 `.json` 파일을 읽을 때 `IndexOutOfRangeException`이 나거나, UTF-8 BOM이 붙은 정상 `.json`을 암호화된 파일로 오진해 `[ERROR]` 배너를 띄우던 문제를 고쳤습니다.
+- **강제 퍼펙트 설정 스위치 반영 보강**: 배틀 중 `config.txt`의 `강제퍼펙트`가 켜질 때 `ModConfig.EnableForcePerfect` 스위치도 함께 확인하도록 정합성을 맞췄습니다.
+- **릴리즈 스크립트(`tools/release.ps1`) PowerShell 5.1 `stderr` 오판 수정**: Windows PowerShell 5.1의 `$ErrorActionPreference = 'Stop'`이 `git push`·`dotnet` 등의 정상 `stderr` 진행 출력을 종료 예외(`NativeCommandError`)로 승격해 태그 푸시 후 실패로 오판하던 문제를 `Invoke-Native`/`Invoke-Captured` 격리로 해결했습니다. 또한 `10` 이상 패치 버전 번호에 대한 `FileVersion` 접두 비교와 `dist/notes-v*.md` 이전 초안 자동 정리를 추가했습니다.
+
+### 업데이트 내성 강화
+- **JIT 경계 격리(`NoInlining`) 확대**: `MainMod.EnableMultiTouch`, `TouchInput.ReadInputSystemCore`/`ReadLegacyCore`, `CustomRecordStore.ReadBattleDifficulty`/`ReadSelectedDifficulty`, `CustomSkinInjector.PrimaryMaterialOfCore`, `NoteSkinInjector.TryInjectCore`, `Patch_Inject_BlackGirlBattle.TryInjectCore`, `Patch_SpineActionContract.DumpSupplyCore`, `SelectedSongLocalizationScope.ReadFrameCountCore`를 별도 `NoInlining` 메서드로 분리해 게임 업데이트나 런타임 환경 차이로 멤버가 바뀔 때 상위 폴백·예외 격리가 안전하게 작동하도록 보강했습니다.
+- **비활성 기능·Verbose 전용 패치 `Prepare()` 게이트 확대**: `PatchInstaller`에서 `Prepare()` 판정을 사전 JIT 검사보다 먼저 수행하고, `AutoPlayPatch`, `ForcePerfectPatch`, `BossPatch`, `StageBattleComponent_LoadMusicData_Patch`, `JudgmentBar`, `PnlInputMobilePatch`, `DiscordManagerDebugPatch`, `GameMusicScene_Run_Patch`, `SceneFlowPatch`(관찰 전용 3개, `ChangeNote` 제외), `PnlStagePatch`(관찰 전용 7개), `PnlRankHookPatch`(관찰 전용 3개)에 `Prepare()`를 추가해 꺼진 기능이나 기본 로그 수준에서 불필요한 네이티브 트램펄린 자체를 걸지 않습니다.
+- **오버로드·파라미터 모호성 차단**: `ModReflection`, `Il2CppWrapperBase`, `InputOverlay`에서 `AmbiguousMatchException`을 방어하고, 주요 `[HarmonyPatch]` 어트리뷰트에 명시적 파라미터 타입 배열을 지정했으며 `PnlVictoryLoggingPatch`/`AudioManager_PlayBgm_Patch`의 동적 타깃에서 Il2CppInterop 합성 `params` 래퍼를 제외했습니다.
+- **핫리로드 스레드 안전성 및 파일 삭제 공유**: `HwaResourceManager`의 매니페스트·가상 UID 컬렉션에 락 동기화를 일원화해 백그라운드 BMS 감시 스레드와의 경합을 막고, `AtomicFile`·`ChartFingerprint` 공유 읽기에 `FileShare.Delete`를 추가해 에디터의 원자적 교체 저장과 충돌하지 않게 했습니다.
+
+### 병목 및 메모리 할당 최적화
+- **채보 주입 및 배틀 시작 대량 할당 제거**: `DBStageInfoExperimentChart`에서 `DebugExperimentNotes`/Verbose가 꺼져 있을 때도 조립되던 노트당 문자열 보간·IL2CPP 마샬링 수만 건을 게이트 뒤로 옮기고, `SortBmsNotesByShowTick`의 리스트 재구성을 제자리 덮어쓰기로 바꿨으며, `GameMusicScenePreLoadEnemyPatch`에서 배틀 시작마다 최대 6,000회 발생하던 클로저·박싱 할당을 제거했습니다.
+- **인게임 프레임·타격 핫패스 경량화**: `GhostNoteAlphaHold`(고스트 보이기 꺼짐 시 조기 반환), `NoteSkinInjector`(스킨 미존재 스켈레톤 포인터 캐시), `OffsetHookPatches`(`Il2CppSystem.Decimal` 캐시), `APModPatch`(포인터 비교로 매 타격 인터롭 비교 제거), `AudioManager_PlayBgm_Patch`(`object[] __args` 박싱 제거), `BmsDtTable`·`ExperimentHitPointInstaller`(`Substring` 제거), `BmsParser`(`#` 비헤더 줄 조기 통과·정규화 무할당 패스트패스), `SongAudioFiles`(음원 없음 결과 캐시), `CustomSkinInjector`(대용량 스킨 JSON 이중 디코딩 제거), `SaveDataManagerPatch`(`TryGetValue` 단일 조회) 등 전역 병목을 해소했습니다.
+- **로케일·크로스플랫폼 일관성**: `SignatureDumper`(실수 리터럴 `InvariantCulture` 및 `AssemblyResolve` 해제), `CustomRecordStore.Serialization`, `CustomRecordUiPatchHelper`, `PnlReportCardPatch`, `RankCellHookPatch`, `HwaManifestLoader` 등에 `CultureInfo.InvariantCulture`와 `\`/`/` 공통 경로 분리를 완비했습니다.
+
+### 문서 및 테스트
+- `tools/check-code-reference.ps1`이 부분 문자열 대신 정확한 `.cs` 파일명 단위로 대조하도록 강화하고 `CODE_REFERENCE.md` 누락 항목·`LOGGING_AND_TROUBLESHOOTING.md`·`OFFLINE_CUSTOM_SANDBOX_GUIDE.md`·`MOD_SYSTEM_BLUEPRINT.md`·`README.md`를 최신 코드 기준으로 정비했습니다. CI 워크플로에 `fix/*` 브랜치 트리거를 추가하고 순수 로직 단위 테스트를 222개로 확장했습니다.
+
 ## [0.16.9] - 감사 14차·보스 전환 맵 2중 조회 해소·고스트 판정 힙 할당 방지·임시 채보 필터 강화
 
 게임 동작을 바꾸는 기능 추가는 없습니다.

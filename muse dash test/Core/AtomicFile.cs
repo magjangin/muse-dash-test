@@ -38,12 +38,14 @@ namespace muse_dash_test
             }
         }
 
+        private const FileShare SharedReadMode = FileShare.ReadWrite | FileShare.Delete;
+
         /// <summary>
-        /// 다른 프로세스(에디터, 클라우드 동기화, 백업)가 파일을 열고 있어도 공유 위반 없이 안전하게 바이트를 읽습니다.
+        /// 다른 프로세스(에디터, 클라우드 동기화, 백업, 원자적 이름 변경 저장기)가 파일을 열고 있어도 공유 위반 없이 안전하게 바이트를 읽습니다.
         /// </summary>
         public static byte[] ReadAllBytesShared(string path)
         {
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, SharedReadMode))
             {
                 long length = fs.Length;
                 if (length > int.MaxValue) throw new IOException($"파일 크기가 너무 큽니다: {path} ({length} bytes)");
@@ -68,7 +70,7 @@ namespace muse_dash_test
         /// </summary>
         public static string ReadAllTextShared(string path, Encoding encoding = null)
         {
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, SharedReadMode))
             using (var reader = new StreamReader(fs, encoding ?? Encoding.UTF8))
             {
                 return reader.ReadToEnd();

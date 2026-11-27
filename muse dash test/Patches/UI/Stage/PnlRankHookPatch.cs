@@ -11,9 +11,11 @@ namespace muse_dash_test.Patches.UI.Stage
     /// PnlRank 메인 갱신 및 서버 응답 콜백 메서드(Refresh, RefreshGeneral, UIRefresh, NsRefreshFail)의 
     /// 실시간 호출 여부를 정확한 il2cpp 파라미터 시그니처로 추적하는 관찰 패치 클래스입니다.
     /// </summary>
-    [HarmonyLib.HarmonyPatch(typeof(PnlRank), nameof(PnlRank.RefreshGeneral))]
+    [HarmonyLib.HarmonyPatch(typeof(PnlRank), nameof(PnlRank.RefreshGeneral), new Type[] { typeof(string) })]
     public class PnlRank_RefreshGeneral_LoggingPatch
     {
+        public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
         public static void Prefix(PnlRank __instance, string uid)
         {
             try
@@ -31,9 +33,11 @@ namespace muse_dash_test.Patches.UI.Stage
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(PnlRank), nameof(PnlRank.UIRefresh))]
+    [HarmonyLib.HarmonyPatch(typeof(PnlRank), nameof(PnlRank.UIRefresh), new Type[] { typeof(string) })]
     public class PnlRank_UIRefresh_LoggingPatch
     {
+        public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
         public static void Prefix(PnlRank __instance, string uid)
         {
             try
@@ -51,9 +55,11 @@ namespace muse_dash_test.Patches.UI.Stage
         }
     }
 
-    [HarmonyLib.HarmonyPatch(typeof(PnlRank), nameof(PnlRank.Refresh))]
+    [HarmonyLib.HarmonyPatch(typeof(PnlRank), nameof(PnlRank.Refresh), new Type[] { typeof(bool) })]
     public class PnlRank_Refresh_LoggingPatch
     {
+        public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
+
         public static void Prefix(PnlRank __instance, bool force)
         {
             try

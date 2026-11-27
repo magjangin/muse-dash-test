@@ -32,6 +32,7 @@ internal static class SceneFlowLog
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), nameof(Il2Cpp.SceneChangeController.ChangeScene), new Type[] { typeof(int) })]
 public class SceneChangeController_ChangeScene_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
         if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
@@ -92,6 +93,7 @@ public class SceneChangeController_ChangeNote_Patch
 [HarmonyLib.HarmonyPatch(typeof(Il2Cpp.SceneChangeController), nameof(Il2Cpp.SceneChangeController.SceneAnimationReset), new Type[] { typeof(int) })]
 public class SceneChangeController_SceneAnimationReset_Patch
 {
+    public static bool Prepare() => ModLogger.IsLevelEnabled(ModLogLevel.Verbose);
     public static void Prefix(Il2Cpp.SceneChangeController __instance, ref int sceneInfo)
     {
         if (!ModLogger.IsLevelEnabled(ModLogLevel.Verbose)) return;
