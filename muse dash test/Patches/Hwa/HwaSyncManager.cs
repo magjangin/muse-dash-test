@@ -35,6 +35,16 @@ namespace muse_dash_test
             loggedSyncError = false;
         }
 
+        /// <summary>
+        /// 일시정지 해제(ResumeMedia) 직후 비디오/오디오 재개 레이턴시 차이로 인한 싱크 급변동을 방지하기 위해
+        /// 짧은 동기화 유예 쿨다운(0.5초)을 부여하고 드리프트 통계를 재설정합니다.
+        /// </summary>
+        public static void NotifyResume()
+        {
+            syncCooldownTimer = Math.Max(syncCooldownTimer, 0.5f);
+            ResetDriftStats();
+        }
+
         public static void HandleBattleSynchronization()
         {
             try
@@ -134,7 +144,7 @@ namespace muse_dash_test
             HwaBattleMediaController.videoStartedAtMusic = true;
             float videoDuration = (float)bgaPlayer.length;
             float startTime = videoDuration > 0.5f && bgaPlayer.isLooping ? masterTime % videoDuration : masterTime;
-            if (startTime > 0.05f) bgaPlayer.time = startTime;
+            if (startTime > 0.001f) bgaPlayer.time = startTime;
             bgaPlayer.playbackSpeed = 1f;
             bgaPlayer.Play();
             // 시작 시크가 끝날 때까지 video.time은 0을 돌려줍니다. 바로 보정하면 같은 위치로 한 번 더 시크했습니다
@@ -146,8 +156,8 @@ namespace muse_dash_test
 
         // 작은 오차는 재생 속도를 살짝 바꿔 따라붙고(시크는 키프레임 탐색이라 멈칫함), 이보다 크면 시크합니다.
         private const float VideoSeekThreshold = 0.5f;
-        private const float VideoSpeedDeadband = 0.02f;
-        private const float VideoSpeedGain = 1.0f;     // 오차 0.1초 → 속도 ±10%
+        private const float VideoSpeedDeadband = 0.015f; // 15ms 이내 오차는 안정 유지
+        private const float VideoSpeedGain = 1.2f;      // 오차 0.05초(50ms) → 속도 ±6% 조절로 보다 빠르게 밀착 추종
         private const float VideoMaxSpeedDelta = 0.15f;
         private const float DriftReportInterval = 30f;
 

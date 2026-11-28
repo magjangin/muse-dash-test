@@ -119,6 +119,8 @@ namespace muse_dash_test
                     bgm.UnPause();
                     ModLogger.Msg("[HwaBattleMediaController] 커스텀 BGM 오디오 재생을 재개했습니다.");
                 }
+
+                HwaSyncManager.NotifyResume();
             }
             catch (Exception ex)
             {
